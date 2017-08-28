@@ -19,19 +19,20 @@
     <Compile Include="composer.json" />
     <Compile Include="LICENCE.md" />
     <Compile Include="src\Form.php" />
+    <Compile Include="src\Forms\Controller.php" />
     <Compile Include="src\Forms\Model.php" />
-    <Compile Include="src\View\Helper\Form.php" />
+    <Compile Include="src\View\Helper\Forms.php" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="libs" />
-    <Folder Include="libs\js\" />
     <Folder Include="src" />
     <Folder Include="src\Forms\" />
     <Folder Include="src\View\" />
     <Folder Include="src\View\Helper\" />
   </ItemGroup>
   <ItemGroup>
-    <Content Include="libs\js\interact.js" />
+    <Content Include="libs\interact.css" />
+    <Content Include="libs\interact.js" />
     <Content Include="README.md" />
   </ItemGroup>
 </Project>

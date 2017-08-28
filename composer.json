@@ -28,7 +28,7 @@
     "forms"
   ],
   "autoload": {
-    "classmap": [ "src/Form.php", "src/View/Helper/Form.php" ],
+    "classmap": [ "src/Form.php", "src/View/Helper/Forms.php" ],
     "psr-4": {
       "Hazaar\\": "src/Forms"
     }
