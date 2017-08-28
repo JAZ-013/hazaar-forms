@@ -1,0 +1,39 @@
+{
+  "name": "hazaarlabs/hazaar-mvc",
+  "description": "Dynamic forms for The MVC framework",
+  "homepage": "http://hazaarmvc.com",
+  "license": "Apache-2.0",
+  "authors": [
+    {
+      "name": "Jamie Carl",
+      "email": "jamie@hazaarlabs.com",
+      "homepage": "http://www.hazaarlabs.com",
+      "role": "developer"
+    }
+  ],
+  "support": {
+    "email": "support@hazaarlabs.com",
+    "issues": "https://git.hazaarlabs.com/hazaar/hazaar-mvc/issues",
+    "wiki": "https://git.hazaarlabs.com/hazaar/hazaar-mvc/wikis/home",
+    "docs": "https://hazaarmvc.com/docs",
+    "source": "https://git.hazaarlabs.com/hazaar/hazaar-mvc/tree/master"
+  },
+  "type": "library",
+  "keywords": [
+    "php",
+    "mvc",
+    "framework",
+    "hazaar",
+    "hmvc",
+    "forms"
+  ],
+  "autoload": {
+    "classmap": [ "src/Form.php", "src/View/Helper/Form.php" ],
+    "psr-4": {
+      "Hazaar\\": "src/Forms"
+    }
+  },
+  "require": {
+    "php": "hazaar-mvc >= 2.3.0"
+  }
+}
