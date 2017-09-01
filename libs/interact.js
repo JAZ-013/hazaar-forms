@@ -30,23 +30,30 @@
         host.o.loader.html(error.str);
         $(host).trigger('error', [error]);
     };
+    host._trigger = function (obj) {
+        var toggle = eval('host.data.' + obj.data('if'));
+        obj.toggle(toggle);
+    };
     //Input events
     host._focus = function (e) {
         $(e.target).parent().removeClass('has-error');
     };
     host._change = function (e) {
-        var input = $(e.target);
-        var value = null;
-        if (input.is('[type=checkbox]')) {
+        var value = null, input = $(e.target);
+        var def = input.data('def');
+        if (input.is('[type=checkbox]'))
             value = input.is(':checked');
-        } else {
+        else
             value = input.val();
-        }
         host.data[e.target.name] = value;
+        $(host).find('[data-validate="true"]').each(function (index, item) {
+            host._trigger($(item));
+        });
     };
     host._blur = function (e) {
         var input = $(e.target);
-        if (input.val() == '')
+        var def = input.data('def');
+        if (def.required && input.val() == '')
             input.parent().addClass('has-error');
     };
     //Render an input field
@@ -60,7 +67,7 @@
         }
         if (!def)
             return;
-        var form_group = $('<div class="form-group">').html($('<label class="col-lg-3">').attr('for', field).html(def.label).data('def', def));
+        var form_group = $('<div class="form-group">').html($('<label class="col-lg-3">').attr('for', field).html(def.label));
         var form_control = $('<div class="col-lg-9">').appendTo(form_group);
         switch (def.type) {
             case 'string':
@@ -69,6 +76,7 @@
                     .attr('name', field)
                     .attr('data-bind', field)
                     .data('name', field)
+                    .data('def', def)
                     .val(host.data[field])
                     .focus(host._focus)
                     .change(host._change)
@@ -90,6 +98,7 @@
                     .attr('name', field)
                     .attr('data-bind', field)
                     .data('name', field)
+                    .data('def', def)
                     .val(host.data[field])
                     .change(host._change)
                     .appendTo(form_control);
@@ -100,6 +109,7 @@
                     .attr('name', field)
                     .attr('data-bind', field)
                     .data('name', field)
+                    .data('def', def)
                     .val(host.data[field])
                     .change(host._change)
                     .appendTo(form_control);
@@ -109,6 +119,7 @@
                     .attr('name', field)
                     .attr('data-bind', field)
                     .data('name', field)
+                    .data('def', def)
                     .attr('checked', host.data[field])
                     .change(host._change)
                     .appendTo(form_control);
@@ -117,13 +128,18 @@
                 var select = $('<select class="form-control">')
                     .attr('name', field)
                     .attr('data-bind', field)
-                    .data('name', field);
+                    .data('name', field)
+                    .data('def', def);
                 for (x in def.options)
                     select.append($('<option>').attr('value', x).html(def.options[x]));
                 select.val(host.data[field])
                     .change(host._change)
                     .appendTo(form_control);
                 break;
+        }
+        if (def.show) {
+            form_group.attr('data-validate', true).data('if', def.show);
+            this._trigger(form_group);
         }
         return form_group;
     };
