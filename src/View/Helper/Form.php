@@ -10,7 +10,7 @@ namespace Hazaar\View\Helper;
  * @version 1.0
  * @author jamiec
  */
-class Forms extends \Hazaar\View\Helper {
+class Form extends \Hazaar\View\Helper {
 
     function import(){
 
@@ -28,18 +28,4 @@ class Forms extends \Hazaar\View\Helper {
 
     }
 
-    public function render($form_name, $args = array()){
-
-        $settings = new \Hazaar\Map($args, array(
-            'name' => $form_name,
-            'url' => (string)$this->application->url('hazaar/forms', 'load')
-        ));
-
-        $id = 'frm' . ucfirst($form_name);
-
-        $this->jquery->exec("$('#$id').form(" . $settings->toJSON() . ");");
-
-        return $this->html->div()->id($id);
-
-    }
 }

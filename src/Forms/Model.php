@@ -14,6 +14,8 @@ class Model {
 
     private $source;
 
+    private $name;
+
     private $data = array();
 
     function __construct(\Hazaar\File $source_file){
@@ -21,19 +23,27 @@ class Model {
         if(!$source_file->exists())
             throw new \Exception('Form model source file not found!', 500);
 
+        $this->name = $source_file->name();
+
         $this->data = $source_file->parseJSON(true);
 
     }
 
     public function getName(){
 
-        return ake($this->data, 'name');
+        return $this->name;
 
     }
 
     public function get(){
 
         return $this->data;
+
+    }
+
+    public function set($data){
+        
+        $this->data = $data;
 
     }
 

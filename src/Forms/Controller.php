@@ -12,11 +12,11 @@ namespace Hazaar\Forms;
  */
 class Controller extends \Hazaar\Controller {
 
-    private $form;
+    private $model;
 
     public function __initialize($request){
 
-        if(!($name = $this->request->get('name')))
+        if(!($name = $this->request->get('form')))
             throw new \Exception('Form name is required!', 400);
 
         $file = $name . '.json';
@@ -24,20 +24,28 @@ class Controller extends \Hazaar\Controller {
         if(!($source = $this->application->filePath('forms', $file, true)))
             throw new \Exception('Form model source not found: ' . $file, 404);
 
-        $this->form = new \Hazaar\Forms\Model(new \Hazaar\File($source));
+        $this->model = new \Hazaar\Forms\Model(new \Hazaar\File($source));
 
     }
 
     public function __run(){
 
-        $response = new \Hazaar\Controller\Response\JSON();
+        $response = new \Hazaar\Controller\Response\Http\OK();
 
-        $data = array(
-            'ok' => true,
-            'data' => $this->form->get()
-        );
+        switch($action = $this->request->getActionName()){
+            case 'load':
 
-        $response->populate($data);
+                $response = new \Hazaar\Controller\Response\JSON();
+
+                $response->populate($this->model->get());
+
+                break;
+
+            default:
+
+                throw new \Exception('Method not found: ' . $action, 404);
+
+        }
 
         return $response;
 

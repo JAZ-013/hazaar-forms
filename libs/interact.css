@@ -1,4 +1,9 @@
-﻿.forms-loader-container {
+﻿form.form-horizontal {
+    position: relative;
+    min-height: 200px;
+}
+
+.forms-loader-container {
     position: absolute;
     top: 0;
     right: 0;
