@@ -197,10 +197,6 @@ The view itself can be pretty minimal.  However to get the best out of our forms
             </div>
             <div class="panel-body">
                 <div class="form-group">
-                    <label class="control-label">APIR Code</label>
-                    <div data-bind="apirCode"></div>
-                </div>
-                <div class="form-group">
                     <label class="control-label">Name</label>
                     <div data-bind="name"></div>
                 </div>
