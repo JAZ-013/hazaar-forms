@@ -93,86 +93,93 @@ class Model extends \Hazaar\Model\Strict {
 
     }
 
-    public function resolve($include_labels = false){
+    public function resolve(){
 
         $form = $this->getForm();
 
         $out = array('name' => $form['name'], 'pages' => array());
 
-        foreach($form['pages'] as $page_no => $page){
+        foreach($form['pages'] as $page_no => $page)
+            $out['pages'][$page_no] = $this->resolvePage($page);
 
-            foreach($page as $page_key => $page_item){
+        return $out;
 
-                if($page_key == 'sections'){
+    }
 
-                    foreach($page_item as $section_no => $section){
+    private function resolvePage($page){
 
-                        foreach($section as $section_key => $section_item){
+        foreach($page as $page_key => $page_item){
 
-                            if($section_key == 'fields'){
+            if($page_key == 'sections'){
 
-                                $field_items = array();
-
-                                foreach($section_item as $field_item){
-
-                                    if(is_array($field_item)){
-
-                                        if(!array_key_exists('name', $field_item)){
-
-                                            if(!$include_labels)
-                                                continue;
-
-                                            $field_item['name'] = 'label_' . uniqid();
-
-                                        }
-
-                                        $field_item = array_merge(ake($form['fields'], $field_item['name'], array()), $field_item);
-
-                                    }else{
-
-                                        $field_item = array_merge($form['fields'][$field_item], array('name' => $field_item));
-
-                                    }
-
-                                    if($show = str_replace(' ', '', ake($field_item, 'show', ''))){
-
-                                        if(!$this->evaluate($show))
-                                            continue;
-
-                                    }
-
-                                    $field_key = $field_item['name'];
-
-                                    $field_item['value'] = $this->get($field_key);
-
-                                    $field_items[$field_key] = $field_item;
-
-                                }
-
-                                $section[$section_key] = $field_items;
-
-                            }else{
-
-                                $section[$section_key] = $section_item;
-
-                            }
-                        }
-
-                        $page_item[$section_no] = $section;
-
-                    }
-
-                }
-
-                $page[$page_key] = $page_item;
+                foreach($page_item as $section_no => $section)
+                    $page_item[$section_no] = $this->resolveSection($section);
 
             }
 
-            $out['pages'][$page_no] = $page;
+            $page[$page_key] = $page_item;
 
         }
 
-        return $out;
+        return $page;
+
+    }
+
+    private function resolveSection($section){
+
+        foreach($section as $section_key => $section_item){
+
+            if($section_key == 'fields'){
+
+                $section[$section_key] = $this->resolveFields($section_item);
+
+            }else{
+
+                $section[$section_key] = $section_item;
+
+            }
+
+        }
+
+        return $section;
+
+    }
+
+    private function resolveFields($fields){
+
+        $field_items = array();
+
+        foreach($fields as $field_item){
+
+            if(is_array($field_item)){
+
+                if(!array_key_exists('name', $field_item))
+                    continue;
+
+                $field_item = array_merge(ake($this->__form['fields'], $field_item['name'], array()), $field_item);
+
+            }else{
+
+                $field_item = array_merge($this->__form['fields'][$field_item], array('name' => $field_item));
+
+            }
+
+            if($show = str_replace(' ', '', ake($field_item, 'show', ''))){
+
+                if(!$this->evaluate($show))
+                    continue;
+
+            }
+
+            $field_key = $field_item['name'];
+
+            $field_item['value'] = $this->get($field_key);
+
+            $field_items[$field_key] = $field_item;
+
+        }
+
+        return $field_items;
 
     }
 
@@ -191,18 +198,20 @@ class Model extends \Hazaar\Model\Strict {
 
         }
 
-        $evaluate = '';
+        $func = function($values, $evaluate){
 
-        foreach($this->values as $key => $value)
-            $evaluate .= '$' . $key . ' = ' . (is_string($value) ? "'$value'" : (is_bool($value) ? strbool($value) : (is_null($value) ? 'null' : $value))) . ";\n";
+            $code = '';
 
-        $evaluate .= "return ( " . implode(' ', $parts) . " );\n";
+            foreach($values as $key => $value)
+                $code .= '$' . $key . ' = ' . (is_string($value) ? "'$value'" : (is_bool($value) ? strbool($value) : (is_null($value) ? 'null' : $value))) . ";\n";
 
-        $func = function($code){
+            $code .= "return ( " . $evaluate . " );\n";
+
             return eval($code);
+
         };
 
-        return $func($evaluate);
+        return $func($this->values, implode(' ', $parts));
 
     }
 

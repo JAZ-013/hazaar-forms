@@ -44,9 +44,26 @@
             })(host.data, obj.data(type));
         };
         host._toggle = function (obj) {
-            var toggle = (function (data, code) {
-                return eval('(' + code + ');');
-            })(host.data, obj.data('show'));
+            var show = obj.data('show').replace(/\s/g, '');
+            var parts = show.split(/(\&\&|\|\|)/);
+            for (var x = 0; x < parts.length; x += 2) {
+                var matches = null;
+                if (!(matches = parts[x].match(/([\w\.]+)([=\!\<\>]+)(.+)/))) {
+                    alert('Invalid show script: ' + show)
+                    return;
+                }
+                parts[x] = matches[1] + ' ' + matches[2] + ' ' + matches[3];
+            }
+            var toggle = (function (values, evaluate) {
+                var code = '';
+                for (key in values) {
+                    var value = values[key];
+                    if (typeof value == 'string') value = "'" + value + "'";
+                    code += 'var ' + key + " = " + value + ";\n";
+                }
+                code += "( " + evaluate + " );";
+                return eval(code);
+            })(host.data.save(), parts.join(''));
             obj.toggle(toggle);
             if (toggle === false) host.data[obj.data('name')] = null;
         };
@@ -75,7 +92,7 @@
             if (def.required && input.val() == '')
                 input.parent().addClass('has-error');
         };
-        //Render an input field
+        //Render a field
         host._field = function (field) {
             var def = null;
             if (typeof field == 'object') {
@@ -155,6 +172,9 @@
                         .change(host._change)
                         .appendTo(form_control);
                     break;
+            }
+            if (def.html) {
+                form_control.append(def.html);
             }
             if (def.show) {
                 this.events.show.push(form_group.data('show', def.show));
@@ -264,7 +284,7 @@
     $.fn.form.defaults = {
         "form": "default",
         "controller": "index",
-        "encode": false
+        "encode": true
     };
 
 })(jQuery);
