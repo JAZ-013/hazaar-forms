@@ -19,12 +19,7 @@ class Controller extends \Hazaar\Controller {
         if(!($name = $this->request->get('form')))
             throw new \Exception('Form name is required!', 400);
 
-        $file = $name . '.json';
-
-        if(!($source = $this->application->filePath('forms', $file, true)))
-            throw new \Exception('Form model source not found: ' . $file, 404);
-
-        $this->model = new \Hazaar\Forms\Model(new \Hazaar\File($source));
+        $this->model = new \Hazaar\Forms\Model($name);
 
     }
 
@@ -37,7 +32,7 @@ class Controller extends \Hazaar\Controller {
 
                 $response = new \Hazaar\Controller\Response\JSON();
 
-                $response->populate($this->model->get());
+                $response->populate($this->model->getForm());
 
                 break;
 

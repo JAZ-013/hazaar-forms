@@ -39,12 +39,7 @@ abstract class Form extends Action implements FormsInterface {
      */
     protected function form($type, $params = array()){
 
-        $file = $type . '.json';
-
-        if(!($source = $this->application->filePath('forms', $file, true)))
-            throw new \Exception('Form model source not found: ' . $file, 404);
-
-        $this->model = new \Hazaar\Forms\Model(new \Hazaar\File($source));
+        $this->model = new \Hazaar\Forms\Model($type);
 
         $this->params = $params;
 
@@ -65,7 +60,7 @@ abstract class Form extends Action implements FormsInterface {
 
                 $params = $this->request->getParams();
 
-                $this->model->set(ake($params, 'form', array()));
+                $this->model->populate(ake($params, 'form', array()));
 
                 unset($params['form']);
 
@@ -80,7 +75,9 @@ abstract class Form extends Action implements FormsInterface {
 
             case 'load':
 
-                $out->populate($this->load($this->request->getParams()));
+                $this->model->populate($this->load($this->request->getParams()));
+
+                $out->populate($this->model->toArray());
 
                 break;
 
@@ -115,6 +112,33 @@ abstract class Form extends Action implements FormsInterface {
         $this->view->jquery->exec("$('#$id').form(" . json_encode($settings) . ");");
 
         return $div->id($id);
+
+    }
+
+    public function output($type = 'pdf'){
+
+        if($this->request->getActionName() == 'output'){
+
+            if($type == 'pdf'){
+
+                $this->model->populate($this->load($this->request->getParams()));
+
+                $output = new \Hazaar\Forms\Output\PDF($this->model);
+
+                $response = $output->render();
+
+            }
+
+            if(!isset($response))
+                throw new \Exception('Unknown response type requested: ' . $type);
+
+            return $response;
+
+        }
+
+        $params = array_merge($this->params, array('form' => $this->model->getName()));
+
+        return $this->url('output/' . $type, $params)->encode();
 
     }
 
