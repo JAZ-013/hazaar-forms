@@ -226,5 +226,25 @@ class Model extends \Hazaar\Model\Strict {
 
     }
 
+    public function items($target){
+
+        $cache = new \Hazaar\Cache();
+
+        $key = md5('form_api_' . $target);
+
+        if(!($out = $cache->get($key))){
+
+            $url = new \Hazaar\Application\Url($target);
+
+            if(!($out = json_decode(file_get_contents((string)$url), true)))
+                throw new \Exception('Form API call failed.  Invalid response!');
+
+            $cache->set($key, $out);
+
+        }
+
+        return $out;
+
+    }
 
 }

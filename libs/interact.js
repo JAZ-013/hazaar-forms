@@ -24,11 +24,10 @@
         //Define the default object properties
         host.settings = $.extend({}, $.fn.form.defaults, settings);
         host.data = {};
-        host.events = {
-            show: [],
-            change: {}
-        };
+        host.events = {};
+        host.posts = {};
         host.page = null;
+        host.loading = 0;
         //Error capture method
         host._error = function (xhr, textStatus, errorThrown) {
             var error = xhr.responseJSON.error;
@@ -105,81 +104,86 @@
                 return;
             var form_group = $('<div class="form-group">').html($('<label class="col-lg-3">').attr('for', field).html(def.label)).data('name', field);
             var form_control = $('<div class="col-lg-9">').appendTo(form_group);
-            switch (def.type) {
-                case 'string':
-                case 'text':
-                    var input = $('<input type="text" class="form-control">')
-                        .attr('name', field)
-                        .attr('data-bind', field)
-                        .data('name', field)
-                        .data('def', def)
-                        .val(host.data[field])
-                        .focus(host._focus)
-                        .change(host._change)
-                        .blur(host._blur);
-                    if (def.placeholder) input.attr('placeholder', def.placeholder);
-                    if (def.prefix || def.prefix) {
-                        var group = $('<div class="input-group">').appendTo(form_control);
-                        if (def.prefix) group.append($('<span class="input-group-addon">').html(def.prefix));
-                        group.append(input);
-                        if (def.suffix) group.append($('<span class="input-group-addon">').html(def.suffix));
-                    } else {
-                        input.appendTo(form_control);
-                    }
-                    break;
-                case 'int':
-                case 'integer':
-                case 'number':
-                    var input = $('<input type="number" class="form-control">')
-                        .attr('name', field)
-                        .attr('data-bind', field)
-                        .data('name', field)
-                        .data('def', def)
-                        .val(host.data[field])
-                        .change(host._change)
-                        .appendTo(form_control);
-                    if (def.placeholder) input.attr('placeholder', def.placeholder);
-                    break;
-                case 'date':
-                    $('<input type="date" class="form-control">')
-                        .attr('name', field)
-                        .attr('data-bind', field)
-                        .data('name', field)
-                        .data('def', def)
-                        .val(host.data[field])
-                        .change(host._change)
-                        .appendTo(form_control);
-                    break;
-                case 'boolean':
-                    $('<input type="checkbox">')
-                        .attr('name', field)
-                        .attr('data-bind', field)
-                        .data('name', field)
-                        .data('def', def)
-                        .attr('checked', host.data[field])
-                        .change(host._change)
-                        .appendTo(form_control);
-                    break;
-                case 'select':
-                    var select = $('<select class="form-control">')
-                        .attr('name', field)
-                        .attr('data-bind', field)
-                        .data('name', field)
-                        .data('def', def);
+            if (def.options) {
+                var select = $('<select class="form-control">')
+                    .attr('name', field)
+                    .attr('data-bind', field)
+                    .data('name', field)
+                    .data('def', def);
+                if (typeof def.options == 'string') {
+                    this._post('api', { target: def.options }).done(function (data) {
+                        for (x in data)
+                            select.append($('<option>').attr('value', x).html(data[x]));
+                    });
+                } else {
                     for (x in def.options)
                         select.append($('<option>').attr('value', x).html(def.options[x]));
                     select.val(host.data[field])
                         .change(host._change)
-                        .appendTo(form_control);
-                    break;
+                }
+                select.appendTo(form_control);
+            } else {
+                switch (def.type) {
+                    case 'string':
+                    case 'text':
+                        var input = $('<input type="text" class="form-control">')
+                            .attr('name', field)
+                            .attr('data-bind', field)
+                            .data('name', field)
+                            .data('def', def)
+                            .val(host.data[field])
+                            .focus(host._focus)
+                            .change(host._change)
+                            .blur(host._blur);
+                        if (def.placeholder) input.attr('placeholder', def.placeholder);
+                        if (def.prefix || def.prefix) {
+                            var group = $('<div class="input-group">').appendTo(form_control);
+                            if (def.prefix) group.append($('<span class="input-group-addon">').html(def.prefix));
+                            group.append(input);
+                            if (def.suffix) group.append($('<span class="input-group-addon">').html(def.suffix));
+                        } else {
+                            input.appendTo(form_control);
+                        }
+                        break;
+                    case 'int':
+                    case 'integer':
+                    case 'number':
+                        var input = $('<input type="number" class="form-control">')
+                            .attr('name', field)
+                            .attr('data-bind', field)
+                            .data('name', field)
+                            .data('def', def)
+                            .val(host.data[field])
+                            .change(host._change)
+                            .appendTo(form_control);
+                        if (def.placeholder) input.attr('placeholder', def.placeholder);
+                        break;
+                    case 'date':
+                        $('<input type="date" class="form-control">')
+                            .attr('name', field)
+                            .attr('data-bind', field)
+                            .data('name', field)
+                            .data('def', def)
+                            .val(host.data[field])
+                            .change(host._change)
+                            .appendTo(form_control);
+                        break;
+                    case 'boolean':
+                        $('<input type="checkbox">')
+                            .attr('name', field)
+                            .attr('data-bind', field)
+                            .data('name', field)
+                            .data('def', def)
+                            .attr('checked', host.data[field])
+                            .change(host._change)
+                            .appendTo(form_control);
+                        break;
+                }
             }
-            if (def.html) {
+            if (def.html)
                 form_control.append(def.html);
-            }
-            if (def.show) {
+            if (def.show)
                 this.events.show.push(form_group.data('show', def.show));
-                this._toggle(form_group);
-            }
             if (def.change)
                 this.events.change[field] = form_group.data('change', def.change);
             return form_group;
@@ -198,16 +202,26 @@
         //Render a page
         host._page = function (page) {
             var form = $('<div class="form-container">');
+            host.events = {
+                show: [],
+                change: {}
+            };
             if (page.label) form.append($('<h1>').html(page.label));
             for (x in page.sections)
                 this._section(page.sections[x]).appendTo(form);
-            $(host).html(form);
+            host.o.container.html(form);
+            if (this.events.show.length > 0) {
+                for (x in this.events.show)
+                    this._toggle(this.events.show[x]);
+            }
         };
         //Render the whole form
         host._render = function (data) {
-            this.o = {};
-            this.o.loader = $('<div class="forms-loader-container">').html($('<div class="forms-loader">'));
-            $(this).addClass('form-horizontal').html(this.o.loader);
+            this.o = {
+                loader: $('<div class="forms-loader-container">').html($('<div class="forms-loader">')),
+                container: $('<div class="forms-container">').hide()
+            };
+            $(this).addClass('form-horizontal').html([this.o.loader, this.o.container]);
         };
         //Navigate to a page
         host._nav = function (pageno) {
@@ -222,17 +236,14 @@
         };
         //Signal that everything is ready to go
         host._ready = function (def) {
+            this.loading--;
+            if (this.page === null)
+                host._nav(0);
+            if (this.loading > 0)
+                return;
             host.o.loader.hide();
+            host.o.container.show();
             $(host).trigger('ready', [host.def]);
-            host._nav(0);
-        };
-        host._post = function (action, postdata) {
-            return $.ajax({
-                method: "POST",
-                url: hazaar.url(host.settings.controller, 'interact/' + action),
-                contentType: "application/json",
-                data: JSON.stringify(postdata)
-            });
         };
         //Save form data back to the controller
         host._save = function (validate, extra) {
@@ -254,6 +265,23 @@
         host._registerEvents = function () {
 
         }
+        host._post = function (action, postdata) {
+            var index = btoa(action + JSON.stringify(postdata));
+            if (index in this.posts)
+                return { done: function (callback) { callback(host.posts[index]); } };
+            host.o.container.hide();
+            host.o.loader.show();
+            this.loading++;
+            return $.ajax({
+                method: "POST",
+                url: hazaar.url(host.settings.controller, 'interact/' + action),
+                contentType: "application/json",
+                data: (typeof postdata == 'object' ? JSON.stringify(postdata) : null)
+            }).always(function (response) {
+                host.posts[index] = response;
+                host._ready();
+            }).fail(this._error);
+        };
         //Load all the dynamic bits
         host._load = function () {
             $.get(hazaar.url('hazaar/forms', 'load', { form: host.settings.form }, host.settings.encode)).done(function (response) {
@@ -270,8 +298,7 @@
                             host.data[x] = response[x];
                         $(host).trigger('data', [host.data.save()]);
                     }
-                    host._ready();
-                }).fail(this._error);
+                });
             }).fail(this._error);
         };
         $(this).trigger('init');

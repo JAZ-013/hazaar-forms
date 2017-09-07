@@ -81,6 +81,15 @@ abstract class Form extends Action implements FormsInterface {
 
                 break;
 
+            case 'api':
+
+                if(!($target = $this->request->get('target')))
+                    throw new \Exception('Form API call failed.  No target specified!');
+
+                $out->populate($this->model->items($target));
+
+                break;
+
             default:
 
                 throw new \Exception('Unknown method: ' . $method, 406);
@@ -88,7 +97,6 @@ abstract class Form extends Action implements FormsInterface {
         }
 
         return $out;
-
 
     }
 
