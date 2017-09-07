@@ -114,12 +114,12 @@
                     this._post('api', { target: def.options }).done(function (data) {
                         for (x in data)
                             select.append($('<option>').attr('value', x).html(data[x]));
+                        select.val(host.data[field]).change(host._change);
                     });
                 } else {
                     for (x in def.options)
                         select.append($('<option>').attr('value', x).html(def.options[x]));
-                    select.val(host.data[field])
-                        .change(host._change)
+                    select.val(host.data[field]).change(host._change);
                 }
                 select.appendTo(form_control);
             } else {
