@@ -21,7 +21,9 @@
     <Compile Include="src\Controller\Form.php" />
     <Compile Include="src\Form.php" />
     <Compile Include="src\Forms\Controller.php" />
+    <Compile Include="src\Forms\Output.php" />
     <Compile Include="src\Forms\Model.php" />
+    <Compile Include="src\Forms\Output\PDF.php" />
     <Compile Include="src\View\Helper\Form.php" />
   </ItemGroup>
   <ItemGroup>
@@ -29,6 +31,7 @@
     <Folder Include="src" />
     <Folder Include="src\Forms\" />
     <Folder Include="src\Controller\" />
+    <Folder Include="src\Forms\Output\" />
     <Folder Include="src\View\" />
     <Folder Include="src\View\Helper\" />
   </ItemGroup>

@@ -63,7 +63,6 @@ class PDF extends \Hazaar\Forms\Output {
         .field_item {
             display: inline-block;
             width: 75%;
-            border-bottom: 1px solid #fff;
         }';
 
         return $style;
