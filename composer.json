@@ -34,7 +34,7 @@
         "src/Controller/Form.php" 
     ],
     "psr-4": {
-      "Hazaar\\Forms": "src/Forms"
+      "Hazaar\\Forms\\": "src/Forms"
     }
   },
   "require": {
