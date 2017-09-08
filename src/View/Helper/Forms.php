@@ -10,7 +10,7 @@ namespace Hazaar\View\Helper;
  * @version 1.0
  * @author jamiec
  */
-class Form extends \Hazaar\View\Helper {
+class Forms extends \Hazaar\View\Helper {
 
     function import(){
 

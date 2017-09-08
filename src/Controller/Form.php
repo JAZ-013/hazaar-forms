@@ -26,7 +26,7 @@ abstract class Form extends Action implements FormsInterface {
 
     public function __initialize($request) {
 
-        $this->view->addHelper('form');
+        $this->view->addHelper('forms');
 
         return parent::__initialize($request);
 
