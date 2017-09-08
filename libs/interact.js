@@ -63,8 +63,7 @@
                 code += "( " + evaluate + " );";
                 return eval(code);
             })(host.data.save(), parts.join(''));
-            obj.toggle(toggle);
-            if (toggle === false) host.data[obj.data('name')] = null;
+            if ((name = obj.data('name')) && toggle === false) host.data[name] = null;
         };
         //Input events
         host._focus = function (e) {
@@ -91,6 +90,22 @@
             if (def.required && input.val() == '')
                 input.parent().addClass('has-error');
         };
+        host._populate = function (select, track) {
+            var def = select.data('def');
+            var options = def.options;
+            while (match = options.match(/\{\{(\w+)\}\}/))
+                options = options.replace(match[0], host.data[match[1]]);
+            select.html($('<option>').html('Loading...'));
+            this._post('api', { target: options }, track).done(function (data) {
+                select.empty();
+                if (def.placeholder && (!def.required || this.data[field] == null))
+                    select.append($('<option>').attr('value', '').html(def.placeholder).prop('disabled', (def.required == true)));
+                for (x in data)
+                    select.append($('<option>').attr('value', x).html(data[x]));
+                select.val(host.data[select.attr('name')]);
+            });
+            return true;
+        }
         //Render a field
         host._field = function (field) {
             var def = null;
@@ -111,12 +126,17 @@
                     .data('name', field)
                     .data('def', def);
                 if (typeof def.options == 'string') {
-                    this._post('api', { target: def.options }).done(function (data) {
-                        for (x in data)
-                            select.append($('<option>').attr('value', x).html(data[x]));
-                        select.val(host.data[field]).change(host._change);
-                    });
+                    var matches = def.options.match(/\{\{\w+\}\}/g);
+                    for (x in matches) {
+                        var match = matches[x].substr(2, matches[x].length - 4);
+                        host.data.watch(match, function (key, value, select) {
+                            host._populate(select, false);
+                        }, select);
+                    }
+                    host._populate(select.change(this._change));
                 } else {
+                    if (def.placeholder && (!def.required || host.data[field] == null))
+                        select.append($('<option>').attr('value', '').html(def.placeholder).prop('disabled', (def.required == true)));
                     for (x in def.options)
                         select.append($('<option>').attr('value', x).html(def.options[x]));
                     select.val(host.data[field]).change(host._change);
@@ -206,6 +226,7 @@
                 show: [],
                 change: {}
             };
+            host.data.unwatch();
             if (page.label) form.append($('<h1>').html(page.label));
             for (x in page.sections)
                 this._section(page.sections[x]).appendTo(form);
@@ -237,12 +258,10 @@
             return false;
         };
         //Signal that everything is ready to go
-        host._ready = function (def) {
+        host._ready = function () {
             this.loading--;
-            if (this.loading > 0)
+            if (this.loading > 0 || this.page === null)
                 return;
-            if (this.page === null)
-                return host._nav(0);
             host.o.loader.hide();
             host.o.container.show();
             $(host).trigger('ready', [host.def]);
@@ -306,6 +325,7 @@
                             host.data[x] = response[x];
                         $(host).trigger('data', [host.data.save()]);
                     }
+                    host._nav(0);
                 });
             }).fail(this._error);
         };
