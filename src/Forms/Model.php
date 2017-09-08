@@ -236,7 +236,7 @@ class Model extends \Hazaar\Model\Strict {
 
             $url = new \Hazaar\Application\Url($target);
 
-            if(!($out = json_decode(file_get_contents((string)$url), true)))
+            if(($out = json_decode(file_get_contents((string)$url), true)) === false)
                 throw new \Exception('Form API call failed.  Invalid response!');
 
             $cache->set($key, $out);
