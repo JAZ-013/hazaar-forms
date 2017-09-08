@@ -225,9 +225,11 @@
         };
         //Navigate to a page
         host._nav = function (pageno) {
+            this.loading++;
             host.page = pageno;
             host._page(host.def.pages[pageno]);
             $(host).trigger('nav', [pageno + 1, host.def.pages.length]);
+            this._ready();
         };
         //Run the data validation
         host._validate = function () {
@@ -237,10 +239,10 @@
         //Signal that everything is ready to go
         host._ready = function (def) {
             this.loading--;
-            if (this.page === null)
-                host._nav(0);
             if (this.loading > 0)
                 return;
+            if (this.page === null)
+                return host._nav(0);
             host.o.loader.hide();
             host.o.container.show();
             $(host).trigger('ready', [host.def]);
@@ -252,11 +254,12 @@
             var data = $.extend({}, this.settings.params, extra);
             data.form = this.data.save();
             $(host).trigger('saving', [data]);
-            this._post('post', $.extend({}, this.settings.params, data)).done(function (response) {
+            this._post('post', $.extend({}, this.settings.params, data), false).done(function (response) {
                 if (response.form) {
                     for (x in response.form)
                         host.data[x] = response.form[x];
                 }
+                host.posts = {}; //Reset the post cache so we get clean data after 
                 $(host).trigger('saved', [response]);
             }).fail(this._error);
             return true;
@@ -265,20 +268,25 @@
         host._registerEvents = function () {
 
         }
-        host._post = function (action, postdata) {
-            var index = btoa(action + JSON.stringify(postdata));
-            if (index in this.posts)
-                return { done: function (callback) { callback(host.posts[index]); } };
-            host.o.container.hide();
-            host.o.loader.show();
-            this.loading++;
+        host._post = function (action, postdata, track) {
+            if (this.settings.cachedActions.indexOf(action) != -1) {
+                var index = btoa(action + JSON.stringify(postdata));
+                if (index in this.posts)
+                    return { done: function (callback) { callback(host.posts[index]); } };
+            }
+            if (track !== false) {
+                host.o.container.hide();
+                host.o.loader.show();
+                this.loading++;
+            }
             return $.ajax({
                 method: "POST",
                 url: hazaar.url(host.settings.controller, 'interact/' + action),
                 contentType: "application/json",
                 data: (typeof postdata == 'object' ? JSON.stringify(postdata) : null)
             }).always(function (response) {
-                host.posts[index] = response;
+                if (host.settings.cachedActions.indexOf(action) != -1)
+                    host.posts[index] = response;
                 host._ready();
             }).fail(this._error);
         };
@@ -311,7 +319,8 @@
     $.fn.form.defaults = {
         "form": "default",
         "controller": "index",
-        "encode": true
+        "encode": true,
+        "cachedActions": ["api"]
     };
 
 })(jQuery);
