@@ -63,6 +63,7 @@
                 code += "( " + evaluate + " );";
                 return eval(code);
             })(host.data.save(), parts.join(''));
+            obj.toggle(toggle);
             if ((name = obj.data('name')) && toggle === false) host.data[name] = null;
         };
         //Input events
