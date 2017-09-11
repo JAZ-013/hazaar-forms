@@ -173,7 +173,18 @@ class Model extends \Hazaar\Model\Strict {
 
             $field_key = $field_item['name'];
 
-            $field_item['value'] = $this->get($field_key);
+            $value = $this->get($field_key);
+
+            if($options = ake($field_item, 'options')){
+
+                if(!is_array($options))
+                    $options = $this->items($this->parseTarget($options));
+
+                $value = ake($options, $value);
+
+            }
+
+            $field_item['value'] = $value;
 
             $field_items[$field_key] = $field_item;
 
@@ -234,6 +245,15 @@ class Model extends \Hazaar\Model\Strict {
             throw new \Exception('Form API call failed.  Invalid response!');
 
         return $out;
+
+    }
+
+    public function parseTarget($target){
+
+        while (preg_match('/\{\{(\w+)\}\}/', $target, $match))
+            $target = str_replace($match[0], $this->get($match[1]), $target);
+
+        return $target;
 
     }
 
