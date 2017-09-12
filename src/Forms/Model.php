@@ -12,8 +12,6 @@ namespace Hazaar\Forms;
  */
 class Model extends \Hazaar\Model\Strict {
 
-    private $source;
-
     private $__form_name;
 
     private $__form = array();
@@ -93,6 +91,12 @@ class Model extends \Hazaar\Model\Strict {
 
         return $this->__form;
 
+    }
+
+    public function getOutputStyle(){
+
+        return ake($this->__form, 'style');
+        
     }
 
     public function resolve(){

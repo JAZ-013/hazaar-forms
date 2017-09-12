@@ -100,40 +100,60 @@ abstract class Form extends Action implements FormsInterface {
 
     }
 
-    public function layout(){
+    public function layout($settings = array()){
 
         if(!$this->model instanceof \Hazaar\Forms\Model)
             throw new \Exception('No form type has been set for this form controller');
 
         $id = 'form_' . uniqid();
 
-        $settings = array(
+        $settings = new \Hazaar\Map($settings, array(
             'form' => $this->model->getName(),
             'controller' => strtolower($this->getName())
-        );
+        ));
 
         if($this->params)
             $settings['params'] = $this->params;
 
         $div = new \Hazaar\Html\Form('FORM: ' . $id);
 
-        $this->view->jquery->exec("$('#$id').form(" . json_encode($settings) . ");");
+        $this->view->jquery->exec("$('#$id').form(" . $settings->toJSON() . ");");
 
         return $div->id($id);
 
     }
 
-    public function output($type = 'pdf'){
+    public function render(){
+
+        $this->model->populate($this->load($this->request->getParams()));
+
+        $output = new \Hazaar\Forms\Output\HTML($this->model);
+
+        return $output->render();
+
+    }
+
+    public function output($type = 'html'){
 
         if($this->request->getActionName() == 'output'){
 
-            if($type == 'pdf'){
+            $this->model->populate($this->load($this->request->getParams()));
 
-                $this->model->populate($this->load($this->request->getParams()));
+            if($type == 'html'){
+
+                $output = new \Hazaar\Forms\Output\HTML($this->model);
+
+                $response = new \Hazaar\Controller\Response\HTML();
+
+                $response->setContent($output->render());
+
+            }else if($type == 'pdf'){
 
                 $output = new \Hazaar\Forms\Output\PDF($this->model);
 
-                $response = $output->render();
+                $response = new \Hazaar\Controller\Response\PDF();
+
+                $response->setContent($output->render());
 
             }
 

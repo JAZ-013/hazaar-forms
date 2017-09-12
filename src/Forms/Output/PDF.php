@@ -10,11 +10,9 @@ namespace Hazaar\Forms\Output;
  * @version 1.0
  * @author jamiec
  */
-class PDF extends \Hazaar\Forms\Output {
+class PDF extends HTML {
 
     public function render(){
-
-        $form = $this->model->resolve();
 
         $html = (new \Hazaar\Html\Html())->class('form');
 
@@ -26,92 +24,64 @@ class PDF extends \Hazaar\Forms\Output {
 
         $html->add($head, $body);
 
-        $body->add(new \Hazaar\Html\H1(ake($form, 'name', 'Unnamed Form')));
+        $body->add(parent::render());
 
-        foreach($form['pages'] as $page)
-            $body->add($this->exportPage($page));
-
-        $response = new \Hazaar\Controller\Response\PDF();
-
-        $response->setHtml($html);
-
-        return $response;
+        return $html;
 
     }
 
     private function renderStyle(){
 
         $style = 'body {
-            font-family: Arial;
+            font-family: Tahoma, Geneva, sans-serif;
         }
-        h1, h2, h3 {
-            border-bottom: 1px solid #ddd;
-            margin-top: 0;
+        h2, h3 {
+            margin: 0 0 15px 0;
         }
-        .form_section {
-            background: #eee; padding: 25px;
-            margin-bottom: 15px;
+        .well {
+            background: #eee;
+            padding: 25px;
+            margin-bottom: 25px;
+            float: left;
+            width: 100%;
+
         }
-        .field_group {
-            margin-bottom: 5px;
+        .row {
+            float: left;
+            width: 100%;
         }
-        .field_group > label {
-            display: inline-block;
-            width: 25%;
-            font-weight: bold;
+        .col-md-1,
+        .col-md-2,
+        .col-md-3,
+        .col-md-4,
+        .col-md-5,
+        .col-md-6,
+        .col-md-7,
+        .col-md-8,
+        .col-md-9,
+        .col-md-10,
+        .col-md-11,
+        .col-md-12 {
+            float: left;
         }
-        .field_item {
-            display: inline-block;
-            width: 75%;
-        }';
+        .col-md-1  { width: 8.33333% }
+        .col-md-2  { width: 16.66667% }
+        .col-md-3  { width: 25% }
+        .col-md-4  { width: 33.33333% }
+        .col-md-5  { width: 41.66667% }
+        .col-md-6  { width: 50% }
+        .col-md-7  { width: 58.33333% }
+        .col-md-8  { width: 66.66667% }
+        .col-md-9  { width: 75% }
+        .col-md-10 { width: 83.33333% }
+        .col-md-11 { width: 91.66667% }
+        .col-md-12 { width: 100% }
+        ';
+
+        if($extraStyle = $this->model->getOutputStyle())
+            $style .= "\n" . $extraStyle;
 
         return $style;
-
-    }
-
-    private function exportPage($page){
-
-        $html = (new \Hazaar\Html\Div())->class('form_page');
-
-        if($label = ake($page, 'label'))
-            $html->add(new \Hazaar\Html\H2($label));
-
-        foreach($page['sections'] as $section)
-            $html->add($this->exportSection($section));
-
-        return $html;
-
-    }
-
-    private function exportSection($section){
-
-        $html = (new \Hazaar\Html\Div())->class('form_section');
-
-        if($label = ake($section, 'label'))
-            $html->add(new \Hazaar\Html\H3($label));
-
-        foreach($section['fields'] as $name => $field)
-            $html->add($this->exportField($name, $field));
-
-        return $html;
-
-    }
-
-    private function exportField($name, $field){
-
-        $group = (new \Hazaar\Html\Div())->class('field_group');
-
-        if($label = ake($field, 'label'))
-            $group->add(new \Hazaar\Html\Label($label));
-
-        $value = $field['value'];
-
-        if($field['type'] == 'boolean')
-            $value = yn($value);
-
-        $group->add((new \Hazaar\Html\Span($value))->class('field_item'));
-
-        return $group;
 
     }
 
