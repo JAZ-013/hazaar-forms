@@ -96,7 +96,7 @@ class Model extends \Hazaar\Model\Strict {
     public function getOutputStyle(){
 
         return ake($this->__form, 'style');
-        
+
     }
 
     public function resolve(){
@@ -165,6 +165,9 @@ class Model extends \Hazaar\Model\Strict {
                 $field_item = array_merge(ake($this->__form['fields'], $field_item['name'], array()), $field_item);
 
             }else{
+
+                if(!array_key_exists($field_item, $this->__form['fields']))
+                    continue;
 
                 $field_item = array_merge($this->__form['fields'][$field_item], array('name' => $field_item));
 
