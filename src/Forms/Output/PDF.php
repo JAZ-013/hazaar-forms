@@ -27,12 +27,17 @@ class PDF extends HTML {
 
         $body = new \Hazaar\Html\Body();
 
-        if($logo = $this->model->getOutputLogo())
-            $body->add((new \Hazaar\Html\Img($logo))->class('form-logo'));
-
         $html->add($head, $body);
 
         $body->add(parent::render());
+
+        if($logo = $this->model->getOutputLogo()){
+
+            $header = $body->children('div.form-output')->children('.form-header');
+
+            $header->prepend((new \Hazaar\Html\Img($logo))->class('form-logo'));
+
+        }
 
         return $html;
 
@@ -44,10 +49,8 @@ class PDF extends HTML {
             font-family: Tahoma, Geneva, sans-serif;
         }
         h2, h3 { margin: 0 0 15px 0; }
-        .form-header { float: left; width: 100%; }
-        .form-header h1 { display: block; margin: 15px auto; }
-        .form-page { float: left; width: 100%; }
-        img.form-logo { float: left; margin-right: 25px; }
+        .form-header { margin-bottom: 50px; }
+        .form-header .form-logo { float: right; max-height: 125px; }
         .well {
             background: #eee;
             padding: 25px;
