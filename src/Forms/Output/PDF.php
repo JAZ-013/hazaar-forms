@@ -43,8 +43,11 @@ class PDF extends HTML {
         $style = 'body {
             font-family: Tahoma, Geneva, sans-serif;
         }
-        img.form-logo { float: right; }
         h2, h3 { margin: 0 0 15px 0; }
+        .form-header { float: left; width: 100%; }
+        .form-header h1 { display: block; margin: 15px auto; }
+        .form-page { float: left; width: 100%; }
+        img.form-logo { float: left; margin-right: 25px; }
         .well {
             background: #eee;
             padding: 25px;
