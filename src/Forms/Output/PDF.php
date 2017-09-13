@@ -18,9 +18,17 @@ class PDF extends HTML {
 
         $head = new \Hazaar\Html\Head();
 
-        $head->add(new \Hazaar\Html\Block('style', $this->renderStyle()));
+        $style = $this->renderStyle();
+
+        if($extraStyle = $this->model->getOutputStyle())
+            $style .= "\n" . $extraStyle;
+
+        $head->add(new \Hazaar\Html\Block('style', $style));
 
         $body = new \Hazaar\Html\Body();
+
+        if($logo = $this->model->getOutputLogo())
+            $body->add((new \Hazaar\Html\Img($logo))->class('form-logo'));
 
         $html->add($head, $body);
 
@@ -35,16 +43,14 @@ class PDF extends HTML {
         $style = 'body {
             font-family: Tahoma, Geneva, sans-serif;
         }
-        h2, h3 {
-            margin: 0 0 15px 0;
-        }
+        img.form-logo { float: right; }
+        h2, h3 { margin: 0 0 15px 0; }
         .well {
             background: #eee;
             padding: 25px;
             margin-bottom: 25px;
             float: left;
             width: 100%;
-
         }
         .row {
             float: left;
@@ -77,9 +83,6 @@ class PDF extends HTML {
         .col-md-11 { width: 91.66667% }
         .col-md-12 { width: 100% }
         ';
-
-        if($extraStyle = $this->model->getOutputStyle())
-            $style .= "\n" . $extraStyle;
 
         return $style;
 

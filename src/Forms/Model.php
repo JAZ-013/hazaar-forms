@@ -95,7 +95,13 @@ class Model extends \Hazaar\Model\Strict {
 
     public function getOutputStyle(){
 
-        return ake($this->__form, 'style');
+        return ake(ake($this->__form, 'pdf'), 'style');
+
+    }
+
+    public function getOutputLogo(){
+
+        return ake(ake($this->__form, 'pdf'), 'logo');
 
     }
 
