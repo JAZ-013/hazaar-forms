@@ -38,7 +38,7 @@
             if (!(type in this.events && field in this.events[type]))
                 return false;
             var obj = host.events[type][field];
-            (function (data, code) {
+            (function (form, code) {
                 return eval(code);
             })(host.data, obj.data(type));
         };
