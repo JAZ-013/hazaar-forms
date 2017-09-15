@@ -33,7 +33,7 @@ class PDF extends HTML {
 
         if($logo = $this->model->getOutputLogo()){
 
-            $header = $body->children('div.form-output')->children('.form-header');
+            $header = $body->find('.form-header');
 
             $header->prepend((new \Hazaar\Html\Img($logo))->class('form-logo'));
 
