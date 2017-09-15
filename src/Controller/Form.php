@@ -100,12 +100,10 @@ abstract class Form extends Action implements FormsInterface {
 
     }
 
-    public function layout($settings = array()){
+    public function layout($name, $settings = array()){
 
         if(!$this->model instanceof \Hazaar\Forms\Model)
             throw new \Exception('No form type has been set for this form controller');
-
-        $id = 'form_' . uniqid();
 
         $settings = new \Hazaar\Map($settings, array(
             'form' => $this->model->getName(),
@@ -115,11 +113,11 @@ abstract class Form extends Action implements FormsInterface {
         if($this->params)
             $settings['params'] = $this->params;
 
-        $div = new \Hazaar\Html\Form('FORM: ' . $id);
+        $div = new \Hazaar\Html\Form('FORM: ' . $name);
 
-        $this->view->jquery->exec("$('#$id').form(" . $settings->toJSON() . ");");
+        $this->view->jquery->exec("$('#$name').form(" . $settings->toJSON() . ");");
 
-        return $div->id($id);
+        return $div->id($name);
 
     }
 
