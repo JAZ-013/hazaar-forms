@@ -228,8 +228,20 @@ class Model extends \Hazaar\Model\Strict {
 
             $code = '';
 
-            foreach($values as $key => $value)
-                $code .= '$' . $key . ' = ' . (is_string($value) ? "'$value'" : (is_bool($value) ? strbool($value) : (is_null($value) ? 'null' : $value))) . ";\n";
+            foreach($values as $key => $value){
+
+                if (is_string($value))
+                    $value = "'" . $value . "'";
+                elseif(is_bool($value))
+                    $value = strbool($value);
+                elseif(is_null($value))
+                    $value = 'null';
+                elseif (is_array($value) || is_object($value))
+                    $value = json_encode($value);
+
+                $code .= '$' . $key . ' = ' . $value . ";\n";
+
+            }
 
             $code .= "return ( " . $evaluate . " );\n";
 
@@ -237,7 +249,18 @@ class Model extends \Hazaar\Model\Strict {
 
         };
 
-        return $func($this->values, implode(' ', $parts));
+        try{
+
+            $result = $func($this->values, implode(' ', $parts));
+
+        }
+        catch(\Exception $e){
+
+            $result = false;
+
+        }
+
+        return $result;
 
     }
 
