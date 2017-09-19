@@ -1,26 +1,357 @@
 ﻿(function ($) {
-    $.fn.form = function (settings) {
-        var host = this.get(0);
-        if (host._render) {
-            switch (arguments[0]) {
-                case 'page':
-                    host._nav(arguments[1]);
-                    break;
-                case 'prev':
-                    if (host.page > 0)
-                        host._nav(host.page - 1);
-                    break;
-                case 'next':
-                    if (host.page < (host.def.pages.length - 1))
-                        host._nav(host.page + 1);
-                    break;
-                case 'save':
-                    return host._save(arguments[1], arguments[2]);
-                case 'get':
-                    return host.data;
+
+    //Error capture method
+    function _error(xhr, textStatus, errorThrown) {
+        alert('Fix this error handler!');
+        var error = xhr.responseJSON.error;
+        host.o.loader.html(error.str);
+        $(host).trigger('error', [error]);
+    };
+
+    function _exec(host, type, field) {
+        if (!(type in host.events && field in host.events[type]))
+            return false;
+        var obj = host.events[type][field];
+        return _eval(host, obj.data(type));
+    };
+
+    function _eval(host, evaluate) {
+        return (function (form, evaluate) {
+            var code = (evaluate.indexOf(';') < 0) ? "( " + evaluate + " )" : '(function(form){' + evaluate + '})(form)';
+            try {
+                return eval(code);
+            } catch (error) {
+                console.log(error);
             }
-            return this;
+            return false;
+        })(host.data, evaluate);
+    }
+
+    function _toggle(host, obj) {
+        var show = obj.data('show').replace(/\s/g, '');
+        var parts = show.split(/(\&\&|\|\|)/);
+        for (var x = 0; x < parts.length; x += 2) {
+            var matches = null;
+            if (!(matches = parts[x].match(/([\w\.]+)([=\!\<\>]+)(.+)/))) {
+                alert('Invalid show script: ' + show)
+                return;
+            }
+            parts[x] = matches[1] + ' ' + matches[2] + ' ' + matches[3];
         }
+        var toggle = (function (values, evaluate) {
+            var code = '';
+            for (key in values) {
+                var value = values[key];
+                if (typeof value == 'string') value = "'" + value + "'";
+                else if (typeof value == 'object' || typeof value == 'array') value = JSON.stringify(value);
+                code += 'var ' + key + " = " + value + ";\n";
+            }
+            code += "( " + evaluate + " );";
+            return eval(code);
+        })(host.data.save(), parts.join(''));
+        obj.toggle(toggle);
+        if ((name = obj.data('name')) && toggle === false) host.data[name] = null;
+    };
+
+    //Input events
+    function _focus(host, input) {
+        var code = input.data('focus');
+        input.parent().removeClass('has-error');
+    };
+
+    function _change(host, input) {
+        var value = null, name = input.attr('name');
+        var def = input.data('def');
+        if (input.is('[type=checkbox]'))
+            value = input.is(':checked');
+        else
+            value = input.val();
+        if (value === '') value = null;
+        host.data[name] = value;
+        if (host.events.show.length > 0) {
+            for (x in host.events.show)
+                _toggle(host, host.events.show[x]);
+        }
+        _exec(host, 'change', name);
+    };
+
+    function _blur(host, input) {
+        var def = input.data('def');
+        if (def.required && input.val() == '')
+            input.parent().addClass('has-error');
+    };
+
+    function _input_select_populate(host, select, track) {
+        var def = select.data('def');
+        var options = def.options;
+        while (match = options.match(/\{\{(\w+)\}\}/))
+            options = options.replace(match[0], host.data[match[1]]);
+        select.html($('<option>').html('Loading...'));
+        _post(host, 'api', { target: options }, track).done(function (data) {
+            select.empty();
+            if (def.placeholder && (!def.required || host.data[field] == null))
+                select.append($('<option>').attr('value', '').html(def.placeholder).prop('disabled', (def.required == true)));
+            for (x in data)
+                select.append($('<option>').attr('value', x).html(data[x]));
+            select.val(host.data[select.attr('name')]);
+        });
+        return true;
+    }
+
+    function _input_select(host, def) {
+        var group = $('<div class="form-group">');
+        var label = $('<label class="control-label">')
+            .attr('for', def.name)
+            .html(def.label)
+            .appendTo(group);
+        var select = $('<select class="form-control">')
+            .attr('name', def.name)
+            .attr('data-bind', def.name)
+            .data('name', def.name)
+            .data('def', def)
+            .appendTo(group);
+        if (typeof def.options == 'string') {
+            var matches = def.options.match(/\{\{\w+\}\}/g);
+            for (x in matches) {
+                var match = matches[x].substr(2, matches[x].length - 4);
+                host.data.watch(match, function (key, value, select) {
+                    _input_select_populate(host, select, false);
+                }, select);
+            }
+            _input_select_populate(host, select.change(function (event) { _change(host, $(event.target)); }));
+        } else {
+            if (def.placeholder && (!def.required || host.data[def.name] == null))
+                select.append($('<option>').attr('value', '').html(def.placeholder).prop('disabled', (def.required == true)));
+            for (x in def.options)
+                select.append($('<option>').attr('value', x).html(def.options[x]));
+            select.val(host.data[def.name]).change(function (event) { _change(host, $(event.target)); });
+        }
+        return group;
+    }
+
+    function _input_checkbox(host, def) {
+        var group = $('<div class="checkbox">');
+        var label = $('<label>').html([
+            $('<input type="checkbox">')
+                .attr('name', def.name)
+                .attr('data-bind', def.name)
+                .data('name', def.name)
+                .data('def', def)
+                .attr('checked', host.data[def.name])
+                .focus(function (event) { _focus(host, $(event.target)); })
+                .change(function (event) { _change(host, $(event.target)); }),
+            def.label
+        ]).appendTo(group);
+        return group;
+    }
+
+    function _input_std(host, type, def) {
+        var group = $('<div class="form-group">');
+        var label = $('<label class="control-label">')
+            .attr('for', def.name)
+            .html(def.label)
+            .appendTo(group);
+        var input = $('<input class="form-control">')
+            .attr('type', type)
+            .attr('name', def.name)
+            .attr('data-bind', def.name)
+            .data('def', def)
+            .val(host.data[def.name])
+            .focus(function (event) { _focus(host, $(event.target)); })
+            .change(function (event) { _change(host, $(event.target)); })
+            .blur(host._blur);
+        if (def.placeholder) input.attr('placeholder', def.placeholder);
+        if (def.prefix || def.suffix) {
+            var inputDIV = $('<div class="input-group">')
+                .appendTo(group);
+            if (def.prefix) inputDIV.append($('<span class="input-group-addon">').html(def.prefix));
+            inputDIV.append(input);
+            if (def.suffix) inputDIV.append($('<span class="input-group-addon">').html(def.suffix));
+        } else {
+            group.append(input);
+        }
+        return group;
+    }
+
+    function _form_field(host, def) {
+        var field = null;
+        if (def.options) {
+            field = _input_select(host, def);
+        } else if (def.type) {
+            switch (def.type) {
+                case 'boolean':
+                    field = _input_checkbox(host, def);
+                    break;
+                case 'int':
+                case 'integer':
+                case 'number':
+                    field = _input_std(host, 'number', def);
+                    break;
+                case 'date':
+                case 'text':
+                default:
+                    field = _input_std(host, def.type, def);
+                    break;
+            }
+        } else {
+            field = $('<div>');
+        }
+        if ('html' in def)
+            field.append(def.html);
+        if ('show' in def) {
+            if (typeof def.show == 'boolean')
+                field.toggle(def.show);
+            else
+                host.events.show.push(field.data('show', def.show));
+        }
+        if ('change' in def)
+            host.events.change[def.name] = field.data('change', def.change);
+        return field;
+    }
+
+    //Render a page section
+    function _section(host, section) {
+        var fieldset = $('<fieldset>');
+        if (section.label)
+            fieldset.append($('<legend>').html(section.label));
+        for (x in section.fields) {
+            var def = null, field = section.fields[x];
+            if (typeof field == 'object')
+                def = $.extend({}, host.def.fields[field.name], field);
+            else
+                def = $.extend({}, host.def.fields[field], { name: field });
+            if (!def) continue;
+            if (def.fields) {
+                var inputsDIV = $('<div class="row">').appendTo(fieldset);
+                for (x in def.fields)
+                    inputsDIV.append(_form_field(host, def));
+            } else
+                _form_field(host, def).appendTo(fieldset);
+        }
+        return fieldset;
+    };
+
+    //Render a page
+    function _page(host, page) {
+        var form = $('<div class="form-container">');
+        host.events = {
+            show: [],
+            change: {}
+        };
+        host.data.unwatch();
+        if (page.label) form.append($('<h1>').html(page.label));
+        for (x in page.sections)
+            _section(host, page.sections[x]).appendTo(form);
+        host.objects.container.html(form);
+        if (host.events.show.length > 0) {
+            for (x in host.events.show)
+                _toggle(host, host.events.show[x]);
+        }
+    };
+
+    //Render the whole form
+    function _render(host, data) {
+        host.objects = {
+            loader: $('<div class="forms-loader-container">').html($('<div class="forms-loader">')),
+            container: $('<div class="forms-container">').hide()
+        };
+        $(host).html([host.objects.loader, host.objects.container]).css('min-height', '200px');
+    };
+
+    //Navigate to a page
+    function _nav(host, pageno) {
+        host.loading++;
+        host.page = pageno;
+        _page(host, host.def.pages[pageno]);
+        $(host).trigger('nav', [pageno + 1, host.def.pages.length]);
+        _ready(host);
+    };
+
+    //Run the data validation
+    function _validate(host) {
+        console.log('Validation not yet implemented!');
+        return false;
+    };
+
+    //Signal that everything is ready to go
+    function _ready(host) {
+        host.loading--;
+        if (host.loading > 0 || host.page === null)
+            return;
+        host.objects.loader.hide();
+        host.objects.container.show();
+        $(host).trigger('ready', [host.def]);
+    };
+
+    //Save form data back to the controller
+    function _save(host, validate, extra) {
+        if (!(validate === false || ((validate === true || typeof validate == 'undefined') && _validate(host))))
+            return false;
+        var data = $.extend({}, host.settings.params, extra);
+        data.form = host.data.save();
+        $(host).trigger('saving', [data]);
+        _post(host, 'post', $.extend({}, host.settings.params, data), false).done(function (response) {
+            if (response.form) {
+                for (x in response.form)
+                    host.data[x] = response.form[x];
+            }
+            host.posts = {}; //Reset the post cache so we get clean data after 
+            $(host).trigger('saved', [response]);
+        }).fail(_error);
+        return true;
+    };
+
+    //Register events that are used to control the form functions
+    function _registerEvents(host) {
+
+    }
+
+    function _post(host, action, postdata, track) {
+        if (host.settings.cachedActions.indexOf(action) != -1) {
+            var index = btoa(action + JSON.stringify(postdata));
+            if (index in host.posts)
+                return { done: function (callback) { callback(host.posts[index]); } };
+        }
+        if (track !== false) {
+            host.objects.container.hide();
+            host.objects.loader.show();
+            host.loading++;
+        }
+        return $.ajax({
+            method: "POST",
+            url: hazaar.url(host.settings.controller, 'interact/' + action),
+            contentType: "application/json",
+            data: (typeof postdata == 'object' ? JSON.stringify(postdata) : null)
+        }).always(function (response) {
+            if (host.settings.cachedActions.indexOf(action) != -1)
+                host.posts[index] = response;
+            _ready(host);
+        }).fail(_error);
+    };
+
+    //Load all the dynamic bits
+    function _load(host) {
+        $.get(hazaar.url('hazaar/forms', 'load', { form: host.settings.form }, host.settings.encode)).done(function (response) {
+            var data = {};
+            host.def = response;
+            if (host.def.fields) {
+                for (x in host.def.fields)
+                    data[x] = host.def.fields[x].default ? host.def.fields[x].default : null;
+            }
+            host.data = new dataBinder(data);
+            $(host).trigger('load', [host.data.save()]);
+            _post(host, 'load', host.settings.params).done(function (response) {
+                if (typeof response == 'object' && Object.keys(response).length > 0) {
+                    for (x in response)
+                        host.data[x] = response[x];
+                    $(host).trigger('data', [host.data.save()]);
+                }
+                _nav(host, 0);
+            });
+        }).fail(_error);
+    };
+
+    function initialise(host, settings) {
         //Define the default object properties
         host.settings = $.extend({}, $.fn.form.defaults, settings);
         host.data = {};
@@ -28,314 +359,43 @@
         host.posts = {};
         host.page = null;
         host.loading = 0;
-        //Error capture method
-        host._error = function (xhr, textStatus, errorThrown) {
-            var error = xhr.responseJSON.error;
-            host.o.loader.html(error.str);
-            $(host).trigger('error', [error]);
-        };
-        host._exec = function (type, field) {
-            if (!(type in this.events && field in this.events[type]))
-                return false;
-            var obj = host.events[type][field];
-            (function (form, code) {
-                return eval(code);
-            })(host.data, obj.data(type));
-        };
-        host._toggle = function (obj) {
-            var show = obj.data('show').replace(/\s/g, '');
-            var parts = show.split(/(\&\&|\|\|)/);
-            for (var x = 0; x < parts.length; x += 2) {
-                var matches = null;
-                if (!(matches = parts[x].match(/([\w\.]+)([=\!\<\>]+)(.+)/))) {
-                    alert('Invalid show script: ' + show)
-                    return;
-                }
-                parts[x] = matches[1] + ' ' + matches[2] + ' ' + matches[3];
-            }
-            var toggle = (function (values, evaluate) {
-                var code = '';
-                for (key in values) {
-                    var value = values[key];
-                    if (typeof value == 'string') value = "'" + value + "'";
-                    code += 'var ' + key + " = " + value + ";\n";
-                }
-                code += "( " + evaluate + " );";
-                return eval(code);
-            })(host.data.save(), parts.join(''));
-            obj.toggle(toggle);
-            if ((name = obj.data('name')) && toggle === false) host.data[name] = null;
-        };
-        //Input events
-        host._focus = function (e) {
-            $(e.target).parent().removeClass('has-error');
-        };
-        host._change = function (e) {
-            var value = null, input = $(e.target);
-            var def = input.data('def');
-            if (input.is('[type=checkbox]'))
-                value = input.is(':checked');
-            else
-                value = input.val();
-            if (value === '') value = null;
-            host.data[e.target.name] = value;
-            if (host.events.show.length > 0) {
-                for (x in host.events.show)
-                    host._toggle(host.events.show[x]);
-            }
-            host._exec('change', e.target.name);
-        };
-        host._blur = function (e) {
-            var input = $(e.target);
-            var def = input.data('def');
-            if (def.required && input.val() == '')
-                input.parent().addClass('has-error');
-        };
-        host._populate = function (select, track) {
-            var def = select.data('def');
-            var options = def.options;
-            while (match = options.match(/\{\{(\w+)\}\}/))
-                options = options.replace(match[0], host.data[match[1]]);
-            select.html($('<option>').html('Loading...'));
-            this._post('api', { target: options }, track).done(function (data) {
-                select.empty();
-                if (def.placeholder && (!def.required || this.data[field] == null))
-                    select.append($('<option>').attr('value', '').html(def.placeholder).prop('disabled', (def.required == true)));
-                for (x in data)
-                    select.append($('<option>').attr('value', x).html(data[x]));
-                select.val(host.data[select.attr('name')]);
-            });
-            return true;
-        }
-        //Render a field
-        host._field = function (field) {
-            var def = null;
-            if (typeof field == 'object') {
-                def = $.extend({}, host.def.fields[field.name], field);
-                field = def.name;
-            } else {
-                def = host.def.fields[field];
-            }
-            if (!def)
-                return;
-            var form_group = $('<div class="form-group">').html($('<label class="col-lg-3">').attr('for', field).html(def.label)).data('name', field);
-            var form_control = $('<div class="col-lg-9">').appendTo(form_group);
-            if (def.options) {
-                var select = $('<select class="form-control">')
-                    .attr('name', field)
-                    .attr('data-bind', field)
-                    .data('name', field)
-                    .data('def', def);
-                if (typeof def.options == 'string') {
-                    var matches = def.options.match(/\{\{\w+\}\}/g);
-                    for (x in matches) {
-                        var match = matches[x].substr(2, matches[x].length - 4);
-                        host.data.watch(match, function (key, value, select) {
-                            host._populate(select, false);
-                        }, select);
-                    }
-                    host._populate(select.change(this._change));
-                } else {
-                    if (def.placeholder && (!def.required || host.data[field] == null))
-                        select.append($('<option>').attr('value', '').html(def.placeholder).prop('disabled', (def.required == true)));
-                    for (x in def.options)
-                        select.append($('<option>').attr('value', x).html(def.options[x]));
-                    select.val(host.data[field]).change(host._change);
-                }
-                select.appendTo(form_control);
-            } else {
-                switch (def.type) {
-                    case 'string':
-                    case 'text':
-                        var input = $('<input type="text" class="form-control">')
-                            .attr('name', field)
-                            .attr('data-bind', field)
-                            .data('name', field)
-                            .data('def', def)
-                            .val(host.data[field])
-                            .focus(host._focus)
-                            .change(host._change)
-                            .blur(host._blur);
-                        if (def.placeholder) input.attr('placeholder', def.placeholder);
-                        if (def.prefix || def.prefix) {
-                            var group = $('<div class="input-group">').appendTo(form_control);
-                            if (def.prefix) group.append($('<span class="input-group-addon">').html(def.prefix));
-                            group.append(input);
-                            if (def.suffix) group.append($('<span class="input-group-addon">').html(def.suffix));
-                        } else {
-                            input.appendTo(form_control);
-                        }
-                        break;
-                    case 'int':
-                    case 'integer':
-                    case 'number':
-                        var input = $('<input type="number" class="form-control">')
-                            .attr('name', field)
-                            .attr('data-bind', field)
-                            .data('name', field)
-                            .data('def', def)
-                            .val(host.data[field])
-                            .change(host._change)
-                            .appendTo(form_control);
-                        if (def.placeholder) input.attr('placeholder', def.placeholder);
-                        break;
-                    case 'date':
-                        $('<input type="date" class="form-control">')
-                            .attr('name', field)
-                            .attr('data-bind', field)
-                            .data('name', field)
-                            .data('def', def)
-                            .val(host.data[field])
-                            .change(host._change)
-                            .appendTo(form_control);
-                        break;
-                    case 'boolean':
-                        $('<input type="checkbox">')
-                            .attr('name', field)
-                            .attr('data-bind', field)
-                            .data('name', field)
-                            .data('def', def)
-                            .attr('checked', host.data[field])
-                            .change(host._change)
-                            .appendTo(form_control);
-                        break;
-                }
-            }
-            if (def.html)
-                form_control.append(def.html);
-            if (def.show)
-                this.events.show.push(form_group.data('show', def.show));
-            if (def.change)
-                this.events.change[field] = form_group.data('change', def.change);
-            return form_group;
-        };
-        //Render a page section
-        host._section = function (section) {
-            var fieldset = $('<fieldset>');
-            if (section.label)
-                fieldset.append($('<legend>').html(section.label));
-            for (x in section.fields) {
-                var field = this._field(section.fields[x]);
-                if (field) field.appendTo(fieldset);
-            }
-            return fieldset;
-        };
-        //Render a page
-        host._page = function (page) {
-            var form = $('<div class="form-container">');
-            host.events = {
-                show: [],
-                change: {}
-            };
-            host.data.unwatch();
-            if (page.label) form.append($('<h1>').html(page.label));
-            for (x in page.sections)
-                this._section(page.sections[x]).appendTo(form);
-            host.o.container.html(form);
-            if (this.events.show.length > 0) {
-                for (x in this.events.show)
-                    this._toggle(this.events.show[x]);
-            }
-        };
-        //Render the whole form
-        host._render = function (data) {
-            this.o = {
-                loader: $('<div class="forms-loader-container">').html($('<div class="forms-loader">')),
-                container: $('<div class="forms-container">').hide()
-            };
-            $(this).addClass('form-horizontal').html([this.o.loader, this.o.container]);
-        };
-        //Navigate to a page
-        host._nav = function (pageno) {
-            this.loading++;
-            host.page = pageno;
-            host._page(host.def.pages[pageno]);
-            $(host).trigger('nav', [pageno + 1, host.def.pages.length]);
-            this._ready();
-        };
-        //Run the data validation
-        host._validate = function () {
-            console.log('Validation not yet implemented!');
-            return false;
-        };
-        //Signal that everything is ready to go
-        host._ready = function () {
-            this.loading--;
-            if (this.loading > 0 || this.page === null)
-                return;
-            host.o.loader.hide();
-            host.o.container.show();
-            $(host).trigger('ready', [host.def]);
-        };
-        //Save form data back to the controller
-        host._save = function (validate, extra) {
-            if (!(validate === false || ((validate === true || typeof validate == 'undefined') && this._validate())))
-                return false;
-            var data = $.extend({}, this.settings.params, extra);
-            data.form = this.data.save();
-            $(host).trigger('saving', [data]);
-            this._post('post', $.extend({}, this.settings.params, data), false).done(function (response) {
-                if (response.form) {
-                    for (x in response.form)
-                        host.data[x] = response.form[x];
-                }
-                host.posts = {}; //Reset the post cache so we get clean data after 
-                $(host).trigger('saved', [response]);
-            }).fail(this._error);
-            return true;
-        };
-        //Register events that are used to control the form functions
-        host._registerEvents = function () {
-
-        }
-        host._post = function (action, postdata, track) {
-            if (this.settings.cachedActions.indexOf(action) != -1) {
-                var index = btoa(action + JSON.stringify(postdata));
-                if (index in this.posts)
-                    return { done: function (callback) { callback(host.posts[index]); } };
-            }
-            if (track !== false) {
-                host.o.container.hide();
-                host.o.loader.show();
-                this.loading++;
-            }
-            return $.ajax({
-                method: "POST",
-                url: hazaar.url(host.settings.controller, 'interact/' + action),
-                contentType: "application/json",
-                data: (typeof postdata == 'object' ? JSON.stringify(postdata) : null)
-            }).always(function (response) {
-                if (host.settings.cachedActions.indexOf(action) != -1)
-                    host.posts[index] = response;
-                host._ready();
-            }).fail(this._error);
-        };
-        //Load all the dynamic bits
-        host._load = function () {
-            $.get(hazaar.url('hazaar/forms', 'load', { form: host.settings.form }, host.settings.encode)).done(function (response) {
-                var data = {};
-                host.def = response;
-                if (host.def.fields) {
-                    for (x in host.def.fields)
-                        data[x] = host.def.fields[x].default ? host.def.fields[x].default : null;
-                }
-                host.data = new dataBinder(data);
-                host._post('load', host.settings.params).done(function (response) {
-                    if (typeof response == 'object' && Object.keys(response).length > 0) {
-                        for (x in response)
-                            host.data[x] = response[x];
-                        $(host).trigger('data', [host.data.save()]);
-                    }
-                    host._nav(0);
-                });
-            }).fail(this._error);
-        };
-        $(this).trigger('init');
-        host._registerEvents();
-        host._render();
-        host._load(host.settings.url);
-        return this;
+        $(host).trigger('init');
+        _registerEvents(host);
+        _render(host);
+        _load(host, host.settings.url);
     };
+
+    $.fn.form = function () {
+        var args = arguments;
+        if (args[0] == 'info') {
+            var host = this.get(0);
+            var data = host.data.save(), info = {};
+            for (x in data)
+                info[x] = { label: host.def.fields[x].label, value: data[x] };
+            return info;
+        }
+        return this.each(function (index, host) {
+            if (host.settings) {
+                switch (args[0]) {
+                    case 'page':
+                        _nav(host, args[1]);
+                        break;
+                    case 'prev':
+                        if (host.page > 0)
+                            host._nav(host, host.page - 1);
+                        break;
+                    case 'next':
+                        if (host.page < (host.def.pages.length - 1))
+                            _nav(host, host.page + 1);
+                        break;
+                    case 'save':
+                        return _save(host, args[1], args[2]);
+                }
+            } else {
+                initialise(host, args[0]);
+            }
+        });
+    }
 
     $.fn.form.defaults = {
         "form": "default",
@@ -344,4 +404,9 @@
         "cachedActions": ["api"]
     };
 
+    //$.getScript(hazaar.url('hazaar/forms', 'file/inputs/text.js'), function () {
+    //    $.fn.form.initialise();
+    //});
+
 })(jQuery);
+
