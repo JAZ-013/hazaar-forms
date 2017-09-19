@@ -54,12 +54,7 @@
     };
 
     //Input events
-    function _focus(host, input) {
-        var code = input.data('focus');
-        input.parent().removeClass('has-error');
-    };
-
-    function _change(host, input) {
+    function _input_event_change(host, input) {
         var value = null, name = input.attr('name');
         var def = input.data('def');
         if (input.is('[type=checkbox]'))
@@ -72,13 +67,23 @@
             for (x in host.events.show)
                 _toggle(host, host.events.show[x]);
         }
-        _exec(host, 'change', name);
+        if (def.change)
+            _eval(host, def.change);
     };
 
-    function _blur(host, input) {
+    function _input_event_focus(host, input) {
+        var def = input.data('def');
+        input.parent().removeClass('has-error');
+        if (def.focus)
+            _eval(host, def.focus);
+    };
+
+    function _input_event_blur(host, input) {
         var def = input.data('def');
         if (def.required && input.val() == '')
             input.parent().addClass('has-error');
+        if (def.blur)
+            _eval(host, def.blur);
     };
 
     function _input_select_populate(host, select, track) {
@@ -107,8 +112,9 @@
         var select = $('<select class="form-control">')
             .attr('name', def.name)
             .attr('data-bind', def.name)
-            .data('name', def.name)
             .data('def', def)
+            .focus(function (event) { _input_event_focus(host, $(event.target)); })
+            .blur(function (event) { _input_event_blur(host, $(event.target)); })
             .appendTo(group);
         if (typeof def.options == 'string') {
             var matches = def.options.match(/\{\{\w+\}\}/g);
@@ -118,13 +124,13 @@
                     _input_select_populate(host, select, false);
                 }, select);
             }
-            _input_select_populate(host, select.change(function (event) { _change(host, $(event.target)); }));
+            _input_select_populate(host, select.change(function (event) { _input_event_change(host, $(event.target)); }));
         } else {
             if (def.placeholder && (!def.required || host.data[def.name] == null))
                 select.append($('<option>').attr('value', '').html(def.placeholder).prop('disabled', (def.required == true)));
             for (x in def.options)
                 select.append($('<option>').attr('value', x).html(def.options[x]));
-            select.val(host.data[def.name]).change(function (event) { _change(host, $(event.target)); });
+            select.val(host.data[def.name]).change(function (event) { _input_event_change(host, $(event.target)); });
         }
         return group;
     }
@@ -135,11 +141,11 @@
             $('<input type="checkbox">')
                 .attr('name', def.name)
                 .attr('data-bind', def.name)
-                .data('name', def.name)
                 .data('def', def)
                 .attr('checked', host.data[def.name])
-                .focus(function (event) { _focus(host, $(event.target)); })
-                .change(function (event) { _change(host, $(event.target)); }),
+                .focus(function (event) { _input_event_focus(host, $(event.target)); })
+                .blur(function (event) { _input_event_blur(host, $(event.target)); })
+                .change(function (event) { _input_event_change(host, $(event.target)); }),
             def.label
         ]).appendTo(group);
         return group;
@@ -157,9 +163,9 @@
             .attr('data-bind', def.name)
             .data('def', def)
             .val(host.data[def.name])
-            .focus(function (event) { _focus(host, $(event.target)); })
-            .change(function (event) { _change(host, $(event.target)); })
-            .blur(host._blur);
+            .focus(function (event) { _input_event_focus(host, $(event.target)); })
+            .blur(function (event) { _input_event_blur(host, $(event.target)); })
+            .change(function (event) { _input_event_change(host, $(event.target)); });
         if (def.placeholder) input.attr('placeholder', def.placeholder);
         if (def.prefix || def.suffix) {
             var inputDIV = $('<div class="input-group">')
@@ -204,8 +210,6 @@
             else
                 host.events.show.push(field.data('show', def.show));
         }
-        if ('change' in def)
-            host.events.change[def.name] = field.data('change', def.change);
         return field;
     }
 
