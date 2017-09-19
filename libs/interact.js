@@ -179,9 +179,19 @@
         return group;
     }
 
-    function _form_field(host, def) {
-        var field = null;
-        if (def.options) {
+    function _form_field(host, info) {
+        var def = null, field = null;
+        if (typeof info == 'object')
+            def = $.extend({}, host.def.fields[info.name], info);
+        else
+            def = $.extend({}, host.def.fields[info], { name: info });
+        if (!def) return;
+        if (def.fields) {
+            var col_width = (12 / def.fields.length);
+            field = $('<div class="row">');
+            for (x in def.fields)
+                field.append($('<div>').addClass('col-lg-' + col_width).html(_form_field(host, def.fields[x])));
+        } else if (def.options) {
             field = _input_select(host, def);
         } else if (def.type) {
             switch (def.type) {
@@ -218,20 +228,8 @@
         var fieldset = $('<fieldset>');
         if (section.label)
             fieldset.append($('<legend>').html(section.label));
-        for (x in section.fields) {
-            var def = null, field = section.fields[x];
-            if (typeof field == 'object')
-                def = $.extend({}, host.def.fields[field.name], field);
-            else
-                def = $.extend({}, host.def.fields[field], { name: field });
-            if (!def) continue;
-            if (def.fields) {
-                var inputsDIV = $('<div class="row">').appendTo(fieldset);
-                for (x in def.fields)
-                    inputsDIV.append(_form_field(host, def));
-            } else
-                _form_field(host, def).appendTo(fieldset);
-        }
+        for (x in section.fields)
+            fieldset.append(_form_field(host, section.fields[x]));
         return fieldset;
     };
 
