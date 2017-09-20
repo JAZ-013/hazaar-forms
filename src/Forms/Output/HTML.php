@@ -21,53 +21,94 @@ class HTML extends \Hazaar\Forms\Output {
         $div->add((new \Hazaar\Html\Div(new \Hazaar\Html\H1(ake($form, 'name', 'Unnamed Form'))))->class('form-header'));
 
         foreach($form['pages'] as $page)
-            $div->add($this->exportPage($page));
+            $div->add($this->__page($page));
 
         return $div;
 
     }
 
-    private function exportPage($page){
+    private function __page($page){
 
-        $html = (new \Hazaar\Html\Div())->class('form-page');
+        $html = (new \Hazaar\Html\Div())->class('panel panel-default');
 
-        if($label = ake($page, 'label'))
-            $html->add(new \Hazaar\Html\H2($label));
+        if(property_exists($page, 'label'))
+            $html->add((new \Hazaar\Html\Div((new \Hazaar\Html\H2($page->label))->class('panel-title')))->class('panel-heading'));
 
-        foreach($page['sections'] as $section)
-            $html->add($this->exportSection($section));
+        $body = (new \Hazaar\Html\Div())->class('panel-body');
+
+        foreach($page->sections as $section)
+            $body->add($this->__section($section));
+
+        return $html->add($body);
+
+    }
+
+    private function __section($section){
+
+        $html = (new \Hazaar\Html\Div())->class('form-section');
+
+        if(property_exists($section, 'label'))
+            $html->add(new \Hazaar\Html\H3($section->label));
+
+        $html->add($this->__group($section->fields));
 
         return $html;
 
     }
 
-    private function exportSection($section){
+    private function __group($fields){
 
-        $html = (new \Hazaar\Html\Div())->class('well form-panel');
+        if(!is_array($fields))
+            return null;
 
-        if($label = ake($section, 'label'))
-            $html->add(new \Hazaar\Html\H3($label));
+        $items = array();
 
-        foreach($section['fields'] as $name => $field)
-            $html->add($this->exportField($name, $field));
+        foreach($fields as $name => $field){
 
-        return $html;
+            if(is_array($field) && !array_key_exists('name', $field)){
+
+                $html = (new \Hazaar\Html\Div())->class('row');
+
+                foreach($field as $field_col)
+                    $html->add((new \Hazaar\Html\Div($this->__group(array($field_col))))->class('col-lg-' . (12 / count($field))));
+
+                $items[] = $html;
+
+            }else{
+
+                $items[] = $this->__field($name, $field);
+
+            }
+
+        }
+
+        return $items;
 
     }
 
-    private function exportField($name, $field){
+    private function __field($name, $field){
 
-        $group = (new \Hazaar\Html\Div())->class('row form-field');
+        $group = (new \Hazaar\Html\Div())->class('form-group');
 
         if($label = ake($field, 'label'))
-            $group->add((new \Hazaar\Html\Div(new \Hazaar\Html\Label($label)))->class('col-md-4 form-label'));
+            $group->add(new \Hazaar\Html\H4($label));
 
         $value = $field['value'];
 
         if($field['type'] == 'boolean')
             $value = yn($value);
 
-        $group->add((new \Hazaar\Html\div($value))->class('col-md-8 form-value'));
+        $value_group = (new \Hazaar\Html\Div())->class('field-value');
+
+        if($prefix = ake($field, 'prefix'))
+            $value_group->add($prefix . ' ');
+
+        $value_group->add($value);
+
+        if($suffix = ake($field, 'suffix'))
+            $value_group->add(' ' . $suffix);
+
+        $group->add($value_group);
 
         return $group;
 
