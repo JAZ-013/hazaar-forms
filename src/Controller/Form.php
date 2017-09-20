@@ -37,7 +37,7 @@ abstract class Form extends Action implements FormsInterface {
      *
      * @param mixed $type
      */
-    protected function form($type, $params = array()){
+    final protected function form($type, $params = array()){
 
         $this->model = new \Hazaar\Forms\Model($type);
 
@@ -45,7 +45,7 @@ abstract class Form extends Action implements FormsInterface {
 
     }
 
-    public function interact($method){
+    final public function interact($method){
 
         if(!$this->model instanceof \Hazaar\Forms\Model)
             throw new \Exception('No form type has been set for this form controller');
@@ -100,7 +100,7 @@ abstract class Form extends Action implements FormsInterface {
 
     }
 
-    public function layout($name, $settings = array()){
+    final public function layout($name, $settings = array()){
 
         if(!$this->model instanceof \Hazaar\Forms\Model)
             throw new \Exception('No form type has been set for this form controller');
@@ -121,7 +121,7 @@ abstract class Form extends Action implements FormsInterface {
 
     }
 
-    public function render(){
+    final public function render(){
 
         $this->model->populate($this->load($this->request->getParams()));
 
@@ -131,7 +131,7 @@ abstract class Form extends Action implements FormsInterface {
 
     }
 
-    public function output($type = 'html'){
+    final public function output($type = 'html'){
 
         if($this->request->getActionName() == 'output'){
 
