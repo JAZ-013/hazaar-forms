@@ -384,7 +384,7 @@
                         break;
                     case 'prev':
                         if (host.page > 0)
-                            host._nav(host, host.page - 1);
+                            _nav(host, host.page - 1);
                         break;
                     case 'next':
                         if (host.page < (host.def.pages.length - 1))
