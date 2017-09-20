@@ -181,7 +181,9 @@
 
     function _form_field(host, info) {
         var def = null, field = null;
-        if (typeof info == 'object')
+        if (info instanceof Array)
+            info = { fields: info };
+        if (info instanceof Object)
             def = $.extend({}, host.def.fields[info.name], info);
         else
             def = $.extend({}, host.def.fields[info], { name: info });
