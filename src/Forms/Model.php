@@ -34,7 +34,7 @@ class Model extends \Hazaar\Model\Strict {
 
         $this->__form_name = $source_file->name();
 
-        if(!($this->__form = $source_file->parseJSON(true)))
+        if(!($this->__form = $source_file->parseJSON()))
             throw new \Exception('An error ocurred parsing the form definition \'' . $source_file->name() . '\'');
 
         if(!array_key_exists('name', $this->__form))
@@ -46,11 +46,12 @@ class Model extends \Hazaar\Model\Strict {
         if(!array_key_exists('fields', $this->__form))
             throw new \Exception('Form definition does not contain any fields!');
 
-        if(!is_assoc($this->__form['fields'])){
+        //If fields is an array, then it is importing one or more field defs from other files.
+        if(is_array($this->__form->fields)){
 
             $fields = array();
 
-            foreach($this->__form['fields'] as $ext_fields){
+            foreach($this->__form->fields as $ext_fields){
 
                 $ext_fields_file = $ext_fields . '.json';
 
@@ -66,7 +67,16 @@ class Model extends \Hazaar\Model\Strict {
 
             }
 
-            $this->__form['fields'] = $fields;
+            $this->__form->fields = $fields;
+
+        }else{
+
+            //Make sure the fields property is an array otherwise strict models will have a tanty.
+            $this->__form->fields = (array)$this->__form->fields;
+
+            array_walk_recursive($this->__form->fields, function(&$array){
+                $array = (array)$array;
+            });
 
         }
 
@@ -76,7 +86,10 @@ class Model extends \Hazaar\Model\Strict {
 
     public function init(){
 
-        return ake($this->__form, 'fields', array());
+        if(!(property_exists($this->__form, 'fields') && is_array($this->__form->fields)))
+            $this->__form->fields == array();
+
+        return $this->__form->fields;
 
     }
 
@@ -95,13 +108,20 @@ class Model extends \Hazaar\Model\Strict {
 
     public function getOutputStyle(){
 
-        return ake(ake($this->__form, 'pdf'), 'style');
+        if(!(property_exists($this->__form, 'pdf') && property_exists($this->__form->pdf, 'style')))
+            return null;
+
+        return $this->__form->pdf->style;
 
     }
 
     public function getOutputLogo(){
 
-        return ake(ake($this->__form, 'pdf'), 'logo');
+        if(!(property_exists($this->__form, 'pdf') && property_exists($this->__form->pdf, 'logo')))
+            return null;
+
+        return $this->__form->pdf->logo;
+
 
     }
 
@@ -109,27 +129,28 @@ class Model extends \Hazaar\Model\Strict {
 
         $form = $this->getForm();
 
-        $out = array('name' => $form['name'], 'pages' => array());
+        $out = array('name' => $form->name, 'pages' => array());
 
-        foreach($form['pages'] as $page_no => $page)
-            $out['pages'][$page_no] = $this->resolvePage($page);
+        if(is_array($form->pages)){
+
+            foreach($form->pages as $page_no => $page)
+                $out['pages'][$page_no] = $this->__page($page);
+
+        }
 
         return $out;
 
     }
 
-    private function resolvePage($page){
+    private function __page($page){
 
-        foreach($page as $page_key => $page_item){
+        if(!is_object($page))
+            return null;
 
-            if($page_key == 'sections'){
+        if(is_array($page->sections)){
 
-                foreach($page_item as $section_no => $section)
-                    $page_item[$section_no] = $this->resolveSection($section);
-
-            }
-
-            $page[$page_key] = $page_item;
+            foreach($page->sections as $section_no => $section)
+                $page->sections[$section_no] = $this->__section($section);
 
         }
 
@@ -137,19 +158,15 @@ class Model extends \Hazaar\Model\Strict {
 
     }
 
-    private function resolveSection($section){
+    private function __section($section){
 
-        foreach($section as $section_key => $section_item){
+        if(!is_object($section))
+            return null;
 
-            if($section_key == 'fields'){
+        if(is_array($section->fields)){
 
-                $section[$section_key] = $this->resolveFields($section_item);
-
-            }else{
-
-                $section[$section_key] = $section_item;
-
-            }
+            foreach($section->fields as $row_no => $row)
+                $section->fields[$row_no] = $this->__group($row);
 
         }
 
@@ -157,55 +174,72 @@ class Model extends \Hazaar\Model\Strict {
 
     }
 
-    private function resolveFields($fields){
+    private function __group($fields){
 
-        $field_items = array();
+        if(is_array($fields)){
 
-        foreach($fields as $field_item){
+            foreach($fields as $index => $item)
+                $fields[$index] = $this->__group($item);
 
-            if(is_array($field_item)){
-
-                if(!array_key_exists('name', $field_item))
-                    continue;
-
-                $field_item = array_merge(ake($this->__form['fields'], $field_item['name'], array()), $field_item);
-
-            }else{
-
-                if(!array_key_exists($field_item, $this->__form['fields']))
-                    continue;
-
-                $field_item = array_merge($this->__form['fields'][$field_item], array('name' => $field_item));
-
-            }
-
-            if($show = str_replace(' ', '', ake($field_item, 'show', ''))){
-
-                if(!$this->evaluate($show))
-                    continue;
-
-            }
-
-            $field_key = $field_item['name'];
-
-            $value = $this->get($field_key);
-
-            if($options = ake($field_item, 'options')){
-
-                if(!is_array($options))
-                    $options = $this->items($this->parseTarget($options));
-
-                $value = ake($options, $value);
-
-            }
-
-            $field_item['value'] = $value;
-
-            $field_items[$field_key] = $field_item;
+            return $fields;
 
         }
 
-        return $field_items;
+        return $this->__field($fields);
+
+    }
+
+    private function __field($field){
+
+        if(is_string($field)){
+
+            if(!array_key_exists($field, $this->__form->fields))
+                return null;
+
+            $field = array_merge($this->__form->fields[$field], array('name' => $field));
+
+        }elseif(is_array($field)){
+
+            dump($field);
+
+            $items = $this->__group($field);
+
+        }elseif(is_object($field)){
+
+            if(!property_exists($field, 'name'))
+                return null;
+
+            $field = array_merge(ake($this->__form->fields, $field->name, array()), (array)$field);
+
+        }else{
+
+            return null;
+
+        }
+
+        if($show = str_replace(' ', '', ake($field, 'show', ''))){
+
+            if(!$this->evaluate($show))
+                return null;
+
+        }
+
+        $field_key = $field['name'];
+
+        $value = $this->get($field_key);
+
+        if($options = ake($field, 'options')){
+
+            if(is_string($options))
+                $options = $this->items($this->parseTarget($options));
+
+            $value = ake((array)$options, $value);
+
+        }
+
+        $field['value'] = $value;
+
+        return $field;
 
     }
 
