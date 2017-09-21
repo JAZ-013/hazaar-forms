@@ -181,21 +181,21 @@ class Model extends \Hazaar\Model\Strict {
 
         if(is_array($fields)){
 
-            foreach($fields as $index => $item){
+            $items = array();
+
+            foreach($fields as $item){
 
                 if($item = $this->__group($item))
-                    $fields[$index] =$item;
+                    $items[] = $item;
 
             }
 
-            return $fields;
+            return $items;
 
-        }
-
-        if($fields instanceof \stdClass && property_exists($fields, 'fields')){
+        }elseif($fields instanceof \stdClass && property_exists($fields, 'fields')){
 
             if(property_exists($fields, 'show') && !$this->evaluate($fields->show))
-                return;
+                return null;
 
             $items = array();
 
@@ -262,7 +262,7 @@ class Model extends \Hazaar\Model\Strict {
 
         if(!($code = str_replace(' ', '', $code)))
             return true;
-            
+
         $parts = preg_split('/(\&\&|\|\|)/', $code, -1, PREG_SPLIT_DELIM_CAPTURE);
 
         $count = count($parts);
