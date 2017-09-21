@@ -106,25 +106,6 @@ class Model extends \Hazaar\Model\Strict {
 
     }
 
-    public function getOutputStyle(){
-
-        if(!(property_exists($this->__form, 'pdf') && property_exists($this->__form->pdf, 'style')))
-            return null;
-
-        return $this->__form->pdf->style;
-
-    }
-
-    public function getOutputLogo(){
-
-        if(!(property_exists($this->__form, 'pdf') && property_exists($this->__form->pdf, 'logo')))
-            return null;
-
-        return $this->__form->pdf->logo;
-
-
-    }
-
     public function resolve(){
 
         $form = $this->getForm();

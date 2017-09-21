@@ -12,16 +12,25 @@ namespace Hazaar\Forms\Output;
  */
 class PDF extends HTML {
 
-    public function render(){
+    final public function render(){
+
+        $form = $this->model->resolve();
 
         $html = (new \Hazaar\Html\Html())->class('form');
 
         $head = new \Hazaar\Html\Head();
 
-        $style = $this->renderStyle();
+        $style = '';
 
-        if($extraStyle = $this->model->getOutputStyle())
-            $style .= "\n" . $extraStyle;
+        if($file = \Hazaar\Loader::getModuleFilePath('pdf.css'))
+            $style = file_get_contents($file);
+
+        if(property_exists($form, 'pdf')){
+
+            if(property_exists($form->pdf, 'style'))
+                $style .= "\n" . $form->pdf->style;
+
+        }
 
         $head->add(new \Hazaar\Html\Block('style', $style));
 
@@ -29,26 +38,21 @@ class PDF extends HTML {
 
         $html->add($head, $body);
 
-        $body->add(parent::render());
+        $body->add(parent::render($form));
 
-        if($logo = $this->model->getOutputLogo()){
+        if(property_exists($form, 'pdf')){
 
-            $header = $body->find('.form-header');
+            if(property_exists($form->pdf, 'logo')){
 
-            $header->prepend((new \Hazaar\Html\Img($logo))->class('form-logo'));
+                $header = $body->find('.form-header');
+
+                $header->prepend((new \Hazaar\Html\Img($form->pdf->logo))->class('form-logo'));
+
+            }
 
         }
 
         return $html;
-
-    }
-
-    private function renderStyle(){
-
-        if($file = \Hazaar\Loader::getModuleFilePath('pdf.css'))
-            return file_get_contents($file);
-
-        return null;
 
     }
 
