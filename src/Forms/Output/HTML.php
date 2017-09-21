@@ -12,15 +12,16 @@ namespace Hazaar\Forms\Output;
  */
 class HTML extends \Hazaar\Forms\Output {
 
-    public function render(){
+    public function render($form = null){
 
-        $form = $this->model->resolve();
+        if($form === null)
+            $form = $this->model->resolve();
 
         $div = (new \Hazaar\Html\Div())->class('form-output');
 
         $div->add((new \Hazaar\Html\Div(new \Hazaar\Html\H1(ake($form, 'name', 'Unnamed Form'))))->class('form-header'));
 
-        foreach($form['pages'] as $page)
+        foreach($form->pages as $page)
             $div->add($this->__page($page));
 
         return $div;
