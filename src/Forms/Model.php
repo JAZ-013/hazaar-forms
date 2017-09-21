@@ -129,28 +129,42 @@ class Model extends \Hazaar\Model\Strict {
 
         $form = $this->getForm();
 
-        $out = array('name' => $form->name, 'pages' => array());
-
         if(is_array($form->pages)){
 
-            foreach($form->pages as $page_no => $page)
-                $out['pages'][$page_no] = $this->__page($page);
+            $pages = array();
+
+            foreach($form->pages as $page){
+
+                if($page = $this->__page($page))
+                    $pages[] = $page;
+
+            }
+
+            $form->pages = $pages;
 
         }
 
-        return $out;
+        return $form;
 
     }
 
     private function __page($page){
 
-        if(!is_object($page))
+        if(!is_object($page) || (property_exists($page, 'show') && !$this->evaluate($page->show)))
             return null;
 
         if(is_array($page->sections)){
 
-            foreach($page->sections as $section_no => $section)
-                $page->sections[$section_no] = $this->__section($section);
+            $sections = array();
+
+            foreach($page->sections as $section){
+
+                if($section = $this->__section($section))
+                    $sections[] = $section;
+
+            }
+
+            $page->sections = $sections;
 
         }
 
@@ -160,13 +174,21 @@ class Model extends \Hazaar\Model\Strict {
 
     private function __section($section){
 
-        if(!is_object($section))
+        if(!is_object($section) || (property_exists($section, 'show') && !$this->evaluate($section->show)))
             return null;
 
         if(is_array($section->fields)){
 
-            foreach($section->fields as $row_no => $row)
-                $section->fields[$row_no] = $this->__group($row);
+            $fields = array();
+
+            foreach($section->fields as $row){
+
+                if($row = $this->__group($row))
+                    $fields[] = $row;
+
+            }
+
+            $section->fields = $fields;
 
         }
 
@@ -178,10 +200,32 @@ class Model extends \Hazaar\Model\Strict {
 
         if(is_array($fields)){
 
-            foreach($fields as $index => $item)
-                $fields[$index] = $this->__group($item);
+            foreach($fields as $index => $item){
+
+                if($item = $this->__group($item))
+                    $fields[$index] =$item;
+
+            }
 
             return $fields;
+
+        }
+
+        if($fields instanceof \stdClass && property_exists($fields, 'fields')){
+
+            if(property_exists($fields, 'show') && !$this->evaluate($fields->show))
+                return;
+
+            $items = array();
+
+            foreach($fields->fields as $field_item){
+
+                if($item = $this->__group($field_item))
+                    $items[] = $item;
+
+            }
+
+            return $items;
 
         }
 
@@ -198,12 +242,6 @@ class Model extends \Hazaar\Model\Strict {
 
             $field = array_merge($this->__form->fields[$field], array('name' => $field));
 
-        }elseif(is_array($field)){
-
-            dump($field);
-
-            $items = $this->__group($field);
-
         }elseif(is_object($field)){
 
             if(!property_exists($field, 'name'))
@@ -217,12 +255,8 @@ class Model extends \Hazaar\Model\Strict {
 
         }
 
-        if($show = str_replace(' ', '', ake($field, 'show', ''))){
-
-            if(!$this->evaluate($show))
-                return null;
-
-        }
+        if(!$this->evaluate(ake($field, 'show')))
+            return null;
 
         $field_key = $field['name'];
 
@@ -245,14 +279,17 @@ class Model extends \Hazaar\Model\Strict {
 
     public function evaluate($code){
 
+        if(!($code = str_replace(' ', '', $code)))
+            return true;
+            
         $parts = preg_split('/(\&\&|\|\|)/', $code, -1, PREG_SPLIT_DELIM_CAPTURE);
 
         $count = count($parts);
 
-        for($i = 0; $i<$count; $i+=2){
+        for($i = 0; $i < $count; $i+=2){
 
             if(!preg_match('/([\w\.]+)([=\!\<\>]+)(.+)/', $parts[$i], $matches))
-                throw new \Exception('Invalid show script: ' + show);
+                throw new \Exception('Invalid show script: ' . $parts[$i]);
 
             $parts[$i] = $this->fixCodeItem($matches[1]) . ' ' . $matches[2] . ' ' . $this->fixCodeItem($matches[3]);
 
