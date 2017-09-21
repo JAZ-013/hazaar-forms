@@ -27,6 +27,24 @@
         })(host.data, evaluate);
     }
 
+    function _nullify(host, def) {
+        if (!typeof def === 'object')
+            return;
+        if (def.name)
+            host.data[def.name] = null;
+        if (def.fields) {
+            for (x in def.fields) {
+                var sdef = def.fields[x];
+                if (sdef instanceof Array)
+                    _nullify(host, { fields: sdef });
+                else if (typeof sdef == 'object')
+                    host.data[sdef.name] = null;
+                else if (typeof sdef == 'string')
+                    host.data[sdef] = null;
+            }
+        }
+    }
+
     function _toggle(host, obj) {
         var show = obj.data('show').replace(/\s/g, '');
         var parts = show.split(/(\&\&|\|\|)/);
@@ -50,7 +68,7 @@
             return eval(code);
         })(host.data.save(), parts.join(''));
         obj.toggle(toggle);
-        if ((name = obj.data('name')) && toggle === false) host.data[name] = null;
+        if (!toggle) _nullify(host, obj.data('def'));
     };
 
     //Input events
@@ -104,7 +122,7 @@
     }
 
     function _input_select(host, def) {
-        var group = $('<div class="form-group">');
+        var group = $('<div class="form-group">').data('def', def);
         var label = $('<label class="control-label">')
             .attr('for', def.name)
             .html(def.label)
@@ -136,13 +154,13 @@
     }
 
     function _input_checkbox(host, def) {
-        var group = $('<div class="checkbox">');
+        var group = $('<div class="checkbox">').data('def', def);
         var label = $('<label>').html([
             $('<input type="checkbox">')
                 .attr('name', def.name)
                 .attr('data-bind', def.name)
-                .data('def', def)
                 .attr('checked', host.data[def.name])
+                .data('def', def)
                 .focus(function (event) { _input_event_focus(host, $(event.target)); })
                 .blur(function (event) { _input_event_blur(host, $(event.target)); })
                 .change(function (event) { _input_event_change(host, $(event.target)); }),
@@ -152,7 +170,7 @@
     }
 
     function _input_std(host, type, def) {
-        var group = $('<div class="form-group">');
+        var group = $('<div class="form-group">').data('def', def);
         var label = $('<label class="control-label">')
             .attr('for', def.name)
             .html(def.label)
@@ -190,7 +208,7 @@
         if (!def) return;
         if (def.fields) {
             var col_width = (12 / def.fields.length);
-            field = $('<div class="row">');
+            field = $('<div class="row">').data('def', def);
             for (x in def.fields)
                 field.append($('<div>').addClass('col-lg-' + col_width).html(_form_field(host, def.fields[x])));
         } else if (def.options) {
@@ -227,17 +245,23 @@
 
     //Render a page section
     function _section(host, section) {
-        var fieldset = $('<fieldset>');
+        var fieldset = $('<fieldset>').data('def', section);
         if (section.label)
             fieldset.append($('<legend>').html(section.label));
         for (x in section.fields)
             fieldset.append(_form_field(host, section.fields[x]));
+        if ('show' in section) {
+            if (typeof section.show == 'boolean')
+                fieldset.toggle(section.show);
+            else
+                host.events.show.push(fieldset.data('show', section.show));
+        }
         return fieldset;
     };
 
     //Render a page
     function _page(host, page) {
-        var form = $('<div class="form-container">');
+        var form = $('<div class="form-container">').data('def', page);
         host.events = {
             show: [],
             change: {}
@@ -246,6 +270,12 @@
         if (page.label) form.append($('<h1>').html(page.label));
         for (x in page.sections)
             _section(host, page.sections[x]).appendTo(form);
+        if ('show' in page) {
+            if (typeof page.show == 'boolean')
+                page.toggle(page.show);
+            else
+                host.events.show.push(page.data('show', page.show));
+        }
         host.objects.container.html(form);
         if (host.events.show.length > 0) {
             for (x in host.events.show)
