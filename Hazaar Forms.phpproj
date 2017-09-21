@@ -37,6 +37,7 @@
     <Folder Include="src\View\Helper\" />
   </ItemGroup>
   <ItemGroup>
+    <Content Include="libs\pdf.css" />
     <Content Include="libs\interact.css" />
     <Content Include="libs\interact.js" />
     <Content Include="README.md" />
