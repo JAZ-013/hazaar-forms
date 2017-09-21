@@ -44,6 +44,13 @@ h1, h2, h3, h4, h5, h6 {
     padding: 15px;
 }
 
+    .panel-body:after,
+    .row:after {
+        clear: both;
+        content: " ";
+        display: table;
+    }
+
 .form-group {
     margin-bottom: 15px;
 }
