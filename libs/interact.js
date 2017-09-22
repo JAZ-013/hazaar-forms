@@ -197,6 +197,26 @@
         return group;
     }
 
+    function _input_list(host, def) {
+        var group = $('<div class="form-group">').data('def', def);
+        var label = $('<h4 class="control-label">')
+            .html(def.label)
+            .appendTo(group);
+        var btn = $('<button type="button">')
+            .html('Add')
+            .appendTo(group);
+        var fields = []
+        for (x in def.fields)
+            fields.push($.extend({}, def.fields[x], { name: x }));
+        console.log(fields);
+        group.append(_form_field(host, { fields: fields }).addClass('newitems'));
+        console.log(group);
+        btn.click(function () {
+            console.log($(this).parent().children('.newitems').find('input,select,textarea').serialize());
+        });
+        return group;
+    }
+
     function _form_field(host, info) {
         var def = null, field = null;
         if (info instanceof Array)
@@ -206,7 +226,7 @@
         else
             def = $.extend({}, host.def.fields[info], { name: info });
         if (!def) return;
-        if (def.fields) {
+        if (def.fields && def.type != 'array') {
             var col_width = (12 / def.fields.length);
             field = $('<div class="row">').data('def', def);
             for (x in def.fields)
@@ -215,6 +235,9 @@
             field = _input_select(host, def);
         } else if (def.type) {
             switch (def.type) {
+                case 'array':
+                    field = _input_list(host, def);
+                    break;
                 case 'boolean':
                     field = _input_checkbox(host, def);
                     break;
