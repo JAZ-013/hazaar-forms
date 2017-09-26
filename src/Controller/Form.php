@@ -28,6 +28,8 @@ abstract class Form extends Action implements FormsInterface {
 
         $this->view->addHelper('forms');
 
+        $this->view->requires('https://cdnjs.cloudflare.com/ajax/libs/jquery.inputmask/3.3.4/jquery.inputmask.bundle.min.js');
+
         return parent::__initialize($request);
 
     }
@@ -115,7 +117,7 @@ abstract class Form extends Action implements FormsInterface {
 
         $div = new \Hazaar\Html\Form('FORM: ' . $name);
 
-        $this->view->jquery->exec("$('#$name').form(" . $settings->toJSON() . ");");
+        $this->view->jquery->exec("$('#$name').hzForm(" . $settings->toJSON() . ");");
 
         return $div->id($name);
 

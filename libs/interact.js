@@ -184,6 +184,7 @@
             .focus(function (event) { _input_event_focus(host, $(event.target)); })
             .blur(function (event) { _input_event_blur(host, $(event.target)); })
             .change(function (event) { _input_event_change(host, $(event.target)); });
+        if (def.format) input.attr('type', 'text').inputmask(def.format);
         if (def.placeholder) input.attr('placeholder', def.placeholder);
         if (def.prefix || def.suffix) {
             var inputDIV = $('<div class="input-group">')
@@ -387,7 +388,7 @@
 
     function initialise(host, settings) {
         //Define the default object properties
-        host.settings = $.extend({}, $.fn.form.defaults, settings);
+        host.settings = $.extend({}, $.fn.hzForm.defaults, settings);
         host.data = {};
         host.events = {};
         host.posts = {};
@@ -399,7 +400,7 @@
         _load(host, host.settings.url);
     };
 
-    $.fn.form = function () {
+    $.fn.hzForm = function () {
         var args = arguments;
         if (args[0] == 'info') {
             var host = this.get(0);
@@ -431,7 +432,7 @@
         });
     }
 
-    $.fn.form.defaults = {
+    $.fn.hzForm.defaults = {
         "form": "default",
         "controller": "index",
         "encode": true,
