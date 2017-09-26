@@ -169,6 +169,32 @@
         return group;
     }
 
+    function _input_date(host, def) {
+        var group = $('<div class="form-group">').data('def', def);
+        var label = $('<label class="control-label">')
+            .attr('for', def.name)
+            .html(def.label)
+            .appendTo(group);
+        var input = $('<input class="form-control">')
+            .attr('type', 'date')
+            .attr('name', def.name)
+            .attr('data-bind', def.name)
+            .data('def', def)
+            .val(host.data[def.name])
+            .focus(function (event) { _input_event_focus(host, $(event.target)); })
+            .blur(function (event) { _input_event_blur(host, $(event.target)); })
+            .change(function (event) { _input_event_change(host, $(event.target)); });
+        if (def.format) {
+            input.attr('type', 'text')
+                .inputmask(def.format)
+                .datepicker($.extend({}, { autoclose: true, format: def.format, todayHighlight: true, language: 'en' }, def.dateOptions));
+            if (!def.placeholder)
+                def.placeholder = def.format;
+        }
+        if (def.placeholder) input.attr('placeholder', def.placeholder);
+        return group.append(input);
+    }
+
     function _input_std(host, type, def) {
         var group = $('<div class="form-group">').data('def', def);
         var label = $('<label class="control-label">')
@@ -225,6 +251,8 @@
                     field = _input_std(host, 'number', def);
                     break;
                 case 'date':
+                    field = _input_date(host, def);
+                    break;
                 case 'text':
                 default:
                     field = _input_std(host, def.type, def);

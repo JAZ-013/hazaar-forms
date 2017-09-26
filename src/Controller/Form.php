@@ -28,6 +28,10 @@ abstract class Form extends Action implements FormsInterface {
 
         $this->view->addHelper('forms');
 
+        $this->view->link('https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/1.7.1/css/bootstrap-datepicker.min.css');
+
+        $this->view->requires('https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/1.7.1/js/bootstrap-datepicker.min.js');
+
         $this->view->requires('https://cdnjs.cloudflare.com/ajax/libs/jquery.inputmask/3.3.4/jquery.inputmask.bundle.min.js');
 
         return parent::__initialize($request);
