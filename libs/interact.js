@@ -224,6 +224,46 @@
         return group;
     }
 
+    function _input_list(host, def) {
+        var group = $('<div class="form-group">').data('def', def);
+        var label = $('<h4 class="control-label">')
+            .html(def.label)
+            .appendTo(group);
+        var btn = $('<button type="button" class="btn btn-success btn-md">')
+            .css('width', '80px')
+            .html('Add');
+        var fields = [], template = $('<div>');
+        var t_container = $('<div class="row">').css({ 'margin-right': '100px' });
+        var col_width = 12 / Object.keys(def.fields).length;
+        template.append($('<div style="float: right;">')
+            .html($('<button type="button" class="btn btn-danger btn-md">').css('width', '80px').html('Remove'))).append(t_container);
+        for (x in def.fields) {
+            fields.push($.extend(def.fields[x], { name: x }));
+            t_container.append($('<div>').addClass('col-lg-' + col_width).attr('data-bind', x));
+        }
+        group.append($('<div style="float: right; padding-top: 25px;">').html(btn));
+        group.append(_form_field(host, { fields: fields }).addClass('itemlist-newitems').css({ 'margin-right': '100px' }))
+        btn.click(function () {
+            var parent = $(this).parent().parent();
+            var data = {};
+            parent.children('.itemlist-newitems').children().each(function (index_0, item_0) {
+                $(item_0).find('input,select,textarea').each(function (index_1, item_1) {
+                    var value = $(item_1).val();
+                    data[item_1.name] = value;
+                    $(item_1).val('');
+                });
+            });
+            host.data[def.name].push(data);
+        });
+        group.append($('<div class="itemlist-items">').attr('data-bind', def.name).html($('<template>' + template[0].outerHTML + '</template>')))
+            .click(function (event) {
+                var target = $(event.target);
+                if (target.is('.btn-danger'))
+                    target.parent().parent().remove();
+            });
+        return group;
+    }
+
     function _form_field(host, info) {
         var def = null, field = null;
         if (info instanceof Array)
@@ -233,7 +273,7 @@
         else
             def = $.extend({}, host.def.fields[info], { name: info });
         if (!def) return;
-        if (def.fields) {
+        if (def.fields && def.type != 'array') {
             var col_width = (12 / def.fields.length);
             field = $('<div class="row">').data('def', def);
             for (x in def.fields)
@@ -242,6 +282,9 @@
             field = _input_select(host, def);
         } else if (def.type) {
             switch (def.type) {
+                case 'array':
+                    field = _input_list(host, def);
+                    break;
                 case 'boolean':
                     field = _input_checkbox(host, def);
                     break;
@@ -310,6 +353,7 @@
             for (x in host.events.show)
                 _toggle(host, host.events.show[x]);
         }
+        host.data.resync();
     };
 
     //Render the whole form
@@ -392,16 +436,21 @@
         }).fail(_error);
     };
 
+    function _define(values) {
+        if (!values) return;
+        var data = {};
+        for (x in values) {
+            if (values[x].type == 'array' && !values[x].default) values[x].default = [];
+            data[x] = values[x].default ? values[x].default : null;
+        }
+        return data;
+    }
+
     //Load all the dynamic bits
     function _load(host) {
         $.get(hazaar.url('hazaar/forms', 'load', { form: host.settings.form }, host.settings.encode)).done(function (response) {
-            var data = {};
             host.def = response;
-            if (host.def.fields) {
-                for (x in host.def.fields)
-                    data[x] = host.def.fields[x].default ? host.def.fields[x].default : null;
-            }
-            host.data = new dataBinder(data);
+            host.data = new dataBinder(_define(host.def.fields));
             $(host).trigger('load', [host.data.save()]);
             _post(host, 'load', host.settings.params).done(function (response) {
                 if (typeof response == 'object' && Object.keys(response).length > 0) {
@@ -436,6 +485,9 @@
             for (x in data)
                 info[x] = { label: host.def.fields[x].label, value: data[x] };
             return info;
+        } else if (args[0] == 'data') {
+            var host = this.get(0);
+            return host.data;
         }
         return this.each(function (index, host) {
             if (host.settings) {
