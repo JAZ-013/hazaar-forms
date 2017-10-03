@@ -45,8 +45,8 @@
         }
     }
 
-    function _toggle(host, obj) {
-        var show = obj.data('show').replace(/\s/g, '');
+    function _is_visible(host, show) {
+        var show = show.replace(/\s/g, '');
         var parts = show.split(/(\&\&|\|\|)/);
         for (var x = 0; x < parts.length; x += 2) {
             var matches = null;
@@ -56,7 +56,7 @@
             }
             parts[x] = matches[1] + ' ' + matches[2] + ' ' + matches[3];
         }
-        var toggle = (function (values, evaluate) {
+        return (function (values, evaluate) {
             var code = '';
             for (key in values) {
                 var value = values[key];
@@ -67,6 +67,10 @@
             code += "( " + evaluate + " );";
             return eval(code);
         })(host.data.save(), parts.join(''));
+    };
+
+    function _toggle(host, obj) {
+        var toggle = _is_visible(host, obj.data('show'));
         obj.toggle(toggle);
         if (!toggle) _nullify(host, obj.data('def'));
     };
@@ -87,19 +91,22 @@
         }
         if (def.change)
             _eval(host, def.change);
+        _validate_field(host, def.name, def, true).done(function (result) {
+            if ((def.validate = result) !== true)
+                input.parent().addClass('has-warning');
+            else
+                input.parent().removeClass('has-warning');
+        });
     };
 
     function _input_event_focus(host, input) {
         var def = input.data('def');
-        input.parent().removeClass('has-error');
         if (def.focus)
             _eval(host, def.focus);
     };
 
     function _input_event_blur(host, input) {
         var def = input.data('def');
-        if (def.required && input.val() == '')
-            input.parent().addClass('has-error');
         if (def.blur)
             _eval(host, def.blur);
     };
@@ -110,7 +117,7 @@
         while (match = options.match(/\{\{(\w+)\}\}/))
             options = options.replace(match[0], host.data[match[1]]);
         select.html($('<option>').html('Loading...'));
-        _post(host, 'api', { target: options }, track).done(function (data) {
+        _post(host, 'items', { target: options }, track).done(function (data) {
             select.empty();
             if (def.placeholder && (!def.required || host.data[field] == null))
                 select.append($('<option>').attr('value', '').html(def.placeholder).prop('disabled', (def.required == true)));
@@ -373,10 +380,48 @@
         _ready(host);
     };
 
+    function _validate_field(host, name, def, sync) {
+        var value = host.data[name];
+        if (sync === true) {
+            return {
+                done: function (callback) {
+                    var result = _validate_field(host, name, def);
+                    if (result === true && 'api' in def) {
+                        console.log('API: ' + def.api);
+                        _post(host, 'api', { "target": def.api, "params": { "name": name, "value": value, "def": def } }, false).done(function (response) {
+                            callback(response.ok === true);
+                        });
+                    } else {
+                        callback(result);
+                    }
+                }
+            }
+        }
+        if ('show' in def) {
+            if (!((typeof def.show == 'boolean') ? def.show : _is_visible(host, def.show)))
+                return true;
+        }
+        if ('required' in def && !value)
+            return { "field": name, "status": "required" };
+        if ('min' in def && value < def.min)
+            return { "field": name, "status": "too small" };
+        if ('max' in def && value > def.max)
+            return { "field": name, "status": "too big" };
+        return true;
+
+    }
+
     //Run the data validation
     function _validate(host) {
-        console.log('Validation not yet implemented!');
-        return false;
+        if (!('def' in host && 'fields' in host.def))
+            return false;
+        var errors = [];
+        for (key in host.def.fields) {
+            var result = _validate_field(host, key, host.def.fields[key]);
+            if (result !== true) errors.push(result);
+        }
+        if (errors.length > 0) return errors;
+        return true;
     };
 
     //Signal that everything is ready to go
@@ -478,15 +523,16 @@
 
     $.fn.hzForm = function () {
         var args = arguments;
+        var host = this.get(0);
         if (args[0] == 'info') {
-            var host = this.get(0);
             var data = host.data.save(), info = {};
             for (x in data)
                 info[x] = { label: host.def.fields[x].label, value: data[x] };
             return info;
         } else if (args[0] == 'data') {
-            var host = this.get(0);
             return host.data;
+        } else if (args[0] == 'validate') {
+            return _validate(host);
         }
         return this.each(function (index, host) {
             if (host.settings) {
@@ -517,10 +563,6 @@
         "encode": true,
         "cachedActions": ["api"]
     };
-
-    //$.getScript(hazaar.url('hazaar/forms', 'file/inputs/text.js'), function () {
-    //    $.fn.form.initialise();
-    //});
 
 })(jQuery);
 

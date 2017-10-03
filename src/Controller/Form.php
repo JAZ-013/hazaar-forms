@@ -80,6 +80,23 @@ abstract class Form extends Action implements FormsInterface {
                 if(!($target = $this->request->get('target')))
                     throw new \Exception('Form API call failed.  No target specified!');
 
+                $url = new \Hazaar\Application\Url($target);
+
+                if($this->request->has('params'))
+                    $url->setParams($this->request->get('params'));
+
+                if(($result = json_decode(file_get_contents((string)$url), true)) === false)
+                    throw new \Exception('Form API call failed.  Invalid response!');
+
+                $out->populate($result);
+
+                break;
+
+            case 'items':
+
+                if(!($target = $this->request->get('target')))
+                    throw new \Exception('Form API call failed.  No target specified!');
+
                 $out->populate($this->model->items($target));
 
                 break;
