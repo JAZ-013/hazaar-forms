@@ -18,6 +18,8 @@ class Forms extends \Hazaar\View\Helper {
 
         $this->requires('bootstrap');
 
+        $this->requires('fontawesome');
+
     }
 
     function init($view, $args = array()){
@@ -25,6 +27,12 @@ class Forms extends \Hazaar\View\Helper {
         $view->requires($this->application->url('hazaar/forms', 'file/interact.js'));
 
         $view->link($this->application->url('hazaar/forms', 'file/interact.css'));
+
+        $view->link('https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/1.7.1/css/bootstrap-datepicker.min.css');
+
+        $view->requires('https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/1.7.1/js/bootstrap-datepicker.min.js');
+
+        $view->requires('https://cdnjs.cloudflare.com/ajax/libs/jquery.inputmask/3.3.4/jquery.inputmask.bundle.min.js');
 
     }
 

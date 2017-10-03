@@ -229,14 +229,13 @@
         var label = $('<h4 class="control-label">')
             .html(def.label)
             .appendTo(group);
-        var btn = $('<button type="button" class="btn btn-success btn-md">')
-            .css('width', '80px')
-            .html('Add');
+        var btn = $('<button type="button" class="btn btn-success btn-sm">')
+            .html($('<i class="fa fa-plus">'));
         var fields = [], template = $('<div>');
         var t_container = $('<div class="row">').css({ 'margin-right': '100px' });
         var col_width = 12 / Object.keys(def.fields).length;
         template.append($('<div style="float: right;">')
-            .html($('<button type="button" class="btn btn-danger btn-md">').css('width', '80px').html('Remove'))).append(t_container);
+            .html($('<button type="button" class="btn btn-danger btn-sm">').html($('<i class="fa fa-minus">')))).append(t_container);
         for (x in def.fields) {
             fields.push($.extend(def.fields[x], { name: x }));
             t_container.append($('<div>').addClass('col-lg-' + col_width).attr('data-bind', x));
