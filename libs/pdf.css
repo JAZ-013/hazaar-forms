@@ -126,3 +126,18 @@ h1, h2, h3, h4, h5, h6 {
 .col-lg-12 {
     width: 100%
 }
+
+.table {
+    width: 100%;
+}
+
+    .table th,
+    .table td {
+        text-align: left;
+        border-collapse: collapse;
+        padding: 8px;
+    }
+
+    .table th {
+        border-bottom: 2px solid #dddddd;
+    }

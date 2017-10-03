@@ -96,20 +96,48 @@ class HTML extends \Hazaar\Forms\Output {
 
         $value = $field['value'];
 
-        if($field['type'] == 'boolean')
-            $value = yn($value);
+        if(ake($field, 'type') == 'array'){
 
-        $value_group = (new \Hazaar\Html\Div())->class('field-value');
+            $table = (new \Hazaar\Html\Table())->class('table');
 
-        if($prefix = ake($field, 'prefix'))
-            $value_group->add($prefix . ' ');
+            $table->add(new \Hazaar\Html\Thead($hdrs = new \Hazaar\Html\Tr()));
 
-        $value_group->add($value);
+            $rows = new \Hazaar\Html\Tbody();
 
-        if($suffix = ake($field, 'suffix'))
-            $value_group->add(' ' . $suffix);
+            foreach(ake($field, 'fields', array()) as $key => $def)
+                $hdrs->add(new \Hazaar\Html\Th(ake($def, 'label', $key)));
 
-        $group->add($value_group);
+            foreach(ake($field, 'value', array()) as $items){
+
+                $row = new \Hazaar\Html\Tr();
+
+                foreach($items as $key => $item)
+                    $row->add(new \Hazaar\Html\Td(ake($item, 'value')));
+
+                $rows->add($row);
+
+            }
+
+            $group->add($table->add($rows));
+
+        }else{
+
+            if($field['type'] == 'boolean')
+                $value = yn($value);
+
+            $value_group = (new \Hazaar\Html\Div())->class('field-value');
+
+            if($prefix = ake($field, 'prefix'))
+                $value_group->add($prefix . ' ');
+
+            $value_group->add($value);
+
+            if($suffix = ake($field, 'suffix'))
+                $value_group->add(' ' . $suffix);
+
+            $group->add($value_group);
+
+        }
 
         return $group;
 

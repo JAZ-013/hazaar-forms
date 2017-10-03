@@ -241,14 +241,38 @@ class Model extends \Hazaar\Model\Strict {
 
         $field_key = $field['name'];
 
-        $value = $this->get($field_key);
+        $value = ake($field, 'value', $this->get($field_key));
 
-        if($options = ake($field, 'options')){
+        if(ake($field, 'type') == 'array'){
 
-            if(is_string($options))
-                $options = $this->items($this->parseTarget($options));
+            $items = array();
 
-            $value = ake((array)$options, $value);
+            foreach($value as $id => $item){
+
+                foreach(ake($field, 'fields', array()) as $key => $def){
+
+                    $def->name = $key;
+
+                    $def->value = ake($item, $key);
+
+                    $items[$id][$key] = $this->__field($def);
+
+                }
+
+            }
+
+            $value = $items;
+
+        }else{
+
+            if($options = ake($field, 'options')){
+
+                if(is_string($options))
+                    $options = $this->items($this->parseTarget($options));
+
+                $value = ake((array)$options, $value);
+
+            }
 
         }
 
@@ -259,6 +283,9 @@ class Model extends \Hazaar\Model\Strict {
     }
 
     public function evaluate($code){
+
+        if(is_bool($code))
+            return $code;
 
         if(!($code = str_replace(' ', '', $code)))
             return true;
@@ -289,7 +316,7 @@ class Model extends \Hazaar\Model\Strict {
                 elseif(is_null($value))
                     $value = 'null';
                 elseif (is_array($value) || is_object($value))
-                    $value = json_encode($value);
+                    $value = var_export($value, true);
 
                 $code .= '$' . $key . ' = ' . $value . ";\n";
 
@@ -297,7 +324,16 @@ class Model extends \Hazaar\Model\Strict {
 
             $code .= "return ( " . $evaluate . " );\n";
 
-            return eval($code);
+            try{
+
+                return eval($code);
+
+            }
+            catch(ParseError $e){
+
+                die($code);
+
+            }
 
         };
 
