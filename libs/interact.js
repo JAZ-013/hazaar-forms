@@ -78,7 +78,7 @@
     //Input events
     function _input_event_change(host, input) {
         var value = null, name = input.attr('name');
-        var def = input.data('def');
+        var def = host.def.fields[name];
         if (input.is('[type=checkbox]'))
             value = input.is(':checked');
         else
@@ -91,11 +91,11 @@
         }
         if (def.change)
             _eval(host, def.change);
-        _validate_field(host, def.name, def, true).done(function (result) {
+        _validate_field(host, name, true).done(function (result) {
             if ((def.validate = result) !== true)
-                input.parent().addClass('has-warning');
+                input.parent().addClass('has-error');
             else
-                input.parent().removeClass('has-warning');
+                input.parent().removeClass('has-error');
         });
     };
 
@@ -380,16 +380,18 @@
         _ready(host);
     };
 
-    function _validate_field(host, name, def, sync) {
-        var value = host.data[name];
+    function _validate_field(host, name, sync) {
+        var value = host.data[name], def = host.def.fields[name];
         if (sync === true) {
+            delete def.validate;
             return {
                 done: function (callback) {
-                    var result = _validate_field(host, name, def);
+                    var result = _validate_field(host, name);
                     if (result === true && 'api' in def) {
                         console.log('API: ' + def.api);
                         _post(host, 'api', { "target": def.api, "params": { "name": name, "value": value, "def": def } }, false).done(function (response) {
-                            callback(response.ok === true);
+                            var result = (response.ok === true) ? true : { "field": name, "status": response.reason || "api_failed(" + def.api + ")" };
+                            callback(result);
                         });
                     } else {
                         callback(result);
@@ -403,12 +405,21 @@
         }
         if ('required' in def && !value)
             return { "field": name, "status": "required" };
-        if ('min' in def && value < def.min)
-            return { "field": name, "status": "too small" };
-        if ('max' in def && value > def.max)
-            return { "field": name, "status": "too big" };
+        if ('min' in def) {
+            if (def.type == 'array' && value.length < def.min)
+                return { "field": name, "status": "too_few" };
+            else if (parseInt(value) < def.min)
+                return { "field": name, "status": "too_small" };
+        }
+        if ('max' in def) {
+            if (def.type == 'array' && value.length > def.max)
+                return { "field": name, "status": "too_many" };
+            else if (parseInt(value) > def.max)
+                return { "field": name, "status": "too_big" };
+        }
+        if ('validate' in def)
+            return def.validate;
         return true;
-
     }
 
     //Run the data validation
@@ -417,7 +428,7 @@
             return false;
         var errors = [];
         for (key in host.def.fields) {
-            var result = _validate_field(host, key, host.def.fields[key]);
+            var result = _validate_field(host, key);
             if (result !== true) errors.push(result);
         }
         if (errors.length > 0) return errors;
