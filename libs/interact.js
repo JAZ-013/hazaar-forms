@@ -223,7 +223,7 @@
         } else {
             group.append(input);
         }
-        if (def.value) _validate_input(host, input);
+        if (host.data[def.name]) _validate_input(host, input);
         return group;
     }
 
@@ -415,14 +415,22 @@
         if ('min' in def) {
             if (def.type == 'array' && value.length < def.min)
                 return { "field": name, "status": "too_few" };
-            else if (parseInt(value) < def.min)
+            else if ((def.type == 'int' || def.type == 'integer' || def.type == 'number') && parseInt(value) < def.min)
                 return { "field": name, "status": "too_small" };
+            else if (def.type === 'text' && value.length < def.min)
+                return { "field": name, "status": "too_short" };
         }
         if ('max' in def) {
             if (def.type == 'array' && value.length > def.max)
                 return { "field": name, "status": "too_many" };
-            else if (parseInt(value) > def.max)
+            else if ((def.type == 'int' || def.type == 'integer' || def.type == 'number') && parseInt(value) > def.max)
                 return { "field": name, "status": "too_big" };
+            else if (def.type === 'text' && value.length > def.max)
+                return { "field": name, "status": "too_long" };
+        }
+        if ('format' in def) {
+            if (!Inputmask.isValid(String(value), def.format))
+                return { "field": name, "status": "bad_format", "format": def.format };
         }
         if ('validate' in def)
             return def.validate;
