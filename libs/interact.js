@@ -91,12 +91,7 @@
         }
         if (def.change)
             _eval(host, def.change);
-        _validate_field(host, name, true).done(function (result) {
-            if ((def.validate = result) !== true)
-                input.parent().addClass('has-error');
-            else
-                input.parent().removeClass('has-error');
-        });
+        _validate_input(host, input);
     };
 
     function _input_event_focus(host, input) {
@@ -228,6 +223,7 @@
         } else {
             group.append(input);
         }
+        if (def.value) _validate_input(host, input);
         return group;
     }
 
@@ -380,6 +376,17 @@
         _ready(host);
     };
 
+    function _validate_input(host, input) {
+        var name = input.attr('name'), def = host.def.fields[name];
+        if (!def) return true;
+        _validate_field(host, name, true).done(function (result) {
+            if ((def.validate = result) !== true)
+                input.parent().addClass('has-error');
+            else
+                input.parent().removeClass('has-error');
+        });
+    }
+
     function _validate_field(host, name, sync) {
         var value = host.data[name], def = host.def.fields[name];
         if (sync === true) {
@@ -388,7 +395,6 @@
                 done: function (callback) {
                     var result = _validate_field(host, name);
                     if (result === true && 'api' in def) {
-                        console.log('API: ' + def.api);
                         _post(host, 'api', { "target": def.api, "params": { "name": name, "value": value, "def": def } }, false).done(function (response) {
                             var result = (response.ok === true) ? true : { "field": name, "status": response.reason || "api_failed(" + def.api + ")" };
                             callback(result);
@@ -396,6 +402,7 @@
                     } else {
                         callback(result);
                     }
+                    return this;
                 }
             }
         }
@@ -431,6 +438,7 @@
             var result = _validate_field(host, key);
             if (result !== true) errors.push(result);
         }
+        $(host).trigger('validate', [(errors.length == 0), errors]);
         if (errors.length > 0) return errors;
         return true;
     };
@@ -446,8 +454,9 @@
     };
 
     //Save form data back to the controller
+    //By default calls validation and will only save data if the validation is successful
     function _save(host, validate, extra) {
-        if (!(validate === false || ((validate === true || typeof validate == 'undefined') && _validate(host))))
+        if (!(validate === false || ((validate === true || typeof validate == 'undefined') && _validate(host) === true)))
             return false;
         var data = $.extend({}, host.settings.params, extra);
         data.form = host.data.save();
@@ -542,8 +551,6 @@
             return info;
         } else if (args[0] == 'data') {
             return host.data;
-        } else if (args[0] == 'validate') {
-            return _validate(host);
         }
         return this.each(function (index, host) {
             if (host.settings) {
@@ -558,6 +565,9 @@
                     case 'next':
                         if (host.page < (host.def.pages.length - 1))
                             _nav(host, host.page + 1);
+                        break;
+                    case 'validate':
+                        _validate(host);
                         break;
                     case 'save':
                         return _save(host, args[1], args[2]);
