@@ -177,24 +177,38 @@
             .attr('for', def.name)
             .html(def.label)
             .appendTo(group);
+        var input_group = $('<div class="input-group date">');
         var input = $('<input class="form-control">')
             .attr('type', 'date')
             .attr('name', def.name)
             .attr('data-bind', def.name)
             .data('def', def)
             .val(host.data[def.name])
+            .appendTo(input_group)
             .focus(function (event) { _input_event_focus(host, $(event.target)); })
             .blur(function (event) { _input_event_blur(host, $(event.target)); })
             .change(function (event) { _input_event_change(host, $(event.target)); });
+        var glyph = $('<span class="input-group-addon">')
+            .html($('<i class="fa fa-calendar">'))
+            .appendTo(input_group);
         if (def.format) {
-            input.attr('type', 'text')
-                .inputmask(def.format)
-                .datepicker($.extend({}, { autoclose: true, format: def.format, todayHighlight: true, language: 'en' }, def.dateOptions));
+            var options = {
+                format: def.format,
+                autoclose: true,
+                forceParse: true,
+                language: 'en',
+                clearBtn: (def.required !== true),
+                todayHighlight: true
+            };
+            if (host.data[def.name])
+                options.defaultViewDate = host.data[def.name];
+            input.attr('type', 'text');
+            input_group.datepicker($.extend({}, options, def.dateOptions));
             if (!def.placeholder)
                 def.placeholder = def.format;
         }
         if (def.placeholder) input.attr('placeholder', def.placeholder);
-        return group.append(input);
+        return group.append(input_group);
     }
 
     function _input_std(host, type, def) {
