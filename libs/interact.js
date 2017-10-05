@@ -423,7 +423,7 @@
         var name = input.attr('name'), def = host.def.fields[name];
         if (!def) return true;
         _validate_field(host, name, true).done(function (result) {
-            if ((def.validate = result) !== true)
+            if ((def.valid = result) !== true)
                 input.parent().addClass('has-error');
             else
                 input.parent().removeClass('has-error');
@@ -433,7 +433,7 @@
     function _validate_field(host, name, sync) {
         var value = host.data[name], def = host.def.fields[name];
         if (sync === true) {
-            delete def.validate;
+            delete def.valid;
             return {
                 done: function (callback) {
                     var result = _validate_field(host, name);
@@ -475,8 +475,8 @@
             if (!Inputmask.isValid(String(value), def.format))
                 return { "field": name, "status": "bad_format", "format": def.format };
         }
-        if ('validate' in def)
-            return def.validate;
+        if ('valid' in def)
+            return def.valid;
         return true;
     }
 
