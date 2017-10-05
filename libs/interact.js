@@ -2,10 +2,19 @@
 
     //Error capture method
     function _error(xhr, textStatus, errorThrown) {
-        alert('Fix this error handler!');
         var error = xhr.responseJSON.error;
-        host.o.loader.html(error.str);
-        $(host).trigger('error', [error]);
+        $('<div>').html([
+            $('<h4>').html(error.status),
+            $('<div>').html(error.str).css({ 'font-weight': 'bold', 'margin-bottom': '15px' }),
+            $('<div>').html('Line: ' + error.line),
+            $('<div>').html('File: ' + error.file)
+        ]).popup({
+            title: 'An error ocurred!',
+            icon: 'danger',
+            buttons: [
+                { label: "OK", "class": "btn btn-default" }
+            ]
+        });
     };
 
     function _exec(host, type, field) {
@@ -85,14 +94,30 @@
             value = input.val();
         if (value === '') value = null;
         host.data[name] = value;
+        if (def.update && (typeof def.update == 'string' || host.settings.update === true)) {
+            var options = {
+                "originator": name,
+                "form": host.data.save()
+            };
+            if (typeof def.update == 'string') options.api = def.update;
+            _post(host, 'update', options, false).done(function (response) {
+                for (x in response)
+                    host.data[x] = response[x];
+            });
+        }
         if (host.events.show.length > 0) {
             for (x in host.events.show)
                 _toggle(host, host.events.show[x]);
         }
+        input.trigger('update');
+    };
+
+    function _input_event_update(host, input) {
+        var def = input.data('def'), name = input.attr('name');
         if (def.change)
             _eval(host, def.change);
         _validate_input(host, input);
-    };
+    }
 
     function _input_event_focus(host, input) {
         var def = input.data('def');
@@ -135,7 +160,7 @@
             var active = (host.data[def.name].indexOf(x) > -1);
             var btn = $('<label class="btn btn-' + btnClass + ' ">')
                 .toggleClass('active', active)
-                .html([$('<input type="checkbox" checked>').attr('value', x).prop('checked', active), def.options[x]])
+                .html([$('<input type="checkbox">').attr('value', x).prop('checked', active), def.options[x]])
                 .appendTo(btnGroup);
             btn.change(function () {
                 var value = this.childNodes[0].value;
@@ -191,7 +216,8 @@
                 .data('def', def)
                 .focus(function (event) { _input_event_focus(host, $(event.target)); })
                 .blur(function (event) { _input_event_blur(host, $(event.target)); })
-                .change(function (event) { _input_event_change(host, $(event.target)); }),
+                .change(function (event) { _input_event_change(host, $(event.target)); })
+                .on('update', function (event) { _input_event_update(host, $(event.target)); }),
             def.label
         ]).appendTo(group);
         return group;
@@ -213,7 +239,8 @@
             .appendTo(input_group)
             .focus(function (event) { _input_event_focus(host, $(event.target)); })
             .blur(function (event) { _input_event_blur(host, $(event.target)); })
-            .change(function (event) { _input_event_change(host, $(event.target)); });
+            .change(function (event) { _input_event_change(host, $(event.target)); })
+            .on('update', function (event) { _input_event_update(host, $(event.target)); });
         var glyph = $('<span class="input-group-addon">')
             .html($('<i class="fa fa-calendar">'))
             .appendTo(input_group);
@@ -251,7 +278,8 @@
             .val(host.data[def.name])
             .focus(function (event) { _input_event_focus(host, $(event.target)); })
             .blur(function (event) { _input_event_blur(host, $(event.target)); })
-            .change(function (event) { _input_event_change(host, $(event.target)); });
+            .change(function (event) { _input_event_change(host, $(event.target)); })
+            .on('update', function (event) { _input_event_update(host, $(event.target)); });
         if (def.format) input.attr('type', 'text').inputmask(def.format);
         if (def.placeholder) input.attr('placeholder', def.placeholder);
         if (def.prefix || def.suffix) {

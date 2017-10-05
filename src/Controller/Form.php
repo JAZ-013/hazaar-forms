@@ -2,14 +2,6 @@
 
 namespace Hazaar\Controller;
 
-interface FormsInterface {
-
-    public function load();
-
-    public function save($data, $params = array());
-
-}
-
 /**
  * Form short summary.
  *
@@ -18,7 +10,7 @@ interface FormsInterface {
  * @version 1.0
  * @author jamiec
  */
-abstract class Form extends Action implements FormsInterface {
+abstract class Form extends Action {
 
     private $model;
 
@@ -80,15 +72,7 @@ abstract class Form extends Action implements FormsInterface {
                 if(!($target = $this->request->get('target')))
                     throw new \Exception('Form API call failed.  No target specified!');
 
-                $url = new \Hazaar\Application\Url($target);
-
-                if($this->request->has('params'))
-                    $url->setParams($this->request->get('params'));
-
-                if(($result = json_decode(file_get_contents((string)$url), true)) === false)
-                    throw new \Exception('Form API call failed.  Invalid response!');
-
-                $out->populate($result);
+                $out->populate($this->model->api($target, $this->request->get('params')));
 
                 break;
 
@@ -98,6 +82,16 @@ abstract class Form extends Action implements FormsInterface {
                     throw new \Exception('Form API call failed.  No target specified!');
 
                 $out->populate($this->model->items($target));
+
+                break;
+
+            case 'update':
+
+                if($target = $this->request->get('api'))
+                    $out->populate($this->model->api($target, array('originator' => $this->request->get('originator'), 'form' => $this->request->get('form'))));
+
+                elseif(method_exists($this, 'update'))
+                    $out->populate((array)$this->update($this->request->get('originator'), $this->request->get('form')));
 
                 break;
 
@@ -118,7 +112,8 @@ abstract class Form extends Action implements FormsInterface {
 
         $settings = new \Hazaar\Map($settings, array(
             'form' => $this->model->getName(),
-            'controller' => strtolower($this->getName())
+            'controller' => strtolower($this->getName()),
+            'update' => method_exists($this, 'update')
         ));
 
         if($this->params)
@@ -176,6 +171,19 @@ abstract class Form extends Action implements FormsInterface {
         $params = array_merge($this->params, array('form' => $this->model->getName()));
 
         return $this->url('output/' . $type, $params)->encode();
+
+    }
+
+    //Placeholder Methods
+    protected function load(){
+
+        throw new \Exception('To load form data you must override the form controller load() method.');
+
+    }
+
+    protected function save($data, $params = array()){
+
+        throw new \Exception('To save form data you must override the form controller save($data, $params = array()) method.');
 
     }
 
