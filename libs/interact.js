@@ -423,7 +423,7 @@
         var name = input.attr('name'), def = host.def.fields[name];
         if (!def) return true;
         _validate_field(host, name, true).done(function (result) {
-            if ((def.validate = result) !== true)
+            if ((def.valid = result) !== true)
                 input.parent().addClass('has-error');
             else
                 input.parent().removeClass('has-error');
@@ -433,12 +433,12 @@
     function _validate_field(host, name, sync) {
         var value = host.data[name], def = host.def.fields[name];
         if (sync === true) {
-            delete def.validate;
+            delete def.valid;
             return {
                 done: function (callback) {
                     var result = _validate_field(host, name);
-                    if (result === true && 'api' in def) {
-                        _post(host, 'api', { "target": def.api, "params": { "name": name, "value": value, "def": def } }, false).done(function (response) {
+                    if (result === true && 'validate' in def && 'api' in def.validate) {
+                        _post(host, 'api', { "target": def.validate.api, "params": { "name": name, "value": value, "def": def } }, false).done(function (response) {
                             var result = (response.ok === true) ? true : { "field": name, "status": response.reason || "api_failed(" + def.api + ")" };
                             callback(result);
                         });
@@ -455,28 +455,48 @@
         }
         if ('required' in def && !value)
             return { "field": name, "status": "required" };
-        if ('min' in def) {
-            if (def.type == 'array' && value.length < def.min)
-                return { "field": name, "status": "too_few" };
-            else if ((def.type == 'int' || def.type == 'integer' || def.type == 'number') && parseInt(value) < def.min)
-                return { "field": name, "status": "too_small" };
-            else if (def.type === 'text' && value.length < def.min)
-                return { "field": name, "status": "too_short" };
-        }
-        if ('max' in def) {
-            if (def.type == 'array' && value.length > def.max)
-                return { "field": name, "status": "too_many" };
-            else if ((def.type == 'int' || def.type == 'integer' || def.type == 'number') && parseInt(value) > def.max)
-                return { "field": name, "status": "too_big" };
-            else if (def.type === 'text' && value.length > def.max)
-                return { "field": name, "status": "too_long" };
-        }
         if ('format' in def) {
             if (!Inputmask.isValid(String(value), def.format))
                 return { "field": name, "status": "bad_format", "format": def.format };
         }
-        if ('validate' in def)
-            return def.validate;
+        if ('validate' in def) {
+            for (type in def.validate) {
+                var data = def.validate[type];
+                switch (type) {
+                    case 'min':
+                        if (parseInt(value) < data)
+                            return { "field": name, "status": "too_small" };
+                        break;
+                    case 'max':
+                        if (parseInt(value) > data)
+                            return { "field": name, "status": "too_big" };
+                        break;
+                    case 'with':
+                        var reg = new RegExp(data);
+                        if (!value.match(reg))
+                            return { "field": name, "status": "regex_failed", "pattern": data };
+                        break;
+                    case 'equals':
+                        if (value !== data)
+                            return { "field": name, "status": "not_equal" };
+                        break;
+                    case 'minlen':
+                        if (value.length < data)
+                            return { "field": name, "status": "too_short" };
+                        break;
+                    case 'maxlen':
+                        if (value.length > data)
+                            return { "field": name, "status": "too_long" };
+                        break;
+                    case 'custom':
+                        if (!_eval(host, data))
+                            return { "field": name, "status": "custom" };
+                        break;
+                }
+            }
+        }
+        if ('valid' in def)
+            return def.valid;
         return true;
     }
 
