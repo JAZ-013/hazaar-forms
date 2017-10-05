@@ -98,27 +98,44 @@ class HTML extends \Hazaar\Forms\Output {
 
         if(ake($field, 'type') == 'array'){
 
-            $table = (new \Hazaar\Html\Table())->class('table');
+            if(array_key_exists('fields', $field)){
 
-            $table->add(new \Hazaar\Html\Thead($hdrs = new \Hazaar\Html\Tr()));
+                $table = (new \Hazaar\Html\Table())->class('table');
 
-            $rows = new \Hazaar\Html\Tbody();
+                $table->add(new \Hazaar\Html\Thead($hdrs = new \Hazaar\Html\Tr()));
 
-            foreach(ake($field, 'fields', array()) as $key => $def)
-                $hdrs->add(new \Hazaar\Html\Th(ake($def, 'label', $key)));
+                $rows = new \Hazaar\Html\Tbody();
 
-            foreach(ake($field, 'value', array()) as $items){
+                foreach(ake($field, 'fields', array()) as $key => $def)
+                    $hdrs->add(new \Hazaar\Html\Th(ake($def, 'label', $key)));
 
-                $row = new \Hazaar\Html\Tr();
+                foreach(ake($field, 'value', array()) as $items){
 
-                foreach($items as $key => $item)
-                    $row->add(new \Hazaar\Html\Td(ake($item, 'value')));
+                    $row = new \Hazaar\Html\Tr();
 
-                $rows->add($row);
+                    foreach($items as $key => $item)
+                        $row->add(new \Hazaar\Html\Td(ake($item, 'value')));
+
+                    $rows->add($row);
+
+                }
+
+                $group->add($table->add($rows));
+
+            }else{
+
+                $list = new \Hazaar\Html\Ul();
+
+                if(array_key_exists('options', $field)){
+
+                    foreach($value as $item)
+                        $list->add(new \Hazaar\Html\Li(ake($field['options'], $item, $item)));
+
+                }
+
+                $group->add($list);
 
             }
-
-            $group->add($table->add($rows));
 
         }else{
 
