@@ -398,4 +398,75 @@ class Model extends \Hazaar\Model\Strict {
 
     }
 
+    public function api($target, $args = array()){
+
+        if(strpos($target, ':') !== false){
+
+            $url = new \Hazaar\Application\Url($target);
+
+            if($args)
+                $url->setParams($args);
+
+            if(!($result = json_decode(file_get_contents((string)$url), true)))
+                throw new \Exception('Form API call failed.  Invalid response!');
+
+        }else{
+
+            $parts = explode('/', $target, 3);
+
+            $controller = null;
+
+            $action = null;
+
+            $params = array();
+
+            switch(count($parts)){
+                case 1:
+
+                    $controller = $parts[0];
+
+                    $action = 'index';
+
+                    break;
+
+                case 2:
+
+                    $controller = $parts[0];
+
+                    $action = $parts[1];
+
+                    break;
+
+                case 3:
+
+                    $controller = $parts[0];
+
+                    $action = $parts[1];
+
+                    $params = explode('/', $parts[3]);
+
+                    break;
+
+                default:
+                    throw new \Exception('Invalid application endpoint: ' . $target);
+            }
+
+            $loader = \Hazaar\Loader::getInstance();
+
+            $controller = $loader->loadController($controller);
+
+            $request = new \Hazaar\Application\Request\HTTP(\Hazaar\Application::getInstance()->config, $args);
+
+            $controller->setRequest($request);
+
+            if(!method_exists($controller, $action))
+                throw new \Exception('Method not found while trying to execute ' . get_class($controller) . '::' . $action . '()');
+
+            $result = call_user_func_array(array($controller, $action), $params);
+
+        }
+
+        return $result;
+
+    }
 }
