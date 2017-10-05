@@ -245,23 +245,31 @@ class Model extends \Hazaar\Model\Strict {
 
         if(ake($field, 'type') == 'array'){
 
-            $items = array();
+            if(array_key_exists('fields', $field) && is_array($field['fields'])){
 
-            foreach($value as $id => $item){
+                $items = array();
 
-                foreach(ake($field, 'fields', array()) as $key => $def){
+                if(array_key_exists('fields', $field) && is_array($field['fields'])){
 
-                    $def->name = $key;
+                    foreach($value as $id => $item){
 
-                    $def->value = ake($item, $key);
+                        foreach(ake($field, 'fields', array()) as $key => $def){
 
-                    $items[$id][$key] = $this->__field($def);
+                            $def->name = $key;
+
+                            $def->value = ake($item, $key);
+
+                            $items[$id][$key] = $this->__field($def);
+
+                        }
+
+                    }
 
                 }
 
-            }
+                $value = $items;
 
-            $value = $items;
+            }
 
         }else{
 
