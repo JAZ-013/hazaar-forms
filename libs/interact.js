@@ -2,10 +2,19 @@
 
     //Error capture method
     function _error(xhr, textStatus, errorThrown) {
-        alert('Fix this error handler!');
         var error = xhr.responseJSON.error;
-        host.o.loader.html(error.str);
-        $(host).trigger('error', [error]);
+        $('<div>').html([
+            $('<h4>').html(error.status),
+            $('<div>').html(error.str).css({ 'font-weight': 'bold', 'margin-bottom': '15px' }),
+            $('<div>').html('Line: ' + error.line),
+            $('<div>').html('File: ' + error.file)
+        ]).popup({
+            title: 'An error ocurred!',
+            icon: 'danger',
+            buttons: [
+                { label: "OK", "class": "btn btn-default" }
+            ]
+        });
     };
 
     function _exec(host, type, field) {
