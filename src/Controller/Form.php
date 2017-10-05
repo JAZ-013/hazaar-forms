@@ -24,26 +24,14 @@ abstract class Form extends Action implements FormsInterface {
 
     private $params;
 
-    public function __initialize($request) {
-
-        $this->view->addHelper('forms');
-
-        $this->view->link('https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/1.7.1/css/bootstrap-datepicker.min.css');
-
-        $this->view->requires('https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/1.7.1/js/bootstrap-datepicker.min.js');
-
-        $this->view->requires('https://cdnjs.cloudflare.com/ajax/libs/jquery.inputmask/3.3.4/jquery.inputmask.bundle.min.js');
-
-        return parent::__initialize($request);
-
-    }
-
     /**
      * Define the form definition to use.
      *
      * @param mixed $type
      */
     final protected function form($type, $params = array()){
+
+        $this->view->addHelper('forms');
 
         $this->model = new \Hazaar\Forms\Model($type);
 
@@ -88,6 +76,23 @@ abstract class Form extends Action implements FormsInterface {
                 break;
 
             case 'api':
+
+                if(!($target = $this->request->get('target')))
+                    throw new \Exception('Form API call failed.  No target specified!');
+
+                $url = new \Hazaar\Application\Url($target);
+
+                if($this->request->has('params'))
+                    $url->setParams($this->request->get('params'));
+
+                if(($result = json_decode(file_get_contents((string)$url), true)) === false)
+                    throw new \Exception('Form API call failed.  Invalid response!');
+
+                $out->populate($result);
+
+                break;
+
+            case 'items':
 
                 if(!($target = $this->request->get('target')))
                     throw new \Exception('Form API call failed.  No target specified!');

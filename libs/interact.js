@@ -45,8 +45,8 @@
         }
     }
 
-    function _toggle(host, obj) {
-        var show = obj.data('show').replace(/\s/g, '');
+    function _is_visible(host, show) {
+        var show = show.replace(/\s/g, '');
         var parts = show.split(/(\&\&|\|\|)/);
         for (var x = 0; x < parts.length; x += 2) {
             var matches = null;
@@ -56,7 +56,7 @@
             }
             parts[x] = matches[1] + ' ' + matches[2] + ' ' + matches[3];
         }
-        var toggle = (function (values, evaluate) {
+        return (function (values, evaluate) {
             var code = '';
             for (key in values) {
                 var value = values[key];
@@ -67,6 +67,10 @@
             code += "( " + evaluate + " );";
             return eval(code);
         })(host.data.save(), parts.join(''));
+    };
+
+    function _toggle(host, obj) {
+        var toggle = _is_visible(host, obj.data('show'));
         obj.toggle(toggle);
         if (!toggle) _nullify(host, obj.data('def'));
     };
@@ -74,7 +78,7 @@
     //Input events
     function _input_event_change(host, input) {
         var value = null, name = input.attr('name');
-        var def = input.data('def');
+        var def = host.def.fields[name];
         if (input.is('[type=checkbox]'))
             value = input.is(':checked');
         else
@@ -87,19 +91,17 @@
         }
         if (def.change)
             _eval(host, def.change);
+        _validate_input(host, input);
     };
 
     function _input_event_focus(host, input) {
         var def = input.data('def');
-        input.parent().removeClass('has-error');
         if (def.focus)
             _eval(host, def.focus);
     };
 
     function _input_event_blur(host, input) {
         var def = input.data('def');
-        if (def.required && input.val() == '')
-            input.parent().addClass('has-error');
         if (def.blur)
             _eval(host, def.blur);
     };
@@ -110,7 +112,7 @@
         while (match = options.match(/\{\{(\w+)\}\}/))
             options = options.replace(match[0], host.data[match[1]]);
         select.html($('<option>').html('Loading...'));
-        _post(host, 'api', { target: options }, track).done(function (data) {
+        _post(host, 'items', { target: options }, track).done(function (data) {
             select.empty();
             if (def.placeholder && (!def.required || host.data[field] == null))
                 select.append($('<option>').attr('value', '').html(def.placeholder).prop('disabled', (def.required == true)));
@@ -175,24 +177,38 @@
             .attr('for', def.name)
             .html(def.label)
             .appendTo(group);
+        var input_group = $('<div class="input-group date">');
         var input = $('<input class="form-control">')
             .attr('type', 'date')
             .attr('name', def.name)
             .attr('data-bind', def.name)
             .data('def', def)
             .val(host.data[def.name])
+            .appendTo(input_group)
             .focus(function (event) { _input_event_focus(host, $(event.target)); })
             .blur(function (event) { _input_event_blur(host, $(event.target)); })
             .change(function (event) { _input_event_change(host, $(event.target)); });
+        var glyph = $('<span class="input-group-addon">')
+            .html($('<i class="fa fa-calendar">'))
+            .appendTo(input_group);
         if (def.format) {
-            input.attr('type', 'text')
-                .inputmask(def.format)
-                .datepicker($.extend({}, { autoclose: true, format: def.format, todayHighlight: true, language: 'en' }, def.dateOptions));
+            var options = {
+                format: def.format,
+                autoclose: true,
+                forceParse: true,
+                language: 'en',
+                clearBtn: (def.required !== true),
+                todayHighlight: true
+            };
+            if (host.data[def.name])
+                options.defaultViewDate = host.data[def.name];
+            input.attr('type', 'text');
+            input_group.datepicker($.extend({}, options, def.dateOptions));
             if (!def.placeholder)
                 def.placeholder = def.format;
         }
         if (def.placeholder) input.attr('placeholder', def.placeholder);
-        return group.append(input);
+        return group.append(input_group);
     }
 
     function _input_std(host, type, def) {
@@ -221,6 +237,7 @@
         } else {
             group.append(input);
         }
+        if (host.data[def.name]) _validate_input(host, input);
         return group;
     }
 
@@ -229,14 +246,13 @@
         var label = $('<h4 class="control-label">')
             .html(def.label)
             .appendTo(group);
-        var btn = $('<button type="button" class="btn btn-success btn-md">')
-            .css('width', '80px')
-            .html('Add');
+        var btn = $('<button type="button" class="btn btn-success btn-sm">')
+            .html($('<i class="fa fa-plus">'));
         var fields = [], template = $('<div>');
         var t_container = $('<div class="row">').css({ 'margin-right': '100px' });
         var col_width = 12 / Object.keys(def.fields).length;
         template.append($('<div style="float: right;">')
-            .html($('<button type="button" class="btn btn-danger btn-md">').css('width', '80px').html('Remove'))).append(t_container);
+            .html($('<button type="button" class="btn btn-danger btn-sm">').html($('<i class="fa fa-minus">')))).append(t_container);
         for (x in def.fields) {
             fields.push($.extend(def.fields[x], { name: x }));
             t_container.append($('<div>').addClass('col-lg-' + col_width).attr('data-bind', x));
@@ -374,10 +390,79 @@
         _ready(host);
     };
 
+    function _validate_input(host, input) {
+        var name = input.attr('name'), def = host.def.fields[name];
+        if (!def) return true;
+        _validate_field(host, name, true).done(function (result) {
+            if ((def.validate = result) !== true)
+                input.parent().addClass('has-error');
+            else
+                input.parent().removeClass('has-error');
+        });
+    }
+
+    function _validate_field(host, name, sync) {
+        var value = host.data[name], def = host.def.fields[name];
+        if (sync === true) {
+            delete def.validate;
+            return {
+                done: function (callback) {
+                    var result = _validate_field(host, name);
+                    if (result === true && 'api' in def) {
+                        _post(host, 'api', { "target": def.api, "params": { "name": name, "value": value, "def": def } }, false).done(function (response) {
+                            var result = (response.ok === true) ? true : { "field": name, "status": response.reason || "api_failed(" + def.api + ")" };
+                            callback(result);
+                        });
+                    } else {
+                        callback(result);
+                    }
+                    return this;
+                }
+            }
+        }
+        if ('show' in def) {
+            if (!((typeof def.show == 'boolean') ? def.show : _is_visible(host, def.show)))
+                return true;
+        }
+        if ('required' in def && !value)
+            return { "field": name, "status": "required" };
+        if ('min' in def) {
+            if (def.type == 'array' && value.length < def.min)
+                return { "field": name, "status": "too_few" };
+            else if ((def.type == 'int' || def.type == 'integer' || def.type == 'number') && parseInt(value) < def.min)
+                return { "field": name, "status": "too_small" };
+            else if (def.type === 'text' && value.length < def.min)
+                return { "field": name, "status": "too_short" };
+        }
+        if ('max' in def) {
+            if (def.type == 'array' && value.length > def.max)
+                return { "field": name, "status": "too_many" };
+            else if ((def.type == 'int' || def.type == 'integer' || def.type == 'number') && parseInt(value) > def.max)
+                return { "field": name, "status": "too_big" };
+            else if (def.type === 'text' && value.length > def.max)
+                return { "field": name, "status": "too_long" };
+        }
+        if ('format' in def) {
+            if (!Inputmask.isValid(String(value), def.format))
+                return { "field": name, "status": "bad_format", "format": def.format };
+        }
+        if ('validate' in def)
+            return def.validate;
+        return true;
+    }
+
     //Run the data validation
     function _validate(host) {
-        console.log('Validation not yet implemented!');
-        return false;
+        if (!('def' in host && 'fields' in host.def))
+            return false;
+        var errors = [];
+        for (key in host.def.fields) {
+            var result = _validate_field(host, key);
+            if (result !== true) errors.push(result);
+        }
+        $(host).trigger('validate', [(errors.length == 0), errors]);
+        if (errors.length > 0) return errors;
+        return true;
     };
 
     //Signal that everything is ready to go
@@ -391,8 +476,9 @@
     };
 
     //Save form data back to the controller
+    //By default calls validation and will only save data if the validation is successful
     function _save(host, validate, extra) {
-        if (!(validate === false || ((validate === true || typeof validate == 'undefined') && _validate(host))))
+        if (!(validate === false || ((validate === true || typeof validate == 'undefined') && _validate(host) === true)))
             return false;
         var data = $.extend({}, host.settings.params, extra);
         data.form = host.data.save();
@@ -479,14 +565,13 @@
 
     $.fn.hzForm = function () {
         var args = arguments;
+        var host = this.get(0);
         if (args[0] == 'info') {
-            var host = this.get(0);
             var data = host.data.save(), info = {};
             for (x in data)
                 info[x] = { label: host.def.fields[x].label, value: data[x] };
             return info;
         } else if (args[0] == 'data') {
-            var host = this.get(0);
             return host.data;
         }
         return this.each(function (index, host) {
@@ -503,6 +588,9 @@
                         if (host.page < (host.def.pages.length - 1))
                             _nav(host, host.page + 1);
                         break;
+                    case 'validate':
+                        _validate(host);
+                        break;
                     case 'save':
                         return _save(host, args[1], args[2]);
                 }
@@ -518,10 +606,6 @@
         "encode": true,
         "cachedActions": ["api"]
     };
-
-    //$.getScript(hazaar.url('hazaar/forms', 'file/inputs/text.js'), function () {
-    //    $.fn.form.initialise();
-    //});
 
 })(jQuery);
 
