@@ -123,6 +123,32 @@
         return true;
     }
 
+    function _input_select_multi(host, def) {
+        var group = $('<div class="form-group">').data('def', def);
+        var label = $('<label class="control-label">')
+            .attr('for', def.name)
+            .html(def.label)
+            .appendTo(group);
+        var btnGroup = $('<div class="btn-group" data-toggle="buttons">').appendTo(group);
+        var btnClass = def.class || 'default';
+        for (x in def.options) {
+            var active = (host.data[def.name].indexOf(x) > -1);
+            var btn = $('<label class="btn btn-' + btnClass + ' ">')
+                .toggleClass('active', active)
+                .html([$('<input type="checkbox" checked>').attr('value', x).prop('checked', active), def.options[x]])
+                .appendTo(btnGroup);
+            btn.change(function () {
+                var value = this.childNodes[0].value;
+                var index = host.data[def.name].indexOf(value);
+                if (this.childNodes[0].checked && index == -1)
+                    host.data[def.name].push(value);
+                else
+                    host.data[def.name].remove(index);
+            });
+        }
+        return group;
+    }
+
     function _input_select(host, def) {
         var group = $('<div class="form-group">').data('def', def);
         var label = $('<label class="control-label">')
@@ -294,8 +320,11 @@
             field = $('<div class="row">').data('def', def);
             for (x in def.fields)
                 field.append($('<div>').addClass('col-lg-' + col_width).html(_form_field(host, def.fields[x])));
-        } else if (def.options) {
-            field = _input_select(host, def);
+        } else if ('options' in def) {
+            if (def.type == 'array')
+                field = _input_select_multi(host, def);
+            else
+                field = _input_select(host, def);
         } else if (def.type) {
             switch (def.type) {
                 case 'array':
