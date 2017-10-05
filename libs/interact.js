@@ -378,7 +378,7 @@
 
     //Render a page
     function _page(host, page) {
-        var form = $('<div class="form-container">').data('def', page);
+        var form = $('<div class="form-container">').data('def', page), sections = [];
         host.events = {
             show: [],
             change: {}
@@ -386,18 +386,12 @@
         host.data.unwatch();
         if (page.label) form.append($('<h1>').html(page.label));
         for (x in page.sections)
-            _section(host, page.sections[x]).appendTo(form);
-        if ('show' in page) {
-            if (typeof page.show == 'boolean')
-                page.toggle(page.show);
-            else
-                host.events.show.push(page.data('show', page.show));
-        }
-        host.objects.container.html(form);
+            sections.push(_section(host, page.sections[x]));
         if (host.events.show.length > 0) {
             for (x in host.events.show)
                 _toggle(host, host.events.show[x]);
         }
+        host.objects.container.html(form.html(sections));
         host.data.resync();
     };
 
