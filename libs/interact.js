@@ -34,7 +34,7 @@
             }
             return false;
         })(host.data, evaluate);
-    }
+    };
 
     function _nullify(host, def) {
         if (!typeof def === 'object')
@@ -52,7 +52,7 @@
                     host.data[sdef] = null;
             }
         }
-    }
+    };
 
     function _is_visible(host, show) {
         var show = show.replace(/\s/g, '');
@@ -60,7 +60,7 @@
         for (var x = 0; x < parts.length; x += 2) {
             var matches = null;
             if (!(matches = parts[x].match(/([\w\.]+)([=\!\<\>]+)(.+)/))) {
-                alert('Invalid show script: ' + show)
+                alert('Invalid show script: ' + show);
                 return;
             }
             parts[x] = matches[1] + ' ' + matches[2] + ' ' + matches[3];
@@ -117,7 +117,7 @@
         if (def.change)
             _eval(host, def.change);
         _validate_input(host, input);
-    }
+    };
 
     function _input_event_focus(host, input) {
         var def = input.data('def');
@@ -146,7 +146,7 @@
             select.val(host.data[select.attr('name')]);
         });
         return true;
-    }
+    };
 
     function _input_select_multi(host, def) {
         var group = $('<div class="form-group">').data('def', def);
@@ -161,6 +161,7 @@
             var btn = $('<label class="btn btn-' + btnClass + ' ">')
                 .toggleClass('active', active)
                 .html([$('<input type="checkbox">').attr('value', x).prop('checked', active), def.options[x]])
+                .attr('data-bind', x)
                 .appendTo(btnGroup);
             btn.change(function () {
                 var value = this.childNodes[0].value;
@@ -172,7 +173,7 @@
             });
         }
         return group;
-    }
+    };
 
     function _input_select(host, def) {
         var group = $('<div class="form-group">').data('def', def);
@@ -204,7 +205,7 @@
             select.val(host.data[def.name]).change(function (event) { _input_event_change(host, $(event.target)); });
         }
         return group;
-    }
+    };
 
     function _input_checkbox(host, def) {
         var group = $('<div class="checkbox">').data('def', def);
@@ -221,7 +222,7 @@
             def.label
         ]).appendTo(group);
         return group;
-    }
+    };
 
     function _input_date(host, def) {
         var group = $('<div class="form-group">').data('def', def);
@@ -262,7 +263,7 @@
         }
         if (def.placeholder) input.attr('placeholder', def.placeholder);
         return group.append(input_group);
-    }
+    };
 
     function _input_std(host, type, def) {
         var group = $('<div class="form-group">').data('def', def);
@@ -293,7 +294,7 @@
         }
         if (host.data[def.name]) _validate_input(host, input);
         return group;
-    }
+    };
 
     function _input_list(host, def) {
         var group = $('<div class="form-group">').data('def', def);
@@ -312,7 +313,7 @@
             t_container.append($('<div>').addClass('col-lg-' + col_width).attr('data-bind', x));
         }
         group.append($('<div style="float: right; padding-top: 25px;">').html(btn));
-        group.append(_form_field(host, { fields: fields }).addClass('itemlist-newitems').css({ 'margin-right': '100px' }))
+        group.append(_form_field(host, { fields: fields }).addClass('itemlist-newitems').css({ 'margin-right': '100px' }));
         btn.click(function () {
             var parent = $(this).parent().parent();
             var data = {};
@@ -332,7 +333,7 @@
                     target.parent().parent().remove();
             });
         return group;
-    }
+    };
 
     function _form_field(host, info) {
         var def = null, field = null;
@@ -386,7 +387,7 @@
                 host.events.show.push(field.data('show', def.show));
         }
         return field;
-    }
+    };
 
     //Render a page section
     function _section(host, section) {
@@ -450,7 +451,7 @@
             else
                 input.parent().removeClass('has-error');
         });
-    }
+    };
 
     function _validate_field(host, name, sync) {
         var value = host.data[name], def = host.def.fields[name];
@@ -520,7 +521,7 @@
         if ('valid' in def)
             return def.valid;
         return true;
-    }
+    };
 
     //Run the data validation
     function _validate(host) {
@@ -568,7 +569,7 @@
     //Register events that are used to control the form functions
     function _registerEvents(host) {
 
-    }
+    };
 
     function _post(host, action, postdata, track) {
         if (host.settings.cachedActions.indexOf(action) != -1) {
@@ -601,7 +602,7 @@
             data[x] = values[x].default ? values[x].default : null;
         }
         return data;
-    }
+    };
 
     //Load all the dynamic bits
     function _load(host) {
@@ -669,7 +670,7 @@
                 initialise(host, args[0]);
             }
         });
-    }
+    };
 
     $.fn.hzForm.defaults = {
         "form": "default",
