@@ -20,17 +20,17 @@ class Forms extends \Hazaar\View\Helper {
 
         $this->requires('fontawesome');
 
-    }
-
-    function init($view, $args = array()){
-
         $this->requires('cdnjs');
 
         $this->cdnjs->load('bootstrap-datepicker', null, 'css/bootstrap-datepicker.min.css');
 
         $this->cdnjs->load('jquery.inputmask');
 
-        //Linky required stylesheets
+    }
+
+    function init($view, $args = array()){
+
+        //Link required stylesheets
         $view->link($this->application->url('hazaar/forms', 'file/interact.css'));
 
         $view->requires($this->application->url('hazaar/forms', 'file/interact.js'));
