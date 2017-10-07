@@ -124,6 +124,12 @@ class IndexController extends \Hazaar\Controller\Form {
 
     private $cache;
 
+    /*
+     * Initialise all the bits we need.  We call these in init so that they are
+     * only called in a single place.  The cache object is used to store form 
+     * data for this test.  The form() method call is required to declare which
+     * form definition we are going to use.
+     */
     protected function init() {
 
         $this->cache = new \Hazaar\Cache('file', array('use_pragma' => false));
@@ -132,6 +138,11 @@ class IndexController extends \Hazaar\Controller\Form {
 
     }
 
+    /*
+     * This is just like any other action defined in \Hazaar\Controller\Action
+     * Here we add the GUI view helper, which gives us a cool popup box to use,
+     * include out application.js script and set the view to use.
+     */
     public function index() {
 
         $this->view->addHelper('gui');
@@ -142,12 +153,26 @@ class IndexController extends \Hazaar\Controller\Form {
 
     }
 
+    /*
+     * This is a simple example of a save method.  Here all we do is take the
+     * form data and dump it into a cache object.  A more advanced use would
+     * be to process the form data and store it in a database
+     *
+     * $params is the second argument from out forms() call in the init() 
+     * method.  This can be used to pass on a unique ID to identify the form
+     * data.
+     */
     public function save($model, $params = array()){
 
         $this->cache->set('form-' . ake($params, 'id', 0), $model->get());
 
     }
 
+    /*
+     * The load method is basically the reverse of the save method.  In this
+     * example we from the form data out of the cache object.  If it doesn't
+     * exist we are nice and return an empty array.
+     */
     public function load($params = array()){
 
         if(!($out = $this->cache->get('form-' . ake($params, 'id', 0))))
