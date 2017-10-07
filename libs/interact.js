@@ -621,7 +621,7 @@
         }).fail(_error);
     };
 
-    function initialise(host, settings) {
+    function __initialise(host, settings) {
         //Define the default object properties
         host.settings = $.extend({}, $.fn.hzForm.defaults, settings);
         host.data = {};
@@ -667,7 +667,7 @@
                         return _save(host, args[1], args[2]);
                 }
             } else {
-                initialise(host, args[0]);
+                __initialise(host, args[0]);
             }
         });
     };
