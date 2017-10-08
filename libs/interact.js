@@ -154,14 +154,16 @@
             .attr('for', def.name)
             .html(def.label)
             .appendTo(group);
-        var btnGroup = $('<div class="btn-group" data-toggle="buttons">').appendTo(group);
+        var btnGroup = $('<div class="btn-group" data-toggle="buttons">')
+            .attr('data-bind', def.name)
+            .appendTo(group);
         var btnClass = def.class || 'default';
         for (x in def.options) {
             var active = (host.data[def.name].indexOf(x) > -1);
             var btn = $('<label class="btn btn-' + btnClass + ' ">')
                 .toggleClass('active', active)
                 .html([$('<input type="checkbox">').attr('value', x).prop('checked', active), def.options[x]])
-                .attr('data-bind', x)
+                .attr('data-bind-value', x)
                 .appendTo(btnGroup);
             btn.change(function () {
                 var value = this.childNodes[0].value;
