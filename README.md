@@ -60,8 +60,7 @@ Here's one to get you started.  Documentation will come soon.
       "placeholder": "Please choose your gender...",
       "options": {
         "male": "Male",
-        "female": "Female",
-        "other": "I'm too lazy to look in my pants"
+        "female": "Female"
       }
     },
     "dob": {
