@@ -101,8 +101,7 @@
             };
             if (typeof def.update == 'string') options.api = def.update;
             _post(host, 'update', options, false).done(function (response) {
-                for (x in response)
-                    host.data[x] = response[x];
+                host.data.extend(response);
             });
         }
         if (host.events.show.length > 0) {
