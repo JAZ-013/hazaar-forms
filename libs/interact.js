@@ -96,8 +96,8 @@
         host.data[name] = value;
         if (def.update && (typeof def.update == 'string' || host.settings.update === true)) {
             var options = {
-                "originator": name,
-                "form": host.data.save()
+                originator: name,
+                form: host.data.save()
             };
             if (typeof def.update == 'string') options.api = def.update;
             _post(host, 'update', options, false).done(function (response) {
@@ -266,6 +266,11 @@
         return group.append(input_group);
     };
 
+    function _input_file(host, def) {
+        var group = $('<div>').html('Not Yet!');
+        return group;
+    }
+
     function _input_std(host, type, def) {
         var group = $('<div class="form-group">').data('def', def);
         var label = $('<label class="control-label">')
@@ -371,6 +376,9 @@
                 case 'date':
                     field = _input_date(host, def);
                     break;
+                case 'file':
+                    field = _input_file(host, def);
+                    break;
                 case 'text':
                 default:
                     field = _input_std(host, def.type, def);
@@ -462,7 +470,9 @@
                 done: function (callback) {
                     var result = _validate_field(host, name);
                     if (result === true && 'validate' in def && 'api' in def.validate) {
-                        _post(host, 'api', { "target": def.validate.api, "params": { "name": name, "value": value, "def": def } }, false).done(function (response) {
+                        _post(host, 'api', {
+                            target: [def.validate.api, { "name": name, "value": value, "def": def }]
+                        }, false).done(function (response) {
                             var result = (response.ok === true) ? true : { "field": name, "status": response.reason || "api_failed(" + def.api + ")" };
                             callback(result);
                         });
@@ -553,10 +563,9 @@
     function _save(host, validate, extra) {
         if (!(validate === false || ((validate === true || typeof validate == 'undefined') && _validate(host) === true)))
             return false;
-        var data = $.extend({}, host.settings.params, extra);
-        data.form = host.data.save();
+        var data = host.data.save();
         $(host).trigger('saving', [data]);
-        _post(host, 'post', $.extend({}, host.settings.params, data), false).done(function (response) {
+        _post(host, 'post', { params: extra, form: data }, false).done(function (response) {
             if (response.form) {
                 for (x in response.form)
                     host.data[x] = response.form[x];
@@ -583,11 +592,15 @@
             host.objects.loader.show();
             host.loading++;
         }
+        var params = $.extend({}, postdata, {
+            name: host.settings.form,
+            params: host.settings.params
+        });
         return $.ajax({
             method: "POST",
             url: hazaar.url(host.settings.controller, 'interact/' + action),
             contentType: "application/json",
-            data: (typeof postdata == 'object' ? JSON.stringify(postdata) : null)
+            data: JSON.stringify(params)
         }).always(function (response) {
             if (host.settings.cachedActions.indexOf(action) != -1)
                 host.posts[index] = response;
@@ -607,11 +620,11 @@
 
     //Load all the dynamic bits
     function _load(host) {
-        $.get(hazaar.url('hazaar/forms', 'load', { form: host.settings.form }, host.settings.encode)).done(function (response) {
+        $.get(hazaar.url('hazaar/forms', 'load', { name: host.settings.form }, host.settings.encode)).done(function (response) {
             host.def = response;
             host.data = new dataBinder(_define(host.def.fields));
             $(host).trigger('load', [host.data.save()]);
-            _post(host, 'load', host.settings.params).done(function (response) {
+            _post(host, 'load').done(function (response) {
                 if (typeof response == 'object' && Object.keys(response).length > 0) {
                     for (x in response)
                         host.data[x] = response[x];

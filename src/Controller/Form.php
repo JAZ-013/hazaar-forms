@@ -33,6 +33,11 @@ abstract class Form extends Action {
 
     final public function interact($method){
 
+        if(!$this->request->has('name'))
+            throw new \Exception('Missing form name in request!');
+
+        $this->form($this->request->name, $this->request->get('params', array()));
+
         if(!$this->model instanceof \Hazaar\Forms\Model)
             throw new \Exception('No form type has been set for this form controller');
 
@@ -55,7 +60,7 @@ abstract class Form extends Action {
                 $result = $this->save($this->model, $params);
 
                 if(is_array($result) && count($result) > 0)
-                    $out['form'] = $result;
+                    $out->form = $result;
 
                 break;
 
@@ -72,7 +77,7 @@ abstract class Form extends Action {
                 if(!($target = $this->request->get('target')))
                     throw new \Exception('Form API call failed.  No target specified!');
 
-                $out->populate($this->model->api($target, $this->request->get('params')));
+                $out->populate($this->model->api($target[0], ake($target, 1, array())));
 
                 break;
 
