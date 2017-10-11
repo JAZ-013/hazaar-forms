@@ -81,15 +81,6 @@ abstract class Form extends Action {
 
                 break;
 
-            case 'items':
-
-                if(!($target = $this->request->get('target')))
-                    throw new \Exception('Form API call failed.  No target specified!');
-
-                $out->populate($this->model->items($target));
-
-                break;
-
             case 'update':
 
                 if($target = $this->request->get('api'))

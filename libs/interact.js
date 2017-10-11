@@ -1,13 +1,15 @@
 ﻿(function ($) {
 
     //Error capture method
-    function _error(xhr, textStatus, errorThrown) {
-        var error = xhr.responseJSON.error;
+    function _error(error) {
+        if (typeof error == 'string') error = { str: error };
+        else if (error instanceof Error) error = { status: 'JavaScript Error', str: error.message, line: error.lineNumber, file: error.fileName };
+        else if ('done' in error) error = error.responseJSON.error;
         $('<div>').html([
             $('<h4>').html(error.status),
             $('<div>').html(error.str).css({ 'font-weight': 'bold', 'margin-bottom': '15px' }),
-            $('<div>').html('Line: ' + error.line),
-            $('<div>').html('File: ' + error.file)
+            (error.line ? $('<div>').html('Line: ' + error.line) : null),
+            (error.file ? $('<div>').html('File: ' + error.file) : null)
         ]).popup({
             title: 'An error ocurred!',
             icon: 'danger',
@@ -25,12 +27,25 @@
     };
 
     function _eval(host, evaluate) {
+        if (typeof evaluate === 'boolean') return evaluate;
         return (function (form, evaluate) {
-            var code = (evaluate.indexOf(';') < 0) ? "( " + evaluate + " )" : '(function(form){' + evaluate + '})(form)';
+            var code = '';
+            if (evaluate.indexOf(';') < 0) {
+                var values = form.save();
+                for (key in values) {
+                    var value = values[key];
+                    if (typeof value == 'string') value = "'" + value + "'";
+                    else if (typeof value == 'object' || typeof value == 'array') value = JSON.stringify(value);
+                    code += 'var ' + key + " = " + value + ";\n";
+                }
+                code += "( " + evaluate + " );";
+            } else {
+                code = '(function(form){' + evaluate + '})(form)';
+            }
             try {
                 return eval(code);
             } catch (error) {
-                console.log(error);
+                _error(error);
             }
             return false;
         })(host.data, evaluate);
@@ -65,17 +80,7 @@
             }
             parts[x] = matches[1] + ' ' + matches[2] + ' ' + matches[3];
         }
-        return (function (values, evaluate) {
-            var code = '';
-            for (key in values) {
-                var value = values[key];
-                if (typeof value == 'string') value = "'" + value + "'";
-                else if (typeof value == 'object' || typeof value == 'array') value = JSON.stringify(value);
-                code += 'var ' + key + " = " + value + ";\n";
-            }
-            code += "( " + evaluate + " );";
-            return eval(code);
-        })(host.data.save(), parts.join(''));
+        return _eval(host, parts.join(''));
     };
 
     function _toggle(host, obj) {
@@ -133,17 +138,27 @@
     function _input_select_populate(host, select, track) {
         var def = select.data('def');
         var options = def.options;
-        while (match = options.match(/\{\{(\w+)\}\}/))
-            options = options.replace(match[0], host.data[match[1]]);
+        var data = $.extend({}, host.data.save(), { "site_url": hazaar.url() });
         select.html($('<option>').html('Loading...'));
-        _post(host, 'items', { target: options }, track).done(function (data) {
-            select.empty();
-            if (def.placeholder && (!def.required || host.data[field] == null))
-                select.append($('<option>').attr('value', '').html(def.placeholder).prop('disabled', (def.required == true)));
-            for (x in data)
-                select.append($('<option>').attr('value', x).html(data[x]));
-            select.val(host.data[select.attr('name')]);
-        });
+        host.data[def.name] = null;
+        while (match = options.match(/\{\{(\w+)\}\}/)) {
+            if (data[match[1]] === null) {
+                select.prop('disabled', true);
+                return;
+            }
+            options = options.replace(match[0], data[match[1]]);
+        }
+        $.get((options.match(/^https?:\/\//) ? options : hazaar.url(options)))
+            .done(function (data) {
+                var value = host.data[def.name];
+                var required = ('required' in def) ? _eval(host, def.required) : false;
+                select.empty().prop('disabled', false);
+                if (def.placeholder && (!required || value == null))
+                    select.append($('<option>').attr('value', '').html(def.placeholder).prop('disabled', (required == true)));
+                for (x in data)
+                    select.append($('<option>').attr('value', x).html(data[x]));
+                select.val(((value in data) ? value : ''));
+            }).error(_error);
         return true;
     };
 
@@ -199,8 +214,9 @@
             }
             _input_select_populate(host, select.change(function (event) { _input_event_change(host, $(event.target)); }));
         } else {
-            if (def.placeholder && (!def.required || host.data[def.name] == null))
-                select.append($('<option>').attr('value', '').html(def.placeholder).prop('disabled', (def.required == true)));
+            var required = ('required' in def) ? _eval(host, def.required) : false;
+            if (def.placeholder && (!required || host.data[def.name] == null))
+                select.append($('<option>').attr('value', '').html(def.placeholder).prop('disabled', (required == true)));
             for (x in def.options)
                 select.append($('<option>').attr('value', x).html(def.options[x]));
             select.val(host.data[def.name]).change(function (event) { _input_event_change(host, $(event.target)); });
@@ -252,7 +268,7 @@
                 autoclose: true,
                 forceParse: true,
                 language: 'en',
-                clearBtn: (def.required !== true),
+                clearBtn: ((('required' in def) ? _eval(host, def.required) : false) !== true),
                 todayHighlight: true
             };
             if (host.data[def.name])
@@ -487,7 +503,7 @@
             if (!((typeof def.show == 'boolean') ? def.show : _is_visible(host, def.show)))
                 return true;
         }
-        if ('required' in def && !value)
+        if ('required' in def && _eval(host, def.required) && !value)
             return { "field": name, "status": "required" };
         if ('format' in def) {
             if (!Inputmask.isValid(String(value), def.format))
