@@ -1,13 +1,15 @@
 ﻿(function ($) {
 
     //Error capture method
-    function _error(xhr, textStatus, errorThrown) {
-        var error = xhr.responseJSON.error;
+    function _error(error) {
+        if (typeof error == 'string') error = { str: error };
+        else if (error instanceof Error) error = { status: 'JavaScript Error', str: error.message, line: error.lineNumber, file: error.fileName };
+        else if ('done' in error) error = error.responseJSON.error;
         $('<div>').html([
             $('<h4>').html(error.status),
             $('<div>').html(error.str).css({ 'font-weight': 'bold', 'margin-bottom': '15px' }),
-            $('<div>').html('Line: ' + error.line),
-            $('<div>').html('File: ' + error.file)
+            (error.line ? $('<div>').html('Line: ' + error.line) : null),
+            (error.file ? $('<div>').html('File: ' + error.file) : null)
         ]).popup({
             title: 'An error ocurred!',
             icon: 'danger',
@@ -30,7 +32,7 @@
             try {
                 return eval(code);
             } catch (error) {
-                console.log(error);
+                _error(error);
             }
             return false;
         })(host.data, evaluate);
