@@ -27,8 +27,21 @@
     };
 
     function _eval(host, evaluate) {
+        if (typeof evaluate === 'boolean') return evaluate;
         return (function (form, evaluate) {
-            var code = (evaluate.indexOf(';') < 0) ? "( " + evaluate + " )" : '(function(form){' + evaluate + '})(form)';
+            var code = '';
+            if (evaluate.indexOf(';') < 0) {
+                var values = form.save();
+                for (key in values) {
+                    var value = values[key];
+                    if (typeof value == 'string') value = "'" + value + "'";
+                    else if (typeof value == 'object' || typeof value == 'array') value = JSON.stringify(value);
+                    code += 'var ' + key + " = " + value + ";\n";
+                }
+                code += "( " + evaluate + " );";
+            } else {
+                code = '(function(form){' + evaluate + '})(form)';
+            }
             try {
                 return eval(code);
             } catch (error) {
@@ -67,17 +80,7 @@
             }
             parts[x] = matches[1] + ' ' + matches[2] + ' ' + matches[3];
         }
-        return (function (values, evaluate) {
-            var code = '';
-            for (key in values) {
-                var value = values[key];
-                if (typeof value == 'string') value = "'" + value + "'";
-                else if (typeof value == 'object' || typeof value == 'array') value = JSON.stringify(value);
-                code += 'var ' + key + " = " + value + ";\n";
-            }
-            code += "( " + evaluate + " );";
-            return eval(code);
-        })(host.data.save(), parts.join(''));
+        return _eval(host, parts.join(''));
     };
 
     function _toggle(host, obj) {
@@ -201,8 +204,9 @@
             }
             _input_select_populate(host, select.change(function (event) { _input_event_change(host, $(event.target)); }));
         } else {
-            if (def.placeholder && (!def.required || host.data[def.name] == null))
-                select.append($('<option>').attr('value', '').html(def.placeholder).prop('disabled', (def.required == true)));
+            var required = ('required' in def) ? _eval(host, def.required) : false;
+            if (def.placeholder && (!required || host.data[def.name] == null))
+                select.append($('<option>').attr('value', '').html(def.placeholder).prop('disabled', (required == true)));
             for (x in def.options)
                 select.append($('<option>').attr('value', x).html(def.options[x]));
             select.val(host.data[def.name]).change(function (event) { _input_event_change(host, $(event.target)); });
@@ -254,7 +258,7 @@
                 autoclose: true,
                 forceParse: true,
                 language: 'en',
-                clearBtn: (def.required !== true),
+                clearBtn: ((('required' in def) ? _eval(host, def.required) : false) !== true),
                 todayHighlight: true
             };
             if (host.data[def.name])
@@ -489,7 +493,7 @@
             if (!((typeof def.show == 'boolean') ? def.show : _is_visible(host, def.show)))
                 return true;
         }
-        if ('required' in def && !value)
+        if ('required' in def && _eval(host, def.required) && !value)
             return { "field": name, "status": "required" };
         if ('format' in def) {
             if (!Inputmask.isValid(String(value), def.format))
