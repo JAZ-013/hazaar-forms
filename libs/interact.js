@@ -138,17 +138,27 @@
     function _input_select_populate(host, select, track) {
         var def = select.data('def');
         var options = def.options;
-        while (match = options.match(/\{\{(\w+)\}\}/))
-            options = options.replace(match[0], host.data[match[1]]);
+        var data = $.extend({}, host.data.save(), { "site_url": hazaar.url() });
         select.html($('<option>').html('Loading...'));
-        _post(host, 'items', { target: options }, track).done(function (data) {
-            select.empty();
-            if (def.placeholder && (!def.required || host.data[field] == null))
-                select.append($('<option>').attr('value', '').html(def.placeholder).prop('disabled', (def.required == true)));
-            for (x in data)
-                select.append($('<option>').attr('value', x).html(data[x]));
-            select.val(host.data[select.attr('name')]);
-        });
+        host.data[def.name] = null;
+        while (match = options.match(/\{\{(\w+)\}\}/)) {
+            if (data[match[1]] === null) {
+                select.prop('disabled', true);
+                return;
+            }
+            options = options.replace(match[0], data[match[1]]);
+        }
+        $.get((options.match(/^https?:\/\//) ? options : hazaar.url(options)))
+            .done(function (data) {
+                var value = host.data[def.name];
+                var required = ('required' in def) ? _eval(host, def.required) : false;
+                select.empty().prop('disabled', false);
+                if (def.placeholder && (!required || value == null))
+                    select.append($('<option>').attr('value', '').html(def.placeholder).prop('disabled', (required == true)));
+                for (x in data)
+                    select.append($('<option>').attr('value', x).html(data[x]));
+                select.val(((value in data) ? value : ''));
+            }).error(_error);
         return true;
     };
 

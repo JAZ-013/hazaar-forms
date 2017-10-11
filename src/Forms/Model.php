@@ -371,24 +371,6 @@ class Model extends \Hazaar\Model\Strict {
 
     }
 
-    public function items($target){
-
-        $key = md5($target);
-
-        if(array_key_exists($key, $this->__items))
-            return $this->__items[$key];
-
-        $url = new \Hazaar\Application\Url($target);
-
-        if(($out = json_decode(file_get_contents((string)$url), true)) === false)
-            throw new \Exception('Form API call failed.  Invalid response!');
-
-        $this->__items[$key] = $out;
-
-        return $out;
-
-    }
-
     public function parseTarget($target){
 
         while (preg_match('/\{\{(\w+)\}\}/', $target, $match))
