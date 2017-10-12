@@ -139,7 +139,6 @@
         var def = select.data('def');
         var options = def.options;
         var data = $.extend({}, host.data.save(), { "site_url": hazaar.url() });
-        select.html($('<option>').html('Loading...'));
         host.data[def.name] = null;
         while (match = options.match(/\{\{(\w+)\}\}/)) {
             if (data[match[1]] === null) {
@@ -148,6 +147,7 @@
             }
             options = options.replace(match[0], data[match[1]]);
         }
+        select.html($('<option>').html('Loading...'));
         $.get((options.match(/^https?:\/\//) ? options : hazaar.url(options)))
             .done(function (data) {
                 var value = host.data[def.name];
