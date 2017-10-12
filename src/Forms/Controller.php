@@ -14,7 +14,7 @@ class Controller extends \Hazaar\Controller {
 
     private $model;
 
-    public function __initialize($request){
+    public function __initialize(\Hazaar\Application\Request $request){
 
         if(!($name = $this->request->get('name')))
             throw new \Exception('Form name is required!', 400);
