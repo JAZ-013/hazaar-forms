@@ -31,7 +31,7 @@
         return (function (form, evaluate) {
             var code = '';
             if (evaluate.indexOf(';') < 0) {
-                var values = form.save();
+                var values = form.save(true);
                 for (key in values) {
                     var value = values[key];
                     if (typeof value == 'string') value = "'" + value + "'";
@@ -102,12 +102,15 @@
     function _input_event_change(host, input) {
         var value = null, name = input.attr('name');
         var def = host.def.fields[name];
-        if (input.is('[type=checkbox]'))
+        if (input.is('[type=checkbox]')) {
             value = input.is(':checked');
-        else
+            host.data[name].set(value, (value ? 'Yes' : 'No'));
+        } else if (input.is('select'))
+            host.data[name].set(input.val(), input.children('option:selected').text());
+        else {
             value = input.val();
-        if (value === '') value = null;
-        host.data[name] = value;
+            host.data[name] = (value === '') ? null : value;
+        }
         if (def.update && (typeof def.update == 'string' || host.settings.update === true)) {
             var options = {
                 originator: name,
@@ -142,30 +145,6 @@
         var def = input.data('def');
         if (def.blur)
             _eval(host, def.blur);
-    };
-
-    function _input_event_keyup(host, event) {
-        var input = $(event.target);
-        var def = input.data('def');
-        if (def.lookup && 'url' in def.lookup) {
-            var values = host.data.save(), query = '';
-            var popup = input.parent().parent().children('.form-lookup-popup');
-            var valueKey = def.lookup.key || 'id', labelKey = def.lookup.label || 'label';
-            if ('startlen' in def.lookup && event.target.value.length < def.lookup.startlen) return;
-            values[def.name] = event.target.value;
-            if ((url = _match_replace(def.lookup.url, values)) === false) return;
-            if ('query' in def.lookup && (query = _match_replace(def.lookup.query, values)) === false) return;
-            popup.css({ "min-width": input.parent().outerWidth() }).show();
-            $.ajax({
-                method: def.lookup.method || 'GET',
-                url: (url.match(/^https?:\/\//) ? url : hazaar.url(url)),
-                data: query
-            }).done(function (items) {
-                popup.empty();
-                for (x in items)
-                    popup.append($('<div class="form-lookup-item">').html(items[x][labelKey]).attr('data-value', items[x][valueKey]));
-            });
-        }
     };
 
     function _input_select_populate(host, select, track) {
@@ -318,24 +297,69 @@
     }
 
     function _input_lookup(host, def) {
-        def.suffix = $('<i class="fa fa-search">');
-        var input = _input_std(host, 'text', def);
-        var popup = $('<div class="panel form-lookup-popup">').html($('<div class="form-lookup-item">').html('Loading results...')).hide();
-        input.find('input')
+        var group = $('<div class="form-group">').data('def', def);
+        var label = $('<label class="control-label">')
+            .attr('for', def.name)
+            .html(def.label)
+            .appendTo(group);
+        var input_group = $('<div class="input-group">')
+            .appendTo(group);
+        var input = $('<input type="text" class="form-control">')
+            .data('def', def)
             .attr('autocomplete', 'off')
-            .off('change')
-            .on('keyup', function (event) { _input_event_keyup(host, event); })
+            .appendTo(input_group)
+            .focus(function (event) { _input_event_focus(host, $(event.target)); })
             .on('blur', function () {
                 setTimeout(function () { popup.hide(); }, 100);
             });
-        input.append(popup);
-        popup.on('click', function (event) {
-            var target = $(event.target);
-            if (!target.is('.form-lookup-item'))
-                return;
-            host.data[def.name] = target.attr('data-value');
-        });
-        return input;
+        var value_input = $('<input type="hidden">')
+            .attr('data-bind', def.name)
+            .attr('name', def.name)
+            .data('def', def)
+            .val(host.data[def.name])
+            .appendTo(input_group)
+            .change(function (event) {
+                input.val(host.data[def.name].label);
+                _input_event_change(host, $(event.target));
+            })
+            .on('update', function (event) { _input_event_update(host, $(event.target)); });
+
+        if (def.lookup && 'url' in def.lookup) {
+            input.on('keyup', function (event) {
+                var values = host.data.save(), query = '';
+                var popup = input.parent().parent().children('.form-lookup-popup');
+                var valueKey = def.lookup.key || 'id', labelKey = def.lookup.label || 'label';
+                if ('startlen' in def.lookup && event.target.value.length < def.lookup.startlen) return;
+                values[def.name] = event.target.value;
+                if ((url = _match_replace(def.lookup.url, values)) === false) return;
+                if ('query' in def.lookup && (query = _match_replace(def.lookup.query, values)) === false) return;
+                popup.css({ "min-width": input.parent().outerWidth() }).show();
+                $.ajax({
+                    method: def.lookup.method || 'GET',
+                    url: (url.match(/^https?:\/\//) ? url : hazaar.url(url)),
+                    data: query
+                }).done(function (items) {
+                    popup.empty();
+                    for (x in items)
+                        popup.append($('<div class="form-lookup-item">').html(items[x][labelKey]).attr('data-value', items[x][valueKey]));
+                });
+            });
+            var popup = $('<div class="panel form-lookup-popup">')
+                .html($('<div class="form-lookup-item">').html('Loading results...'))
+                .hide()
+                .appendTo(group).on('click', function (event) {
+                    var target = $(event.target);
+                    if (!target.is('.form-lookup-item'))
+                        return;
+                    host.data[def.name].set(target.attr('data-value'), target.text());
+                    value_input.change();
+                });
+        }
+        if ('placeholder' in def)
+            input.attr('placeholder', def.placeholder);
+        input_group.append($('<div class="input-group-addon">')
+            .html($('<i class="fa fa-search">')));
+        return group;
     }
 
     function _input_std(host, type, def) {
@@ -365,7 +389,7 @@
         } else {
             group.append(input);
         }
-        if (host.data[def.name]) _validate_input(host, input);
+        if (host.data[def.name] && host.data[def.name].value) _validate_input(host, input);
         return group;
     };
 
@@ -533,7 +557,7 @@
     };
 
     function _validate_field(host, name, sync) {
-        var value = host.data[name], def = host.def.fields[name];
+        var value = host.data[name].value, def = host.def.fields[name];
         if (sync === true) {
             delete def.valid;
             return {
