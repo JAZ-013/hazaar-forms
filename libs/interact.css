@@ -32,3 +32,18 @@
         transform: rotate(360deg);
     }
 }
+
+.form-lookup-popup {
+    position: absolute;
+    border: 1px solid red;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+}
+
+    .form-lookup-popup .form-lookup-item {
+        padding: 5px;
+    }
+
+        .form-lookup-popup .form-lookup-item:hover {
+            background: red;
+            color: white;
+        }
