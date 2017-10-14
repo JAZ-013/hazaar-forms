@@ -581,9 +581,10 @@
             if (!((typeof def.show == 'boolean') ? def.show : _is_visible(host, def.show)))
                 return true;
         }
-        if ('required' in def && _eval(host, def.required) && !value)
+        var required = ('required' in def) ? _eval(host, def.required) : false;
+        if (required && !value)
             return { "field": name, "status": "required" };
-        if ('format' in def) {
+        if ('format' in def && value) {
             if (!Inputmask.isValid(String(value), def.format))
                 return { "field": name, "status": "bad_format", "format": def.format };
         }
@@ -660,12 +661,21 @@
         var data = host.data.save();
         $(host).trigger('saving', [data]);
         _post(host, 'post', { params: extra, form: data }, false).done(function (response) {
-            if (response.form) {
-                for (x in response.form)
-                    host.data[x] = response.form[x];
+            if (response.ok) {
+                if (response.params)
+                    $.extend(host.settings.params, response.params);
+                if (response.form) {
+                    for (x in response.form)
+                        host.data[x] = response.form[x];
+                }
+                host.posts = {}; //Reset the post cache so we get clean data after 
+                $(host).trigger('saved', [response]);
+            } else {
+                $('<div>').html(response.reason).popup({
+                    title: 'Save error',
+                    buttons: [{ label: 'OK', "class": "default" }]
+                })
             }
-            host.posts = {}; //Reset the post cache so we get clean data after 
-            $(host).trigger('saved', [response]);
         }).fail(_error);
         return true;
     };
