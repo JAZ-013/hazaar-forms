@@ -44,20 +44,20 @@ abstract class Form extends Action {
         if(!$this->request->isPOST())
             throw new \Exception('Method not allowed!', 405);
 
-        $out = new \Hazaar\Controller\Response\Json();
+        $out = new \Hazaar\Controller\Response\Json(array('name' => $this->request->name));
 
         switch($method){
             case 'post':
 
-                $params = $this->request->getParams();
+                $postdata = $this->request->getParams();
 
-                $this->model->populate(ake($params, 'form', array()));
+                $this->model->populate(ake($postdata, 'form', array()));
 
-                unset($params['form']);
-
-                $out->populate($params);
+                $params = ake($postdata, 'params');
 
                 $result = $this->save($this->model, $params);
+
+                $out->params = $params;
 
                 if(is_array($result) && count($result) > 0)
                     $out->form = $result;
@@ -66,7 +66,7 @@ abstract class Form extends Action {
 
             case 'load':
 
-                $this->model->populate($this->load($this->request->getParams()));
+                $this->model->populate($this->load($this->request->get('params', array())));
 
                 $out->populate($this->model->toArray());
 
@@ -96,6 +96,8 @@ abstract class Form extends Action {
                 throw new \Exception('Unknown method: ' . $method, 406);
 
         }
+
+        $out->ok = true;
 
         return $out;
 
@@ -177,7 +179,7 @@ abstract class Form extends Action {
 
     }
 
-    protected function save($data, $params = array()){
+    protected function save($data, &$params = array()){
 
         throw new \Exception('To save form data you must override the form controller save($data, $params = array()) method.');
 
