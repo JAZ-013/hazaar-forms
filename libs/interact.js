@@ -503,9 +503,10 @@
             if (!((typeof def.show == 'boolean') ? def.show : _is_visible(host, def.show)))
                 return true;
         }
-        if ('required' in def && _eval(host, def.required) && !value)
+        var required = ('required' in def) ? _eval(host, def.required) : false;
+        if (required && !value)
             return { "field": name, "status": "required" };
-        if ('format' in def) {
+        if ('format' in def && value) {
             if (!Inputmask.isValid(String(value), def.format))
                 return { "field": name, "status": "bad_format", "format": def.format };
         }
