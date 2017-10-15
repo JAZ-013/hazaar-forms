@@ -115,7 +115,7 @@ abstract class Form extends Action {
         ));
 
         if($this->params)
-            $settings['params'] = $this->params;
+            $settings->params = $this->params;
 
         $div = new \Hazaar\Html\Form('FORM: ' . $name);
 
@@ -127,6 +127,9 @@ abstract class Form extends Action {
 
     final public function render(){
 
+        if(!$this->model instanceof \Hazaar\Forms\Model)
+            throw new \Exception('No form type has been set for this form controller');
+
         $this->model->populate($this->load($this->request->getParams()));
 
         $output = new \Hazaar\Forms\Output\HTML($this->model);
@@ -136,6 +139,9 @@ abstract class Form extends Action {
     }
 
     final public function output($type = 'html'){
+
+        if(!$this->model instanceof \Hazaar\Forms\Model)
+            throw new \Exception('No form type has been set for this form controller');
 
         if($this->request->getActionName() == 'output'){
 
