@@ -581,7 +581,7 @@
     };
 
     function _validate_field(host, name, sync) {
-        var value = host.data[name].value, def = host.def.fields[name];
+        var item = host.data[name], def = host.def.fields[name];
         if (sync === true) {
             delete def.valid;
             return {
@@ -589,7 +589,7 @@
                     var result = _validate_field(host, name);
                     if (result === true && 'validate' in def && 'api' in def.validate) {
                         _post(host, 'api', {
-                            target: [def.validate.api, { "name": name, "value": value, "def": def }]
+                            target: [def.validate.api, { "name": name, "value": item.value, "def": def }]
                         }, false).done(function (response) {
                             var result = (response.ok === true) ? true : { "field": name, "status": response.reason || "api_failed(" + def.api + ")" };
                             callback(result);
@@ -606,10 +606,10 @@
                 return true;
         }
         var required = ('required' in def) ? _eval(host, def.required) : false;
-        if (required && !value)
+        if (required && !item)
             return { "field": name, "status": "required" };
-        if ('format' in def && value) {
-            if (!Inputmask.isValid(String(value), def.format))
+        if ('format' in def && item) {
+            if (!Inputmask.isValid(String(item.value), def.format))
                 return { "field": name, "status": "bad_format", "format": def.format };
         }
         if ('validate' in def) {
@@ -617,28 +617,30 @@
                 var data = def.validate[type];
                 switch (type) {
                     case 'min':
-                        if (parseInt(value) < data)
+                        if (parseInt(item.value) < data)
                             return { "field": name, "status": "too_small" };
                         break;
                     case 'max':
-                        if (parseInt(value) > data)
+                        if (parseInt(item.value) > data)
                             return { "field": name, "status": "too_big" };
                         break;
                     case 'with':
                         var reg = new RegExp(data);
-                        if (!value.match(reg))
+                        if (!(typeof item.value == 'string' && item.value.match(reg)))
                             return { "field": name, "status": "regex_failed", "pattern": data };
                         break;
                     case 'equals':
-                        if (value !== data)
+                        if (item.value !== data)
                             return { "field": name, "status": "not_equal" };
                         break;
                     case 'minlen':
-                        if (value.length < data)
+                        if ((item instanceof dataBinderValue && (!item.value || item.value.length < data))
+                            || (!item || item.length < data))
                             return { "field": name, "status": "too_short" };
                         break;
                     case 'maxlen':
-                        if (value.length > data)
+                        if ((item instanceof dataBinderValue && (!item.value || item.value.length > data))
+                            || (!item || item.length > data))
                             return { "field": name, "status": "too_long" };
                         break;
                     case 'custom':
@@ -720,10 +722,10 @@
             host.objects.loader.show();
             host.loading++;
         }
-        var params = $.extend({}, postdata, {
+        var params = $.extend(true, {}, {
             name: host.settings.form,
-            params: host.settings.params
-        });
+            params: host.settings.params,
+        }, postdata);
         return $.ajax({
             method: "POST",
             url: hazaar.url(host.settings.controller, 'interact/' + action),
