@@ -31,7 +31,7 @@
         return (function (form, evaluate) {
             var code = '';
             if (evaluate.indexOf(';') < 0) {
-                var values = form.save();
+                var values = form.save(true);
                 for (key in values) {
                     var value = values[key];
                     if (typeof value == 'string') value = "'" + value + "'";
@@ -89,19 +89,30 @@
         if (!toggle) _nullify(host, obj.data('def'));
     };
 
+    function _match_replace(str, values) {
+        while (match = str.match(/\{\{(\w+)\}\}/)) {
+            if (values[match[1]] === null)
+                return false;
+            str = str.replace(match[0], values[match[1]]);
+        }
+        return str;
+    }
+
     //Input events
     function _input_event_change(host, input) {
-        var value = null, name = input.attr('name');
-        var def = host.def.fields[name];
-        if (input.is('[type=checkbox]'))
+        var value = null, def = input.data('def');
+        if (input.is('[type=checkbox]')) {
             value = input.is(':checked');
-        else
+            host.data[def.name].set(value, (value ? 'Yes' : 'No'));
+        } else if (input.is('select'))
+            host.data[def.name].set(input.val(), input.children('option:selected').text());
+        else {
             value = input.val();
-        if (value === '') value = null;
-        host.data[name] = value;
+            host.data[def.name] = (value === '') ? null : value;
+        }
         if (def.update && (typeof def.update == 'string' || host.settings.update === true)) {
             var options = {
-                originator: name,
+                originator: def.name,
                 form: host.data.save()
             };
             if (typeof def.update == 'string') options.api = def.update;
@@ -109,17 +120,17 @@
                 host.data.extend(response);
             });
         }
-        if (host.events.show.length > 0) {
-            for (x in host.events.show)
-                _toggle(host, host.events.show[x]);
-        }
         input.trigger('update');
     };
 
     function _input_event_update(host, input) {
-        var def = input.data('def'), name = input.attr('name');
+        var def = input.data('def');
         if (def.change)
             _eval(host, def.change);
+        if (host.events.show.length > 0) {
+            for (x in host.events.show)
+                _toggle(host, host.events.show[x]);
+        }
         _validate_input(host, input);
     };
 
@@ -138,26 +149,26 @@
     function _input_select_populate(host, select, track) {
         var def = select.data('def');
         var options = def.options;
-        var data = $.extend({}, host.data.save(), { "site_url": hazaar.url() });
-        host.data[def.name] = null;
-        while (match = options.match(/\{\{(\w+)\}\}/)) {
-            if (data[match[1]] === null) {
-                select.prop('disabled', true);
-                return;
-            }
-            options = options.replace(match[0], data[match[1]]);
+        var data = $.extend({}, host.data.save(true), { "site_url": hazaar.url() });
+        if ((options = _match_replace(options, data)) === false) {
+            select.empty().prop('disabled', true);
+            host.data[def.name] = null;
+            return;
         }
         select.html($('<option>').html('Loading...'));
         $.get((options.match(/^https?:\/\//) ? options : hazaar.url(options)))
             .done(function (data) {
-                var value = host.data[def.name];
+                var item = host.data[def.name];
                 var required = ('required' in def) ? _eval(host, def.required) : false;
                 select.empty().prop('disabled', false);
-                if (def.placeholder && (!required || value == null))
+                if (def.placeholder && (!required || item == null))
                     select.append($('<option>').attr('value', '').html(def.placeholder).prop('disabled', (required == true)));
                 for (x in data)
                     select.append($('<option>').attr('value', x).html(data[x]));
-                select.val(((value in data) ? value : ''));
+                if (item && (item.value in data))
+                    select.val(item.value);
+                else
+                    host.data[def.name] = null;
             }).error(_error);
         return true;
     };
@@ -212,14 +223,23 @@
                     _input_select_populate(host, select, false);
                 }, select);
             }
-            _input_select_populate(host, select.change(function (event) { _input_event_change(host, $(event.target)); }));
+            _input_select_populate(host, select.change(function (event) {
+                _input_event_change(host, $(event.target));
+            }));
         } else {
             var required = ('required' in def) ? _eval(host, def.required) : false;
             if (def.placeholder && (!required || host.data[def.name] == null))
-                select.append($('<option>').attr('value', '').html(def.placeholder).prop('disabled', (required == true)));
+                select.append($('<option>')
+                    .attr('value', '')
+                    .html(def.placeholder)
+                    .prop('disabled', (required == true)));
             for (x in def.options)
-                select.append($('<option>').attr('value', x).html(def.options[x]));
-            select.val(host.data[def.name]).change(function (event) { _input_event_change(host, $(event.target)); });
+                select.append($('<option>')
+                    .attr('value', x)
+                    .html(def.options[x]));
+            if (value = host.data[def.name])
+                select.val(value.value)
+                    .change(function (event) { _input_event_change(host, $(event.target)); });
         }
         return group;
     };
@@ -287,6 +307,85 @@
         return group;
     }
 
+    function _input_lookup(host, def) {
+        var group = $('<div class="form-group">').data('def', def);
+        var label = $('<label class="control-label">')
+            .attr('for', def.name)
+            .html(def.label)
+            .appendTo(group);
+        var input_group = $('<div class="input-group">')
+            .appendTo(group);
+        var input = $('<input type="text" class="form-control">')
+            .attr('data-bind', def.name)
+            .attr('data-bind-label', true)
+            .data('def', def)
+            .attr('autocomplete', 'off')
+            .appendTo(input_group)
+            .focus(function (event) { _input_event_focus(host, $(event.target)); })
+            .on('blur', function (event) {
+                popup.css({ "opacity": "0" });
+                setTimeout(function () {
+                    if (popup.is(':visible')) {
+                        popup.hide();
+                        input.val(host.data[def.name].label);
+                    }
+                }, 500);
+            });
+        var value_input = $('<input type="hidden">')
+            .attr('data-bind', def.name)
+            .attr('name', def.name)
+            .data('def', def)
+            .appendTo(input_group);
+        if (def.lookup && 'url' in def.lookup) {
+            input.on('keyup', function (event) {
+                var values = host.data.save(), query = '';
+                var popup = input.parent().parent().children('.form-lookup-popup');
+                var valueKey = def.lookup.value || 'id', labelKey = def.lookup.label || 'label';
+                if (event.target.value == '') {
+                    host.data[def.name].set(null);
+                    return;
+                }
+                if ('startlen' in def.lookup && event.target.value.length < def.lookup.startlen) {
+                    popup.hide();
+                    return;
+                }
+                values[def.name] = event.target.value;
+                if ((url = _match_replace(def.lookup.url, values)) === false) return;
+                if ('query' in def.lookup && (query = _match_replace(def.lookup.query, values)) === false) return;
+                popup.css({ "min-width": input.parent().outerWidth(), "opacity": "1" }).show();
+                $.ajax({
+                    method: def.lookup.method || 'GET',
+                    url: (url.match(/^https?:\/\//) ? url : hazaar.url(url)),
+                    data: query
+                }).done(function (items) {
+                    popup.empty();
+                    if (items.length > 0) {
+                        for (x in items)
+                            popup.append($('<div class="form-lookup-item">').html(items[x][labelKey]).attr('data-value', items[x][valueKey]));
+                    } else {
+                        popup.append($('<div class="form-lookup-null">').html('No results...'));
+                    }
+                });
+            });
+            var popup = $('<div class="panel form-lookup-popup">')
+                .html($('<div class="form-lookup-item">').html('Loading results...'))
+                .hide()
+                .appendTo(group).on('click', function (event) {
+                    var target = $(event.target);
+                    if (!target.is('.form-lookup-item'))
+                        return;
+                    host.data[def.name].set(target.attr('data-value'), target.text());
+                    value_input.trigger('update');
+                    popup.hide();
+                });
+        }
+        if ('placeholder' in def)
+            input.attr('placeholder', def.placeholder);
+        input_group.append($('<div class="input-group-addon">')
+            .html($('<i class="fa fa-search">')));
+        return group;
+    }
+
     function _input_std(host, type, def) {
         var group = $('<div class="form-group">').data('def', def);
         var label = $('<label class="control-label">')
@@ -314,7 +413,7 @@
         } else {
             group.append(input);
         }
-        if (host.data[def.name]) _validate_input(host, input);
+        if (host.data[def.name] && host.data[def.name].value) _validate_input(host, input);
         return group;
     };
 
@@ -376,6 +475,9 @@
                 field = _input_select_multi(host, def);
             else
                 field = _input_select(host, def);
+        } else if ('lookup' in def && def.type == 'text') {
+            field = _input_lookup(host, def);
+
         } else if (def.type) {
             switch (def.type) {
                 case 'array':
@@ -479,7 +581,7 @@
     };
 
     function _validate_field(host, name, sync) {
-        var value = host.data[name], def = host.def.fields[name];
+        var value = host.data[name].value, def = host.def.fields[name];
         if (sync === true) {
             delete def.valid;
             return {
@@ -595,7 +697,7 @@
             } else {
                 $('<div>').html(response.reason).popup({
                     title: 'Save error',
-                    buttons: [{ label: 'OK', "class": "default" }]
+                    buttons: [{ label: 'OK', "class": "btn btn-default" }]
                 })
             }
         }).fail(_error);
@@ -651,11 +753,11 @@
             host.data = new dataBinder(_define(host.def.fields));
             $(host).trigger('load', [host.data.save()]);
             _post(host, 'load').done(function (response) {
-                if (typeof response == 'object' && Object.keys(response).length > 0) {
-                    for (x in response)
-                        host.data[x] = response[x];
-                    $(host).trigger('data', [host.data.save()]);
-                }
+                if (!response.ok)
+                    return;
+                for (x in response.form)
+                    host.data[x] = response.form[x];
+                $(host).trigger('data', [host.data.save()]);
                 _nav(host, 0);
             });
         }).fail(_error);

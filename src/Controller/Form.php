@@ -68,7 +68,7 @@ abstract class Form extends Action {
 
                 $this->model->populate($this->load($this->request->get('params', array())));
 
-                $out->populate($this->model->toArray());
+                $out->form = $this->model->toArray();
 
                 break;
 
