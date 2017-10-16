@@ -35,19 +35,10 @@
 
 .form-lookup-popup {
     position: absolute;
-    border: 1px solid rgba(0,0,0,0.1);
     box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+    z-index: 1;
 }
 
-    .form-lookup-popup .form-lookup-item,
-    .form-lookup-popup .form-lookup-null {
-        padding: 5px;
-    }
-
-    .form-lookup-popup .form-lookup-item {
+    .form-lookup-popup > tbody > tr > td {
         cursor: pointer;
     }
-
-        .form-lookup-popup .form-lookup-item:hover {
-            background: rgba(0,0,0,0.1);
-        }

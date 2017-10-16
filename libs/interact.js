@@ -325,7 +325,7 @@
                 popup.css({ "opacity": "0" });
                 setTimeout(function () {
                     if (popup.is(':visible')) {
-                        popup.hide();
+                        popup.hide().empty();
                         input.val(host.data[def.name].label);
                     }
                 }, 500);
@@ -360,14 +360,14 @@
                     popup.empty();
                     if (items.length > 0) {
                         for (x in items)
-                            popup.append($('<div class="form-lookup-item">').html(items[x][labelKey]).attr('data-value', items[x][valueKey]));
+                            popup.append($('<tr>').html($('<td class="form-lookup-item">').html(items[x][labelKey]).attr('data-value', items[x][valueKey])));
                     } else {
-                        popup.append($('<div class="form-lookup-null">').html('No results...'));
+                        popup.append($('<tr>').html($('<td>').html('No results...')));
                     }
                 });
             });
-            var popup = $('<div class="panel form-lookup-popup">')
-                .html($('<div class="form-lookup-item">').html('Loading results...'))
+            var popup = $('<table class="form-lookup-popup panel table table-hover">')
+                .html($('<tr>').html($('<td>').html('Loading results...')))
                 .hide()
                 .appendTo(group).on('click', function (event) {
                     var target = $(event.target);
