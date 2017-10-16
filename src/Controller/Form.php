@@ -191,7 +191,7 @@ abstract class Form extends Action {
 
         $params = array('name' => $this->model->getName(), 'params' => serialize($this->params));
 
-        return $this->url('output/' . $type, $params);//->encode();
+        return $this->url('output/' . $type, $params)->encode();
 
     }
 
