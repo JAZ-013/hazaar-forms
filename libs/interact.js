@@ -337,7 +337,7 @@
             .appendTo(input_group);
         if (def.lookup && 'url' in def.lookup) {
             input.on('keyup', function (event) {
-                var values = host.data.save(), query = '';
+                var values = host.data.save(true), query = '';
                 var popup = input.parent().parent().children('.form-lookup-popup');
                 var valueKey = def.lookup.value || 'id', labelKey = def.lookup.label || 'label';
                 if (event.target.value == '') {
