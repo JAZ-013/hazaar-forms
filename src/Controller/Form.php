@@ -140,12 +140,14 @@ abstract class Form extends Action {
 
     final public function output($type = 'html'){
 
-        if(!$this->model instanceof \Hazaar\Forms\Model)
-            throw new \Exception('No form type has been set for this form controller');
-
         if($this->request->getActionName() == 'output'){
 
-            $this->model->populate($this->load($this->request->getParams()));
+            if(!($name = $this->request->get('name')))
+                throw new \Exception('No form name specified!');
+
+            $this->model = new \Hazaar\Forms\Model($name);
+
+            $this->model->populate($this->load(unserialize($this->request->get('params'))));
 
             if($type == 'html'){
 
@@ -172,9 +174,12 @@ abstract class Form extends Action {
 
         }
 
-        $params = array_merge($this->params, array('form' => $this->model->getName()));
+        if(!$this->model instanceof \Hazaar\Forms\Model)
+            throw new \Exception('No form type has been set for this form controller');
 
-        return $this->url('output/' . $type, $params)->encode();
+        $params = array('name' => $this->model->getName(), 'params' => serialize($this->params));
+
+        return $this->url('output/' . $type, $params);//->encode();
 
     }
 

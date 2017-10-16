@@ -271,16 +271,16 @@ class Model extends \Hazaar\Model\Strict {
 
             }
 
-        }else{
+        }elseif ($value instanceof \Hazaar\Model\dataBinderValue && $value->label){
 
-            if($options = ake($field, 'options')){
+            $value = $value->label;
 
-                if(is_string($options))
-                    $options = $this->items($this->parseTarget($options));
+        }elseif($options = ake($field, 'options')){
 
-                $value = ake((array)$options, $value);
+            if(is_string($options))
+                $options = $this->api($this->parseTarget($options));
 
-            }
+            $value = ake((array)$options, (($value instanceof \Hazaar\Model\dataBinderValue)?$value->value:$value));
 
         }
 
@@ -316,6 +316,9 @@ class Model extends \Hazaar\Model\Strict {
             $code = '';
 
             foreach($values as $key => $value){
+
+                if($value instanceof \Hazaar\Model\dataBinderValue)
+                    $value = $value->value;
 
                 if (is_string($value))
                     $value = "'" . $value . "'";
@@ -373,8 +376,13 @@ class Model extends \Hazaar\Model\Strict {
 
     public function parseTarget($target){
 
-        while (preg_match('/\{\{(\w+)\}\}/', $target, $match))
-            $target = str_replace($match[0], $this->get($match[1]), $target);
+        while (preg_match('/\{\{(\w+)\}\}/', $target, $match)){
+
+            $item = $this->get($match[1]);
+
+            $target = str_replace($match[0], (($item instanceof \Hazaar\Model\dataBinderValue) ? $item->value : $item), $target);
+
+        }
 
         return $target;
 
@@ -394,44 +402,10 @@ class Model extends \Hazaar\Model\Strict {
 
         }else{
 
-            $parts = explode('/', $target, 3);
+            list($controller,) = explode('/', $target, 2);
 
-            $controller = null;
-
-            $action = null;
-
-            $params = array();
-
-            switch(count($parts)){
-                case 1:
-
-                    $controller = $parts[0];
-
-                    $action = 'index';
-
-                    break;
-
-                case 2:
-
-                    $controller = $parts[0];
-
-                    $action = $parts[1];
-
-                    break;
-
-                case 3:
-
-                    $controller = $parts[0];
-
-                    $action = $parts[1];
-
-                    $params = explode('/', $parts[3]);
-
-                    break;
-
-                default:
-                    throw new \Exception('Invalid application endpoint: ' . $target);
-            }
+            if(!$controller)
+                throw new \Exception('Invalid application endpoint: ' . $target);
 
             $loader = \Hazaar\Loader::getInstance();
 
@@ -439,12 +413,21 @@ class Model extends \Hazaar\Model\Strict {
 
             $request = new \Hazaar\Application\Request\HTTP(\Hazaar\Application::getInstance()->config, $args);
 
+            $request->evaluate($target);
+
             $controller->setRequest($request);
 
-            if(!method_exists($controller, $action))
-                throw new \Exception('Method not found while trying to execute ' . get_class($controller) . '::' . $action . '()');
+            $controller->__initialize($request);
 
-            $result = call_user_func_array(array($controller, $action), $params);
+            $response = $controller->__run();
+
+            if(!$response instanceof \Hazaar\Controller\Response\Json)
+                throw new \Exception('Only JSON API responses are currently supported!');
+
+            if($response->getStatus()!= 200)
+                throw new \Exception('API endpoint returned status code ' . $response->getStatus() . '. ' . $response->getContent());
+
+            $result = $response->toArray();
 
         }
 
