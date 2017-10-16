@@ -589,7 +589,7 @@
                     var result = _validate_field(host, name);
                     if (result === true && 'validate' in def && 'api' in def.validate) {
                         _post(host, 'api', {
-                            target: [def.validate.api, { "name": name, "value": item.value, "def": def }]
+                            target: [def.validate.api, { "name": name, "value": item.value }],
                         }, false).done(function (response) {
                             var result = (response.ok === true) ? true : { "field": name, "status": response.reason || "api_failed(" + def.api + ")" };
                             callback(result);

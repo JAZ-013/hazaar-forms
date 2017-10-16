@@ -77,9 +77,21 @@ abstract class Form extends Action {
                 if(!($target = $this->request->get('target')))
                     throw new \Exception('Form API call failed.  No target specified!');
 
-                $out->populate($this->model->api($target[0], ake($target, 1, array())));
+                $args = array();
 
-                break;
+                if($info = ake($target, 1, array())){
+
+                    $name = ake($info, 'name');
+
+                    $this->model->set($name, ake($info, 'value'));
+
+                    $args[$name] = $this->model->get($name);
+
+                }
+
+                $out->populate($this->model->api($target[0], $args));
+
+                return $out;
 
             case 'update':
 
