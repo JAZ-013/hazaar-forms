@@ -348,7 +348,7 @@
                     popup.hide();
                     return;
                 }
-                values[def.name] = event.target.value;
+                values['__input__'] = event.target.value;
                 if ((url = _match_replace(def.lookup.url, values)) === false) return;
                 if ('query' in def.lookup && (query = _match_replace(def.lookup.query, values)) === false) return;
                 popup.css({ "min-width": input.parent().outerWidth(), "opacity": "1" }).show();
