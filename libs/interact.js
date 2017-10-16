@@ -84,9 +84,9 @@
     };
 
     function _toggle(host, obj) {
-        var toggle = _is_visible(host, obj.data('show'));
+        var toggle = _is_visible(host, obj.data('show')), def = obj.data('def');
         obj.toggle(toggle);
-        if (!toggle) _nullify(host, obj.data('def'));
+        if (!toggle) _nullify(host, def);
     };
 
     function _match_replace(str, values) {
@@ -104,12 +104,18 @@
         if (input.is('[type=checkbox]')) {
             value = input.is(':checked');
             host.data[def.name].set(value, (value ? 'Yes' : 'No'));
-        } else if (input.is('select'))
+        } else if (input.is('select')) {
             host.data[def.name].set(input.val(), input.children('option:selected').text());
-        else {
+        } else {
             value = input.val();
             host.data[def.name] = (value === '') ? null : value;
         }
+    };
+
+    function _input_event_update(host, input) {
+        var def = input.data('def');
+        if (def.change)
+            _eval(host, def.change);
         if (def.update && (typeof def.update == 'string' || host.settings.update === true)) {
             var options = {
                 originator: def.name,
@@ -120,13 +126,6 @@
                 host.data.extend(response);
             });
         }
-        input.trigger('update');
-    };
-
-    function _input_event_update(host, input) {
-        var def = input.data('def');
-        if (def.change)
-            _eval(host, def.change);
         if (host.events.show.length > 0) {
             for (x in host.events.show)
                 _toggle(host, host.events.show[x]);
@@ -180,8 +179,7 @@
             .html(def.label)
             .appendTo(group);
         var btnGroup = $('<div class="btn-group" data-toggle="buttons">')
-            .attr('data-bind', def.name)
-            .appendTo(group);
+            .attr('data-bind', def.name);
         var btnClass = def.class || 'default';
         for (x in def.options) {
             var active = (host.data[def.name].indexOf(x) > -1);
@@ -199,7 +197,8 @@
                     host.data[def.name].remove(index);
             });
         }
-        return group;
+        if (def.justified) btnGroup.addClass('btn-group-justified');
+        return group.append($('<div>').html(btnGroup));
     };
 
     function _input_select(host, def) {
@@ -214,6 +213,7 @@
             .data('def', def)
             .focus(function (event) { _input_event_focus(host, $(event.target)); })
             .blur(function (event) { _input_event_blur(host, $(event.target)); })
+            .on('update', function (event) { _input_event_update(host, $(event.target)); })
             .appendTo(group);
         if (typeof def.options == 'string') {
             var matches = def.options.match(/\{\{\w+\}\}/g);
@@ -238,8 +238,7 @@
                     .attr('value', x)
                     .html(def.options[x]));
             if (value = host.data[def.name])
-                select.val(value.value)
-                    .change(function (event) { _input_event_change(host, $(event.target)); });
+                select.val(value.value).change(function (event) { _input_event_change(host, $(event.target)); });
         }
         return group;
     };
