@@ -228,7 +228,7 @@
             }));
         } else {
             var required = ('required' in def) ? _eval(host, def.required) : false;
-            if (def.placeholder && (!required || host.data[def.name] == null))
+            if (def.placeholder && (!required || host.data[def.name].value == null))
                 select.append($('<option>')
                     .attr('value', '')
                     .html(def.placeholder)
