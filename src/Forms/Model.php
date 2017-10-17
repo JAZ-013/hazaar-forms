@@ -409,7 +409,8 @@ class Model extends \Hazaar\Model\Strict {
 
             $loader = \Hazaar\Loader::getInstance();
 
-            $controller = $loader->loadController($controller);
+            if(!($controller = $loader->loadController($controller)))
+                throw new \Exception("Controller for target '$target' could not be found!", 404);
 
             $request = new \Hazaar\Application\Request\HTTP(\Hazaar\Application::getInstance()->config, $args);
 
