@@ -141,10 +141,10 @@
         }
         if (host.events.disabled.length > 0) {
             for (x in host.events.disabled) {
-                var input = host.events.disabled[x];
-                var disabled = _eval(host, input.data('disabled'));
-                input.prop('disabled', disabled);
-                if (disabled) input.val('').change();
+                var i = host.events.disabled[x];
+                var disabled = _eval(host, i.data('disabled'));
+                i.prop('disabled', disabled);
+                if (disabled) i.val('').change();
             }
         }
         _validate_input(host, input);
@@ -271,7 +271,7 @@
             .focus(function (event) { _input_event_focus(host, $(event.target)); })
             .blur(function (event) { _input_event_blur(host, $(event.target)); })
             .change(function (event) { _input_event_change(host, $(event.target)); })
-            .on('update', function (event) { _input_event_update(host, $(event.target)); })
+            .on('update', function (event) { _input_event_update(host, $(event.target)); });
         var label = $('<label>').html([input, def.label]).appendTo(group);
         _check_input_disabled(host, input, def);
         return group;
