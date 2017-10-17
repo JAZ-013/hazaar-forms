@@ -504,8 +504,12 @@
         } else {
             field = $('<div>');
         }
-        if ('html' in def)
-            field.append(def.html);
+        if ('html' in def) {
+            var html = def.html;
+            while (match = html.match(/\{\{(\w+)\}\}/))
+                html = html.replace(match[0], '<span data-bind="' + [match[1]] + '"></span>');
+            field.append(html);
+        }
         if ('show' in def) {
             if (typeof def.show == 'boolean')
                 field.toggle(def.show);
