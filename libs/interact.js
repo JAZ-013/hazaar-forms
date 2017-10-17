@@ -531,6 +531,7 @@
         } else {
             field = $('<div>');
         }
+        if ('width' in def) field.width(def.width);
         if ('html' in def) field.append(def.html);
         if ('show' in def) {
             if (typeof def.show == 'boolean')
