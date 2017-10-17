@@ -92,7 +92,7 @@
 
     function _match_replace(str, values) {
         while (match = str.match(/\{\{(\w+)\}\}/)) {
-            if (values[match[1]] === null)
+            if (!(match[1] in values) || values[match[1]] === null)
                 return false;
             str = str.replace(match[0], values[match[1]]);
         }
