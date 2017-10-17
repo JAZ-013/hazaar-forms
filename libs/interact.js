@@ -121,7 +121,11 @@
                 originator: def.name,
                 form: host.data.save()
             };
-            if (typeof def.update == 'string') options.api = def.update;
+            if (typeof def.update == 'string') {
+                if ((api = _match_replace(def.update, host.data.save(true))) === false)
+                    return;
+                options.api = api;
+            }
             _post(host, 'update', options, false).done(function (response) {
                 host.data.extend(response);
             });
@@ -403,6 +407,7 @@
             .on('update', function (event) { _input_event_update(host, $(event.target)); });
         if (def.format) input.attr('type', 'text').inputmask(def.format);
         if (def.placeholder) input.attr('placeholder', def.placeholder);
+        if (def.disabled === true) input.prop('disabled', true);
         if (def.prefix || def.suffix) {
             var inputDIV = $('<div class="input-group">')
                 .appendTo(group);
@@ -504,8 +509,7 @@
         } else {
             field = $('<div>');
         }
-        if ('html' in def)
-            field.append(def.html);
+        if ('html' in def) field.append(def.html);
         if ('show' in def) {
             if (typeof def.show == 'boolean')
                 field.toggle(def.show);
