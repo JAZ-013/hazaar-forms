@@ -232,6 +232,7 @@
             .blur(function (event) { _input_event_blur(host, $(event.target)); })
             .on('update', function (event) { _input_event_update(host, $(event.target)); })
             .appendTo(group);
+        _check_input_disabled(host, select, def);
         if (typeof def.options == 'string') {
             var matches = def.options.match(/\{\{\w+\}\}/g);
             for (x in matches) {
@@ -262,18 +263,17 @@
 
     function _input_checkbox(host, def) {
         var group = $('<div class="checkbox">').data('def', def);
-        var label = $('<label>').html([
-            $('<input type="checkbox">')
-                .attr('name', def.name)
-                .attr('data-bind', def.name)
-                .attr('checked', host.data[def.name])
-                .data('def', def)
-                .focus(function (event) { _input_event_focus(host, $(event.target)); })
-                .blur(function (event) { _input_event_blur(host, $(event.target)); })
-                .change(function (event) { _input_event_change(host, $(event.target)); })
-                .on('update', function (event) { _input_event_update(host, $(event.target)); }),
-            def.label
-        ]).appendTo(group);
+        var input = $('<input type="checkbox">')
+            .attr('name', def.name)
+            .attr('data-bind', def.name)
+            .attr('checked', host.data[def.name])
+            .data('def', def)
+            .focus(function (event) { _input_event_focus(host, $(event.target)); })
+            .blur(function (event) { _input_event_blur(host, $(event.target)); })
+            .change(function (event) { _input_event_change(host, $(event.target)); })
+            .on('update', function (event) { _input_event_update(host, $(event.target)); })
+        var label = $('<label>').html([input, def.label]).appendTo(group);
+        _check_input_disabled(host, input, def);
         return group;
     };
 
@@ -315,6 +315,7 @@
                 def.placeholder = def.format;
         }
         if (def.placeholder) input.attr('placeholder', def.placeholder);
+        _check_input_disabled(host, input, def);
         return group.append(input_group);
     };
 
@@ -352,6 +353,7 @@
             .attr('name', def.name)
             .data('def', def)
             .appendTo(input_group);
+        _check_input_disabled(host, input, def);
         if (def.lookup && 'url' in def.lookup) {
             input.on('keyup', function (event) {
                 var values = host.data.save(true), query = '';
