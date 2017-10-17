@@ -492,10 +492,20 @@
             def = $.extend({}, host.def.fields[info], { name: info });
         if (!def) return;
         if (def.fields && def.type != 'array') {
-            var col_width = (12 / def.fields.length);
+            var length = def.fields.length;
+            for (x in def.fields) {
+                if (typeof def.fields[x] !== 'object') def.fields[x] = { name: def.fields[x] };
+                if (!('weight' in def.fields[x])) def.fields[x].weight = 1;
+                length = length + (def.fields[x].weight - 1);
+            }
+            var col_width = (12 / length);
             field = $('<div class="row">').data('def', def);
-            for (x in def.fields)
-                field.append($('<div>').addClass('col-lg-' + col_width).html(_form_field(host, def.fields[x])));
+            for (x in def.fields) {
+                var field_width = col_width;
+                if (def.fields[x] instanceof Object && ('weight' in def.fields[x]))
+                    field_width = Math.round(field_width * def.fields[x].weight);
+                field.append($('<div>').addClass('col-lg-' + field_width).html(_form_field(host, def.fields[x])));
+            }
         } else if ('options' in def) {
             if (def.type == 'array')
                 field = _input_select_multi(host, def);
