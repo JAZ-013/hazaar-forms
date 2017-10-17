@@ -23,10 +23,10 @@
         if (!(type in host.events && field in host.events[type]))
             return false;
         var obj = host.events[type][field];
-        return _eval(host, obj.data(type));
+        return _eval_code(host, obj.data(type));
     };
 
-    function _eval(host, evaluate) {
+    function _eval_code(host, evaluate) {
         if (typeof evaluate === 'boolean') return evaluate;
         return (function (form, evaluate) {
             var code = '';
@@ -69,22 +69,23 @@
         }
     };
 
-    function _is_visible(host, show) {
-        var show = show.replace(/\s/g, '');
-        var parts = show.split(/(\&\&|\|\|)/);
+    function _eval(host, script) {
+        if (typeof script == 'boolean') return script;
+        var script = script.replace(/\s/g, '');
+        var parts = script.split(/(\&\&|\|\|)/);
         for (var x = 0; x < parts.length; x += 2) {
             var matches = null;
             if (!(matches = parts[x].match(/([\w\.]+)([=\!\<\>]+)(.+)/))) {
-                alert('Invalid show script: ' + show);
+                alert('Invalid evaluation script: ' + script);
                 return;
             }
             parts[x] = matches[1] + ' ' + matches[2] + ' ' + matches[3];
         }
-        return _eval(host, parts.join(''));
+        return _eval_code(host, parts.join(''));
     };
 
-    function _toggle(host, obj) {
-        var toggle = _is_visible(host, obj.data('show')), def = obj.data('def');
+    function _toggle_show(host, obj) {
+        var toggle = _eval(host, obj.data('show')), def = obj.data('def');
         obj.toggle(toggle);
         if (!toggle) _nullify(host, def);
     };
@@ -100,35 +101,51 @@
 
     //Input events
     function _input_event_change(host, input) {
-        var value = null, def = input.data('def');
+        var def = input.data('def');
         if (input.is('[type=checkbox]')) {
-            value = input.is(':checked');
+            var value = input.is(':checked');
             host.data[def.name].set(value, (value ? 'Yes' : 'No'));
         } else if (input.is('select')) {
             host.data[def.name].set(input.val(), input.children('option:selected').text());
         } else {
-            value = input.val();
-            host.data[def.name] = (value === '') ? null : value;
+            host.data[def.name] = input.val();
         }
     };
 
     function _input_event_update(host, input) {
         var def = input.data('def');
         if (def.change)
-            _eval(host, def.change);
+            _eval_code(host, def.change);
         if (def.update && (typeof def.update == 'string' || host.settings.update === true)) {
             var options = {
                 originator: def.name,
                 form: host.data.save()
             };
-            if (typeof def.update == 'string') options.api = def.update;
-            _post(host, 'update', options, false).done(function (response) {
-                host.data.extend(response);
-            });
+            var check_api = function (api) {
+                if (typeof api == 'string') {
+                    if ((api = _match_replace(api, host.data.save(true))) === false)
+                        return false;
+                    options.api = api;
+                }
+                return true;
+            };
+            if (check_api(def.update)) {
+                _post(host, 'update', options, false).done(function (response) {
+                    host.data.extend(response);
+                });
+            }
         }
         if (host.events.show.length > 0) {
             for (x in host.events.show)
-                _toggle(host, host.events.show[x]);
+                _toggle_show(host, host.events.show[x]);
+        }
+        if (host.events.disabled.length > 0) {
+            for (x in host.events.disabled) {
+                var input = host.events.disabled[x];
+                var disabled = _eval(host, input.data('disabled'));
+                input.prop('disabled', disabled);
+                if (disabled) input.val('').change();
+            }
         }
         _validate_input(host, input);
     };
@@ -136,13 +153,13 @@
     function _input_event_focus(host, input) {
         var def = input.data('def');
         if (def.focus)
-            _eval(host, def.focus);
+            _eval_code(host, def.focus);
     };
 
     function _input_event_blur(host, input) {
         var def = input.data('def');
         if (def.blur)
-            _eval(host, def.blur);
+            _eval_code(host, def.blur);
     };
 
     function _input_select_populate(host, select, track) {
@@ -158,7 +175,7 @@
         $.get((options.match(/^https?:\/\//) ? options : hazaar.url(options)))
             .done(function (data) {
                 var item = host.data[def.name];
-                var required = ('required' in def) ? _eval(host, def.required) : false;
+                var required = ('required' in def) ? _eval_code(host, def.required) : false;
                 select.empty().prop('disabled', false);
                 if (def.placeholder && (!required || item == null))
                     select.append($('<option>').attr('value', '').html(def.placeholder).prop('disabled', (required == true)));
@@ -215,6 +232,7 @@
             .blur(function (event) { _input_event_blur(host, $(event.target)); })
             .on('update', function (event) { _input_event_update(host, $(event.target)); })
             .appendTo(group);
+        _check_input_disabled(host, select, def);
         if (typeof def.options == 'string') {
             var matches = def.options.match(/\{\{\w+\}\}/g);
             for (x in matches) {
@@ -227,7 +245,7 @@
                 _input_event_change(host, $(event.target));
             }));
         } else {
-            var required = ('required' in def) ? _eval(host, def.required) : false;
+            var required = ('required' in def) ? _eval_code(host, def.required) : false;
             if (def.placeholder && (!required || host.data[def.name].value == null))
                 select.append($('<option>')
                     .attr('value', '')
@@ -245,18 +263,17 @@
 
     function _input_checkbox(host, def) {
         var group = $('<div class="checkbox">').data('def', def);
-        var label = $('<label>').html([
-            $('<input type="checkbox">')
-                .attr('name', def.name)
-                .attr('data-bind', def.name)
-                .attr('checked', host.data[def.name])
-                .data('def', def)
-                .focus(function (event) { _input_event_focus(host, $(event.target)); })
-                .blur(function (event) { _input_event_blur(host, $(event.target)); })
-                .change(function (event) { _input_event_change(host, $(event.target)); })
-                .on('update', function (event) { _input_event_update(host, $(event.target)); }),
-            def.label
-        ]).appendTo(group);
+        var input = $('<input type="checkbox">')
+            .attr('name', def.name)
+            .attr('data-bind', def.name)
+            .attr('checked', host.data[def.name])
+            .data('def', def)
+            .focus(function (event) { _input_event_focus(host, $(event.target)); })
+            .blur(function (event) { _input_event_blur(host, $(event.target)); })
+            .change(function (event) { _input_event_change(host, $(event.target)); })
+            .on('update', function (event) { _input_event_update(host, $(event.target)); })
+        var label = $('<label>').html([input, def.label]).appendTo(group);
+        _check_input_disabled(host, input, def);
         return group;
     };
 
@@ -287,7 +304,7 @@
                 autoclose: true,
                 forceParse: true,
                 language: 'en',
-                clearBtn: ((('required' in def) ? _eval(host, def.required) : false) !== true),
+                clearBtn: ((('required' in def) ? _eval_code(host, def.required) : false) !== true),
                 todayHighlight: true
             };
             if (host.data[def.name])
@@ -298,6 +315,7 @@
                 def.placeholder = def.format;
         }
         if (def.placeholder) input.attr('placeholder', def.placeholder);
+        _check_input_disabled(host, input, def);
         return group.append(input_group);
     };
 
@@ -335,6 +353,7 @@
             .attr('name', def.name)
             .data('def', def)
             .appendTo(input_group);
+        _check_input_disabled(host, input, def);
         if (def.lookup && 'url' in def.lookup) {
             input.on('keyup', function (event) {
                 var values = host.data.save(true), query = '';
@@ -401,9 +420,10 @@
             .blur(function (event) { _input_event_blur(host, $(event.target)); })
             .change(function (event) { _input_event_change(host, $(event.target)); })
             .on('update', function (event) { _input_event_update(host, $(event.target)); });
-        if (def.format) input.attr('type', 'text').inputmask(def.format);
-        if (def.placeholder) input.attr('placeholder', def.placeholder);
-        if (def.prefix || def.suffix) {
+        if ('format' in def) input.attr('type', 'text').inputmask(def.format);
+        if ('placeholder' in def) input.attr('placeholder', def.placeholder);
+        _check_input_disabled(host, input, def);
+        if (('prefix' in def) || ('suffix' in def)) {
             var inputDIV = $('<div class="input-group">')
                 .appendTo(group);
             if (def.prefix) inputDIV.append($('<span class="input-group-addon">').html(def.prefix));
@@ -455,6 +475,13 @@
         return group;
     };
 
+    function _check_input_disabled(host, input, def) {
+        if (!('disabled' in def)) return false;
+        input.prop('disabled', _eval(host, def.disabled));
+        if (typeof def.disabled == 'string')
+            host.events.disabled.push(input.data('disabled', def.disabled));
+    };
+
     function _form_field(host, info) {
         var def = null, field = null;
         if (info instanceof Array)
@@ -504,8 +531,13 @@
         } else {
             field = $('<div>');
         }
-        if ('html' in def)
-            field.append(def.html);
+        if ('width' in def) field.width(def.width);
+        if ('html' in def) {
+            var html = def.html;
+            while (match = html.match(/\{\{(\w+)\}\}/))
+                html = html.replace(match[0], '<span data-bind="' + [match[1]] + '"></span>');
+            field.append(html);
+        }
         if ('show' in def) {
             if (typeof def.show == 'boolean')
                 field.toggle(def.show);
@@ -536,6 +568,7 @@
         var form = $('<div class="form-container">').data('def', page), sections = [];
         host.events = {
             show: [],
+            disabled: [],
             change: {}
         };
         host.data.unwatch();
@@ -544,7 +577,7 @@
             sections.push(_section(host, page.sections[x]));
         if (host.events.show.length > 0) {
             for (x in host.events.show)
-                _toggle(host, host.events.show[x]);
+                _toggle_show(host, host.events.show[x]);
         }
         host.objects.container.html(form.html(sections));
         host.data.resync();
@@ -601,10 +634,9 @@
             }
         }
         if ('show' in def) {
-            if (!((typeof def.show == 'boolean') ? def.show : _is_visible(host, def.show)))
-                return true;
+            if (!_eval(host, def.show)) return true;
         }
-        var required = ('required' in def) ? _eval(host, def.required) : false;
+        var required = ('required' in def) ? _eval_code(host, def.required) : false;
         if (required && !item)
             return { "field": name, "status": "required" };
         if ('format' in def && item) {
@@ -643,7 +675,7 @@
                             return { "field": name, "status": "too_long" };
                         break;
                     case 'custom':
-                        if (!_eval(host, data))
+                        if (!_eval_code(host, data))
                             return { "field": name, "status": "custom" };
                         break;
                 }
