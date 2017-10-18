@@ -269,6 +269,24 @@ class Model extends \Hazaar\Model\Strict {
 
                 $value = $items;
 
+            }else{
+
+                if($options = ake($field, 'options')){
+
+                    if(is_string($options))
+                        $options = $this->api($this->parseTarget($options));
+
+                }
+
+                foreach($value as &$item){
+
+                    if(($item instanceof \Hazaar\Model\dataBinderValue) && $label = $item->label)
+                        $item = $item->label;
+                    else
+                        $item = ake((array)$options, (($item instanceof \Hazaar\Model\dataBinderValue)?$item->value:$item));
+
+                }
+
             }
 
         }elseif ($value instanceof \Hazaar\Model\dataBinderValue && $value->label){
@@ -313,25 +331,33 @@ class Model extends \Hazaar\Model\Strict {
 
         $func = function($values, $evaluate){
 
-            $code = '';
-
-            foreach($values as $key => $value){
+            $export = function($export, &$value, $quote = true){
 
                 if($value instanceof \Hazaar\Model\dataBinderValue)
                     $value = $value->value;
 
-                if (is_string($value))
+                if (is_string($value) && $quote)
                     $value = "'" . $value . "'";
                 elseif(is_bool($value))
                     $value = strbool($value);
                 elseif(is_null($value))
                     $value = 'null';
-                elseif (is_array($value) || is_object($value))
+                elseif (is_array($value)){
+
+                    foreach($value as &$subValue)
+                        $subValue = $export($export, $subValue, false);
+
                     $value = var_export($value, true);
 
-                $code .= '$' . $key . ' = ' . $value . ";\n";
+                }
 
-            }
+                return $value;
+            };
+
+            $code = '';
+
+            foreach($values as $key => $value)
+                $code .= '$' . $key . ' = ' . $export($export, $value) . ";\n";
 
             $code .= "return ( " . $evaluate . " );\n";
 
