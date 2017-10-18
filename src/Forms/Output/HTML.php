@@ -30,7 +30,7 @@ class HTML extends \Hazaar\Forms\Output {
 
     private function __page($page){
 
-        $html = (new \Hazaar\Html\Div())->class('panel panel-default');
+        $html = (new \Hazaar\Html\Div())->class('form-page panel panel-default');
 
         if(property_exists($page, 'label'))
             $html->add((new \Hazaar\Html\Div((new \Hazaar\Html\H2($page->label))->class('panel-title')))->class('panel-heading'));
