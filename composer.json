@@ -38,6 +38,6 @@
     }
   },
   "require": {
-    "hazaarlabs/hazaar-mvc": ">= 2.3.20"
+    "hazaarlabs/hazaar-mvc": ">= 2.3.21"
   }
 }
