@@ -52,7 +52,7 @@
     };
 
     function _nullify(host, def) {
-        if (!typeof def === 'object')
+        if (typeof def !== 'object')
             return;
         if (def.name)
             host.data[def.name] = (('default' in def) ? def.default : null);
