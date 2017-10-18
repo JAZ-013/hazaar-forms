@@ -175,6 +175,7 @@
         if (track == true) _track(host);
         $.get((options.match(/^https?:\/\//) ? options : hazaar.url(options)))
             .done(function (data) {
+                btnGroup.empty();
                 for (x in data) {
                     var active = (host.data[def.name].indexOf(x) > -1);
                     var btn = $('<label class="btn btn-' + btnClass + ' ">')
@@ -210,9 +211,9 @@
             var matches = def.options.match(/\{\{\w+\}\}/g);
             for (x in matches) {
                 var match = matches[x].substr(2, matches[x].length - 4);
-                host.data.watch(match, function (key, value, select) {
-                    _input_select_populate(host, select, false);
-                }, select);
+                host.data.watch(match, function (key, value, btnGroup) {
+                    _input_select_multi_populate(host, btnGroup, false);
+                }, btnGroup);
             }
             _input_select_multi_populate(host, btnGroup, true);
         } else {
