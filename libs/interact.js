@@ -92,7 +92,7 @@
 
     function _match_replace(str, values) {
         while (match = str.match(/\{\{(\w+)\}\}/)) {
-            if (values[match[1]] === null)
+            if (!(match[1] in values) || values[match[1]] === null)
                 return false;
             str = str.replace(match[0], values[match[1]]);
         }
@@ -162,6 +162,81 @@
             _eval_code(host, def.blur);
     };
 
+    function _input_select_multi_populate(host, btnGroup, track) {
+        var def = btnGroup.data('def');
+        var options = def.options;
+        var data = $.extend({}, host.data.save(true), { "site_url": hazaar.url() });
+        var btnClass = def.class || 'default';
+        if ((options = _match_replace(options, data)) === false) {
+            btnGroup.hide();
+            host.data[def.name] = null;
+            return;
+        }
+        if (track == true) _track(host);
+        $.get((options.match(/^https?:\/\//) ? options : hazaar.url(options)))
+            .done(function (data) {
+                for (x in data) {
+                    var active = (host.data[def.name].indexOf(x) > -1);
+                    var btn = $('<label class="btn btn-' + btnClass + ' ">')
+                        .toggleClass('active', active)
+                        .html([$('<input type="checkbox">').attr('value', x).prop('checked', active), data[x]])
+                        .attr('data-bind-value', x)
+                        .appendTo(btnGroup);
+                    btn.change(function () {
+                        var value = this.childNodes[0].value;
+                        var index = host.data[def.name].indexOf(value);
+                        if (this.childNodes[0].checked && index == -1)
+                            host.data[def.name].push(value);
+                        else
+                            host.data[def.name].remove(index);
+                    });
+                }
+                _ready(host);
+            }).error(_error);
+        return true;
+    };
+
+    function _input_select_multi(host, def) {
+        var group = $('<div class="form-group">').data('def', def);
+        var label = $('<label class="control-label">')
+            .attr('for', def.name)
+            .html(def.label)
+            .appendTo(group);
+        var btnGroup = $('<div class="btn-group" data-toggle="buttons">')
+            .data('def', def)
+            .attr('data-bind', def.name);
+        if (def.justified) btnGroup.addClass('btn-group-justified');
+        if (typeof def.options == 'string') {
+            var matches = def.options.match(/\{\{\w+\}\}/g);
+            for (x in matches) {
+                var match = matches[x].substr(2, matches[x].length - 4);
+                host.data.watch(match, function (key, value, select) {
+                    _input_select_populate(host, select, false);
+                }, select);
+            }
+            _input_select_multi_populate(host, btnGroup, true);
+        } else {
+            var btnClass = def.class || 'default';
+            for (x in def.options) {
+                var active = (host.data[def.name].indexOf(x) > -1);
+                var btn = $('<label class="btn btn-' + btnClass + ' ">')
+                    .toggleClass('active', active)
+                    .html([$('<input type="checkbox">').attr('value', x).prop('checked', active), def.options[x]])
+                    .attr('data-bind-value', x)
+                    .appendTo(btnGroup);
+                btn.change(function () {
+                    var value = this.childNodes[0].value;
+                    var index = host.data[def.name].indexOf(value);
+                    if (this.childNodes[0].checked && index == -1)
+                        host.data[def.name].push(value);
+                    else
+                        host.data[def.name].remove(index);
+                });
+            }
+        }
+        return group.append($('<div>').html(btnGroup));
+    };
+
     function _input_select_populate(host, select, track) {
         var def = select.data('def');
         var options = def.options;
@@ -187,35 +262,6 @@
                     host.data[def.name] = null;
             }).error(_error);
         return true;
-    };
-
-    function _input_select_multi(host, def) {
-        var group = $('<div class="form-group">').data('def', def);
-        var label = $('<label class="control-label">')
-            .attr('for', def.name)
-            .html(def.label)
-            .appendTo(group);
-        var btnGroup = $('<div class="btn-group" data-toggle="buttons">')
-            .attr('data-bind', def.name);
-        var btnClass = def.class || 'default';
-        for (x in def.options) {
-            var active = (host.data[def.name].indexOf(x) > -1);
-            var btn = $('<label class="btn btn-' + btnClass + ' ">')
-                .toggleClass('active', active)
-                .html([$('<input type="checkbox">').attr('value', x).prop('checked', active), def.options[x]])
-                .attr('data-bind-value', x)
-                .appendTo(btnGroup);
-            btn.change(function () {
-                var value = this.childNodes[0].value;
-                var index = host.data[def.name].indexOf(value);
-                if (this.childNodes[0].checked && index == -1)
-                    host.data[def.name].push(value);
-                else
-                    host.data[def.name].remove(index);
-            });
-        }
-        if (def.justified) btnGroup.addClass('btn-group-justified');
-        return group.append($('<div>').html(btnGroup));
     };
 
     function _input_select(host, def) {
@@ -494,6 +540,7 @@
         if (def.fields && def.type != 'array') {
             var length = def.fields.length;
             for (x in def.fields) {
+                if (!def.fields[x]) continue;
                 if (typeof def.fields[x] !== 'object') def.fields[x] = { name: def.fields[x] };
                 if (!('weight' in def.fields[x])) def.fields[x].weight = 1;
                 length = length + (def.fields[x].weight - 1);
@@ -604,7 +651,7 @@
 
     //Navigate to a page
     function _nav(host, pageno) {
-        host.loading++;
+        _track(host);
         host.page = pageno;
         _page(host, host.def.pages[pageno]);
         $(host).trigger('nav', [pageno + 1, host.def.pages.length]);
@@ -710,6 +757,13 @@
         return true;
     };
 
+    //Signal that we're loading something and should show the loader.  MUST call _ready() when done.
+    function _track(host) {
+        host.objects.container.hide();
+        host.objects.loader.show();
+        host.loading++;
+    };
+
     //Signal that everything is ready to go
     function _ready(host) {
         host.loading--;
@@ -758,11 +812,7 @@
             if (index in host.posts)
                 return { done: function (callback) { callback(host.posts[index]); } };
         }
-        if (track !== false) {
-            host.objects.container.hide();
-            host.objects.loader.show();
-            host.loading++;
-        }
+        if (track === true) _track(host);
         var params = $.extend(true, {}, {
             name: host.settings.form,
             params: host.settings.params,
@@ -775,7 +825,7 @@
         }).always(function (response) {
             if (host.settings.cachedActions.indexOf(action) != -1)
                 host.posts[index] = response;
-            _ready(host);
+            if (track === true) _ready(host);
         }).fail(_error);
     };
 
