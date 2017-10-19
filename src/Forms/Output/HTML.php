@@ -79,8 +79,34 @@ class HTML extends \Hazaar\Forms\Output {
 
                 $html = (new \Hazaar\Html\Div())->class('row');
 
-                foreach($field as $field_col)
-                    $html->add((new \Hazaar\Html\Div($this->__group(array($field_col))))->class('col-lg-' . (12 / count($field))));
+                $length = count($field);
+
+                foreach ($field as $field_col) {
+
+                    if (!$field_col) continue;
+
+                    if (!is_object($field_col))
+                        $field_col = (object)array("name" => $field_col);
+
+                    if (!property_exists($field_col, 'weight'))
+                        $field_col->weight = 1;
+
+                    $length = $length + ($field_col->weight - 1);
+
+                }
+
+                $col_width = (12 / $length);
+
+                foreach($field as $field_col){
+
+                    $field_width = $col_width;
+
+                    if (is_object($field_col) && property_exists($field_col, 'weight'))
+                        $field_width = round($field_width * $field_col->weight);
+
+                    $html->add((new \Hazaar\Html\Div($this->__group(array($field_col))))->class('col-lg-' . $field_width));
+
+                }
 
                 $items[] = $html;
 
