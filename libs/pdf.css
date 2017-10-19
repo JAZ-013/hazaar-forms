@@ -19,30 +19,20 @@ h1, h2, h3, h4, h5, h6 {
         float: right;
         max-height: 125px;
         margin-bottom: 25px;
-        padding: 15px;
-        background: #fff;
-        border: 1px solid #eee;
-        box-shadow: 2px 2px 8px rgba(0,0,0,0.3);
     }
 
 .panel {
     margin-bottom: 25px;
     width: 100%;
-    border: 1px solid #ddd;
 }
 
-.panel-heading {
-    padding: 15px;
-    background: #ddd;
+.panel-heading, .panel-body {
+    padding: 5px;
 }
 
     .panel-heading .panel-title {
         margin: 0;
     }
-
-.panel-body {
-    padding: 15px;
-}
 
     .panel-body:after,
     .row:after {
@@ -139,5 +129,5 @@ h1, h2, h3, h4, h5, h6 {
     }
 
     .table th {
-        border-bottom: 2px solid #dddddd;
+        border-bottom: 1px solid #dddddd;
     }
