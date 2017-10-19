@@ -175,6 +175,8 @@
         if (track == true) _track(host);
         $.get((options.match(/^https?:\/\//) ? options : hazaar.url(options)))
             .done(function (data) {
+                var remove = host.data[def.name].save(true).filter(function (i) { return !(i in data); });
+                for (x in remove) host.data[def.name].remove(remove[x]);
                 btnGroup.empty();
                 for (x in data) {
                     var active = (host.data[def.name].indexOf(x) > -1);
