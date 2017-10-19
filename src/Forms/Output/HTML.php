@@ -103,11 +103,9 @@ class HTML extends \Hazaar\Forms\Output {
         if($label = ake($field, 'label'))
             $group->add(new \Hazaar\Html\H4($label));
 
-        $value = $field['value'];
-
         if(ake($field, 'type') == 'array'){
 
-            if(array_key_exists('fields', $field)){
+            if(property_exists($field, 'fields')){
 
                 $table = (new \Hazaar\Html\Table())->class('table');
 
@@ -135,10 +133,10 @@ class HTML extends \Hazaar\Forms\Output {
 
                 $list = (new \Hazaar\Html\Ul())->class('form-value-group');
 
-                if(array_key_exists('options', $field)){
+                if(property_exists($field, 'options')){
 
-                    foreach($value as $item)
-                        $list->add((new \Hazaar\Html\Li(ake($field['options'], $item, $item)))->class('form-value'));
+                    foreach($field->value as $item)
+                        $list->add((new \Hazaar\Html\Li(ake($field->options, $item, $item)))->class('form-value'));
 
                 }
 
@@ -146,17 +144,17 @@ class HTML extends \Hazaar\Forms\Output {
 
             }
 
-        }else{
+        }elseif(ake($field, 'type') !== null){
 
-            if($field['type'] == 'boolean')
-                $value = yn($value);
+            if(ake($field, 'type') == 'boolean')
+                $field->value = yn($field->value);
 
             $value_group = (new \Hazaar\Html\Div())->class('form-value');
 
             if($prefix = ake($field, 'prefix'))
                 $value_group->add($prefix . ' ');
 
-            $value_group->add($value);
+            $value_group->add($field->value);
 
             if($suffix = ake($field, 'suffix'))
                 $value_group->add(' ' . $suffix);
@@ -164,6 +162,9 @@ class HTML extends \Hazaar\Forms\Output {
             $group->add($value_group);
 
         }
+
+        if($html = ake($field, 'html'))
+            $group->add($this->model->matchReplace((string)$html, true));
 
         return $group;
 
