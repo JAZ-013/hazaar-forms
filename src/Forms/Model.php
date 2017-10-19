@@ -221,14 +221,14 @@ class Model extends \Hazaar\Model\Strict {
             if(!array_key_exists($field, $this->__form->fields))
                 return null;
 
-            $field = array_merge($this->__form->fields[$field], array('name' => $field));
+            $field = (object)array_merge($this->__form->fields[$field], array('name' => $field));
 
         }elseif(is_object($field)){
 
             if(!property_exists($field, 'name'))
-                return null;
+                return $field;
 
-            $field = array_merge(ake($this->__form->fields, $field->name, array()), (array)$field);
+            $field = (object)array_merge(ake($this->__form->fields, $field->name, array()), (array)$field);
 
         }else{
 
@@ -239,29 +239,25 @@ class Model extends \Hazaar\Model\Strict {
         if(!$this->evaluate(ake($field, 'show')))
             return null;
 
-        $field_key = $field['name'];
+        $field_key = $field->name;
 
         $value = ake($field, 'value', $this->get($field_key));
 
         if(ake($field, 'type') == 'array'){
 
-            if(array_key_exists('fields', $field) && is_array($field['fields'])){
+            if(property_exists($field, 'fields') && is_array($field->fields)){
 
                 $items = array();
 
-                if(array_key_exists('fields', $field) && is_array($field['fields'])){
+                foreach($value as $id => $item){
 
-                    foreach($value as $id => $item){
+                    foreach(ake($field, 'fields', array()) as $key => $def){
 
-                        foreach(ake($field, 'fields', array()) as $key => $def){
+                        $def->name = $key;
 
-                            $def->name = $key;
+                        $def->value = ake($item, $key);
 
-                            $def->value = ake($item, $key);
-
-                            $items[$id][$key] = $this->__field($def);
-
-                        }
+                        $items[$id][$key] = $this->__field($def);
 
                     }
 
@@ -302,7 +298,7 @@ class Model extends \Hazaar\Model\Strict {
 
         }
 
-        $field['value'] = $value;
+        $field->value = $value;
 
         return $field;
 
