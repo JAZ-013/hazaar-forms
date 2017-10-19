@@ -225,6 +225,8 @@
                 .attr('data-toggle', 'buttons')
                 .toggleClass('btn-group-justified', (def.justified === true))
             ).appendTo(group);
+        } else {
+            container.attr('data-bind', def.name).attr('data-toggle', 'checks');
         }
         if (typeof def.options == 'string') {
             var matches = def.options.match(/\{\{\w+\}\}/g);
