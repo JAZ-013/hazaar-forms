@@ -15,8 +15,11 @@ h1, h2, h3, h4, h5, h6 {
     margin-bottom: 50px;
 }
 
-    .form-header .form-logo {
-        margin-bottom: 25px;
+    .form-header .form-logo,
+    .form-prefix,
+    .form-suffix,
+    .form-group {
+        margin-bottom: 15px;
     }
 
 .panel {
@@ -24,23 +27,11 @@ h1, h2, h3, h4, h5, h6 {
     width: 100%;
 }
 
-.panel-heading, .panel-body {
-    padding: 5px;
-}
-
-    .panel-heading .panel-title {
-        margin: 0;
-    }
-
-    .panel-body:after,
-    .row:after {
-        clear: both;
-        content: " ";
-        display: table;
-    }
-
-.form-group {
-    margin-bottom: 15px;
+.panel-body:after,
+.row:after {
+    clear: both;
+    content: " ";
+    display: table;
 }
 
 .row {

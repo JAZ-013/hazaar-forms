@@ -33,7 +33,7 @@ class PDF extends HTML {
 
             foreach(get_object_vars($item) as $attr => $content){
 
-                if($attr == 'href' || $attr == 'src')
+                if(($attr == 'href' || $attr == 'src') && strpos($content, ':') === false)
                     $content = (string)(new \Hazaar\Application\Url($content));
 
                 $element->attr($attr, $content);
@@ -45,7 +45,7 @@ class PDF extends HTML {
 
     }
 
-    final public function render(){
+    public function render($form = null, $inc_ixes = true){
 
         $form = $this->model->resolve();
 
@@ -64,7 +64,7 @@ class PDF extends HTML {
 
         $html->add($head, $body);
 
-        $body->add(parent::render($form));
+        $body->add(parent::render($form, (property_exists($form, 'pdf')? $form->pdf : null)));
 
         if(property_exists($form, 'pdf')){
 

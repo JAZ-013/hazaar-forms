@@ -12,7 +12,7 @@ namespace Hazaar\Forms\Output;
  */
 class HTML extends \Hazaar\Forms\Output {
 
-    public function render($form = null){
+    public function render($form = null, $ixes = null){
 
         if($form === null)
             $form = $this->model->resolve();
@@ -21,8 +21,17 @@ class HTML extends \Hazaar\Forms\Output {
 
         $div->add((new \Hazaar\Html\Div(new \Hazaar\Html\H1(ake($form, 'name', 'Unnamed Form'))))->class('form-header'));
 
+        if(!$ixes && property_exists($form, 'html'))
+            $ixes = $form->html;
+
+        if(is_object($ixes) && property_exists($ixes, 'prefix'))
+            $div->add((new \Hazaar\Html\Div($this->model->matchReplace((string)$ixes->prefix, true)))->class('form-prefix'));
+
         foreach($form->pages as $page_num => $page)
             $div->add($this->__page($page, $page_num + 1));
+
+        if(is_object($ixes) && property_exists($ixes,  'suffix'))
+            $div->add((new \Hazaar\Html\Div($this->model->matchReplace((string)$ixes->suffix, true)))->class('form-suffix'));
 
         return $div;
 
@@ -124,12 +133,12 @@ class HTML extends \Hazaar\Forms\Output {
 
             }else{
 
-                $list = new \Hazaar\Html\Ul();
+                $list = (new \Hazaar\Html\Ul())->class('form-value-group');
 
                 if(array_key_exists('options', $field)){
 
                     foreach($value as $item)
-                        $list->add(new \Hazaar\Html\Li(ake($field['options'], $item, $item)));
+                        $list->add((new \Hazaar\Html\Li(ake($field['options'], $item, $item)))->class('form-value'));
 
                 }
 
