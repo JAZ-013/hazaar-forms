@@ -12,6 +12,39 @@ namespace Hazaar\Forms\Output;
  */
 class PDF extends HTML {
 
+    private function renderItem($tag, $item){
+
+        if(is_array($item)){
+
+            foreach($item as &$i)
+                $i = $this->renderItem($tag, $i);
+
+            return $item;
+
+        }
+
+        $element = new \Hazaar\Html\Block($tag);
+
+        if(is_string($item)){
+
+            $element->add($item);
+
+        }else{
+
+            foreach(get_object_vars($item) as $attr => $content){
+
+                if($attr == 'href' || $attr == 'src')
+                    $content = (string)(new \Hazaar\Application\Url($content));
+
+                $element->attr($attr, $content);
+
+            }
+
+        }
+        return $element;
+
+    }
+
     final public function render(){
 
         $form = $this->model->resolve();
@@ -25,13 +58,6 @@ class PDF extends HTML {
         if($file = \Hazaar\Loader::getModuleFilePath('pdf.css'))
             $style = file_get_contents($file);
 
-        if(property_exists($form, 'pdf')){
-
-            if(property_exists($form->pdf, 'style'))
-                $style .= "\n" . $form->pdf->style;
-
-        }
-
         $head->add(new \Hazaar\Html\Block('style', $style));
 
         $body = new \Hazaar\Html\Body();
@@ -41,6 +67,13 @@ class PDF extends HTML {
         $body->add(parent::render($form));
 
         if(property_exists($form, 'pdf')){
+
+            if(property_exists($form->pdf, 'head')){
+
+                foreach($form->pdf->head as $tag => $items)
+                    $head->add($this->renderItem($tag, $items));
+
+            }
 
             if(property_exists($form->pdf, 'logo')){
 
