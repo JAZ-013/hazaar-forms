@@ -162,11 +162,40 @@
             _eval_code(host, def.blur);
     };
 
-    function _input_select_multi_populate(host, btnGroup, track) {
-        var def = btnGroup.data('def');
+    function _input_select_multi_items(host, def, data) {
+        var items = [];
+        var btnClass = def.class || 'default';
+        var fChange = function () {
+            var value = this.childNodes[0].value;
+            var index = host.data[def.name].indexOf(value);
+            if (this.childNodes[0].checked && index == -1)
+                host.data[def.name].push({ '__hz_value': value, '__hz_label': this.childNodes[1].nodeValue });
+            else
+                host.data[def.name].remove(index);
+        };
+        for (x in data) {
+            var active = (host.data[def.name].indexOf(x) > -1), name = def.name + '_' + x;
+            var label = $('<label>')
+                .html([$('<input type="checkbox">').attr('value', x).prop('checked', active), data[x]])
+                .attr('data-bind-value', x)
+                .change(fChange);
+            if (def.buttons === true) {
+                items.push(label.toggleClass('btn', (def.buttons === true))
+                    .toggleClass('btn-' + btnClass, (def.buttons === true))
+                    .toggleClass('active', active));
+            } else if (def.inline === true) {
+                items.push(label.addClass('checkbox-inline'));
+            } else {
+                items.push($('<div class="checkbox">').html(label));
+            }
+        }
+        return items;
+    };
+
+    function _input_select_multi_populate(host, container, track) {
+        var def = container.data('def');
         var options = def.options;
         var data = $.extend({}, host.data.save(true), { "site_url": hazaar.url() });
-        var btnClass = def.class || 'default';
         if ((options = _match_replace(options, data)) === false) {
             btnGroup.hide();
             host.data[def.name] = null;
@@ -177,23 +206,7 @@
             .done(function (data) {
                 var remove = host.data[def.name].save(true).filter(function (i) { return !(i in data); });
                 for (x in remove) host.data[def.name].remove(remove[x]);
-                btnGroup.empty();
-                for (x in data) {
-                    var active = (host.data[def.name].indexOf(x) > -1);
-                    var btn = $('<label class="btn btn-' + btnClass + ' ">')
-                        .toggleClass('active', active)
-                        .html([$('<input type="checkbox">').attr('value', x).prop('checked', active), data[x]])
-                        .attr('data-bind-value', x)
-                        .appendTo(btnGroup);
-                    btn.change(function () {
-                        var value = this.childNodes[0].value;
-                        var index = host.data[def.name].indexOf(value);
-                        if (this.childNodes[0].checked && index == -1)
-                            host.data[def.name].push({ '__hz_value': value, '__hz_label': this.childNodes[1].nodeValue });
-                        else
-                            host.data[def.name].remove(index);
-                    });
-                }
+                container.empty().append(_input_select_multi_items(host, def, data));
                 _ready(host);
             }).error(_error);
         return true;
@@ -205,39 +218,27 @@
             .attr('for', def.name)
             .html(def.label)
             .appendTo(group);
-        var btnGroup = $('<div class="btn-group" data-toggle="buttons">')
-            .data('def', def)
-            .attr('data-bind', def.name);
-        if (def.justified) btnGroup.addClass('btn-group-justified');
+        var container = $('<div>').data('def', def).appendTo(group);
+        if (def.buttons === true) {
+            $('<div>').html(container.addClass('btn-group')
+                .attr('data-bind', def.name)
+                .attr('data-toggle', 'buttons')
+                .toggleClass('btn-group-justified', (def.justified === true))
+            ).appendTo(group);
+        }
         if (typeof def.options == 'string') {
             var matches = def.options.match(/\{\{\w+\}\}/g);
             for (x in matches) {
                 var match = matches[x].substr(2, matches[x].length - 4);
-                host.data.watch(match, function (key, value, btnGroup) {
-                    _input_select_multi_populate(host, btnGroup, false);
-                }, btnGroup);
+                host.data.watch(match, function (key, value, container) {
+                    _input_select_multi_populate(host, container, false);
+                }, container);
             }
-            _input_select_multi_populate(host, btnGroup, true);
+            _input_select_multi_populate(host, container, true);
         } else {
-            var btnClass = def.class || 'default';
-            for (x in def.options) {
-                var active = (host.data[def.name].indexOf(x) > -1);
-                var btn = $('<label class="btn btn-' + btnClass + ' ">')
-                    .toggleClass('active', active)
-                    .html([$('<input type="checkbox">').attr('value', x).prop('checked', active), def.options[x]])
-                    .attr('data-bind-value', x)
-                    .appendTo(btnGroup);
-                btn.change(function () {
-                    var value = this.childNodes[0].value;
-                    var index = host.data[def.name].indexOf(value);
-                    if (this.childNodes[0].checked && index == -1)
-                        host.data[def.name].push(value);
-                    else
-                        host.data[def.name].remove(index);
-                });
-            }
+            container.empty().append(_input_select_multi_items(host, def, def.options));
         }
-        return group.append($('<div>').html(btnGroup));
+        return group;
     };
 
     function _input_select_populate(host, select, track) {
