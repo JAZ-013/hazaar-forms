@@ -274,7 +274,7 @@ class Model extends \Hazaar\Model\Strict {
                 if($options = ake($field, 'options')){
 
                     if(is_string($options))
-                        $options = $this->api($this->parseTarget($options));
+                        $options = $this->api($this->matchReplace($options));
 
                 }
 
@@ -296,7 +296,7 @@ class Model extends \Hazaar\Model\Strict {
         }elseif($options = ake($field, 'options')){
 
             if(is_string($options))
-                $options = $this->api($this->parseTarget($options));
+                $options = $this->api($this->matchReplace($options));
 
             $value = ake((array)$options, (($value instanceof \Hazaar\Model\dataBinderValue)?$value->value:$value));
 
@@ -400,17 +400,17 @@ class Model extends \Hazaar\Model\Strict {
 
     }
 
-    public function parseTarget($target){
+    public function matchReplace($string, $use_label = false){
 
-        while (preg_match('/\{\{(\w+)\}\}/', $target, $match)){
+        while (preg_match('/\{\{(\w+)\}\}/', $string, $match)){
 
             $item = $this->get($match[1]);
 
-            $target = str_replace($match[0], (($item instanceof \Hazaar\Model\dataBinderValue) ? $item->value : $item), $target);
+            $string = str_replace($match[0], ((!$use_label && $item instanceof \Hazaar\Model\dataBinderValue) ? $item->value : (string)$item), $string);
 
         }
 
-        return $target;
+        return $string;
 
     }
 
