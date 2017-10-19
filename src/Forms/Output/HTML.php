@@ -21,16 +21,16 @@ class HTML extends \Hazaar\Forms\Output {
 
         $div->add((new \Hazaar\Html\Div(new \Hazaar\Html\H1(ake($form, 'name', 'Unnamed Form'))))->class('form-header'));
 
-        foreach($form->pages as $page)
-            $div->add($this->__page($page));
+        foreach($form->pages as $page_num => $page)
+            $div->add($this->__page($page, $page_num + 1));
 
         return $div;
 
     }
 
-    private function __page($page){
+    private function __page($page, $page_num){
 
-        $html = (new \Hazaar\Html\Div())->class('form-page panel panel-default');
+        $html = (new \Hazaar\Html\Div())->class('panel panel-default form-page page-' . $page_num);
 
         if(property_exists($page, 'label'))
             $html->add((new \Hazaar\Html\Div((new \Hazaar\Html\H2($page->label))->class('panel-title')))->class('panel-heading'));
