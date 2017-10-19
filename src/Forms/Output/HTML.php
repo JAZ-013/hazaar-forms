@@ -142,7 +142,7 @@ class HTML extends \Hazaar\Forms\Output {
             if($field['type'] == 'boolean')
                 $value = yn($value);
 
-            $value_group = (new \Hazaar\Html\Div())->class('field-value');
+            $value_group = (new \Hazaar\Html\Div())->class('form-value');
 
             if($prefix = ake($field, 'prefix'))
                 $value_group->add($prefix . ' ');
