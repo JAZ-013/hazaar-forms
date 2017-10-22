@@ -208,7 +208,7 @@
                 for (x in remove) host.data[def.name].remove(remove[x]);
                 container.empty().append(_input_select_multi_items(host, def, data));
                 _ready(host);
-            }).error(_error);
+            }).fail(_error);
         return true;
     };
 
@@ -266,7 +266,7 @@
                     select.val(item.value);
                 else
                     host.data[def.name] = null;
-            }).error(_error);
+            }).fail(_error);
         return true;
     };
 
