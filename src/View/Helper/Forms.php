@@ -22,14 +22,14 @@ class Forms extends \Hazaar\View\Helper {
 
         $this->requires('cdnjs');
 
-        $this->cdnjs->load('bootstrap-datepicker', null, 'css/bootstrap-datepicker.min.css');
-
-        $this->cdnjs->load('jquery.inputmask');
-
     }
 
     function init($view, $args = array()){
 
+        $this->cdnjs->load('bootstrap-datepicker', null, 'css/bootstrap-datepicker.min.css');
+
+        $this->cdnjs->load('jquery.inputmask');
+        
         //Link required stylesheets
         $view->link($this->application->url('hazaar/forms', 'file/interact.css'));
 
