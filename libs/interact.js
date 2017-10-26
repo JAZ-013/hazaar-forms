@@ -28,27 +28,25 @@
 
     function _eval_code(host, evaluate) {
         if (typeof evaluate === 'boolean') return evaluate;
-        return (function (form, evaluate) {
-            var code = '';
-            if (evaluate.indexOf(';') < 0) {
-                var values = form.save(true);
-                for (key in values) {
-                    var value = values[key];
-                    if (typeof value == 'string') value = "'" + value + "'";
-                    else if (typeof value == 'object' || typeof value == 'array') value = JSON.stringify(value);
-                    code += 'var ' + key + " = " + value + ";\n";
-                }
-                code += "( " + evaluate + " );";
-            } else {
-                code = '(function(form){' + evaluate + '})(form)';
+        var code = '';
+        if (evaluate.indexOf(';') < 0) {
+            var values = host.data.save(true);
+            for (key in values) {
+                var value = values[key];
+                if (typeof value == 'string') value = "'" + value + "'";
+                else if (typeof value == 'object' || typeof value == 'array') value = JSON.stringify(value);
+                code += 'var ' + key + " = " + value + ";\n";
             }
-            try {
-                return eval(code);
-            } catch (error) {
-                _error(error);
-            }
-            return false;
-        })(host.data, evaluate);
+            code += "return ( " + evaluate + " );";
+        } else {
+            code = evaluate;
+        }
+        try {
+            return new Function('form', code)(host);
+        } catch (error) {
+            _error(error);
+        }
+        return false;
     };
 
     function _nullify(host, def) {
@@ -71,6 +69,8 @@
 
     function _eval(host, script) {
         if (typeof script == 'boolean') return script;
+        if (script.indexOf(';') != -1)
+            return _eval_code(host, script);
         var script = script.replace(/\s/g, '');
         var parts = script.split(/(\&\&|\|\|)/);
         for (var x = 0; x < parts.length; x += 2) {
@@ -197,7 +197,7 @@
         var options = def.options;
         var data = $.extend({}, host.data.save(true), { "site_url": hazaar.url() });
         if ((options = _match_replace(options, data)) === false) {
-            btnGroup.hide();
+            container.hide();
             host.data[def.name] = null;
             return;
         }
@@ -549,7 +549,7 @@
             info = { fields: info };
         if (!(def = _form_field_lookup(host, info))) return;
         if ('render' in def) {
-            field = new Function(def.render)(def, host.data[def.name].save(true));
+            field = new Function('field', 'form', def.render)($.extend({}, def, { value: host.data[def.name].save(true) }), host);
         } else if (def.fields && def.type != 'array') {
             var length = def.fields.length, fields = [];
             for (x in def.fields) {
