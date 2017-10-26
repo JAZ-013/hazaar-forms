@@ -305,6 +305,76 @@ $(document).ready(function () {
 
 This bit of code will handle the click events on a couple of buttons that allow us to save and submit a form.  Save is the default method, while submit pops up a confirmation and also sends a bit of extra data to signal that we are submitting.  We can do whatever we want with this data in our forms controller save() method.  The idea in this example is that we can save the form as we go, then submit it at the end and navigate the page away or do something different.
 
+## Custom Inputs
+
+It is possible to create a completely custom input using jQuery.  Adding custom inputs is an advanced function and there are a few things to consider if you are going to go this route.
+
+* Your code is responsible for rendering the entire field, including the label.
+* You code is responsible for handling events, such as on change or on keypress.
+* You code MUST return a jQuery object constainer.
+* If you want the input to correctly interract with the MVVM data binder you will need to remember to add the ```data-bind``` attribute to the actual input (see example 2 below).
+
+### Available Variables
+
+There are two global variables available to your function:
+
+* **field** contains the field definition, including the current value of the field.  This will at a minimum contain the properties *name* and *value*.  The rest is whatever you defined in your JSON field definition.
+* **form** is the form object.  You can call functions on it as well as directly access the form data by modifying the *dataBinder* object on *form.data*.
+
+### Example 1 - A Simple Text Input
+
+Below is an example of how to create a custom input.  This will generate a text input with no style and no label and is defined entirely within the JSON field definition file.
+
+```json
+{
+    "pages": [],
+    "fields": {
+        "custom": {
+            "type": "text",
+            "label": "A Simple Custom Input",
+            "render": "return $('<input type="text">').val(field.value);"
+        }      
+    }
+}
+  
+```
+
+**NOTE** - Keep in mind that the above example will not actually do anything because we have not handled any ```onChange``` events that update the form data.
+
+### Example 2 - A Less Simple Text Input
+
+This code creates a slightly more advanced text input similar to the built in text input generator.  This custom input is defined in your application javascript somewhere as a function call that must be accessible and included in your form controller (use ```$this->require('yourscript.js');``` in your controller as usual).
+
+```javascript
+function myCustomInput(field, form) {
+    var group = $('<div class="form-group">');
+    $('<label class="control-label">').attr('for', field.name).html(field.label).appendTo(group);
+    $('<input type="text" placeholder="custom input" class="form-control">')
+        .attr('data-bind', field.name)
+        .val(field.value)
+        .appendTo(group)
+        .change(function () {
+            form.data[field.name] = $(this).val();
+        });
+    return group;
+};
+```
+
+Then we can use a similar JSON field definition as example 1, except we call our function and pass it the **field** and **form** variables.
+
+```json
+{
+    "pages": [],
+    "fields": {
+        "custom": {
+            "type": "text",
+            "label": "A Simple Custom Input",
+            "render": "return myCustomInput(field, form);"
+        }      
+    }
+}
+  
+```
 
 # Conclusion
 
