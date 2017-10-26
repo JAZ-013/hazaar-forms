@@ -548,7 +548,9 @@
         if (info instanceof Array)
             info = { fields: info };
         if (!(def = _form_field_lookup(host, info))) return;
-        if (def.fields && def.type != 'array') {
+        if ('render' in def) {
+            field = new Function(def.render)(def, host.data[def.name].save(true));
+        } else if (def.fields && def.type != 'array') {
             var length = def.fields.length, fields = [];
             for (x in def.fields) {
                 var field = _form_field_lookup(host, def.fields[x]);
@@ -572,7 +574,6 @@
                 field = _input_select(host, def);
         } else if ('lookup' in def && def.type == 'text') {
             field = _input_lookup(host, def);
-
         } else if (def.type) {
             switch (def.type) {
                 case 'array':
