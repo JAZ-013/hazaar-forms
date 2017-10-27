@@ -37,16 +37,9 @@
                 else if (typeof value == 'object' || typeof value == 'array') value = JSON.stringify(value);
                 code += 'var ' + key + " = " + value + ";\n";
             }
-            code += "return ( " + evaluate + " );";
-        } else {
-            code = evaluate;
+            return new Function('form', code + "\nreturn ( " + evaluate + " );")();
         }
-        try {
-            return new Function('form', code)(host);
-        } catch (error) {
-            _error(error);
-        }
-        return false;
+        return new Function('form', evaluate)(host.data);
     };
 
     function _nullify(host, def) {
@@ -244,22 +237,26 @@
     };
 
     function _input_select_populate(host, select, track) {
-        var def = select.data('def');
-        var options = def.options;
+        var def = select.data('def'), options = def.options, url = null;
         var data = $.extend({}, host.data.save(true), { "site_url": hazaar.url() });
-        if ((options = _match_replace(options, data)) === false) {
+        if ((url = _match_replace(options.url, data)) === false) {
             select.empty().prop('disabled', true);
             host.data[def.name] = null;
             return;
         }
-        select.html($('<option>').html('Loading...'));
-        $.get((options.match(/^https?:\/\//) ? options : hazaar.url(options)))
+        select.html($('<option selected>').html('Loading...'));
+        $.get((url.match(/^https?:\/\//) ? url : hazaar.url(url)))
             .done(function (data) {
                 var item = host.data[def.name];
                 var required = ('required' in def) ? _eval_code(host, def.required) : false;
                 select.empty().prop('disabled', false);
                 if (def.placeholder && (!required || item == null))
                     select.append($('<option>').attr('value', '').html(def.placeholder).prop('disabled', (required == true)));
+                if ('value' in options || 'label' in options) {
+                    var valueKey = options.value || 'value', labelKey = options.label || 'label', newdata = {};
+                    for (x in data) newdata[data[x][valueKey]] = data[x][labelKey];
+                    data = newdata;
+                }
                 for (x in data)
                     select.append($('<option>').attr('value', x).html(data[x]));
                 if (item && (item.value in data))
@@ -285,8 +282,9 @@
             .on('update', function (event) { _input_event_update(host, $(event.target)); })
             .appendTo(group);
         _check_input_disabled(host, select, def);
-        if (typeof def.options == 'string') {
-            var matches = def.options.match(/\{\{\w+\}\}/g);
+        if (typeof def.options == 'string') def.options = { url: def.options };
+        if ('url' in def.options) {
+            var matches = def.options.url.match(/\{\{\w+\}\}/g);
             for (x in matches) {
                 var match = matches[x].substr(2, matches[x].length - 4);
                 host.data.watch(match, function (key, value, select) {
