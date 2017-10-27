@@ -37,16 +37,9 @@
                 else if (typeof value == 'object' || typeof value == 'array') value = JSON.stringify(value);
                 code += 'var ' + key + " = " + value + ";\n";
             }
-            code += "return ( " + evaluate + " );";
-        } else {
-            code = evaluate;
+            return new Function('form', code + "\nreturn ( " + evaluate + " );")();
         }
-        try {
-            return new Function('form', code)(host);
-        } catch (error) {
-            _error(error);
-        }
-        return false;
+        return new Function('form', evaluate)(host.data);
     };
 
     function _nullify(host, def) {
