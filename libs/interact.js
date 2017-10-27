@@ -511,7 +511,8 @@
             var data = {};
             parent.children('.itemlist-newitems').children().each(function (index_0, item_0) {
                 $(item_0).find('input,select,textarea').each(function (index_1, item_1) {
-                    var value = $(item_1).val();
+                    var input = $(item_1), value = input.val();
+                    if (input.is('select')) value = { __hz_value: value, __hz_label: input.children('option:selected').text() };
                     data[item_1.name] = value;
                     $(item_1).val('');
                 });
