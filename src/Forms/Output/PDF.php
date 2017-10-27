@@ -23,13 +23,17 @@ class PDF extends HTML {
 
         }
 
-        $element = new \Hazaar\Html\Block($tag);
+        $element = null;
 
         if(is_string($item)){
+
+            $element = new \Hazaar\Html\Block($tag);
 
             $element->add($item);
 
         }else{
+
+            $element = new \Hazaar\Html\Inline($tag);
 
             foreach(get_object_vars($item) as $attr => $content){
 
@@ -41,6 +45,7 @@ class PDF extends HTML {
             }
 
         }
+
         return $element;
 
     }
