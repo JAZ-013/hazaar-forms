@@ -519,10 +519,8 @@
             host.data[def.name].push(data);
         });
         group.append($('<div class="itemlist-items">').attr('data-bind', def.name).html($('<template>' + template[0].outerHTML + '</template>')))
-            .click(function (event) {
-                var target = $(event.target);
-                if (target.is('.btn-danger'))
-                    target.parent().parent().remove();
+            .on('click', '.btn-danger', function (event) {
+                $(this).parent().parent().remove();
             });
         return group;
     };
