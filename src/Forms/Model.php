@@ -389,7 +389,7 @@ class Model extends \Hazaar\Model\Strict {
 
         $keywords = array('true', 'false', 'null');
 
-        if(!($item[0] == "'" && $item[-1] == "'") && !in_array(strtolower($item), $keywords))
+        if(!($item[0] == "'" && $item[-1] == "'") && !in_array(strtolower($item), $keywords) && !is_numeric($item))
             $item = '$' . $item;
 
         return $item;
