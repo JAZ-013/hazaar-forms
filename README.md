@@ -319,7 +319,7 @@ It is possible to create a completely custom input using jQuery.  Adding custom 
 There are two global variables available to your function:
 
 * **field** contains the field definition, including the current value of the field.  This will at a minimum contain the properties *name* and *value*.  The rest is whatever you defined in your JSON field definition.
-* **form** is the form object.  You can call functions on it as well as directly access the form data by modifying the *dataBinder* object on *form.data*.
+* **form** is the form data object.  You can directly access the form data by modifying this *dataBinder* object.
 
 ### Example 1 - A Simple Text Input
 
