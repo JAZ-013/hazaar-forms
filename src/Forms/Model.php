@@ -18,24 +18,17 @@ class Model extends \Hazaar\Model\Strict {
 
     private $__items = array();
 
-    function __construct($form_name){
+    function __construct($form_name, $form = null){
 
-        $app = \Hazaar\Application::getInstance();
+        $this->__form_name = $form_name;
 
-        $file = $form_name . '.json';
+        if($form) $this->load($form);
 
-        if(!($source = $app->filePath('forms', $file, true)))
-            throw new \Exception('Form model source not found: ' . $file, 404);
+    }
 
-        $source_file = new \Hazaar\File($source);
+    public function load($form){
 
-        if(!$source_file->exists())
-            throw new \Exception('Form model source file not found!', 500);
-
-        $this->__form_name = $source_file->name();
-
-        if(!($this->__form = $source_file->parseJSON()))
-            throw new \Exception('An error ocurred parsing the form definition \'' . $source_file->name() . '\'');
+        $this->__form = $form;
 
         if(!array_key_exists('name', $this->__form))
             throw new \Exception('Form definition does have a name!');
@@ -80,7 +73,7 @@ class Model extends \Hazaar\Model\Strict {
 
         }
 
-        parent::__construct();
+        return parent::__construct();
 
     }
 
