@@ -148,6 +148,17 @@ class Model extends \Hazaar\Model\Strict {
 
     private function __section($section){
 
+        if(is_array($section)){
+
+            $group = array();
+
+            foreach($section as $s)
+                $group[] = $this->__section($s);
+
+            return $group;
+
+        }
+
         if(!is_object($section) || (property_exists($section, 'show') && !$this->evaluate($section->show)))
             return null;
 
