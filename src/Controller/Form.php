@@ -166,7 +166,7 @@ abstract class Form extends Action {
             if(!($name = $this->request->get('name')))
                 throw new \Exception('No form name specified!');
 
-            $this->model = new \Hazaar\Forms\Model($name);
+            $this->form($name);
 
             $this->model->populate($this->load(unserialize($this->request->get('params'))));
 
