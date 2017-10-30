@@ -236,12 +236,17 @@ class Model extends \Hazaar\Model\Strict {
 
         }
 
-        if(!$this->evaluate(ake($field, 'show')))
-            return null;
-
         $field_key = $field->name;
 
         $value = ake($field, 'value', $this->get($field_key));
+
+        $output = ake($field, 'output', array('empty' => true));
+
+        if(!$value && ake($output, 'empty', true) === false)
+            return null;
+
+        if(!$this->evaluate(ake($field, 'show')))
+            return null;
 
         if(ake($field, 'type') == 'array'){
 
