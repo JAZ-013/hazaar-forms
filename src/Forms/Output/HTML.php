@@ -53,7 +53,52 @@ class HTML extends \Hazaar\Forms\Output {
 
     }
 
-    private function __section($section){
+    private function __section($section, $p = true){
+
+        if(is_array($section)){
+
+            $col_width = null;
+
+            $group = new \Hazaar\Html\Div();
+
+            if($p){
+
+                $group->addClass('row');
+
+                $length = count($section);
+
+                foreach ($section as &$s) {
+
+                    if (!is_object($s)) continue;
+
+                    if (!property_exists($s, 'weight')) $s->weight = 1;
+
+                    $length = $length + ($s->weight - 1);
+
+                }
+
+                $col_width = (12 / $length);
+
+            }
+
+            foreach($section as &$s){
+
+                $col = new \Hazaar\Html\Div($this->__section($s, !$p));
+
+                if($p){
+
+                    $field_width = $s->weight * $col_width;
+
+                    $col->class('col-lg-' . round($field_width));
+                }
+
+                $group->add($col);
+
+            }
+
+            return $group;
+
+        }
 
         $html = (new \Hazaar\Html\Div())->class('form-section');
 
