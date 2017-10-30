@@ -248,7 +248,11 @@ class Model extends \Hazaar\Model\Strict {
         if(!$this->evaluate(ake($field, 'show')))
             return null;
 
-        if(ake($field, 'type') == 'array'){
+        if($value === null){
+
+            $value = ake($output, 'content');
+
+        }elseif(ake($field, 'type') == 'array'){
 
             if(property_exists($field, 'fields') && is_array($field->fields)){
 
