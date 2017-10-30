@@ -851,8 +851,9 @@
 
     //Load all the dynamic bits
     function _load(host) {
-        $.get(hazaar.url('hazaar/forms', 'load', { name: host.settings.form }, host.settings.encode)).done(function (response) {
-            host.def = response;
+        _post(host, 'init').done(function (response) {
+            if (!response.ok) return;
+            host.def = response.form;
             host.data = new dataBinder(_define(host.def.fields));
             $(host).trigger('load', [host.data.save()]);
             _post(host, 'load').done(function (response) {

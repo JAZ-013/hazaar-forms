@@ -21,11 +21,14 @@ abstract class Form extends Action {
      *
      * @param mixed $type
      */
-    final protected function form($type, $params = array()){
+    final protected function form($name, $params = array()){
 
         $this->view->addHelper('forms');
 
-        $this->model = new \Hazaar\Forms\Model($type);
+        if(!($model = $this->get($name)) instanceof \Hazaar\Forms\Model)
+            throw new \Exception(__CLASS__ . '::get() MUST return a form a Hazaar\Forms\Model object!');
+
+        $this->model = $model;
 
         $this->params = $params;
 
@@ -47,6 +50,12 @@ abstract class Form extends Action {
         $out = new \Hazaar\Controller\Response\Json(array('name' => $this->request->name));
 
         switch($method){
+            case 'init':
+
+                $out->form = $this->model->getForm();
+
+                break;
+
             case 'post':
 
                 $postdata = $this->request->getParams();
@@ -205,6 +214,27 @@ abstract class Form extends Action {
     protected function save($data, &$params = array()){
 
         throw new \Exception('To save form data you must override the form controller save($data, $params = array()) method.');
+
+    }
+
+    protected function get($name){
+
+        $app = \Hazaar\Application::getInstance();
+
+        $file = $name . '.json';
+
+        if(!($source = $app->filePath('forms', $file, true)))
+            throw new \Exception('Form model source not found: ' . $file, 404);
+
+        $source_file = new \Hazaar\File($source);
+
+        if(!$source_file->exists())
+            throw new \Exception('Form model source file not found!', 500);
+
+        if(!($form = $source_file->parseJSON()))
+            throw new \Exception('An error ocurred parsing the form definition \'' . $source_file->name() . '\'');
+
+        return new \Hazaar\Forms\Model($name, $form);
 
     }
 
