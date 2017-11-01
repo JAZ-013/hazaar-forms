@@ -370,7 +370,40 @@
     };
 
     function _input_file(host, def) {
-        var group = $('<div>').html('Not Yet!');
+        var group = $('<div class="form-group">');
+        var label = $('<label class="control-label">')
+            .attr('for', def.name)
+            .html(def.label)
+            .appendTo(group);
+        var input = $('<div>').fileUpload({
+            name: def.name,
+            multiple: def.multiple || false,
+            select: function (files) {
+                var fd = new FormData();
+                fd.append('name', host.settings.form);
+                fd.append('params', JSON.stringify(host.settings.params));
+                for (x in files)
+                    fd.append(def.name + '[' + x + ']', files[x]);
+                $.ajax({
+                    type: 'POST',
+                    data: fd,
+                    processData: false,
+                    contentType: false,
+                    url: hazaar.url(host.settings.controller, 'upload'),
+                    success: function (response) {
+                        console.log(response);
+                    },
+                    fail: _error
+                });
+            },
+            remove: function (file) {
+
+            }
+        }).appendTo(group);
+        _post(host, 'fileinfo', { 'file': def.name }, true).done(function (response) {
+            if (!response.ok) return;
+            input.fileUpload('add', response.info);
+        });
         return group;
     }
 
@@ -895,7 +928,7 @@
         $(host).trigger('init');
         _registerEvents(host);
         _render(host);
-        _load(host, host.settings.url);
+        _load(host);
     };
 
     $.fn.hzForm = function () {
@@ -944,3 +977,52 @@
 
 })(jQuery);
 
+$.fn.fileUpload = function () {
+    var host = this.get(0);
+    if (host.options) {
+        switch (arguments[0]) {
+            case 'add':
+                host._add(arguments[1]);
+                break;
+        }
+        return this;
+    }
+    host.files = [];
+    host.options = $.extend({ name: 'file', multiple: false }, arguments[0]);
+    host._add = function (file) {
+        if (Array.isArray(file)) {
+            if (host.options.multiple === true) for (x in file) this._add(file[x]);
+            return;
+        }
+        host.files.push(file);
+        host.o.list.append($('<div>').html([
+            $('<span>').html(file.name + ' (' + file.size + ' bytes)'),
+            $('<button type="button">').html('X').click(function () {
+                host._remove(file);
+            })
+        ]));
+    };
+    host._remove = function (file) {
+        console.log(this.files);
+    };
+    host._registerEvents = function () {
+        this.o.input.change(function (e) {
+            var fileArray = Array.from(e.target.files);
+            fileArray.forEach(function (file) {
+                host._add(file);
+            });
+            this.value = null;
+            if (typeof host.options.select == 'function')
+                host.options.select(fileArray);
+        });
+    };
+    host._render = function (host) {
+        this.o = {};
+        this.o.input = $('<input type="file" class="form-control">').appendTo(host);
+        if (host.options.multiple) this.o.input.prop('multiple', true);
+        this.o.list = $('<div>').appendTo(host);
+    };
+    host._render(host);
+    host._registerEvents();
+    return this;
+};

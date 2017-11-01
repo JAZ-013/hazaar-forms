@@ -14,13 +14,13 @@ class Forms extends \Hazaar\View\Helper {
 
     function import(){
 
+        $this->requires('cdnjs');
+
         $this->requires('jQuery');
 
         $this->requires('bootstrap');
 
         $this->requires('fontawesome');
-
-        $this->requires('cdnjs');
 
     }
 

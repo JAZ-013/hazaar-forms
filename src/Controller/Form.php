@@ -36,6 +36,9 @@ abstract class Form extends Action {
 
     final public function interact($method){
 
+        if(!$this->request->isPOST())
+            throw new \Exception('Method not allowed!', 405);
+
         if(!$this->request->has('name'))
             throw new \Exception('Missing form name in request!');
 
@@ -44,15 +47,14 @@ abstract class Form extends Action {
         if(!$this->model instanceof \Hazaar\Forms\Model)
             throw new \Exception('No form type has been set for this form controller');
 
-        if(!$this->request->isPOST())
-            throw new \Exception('Method not allowed!', 405);
-
-        $out = new \Hazaar\Controller\Response\Json(array('name' => $this->request->name));
+        $out = new \Hazaar\Controller\Response\Json(array( 'ok' => false, 'name' => $this->request->name));
 
         switch($method){
             case 'init':
 
                 $out->form = $this->model->getForm();
+
+                $out->ok = true;
 
                 break;
 
@@ -71,6 +73,8 @@ abstract class Form extends Action {
                 if(is_array($result) && count($result) > 0)
                     $out->form = $result;
 
+                $out->ok = true;
+
                 break;
 
             case 'load':
@@ -78,6 +82,8 @@ abstract class Form extends Action {
                 $this->model->populate($this->load($this->request->get('params', array())));
 
                 $out->form = $this->model->toArray();
+
+                $out->ok = true;
 
                 break;
 
@@ -110,6 +116,25 @@ abstract class Form extends Action {
                 elseif(method_exists($this, 'update'))
                     $out->populate((array)$this->update($this->request->get('originator'), $this->request->get('form')));
 
+                $out->ok = true;
+
+                break;
+
+            case 'fileinfo':
+
+                if(!method_exists($this, 'attachment'))
+                    throw new \Exception('Forms controller has not implemented attachment method!');
+
+                $info = $this->attachment($this->request->file, $this->request->params);
+
+                if(is_array($info)){
+
+                    $out->ok = true;
+
+                    $out->info = $info;
+
+                }
+
                 break;
 
             default:
@@ -117,8 +142,6 @@ abstract class Form extends Action {
                 throw new \Exception('Unknown method: ' . $method, 406);
 
         }
-
-        $out->ok = true;
 
         return $out;
 
@@ -201,6 +224,45 @@ abstract class Form extends Action {
         $params = array('name' => $this->model->getName(), 'params' => serialize($this->params));
 
         return $this->url('output/' . $type, $params)->encode();
+
+    }
+
+    //File attachment handlers
+    final public function upload(){
+
+        if(!$this->request->isPOST())
+            throw new \Exception('Method not allowed!', 405);
+
+        if(!$this->request->has('name'))
+            throw new \Exception('Missing form name in request!');
+
+        $files = new \Hazaar\File\Upload();
+
+        if(!$files->uploaded())
+            throw new \Exception('No files uploaded!');
+
+        $out = new \Hazaar\Controller\Response\Json(array( 'ok' => false, 'name' => $this->request->name));
+
+        $params = json_decode($this->request->get('params'), true);
+
+        foreach($files->keys() as $key){
+
+            $file = $files->getFile($key);
+
+            if(!$this->attachment($key, $params, $file))
+                throw new \Exception('Unknown error saving attachment!');
+
+        }
+
+        $out->ok = true;
+
+        return $out;
+
+    }
+
+    final public function download(){
+
+        dump($this->request);
 
     }
 
