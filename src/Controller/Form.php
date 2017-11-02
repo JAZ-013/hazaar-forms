@@ -122,16 +122,15 @@ abstract class Form extends Action {
 
             case 'fileinfo':
 
-                if(!method_exists($this, 'attachment'))
-                    throw new \Exception('Forms controller has not implemented attachment method!');
+                $fileinfo = $this->file_info($this->request->field, $this->request->params);
 
-                $info = $this->attachment($this->request->file, $this->request->params);
-
-                if(is_array($info)){
+                if(is_array($fileinfo)){
 
                     $out->ok = true;
 
-                    $out->info = $info;
+                    $out->field = $this->request->field;
+
+                    $out->files = $fileinfo;
 
                 }
 
@@ -236,21 +235,28 @@ abstract class Form extends Action {
         if(!$this->request->has('name'))
             throw new \Exception('Missing form name in request!');
 
+        $this->form($this->request->name);
+
         $files = new \Hazaar\File\Upload();
 
-        if(!$files->uploaded())
-            throw new \Exception('No files uploaded!');
+        if($files->uploaded()){
 
-        $out = new \Hazaar\Controller\Response\Json(array( 'ok' => false, 'name' => $this->request->name));
+            $out = new \Hazaar\Controller\Response\Json(array( 'ok' => false, 'name' => $this->request->name));
 
-        $params = json_decode($this->request->get('params'), true);
+            $params = json_decode($this->request->get('params'), true);
 
-        foreach($files->keys() as $key){
+            foreach($files->getFile() as $key => $attachments){
 
-            $file = $files->getFile($key);
+                if(!$this->file_attach($key, $attachments, $params))
+                    throw new \Exception('Unknown error saving attachments!');
 
-            if(!$this->attachment($key, $params, $file))
-                throw new \Exception('Unknown error saving attachment!');
+            }
+
+        }
+
+        if(count($remove = json_decode($this->request->get('remove'), true)) > 0){
+
+            dump($remove);
 
         }
 
@@ -297,6 +303,85 @@ abstract class Form extends Action {
             throw new \Exception('An error ocurred parsing the form definition \'' . $source_file->name() . '\'');
 
         return new \Hazaar\Forms\Model($name, $form);
+
+    }
+
+    private function file_init($name, $params, &$dir, &$index, &$key){
+
+        $manager = new \Hazaar\File\Manager('local', array('root' => $this->application->runtimePath('forms', true)));
+
+        $dir = $manager->dir('/attachments');
+
+        if(!$dir->exists())
+            $dir->create(true);
+
+        $index = new \Hazaar\Btree($manager->get('/fileindex.db'));
+
+        $key = md5($this->model->getName() . $name . serialize($params));
+
+    }
+
+    protected function file_info($name, $params = array()){
+
+        $this->file_init($name, $params, $dir, $index, $key);
+
+        $fileindex = $index->get($key);
+
+        if(!is_array($fileindex))
+            return false;
+
+        $filelist = array();
+
+        foreach($fileindex as $filename){
+
+            $file = $dir->get($filename);
+
+            if(!$file->exists())
+                continue;
+
+            $filelist[] = array(
+                'lastModified' => $file->mtime(),
+                'name' => $file->basename(),
+                'size' => $file->size(),
+                'type' => $file->mime_content_type()
+            );
+
+        }
+
+        return $filelist;
+
+    }
+
+    protected function file_remove($name, $files, $params = array()){
+
+        $this->file_init($name, $params, $dir, $index, $key);
+
+    }
+
+    protected function file_attach($name, $files, $params = array()){
+
+        $this->file_init($name, $params, $dir, $index, $key);
+
+        $fileindex = $index->get($key);
+
+        if(!is_array($fileindex))
+            $fileindex = array();
+
+        foreach($files as $file){
+
+            if($file instanceof \Hazaar\File){
+
+                $dir->put($file);
+
+                $fileindex[] = $file->basename();
+
+            }
+
+        }
+
+        $index->set($key, $fileindex);
+
+        return true;
 
     }
 

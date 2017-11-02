@@ -383,12 +383,13 @@
                     host.uploads.push({ "field": def.name, "file": files[x] });
             },
             remove: function (file) {
-
+                host.deloads.push({ "field": def.name, "file": file });
+                return true;
             }
         }).appendTo(group);
-        _post(host, 'fileinfo', { 'file': def.name }, true).done(function (response) {
+        _post(host, 'fileinfo', { 'field': def.name }, true).done(function (response) {
             if (!response.ok) return;
-            input.fileUpload('add', response.info);
+            for (x in response.files) input.fileUpload('add', response.files[x]);
         });
         return group;
     }
@@ -836,7 +837,7 @@
                         host.data[x] = response.form[x];
                 }
                 host.posts = {}; //Reset the post cache so we get clean data after 
-                if (host.uploads.length > 0) {
+                if (host.uploads.length > 0 || host.deloads.length > 0) {
                     _upload_files(host).done(function (upload_response) {
                         if (upload_response.ok) {
                             host.uploads = [];
@@ -872,6 +873,8 @@
         var fd = new FormData();
         fd.append('name', host.settings.form);
         fd.append('params', JSON.stringify(host.settings.params));
+        if (host.deloads.length > 0)
+            fd.append('remove', JSON.stringify(host.deloads));
         for (x in host.uploads)
             fd.append(host.uploads[x].field + '[' + x + ']', host.uploads[x].file);
         return $.ajax({
@@ -943,6 +946,7 @@
         host.page = null;
         host.loading = 0;
         host.uploads = [];
+        host.deloads = [];
         $(host).trigger('init');
         _registerEvents(host);
         _render(host);
@@ -1012,16 +1016,24 @@ $.fn.fileUpload = function () {
             if (host.options.multiple === true) for (x in file) this._add(file[x]);
             return;
         }
+        if (!('lastModifiedDate' in file)) file.lastModifiedDate = new Date(file.lastModified * 1000);
         host.files.push(file);
         host.o.list.append($('<div>').html([
             $('<span>').html(file.name + ' (' + file.size + ' bytes)'),
             $('<button type="button">').html('X').click(function () {
-                host._remove(file);
+                if (host._remove($(this).parent().data('file')))
+                    $(this).parent().remove();
             })
-        ]));
+        ]).data('file', file));
     };
     host._remove = function (file) {
-        console.log(this.files);
+        if (!(typeof this.options.remove === 'function'
+            && this.options.remove(file)))
+            return false;
+        this.files = this.files.filter(function (item) {
+            return (item.name !== file.name);
+        });
+        return true;
     };
     host._registerEvents = function () {
         this.o.input.change(function (e) {
