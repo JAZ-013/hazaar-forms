@@ -379,22 +379,8 @@
             name: def.name,
             multiple: def.multiple || false,
             select: function (files) {
-                var fd = new FormData();
-                fd.append('name', host.settings.form);
-                fd.append('params', JSON.stringify(host.settings.params));
                 for (x in files)
-                    fd.append(def.name + '[' + x + ']', files[x]);
-                $.ajax({
-                    type: 'POST',
-                    data: fd,
-                    processData: false,
-                    contentType: false,
-                    url: hazaar.url(host.settings.controller, 'upload'),
-                    success: function (response) {
-                        console.log(response);
-                    },
-                    fail: _error
-                });
+                    host.uploads.push({ "field": def.name, "file": files[x] });
             },
             remove: function (file) {
 
@@ -850,12 +836,28 @@
                         host.data[x] = response.form[x];
                 }
                 host.posts = {}; //Reset the post cache so we get clean data after 
-                $(host).trigger('saved', [response]);
+                if (host.uploads.length > 0) {
+                    _upload_files(host).done(function (upload_response) {
+                        if (upload_response.ok) {
+                            host.uploads = [];
+                            $(host).trigger('saved');
+                        } else {
+                            $('<div>').html(upload_response.reason).popup({
+                                title: 'Upload error',
+                                buttons: [{ label: 'OK', "class": "btn btn-default" }]
+                            });
+                            $(host).trigger('saverror', [upload_response.reason]);
+                        }
+                    }).fail(_error);
+                } else {
+                    $(host).trigger('saved');
+                }
             } else {
                 $('<div>').html(response.reason).popup({
                     title: 'Save error',
                     buttons: [{ label: 'OK', "class": "btn btn-default" }]
-                })
+                });
+                $(host).trigger('saverror', [response.reason]);
             }
         }).fail(_error);
         return true;
@@ -864,6 +866,21 @@
     //Register events that are used to control the form functions
     function _registerEvents(host) {
 
+    };
+
+    function _upload_files(host) {
+        var fd = new FormData();
+        fd.append('name', host.settings.form);
+        fd.append('params', JSON.stringify(host.settings.params));
+        for (x in host.uploads)
+            fd.append(host.uploads[x].field + '[' + x + ']', host.uploads[x].file);
+        return $.ajax({
+            type: 'POST',
+            data: fd,
+            processData: false,
+            contentType: false,
+            url: hazaar.url(host.settings.controller, 'upload')
+        });
     };
 
     function _post(host, action, postdata, track) {
@@ -925,6 +942,7 @@
         host.posts = {};
         host.page = null;
         host.loading = 0;
+        host.uploads = [];
         $(host).trigger('init');
         _registerEvents(host);
         _render(host);
