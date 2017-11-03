@@ -429,14 +429,10 @@
                 var values = host.data.save(true), query = '';
                 var popup = input.parent().parent().children('.form-lookup-popup');
                 var valueKey = def.lookup.value || 'value', labelKey = def.lookup.label || 'label';
-                if (event.target.value == '') {
-                    host.data[def.name].set(null);
-                    return;
-                }
-                if ('startlen' in def.lookup && event.target.value.length < def.lookup.startlen) {
-                    popup.hide();
-                    return;
-                }
+                if (event.target.value == '')
+                    return host.data[def.name].set(null);
+                if ('startlen' in def.lookup && event.target.value.length < def.lookup.startlen)
+                    return popup.hide();
                 values['__input__'] = event.target.value;
                 if ((url = _match_replace(def.lookup.url, values)) === false) return;
                 if ('query' in def.lookup && (query = _match_replace(def.lookup.query, values)) === false) return;
@@ -449,10 +445,9 @@
                     popup.empty();
                     if (items.length > 0) {
                         for (x in items)
-                            popup.append($('<tr>').html($('<td class="form-lookup-item">').html(items[x][labelKey]).attr('data-value', items[x][valueKey])));
-                    } else {
-                        popup.append($('<tr>').html($('<td>').html('No results...')));
-                    }
+                            popup.append($('<tr>').html($('<td class="form-lookup-item">')
+                                .html(items[x][labelKey]).attr('data-value', items[x][valueKey])));
+                    } else popup.append($('<tr>').html($('<td>').html('No results...')));
                 });
             });
             var popup = $('<table class="form-lookup-popup panel table table-hover">')
@@ -716,6 +711,12 @@
         });
     };
 
+    function _validation_error(name, def, status) {
+        var error = { name: name, field: $.extend({}, def), status: status };
+        if ('valid' in error.field) delete error.field.valid;
+        return error;
+    };
+
     function _validate_field(host, name, sync) {
         var item = host.data[name], def = host.def.fields[name];
         if (sync === true) {
@@ -727,7 +728,7 @@
                         _post(host, 'api', {
                             target: [def.validate.api, { "name": name, "value": item.value }],
                         }, false).done(function (response) {
-                            var result = (response.ok === true) ? true : { "field": name, "status": response.reason || "api_failed(" + def.api + ")" };
+                            var result = (response.ok === true) ? true : _validation_error(name, def, response.reason || "api_failed(" + def.api + ")");
                             callback(result);
                         });
                     } else {
@@ -742,10 +743,10 @@
         }
         var required = ('required' in def) ? _eval_code(host, def.required) : false;
         if (required && !item)
-            return { "field": name, "status": "required" };
+            return { "field": def, "status": "required" };
         if ('format' in def && item) {
             if (!Inputmask.isValid(String(item.value), def.format))
-                return { "field": name, "status": "bad_format", "format": def.format };
+                return _validation_error(name, def, "bad_format");
         }
         if ('validate' in def) {
             for (type in def.validate) {
@@ -753,40 +754,39 @@
                 switch (type) {
                     case 'min':
                         if (parseInt(item.value) < data)
-                            return { "field": name, "status": "too_small" };
+                            return _validation_error(name, def, "too_small");
                         break;
                     case 'max':
                         if (parseInt(item.value) > data)
-                            return { "field": name, "status": "too_big" };
+                            return _validation_error(name, def, "too_big");
                         break;
                     case 'with':
                         var reg = new RegExp(data);
                         if (!(typeof item.value == 'string' && item.value.match(reg)))
-                            return { "field": name, "status": "regex_failed", "pattern": data };
+                            return _validation_error(name, def, "regex_failed");
                         break;
                     case 'equals':
                         if (item.value !== data)
-                            return { "field": name, "status": "not_equal" };
+                            return _validation_error(name, def, "not_equal");
                         break;
                     case 'minlen':
                         if ((item instanceof dataBinderValue && (!item.value || item.value.length < data))
                             || (!item || item.length < data))
-                            return { "field": name, "status": "too_short" };
+                            return _validation_error(name, def, "too_short");
                         break;
                     case 'maxlen':
                         if ((item instanceof dataBinderValue && (!item.value || item.value.length > data))
                             || (!item || item.length > data))
-                            return { "field": name, "status": "too_long" };
+                            return _validation_error(name, def, "too_long");
                         break;
                     case 'custom':
                         if (!_eval_code(host, data))
-                            return { "field": name, "status": "custom" };
+                            return _validation_error(name, def, "custom");
                         break;
                 }
             }
         }
-        if ('valid' in def)
-            return def.valid;
+        if ('valid' in def) return def.valid;
         return true;
     };
 
@@ -799,7 +799,6 @@
             var result = _validate_field(host, key);
             if (result !== true) errors.push(result);
         }
-        $(host).trigger('validate', [(errors.length == 0), errors]);
         if (errors.length > 0) return errors;
         return true;
     };
@@ -824,7 +823,7 @@
     //Save form data back to the controller
     //By default calls validation and will only save data if the validation is successful
     function _save(host, validate, extra) {
-        if (!(validate === false || ((validate === true || typeof validate == 'undefined') && _validate(host) === true)))
+        if (!(validate === false || ((validate === true || typeof validate == 'undefined') && _validate(host, true) === true)))
             return false;
         var data = host.data.save();
         $(host).trigger('saving', [data]);
@@ -841,7 +840,7 @@
                     _upload_files(host).done(function (upload_response) {
                         if (upload_response.ok) {
                             host.uploads = [];
-                            $(host).trigger('saved');
+                            $(host).trigger('save', [host.settings.params]);
                         } else {
                             $('<div>').html(upload_response.reason).popup({
                                 title: 'Upload error',
@@ -851,7 +850,7 @@
                         }
                     }).fail(_error);
                 } else {
-                    $(host).trigger('saved');
+                    $(host).trigger('save', [host.settings.params]);
                 }
             } else {
                 $('<div>').html(response.reason).popup({
@@ -963,6 +962,8 @@
             return info;
         } else if (args[0] == 'data') {
             return host.data;
+        } else if (args[0] == 'validate') {
+            return _validate(host);
         }
         return this.each(function (index, host) {
             if (host.settings) {
@@ -977,9 +978,6 @@
                     case 'next':
                         if (host.page < (host.def.pages.length - 1))
                             _nav(host, host.page + 1);
-                        break;
-                    case 'validate':
-                        _validate(host);
                         break;
                     case 'save':
                         return _save(host, args[1], args[2]);
