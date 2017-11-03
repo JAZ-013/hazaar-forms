@@ -882,7 +882,7 @@
             data: fd,
             processData: false,
             contentType: false,
-            url: hazaar.url(host.settings.controller, 'upload')
+            url: hazaar.url(host.settings.controller, 'attach')
         });
     };
 

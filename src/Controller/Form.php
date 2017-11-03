@@ -23,6 +23,8 @@ abstract class Form extends Action {
      */
     final protected function form($name, $params = array()){
 
+        $this->view->addHelper('gui');
+
         $this->view->addHelper('forms');
 
         if(!($model = $this->get($name)) instanceof \Hazaar\Forms\Model)
@@ -227,7 +229,7 @@ abstract class Form extends Action {
     }
 
     //File attachment handlers
-    final public function upload(){
+    final public function attach(){
 
         if(!$this->request->isPOST())
             throw new \Exception('Method not allowed!', 405);
@@ -237,13 +239,13 @@ abstract class Form extends Action {
 
         $this->form($this->request->name);
 
+        $out = new \Hazaar\Controller\Response\Json(array( 'ok' => false, 'name' => $this->request->name));
+
+        $params = json_decode($this->request->get('params'), true);
+
         $files = new \Hazaar\File\Upload();
 
         if($files->uploaded()){
-
-            $out = new \Hazaar\Controller\Response\Json(array( 'ok' => false, 'name' => $this->request->name));
-
-            $params = json_decode($this->request->get('params'), true);
 
             foreach($files->getFile() as $key => $attachments){
 
@@ -256,7 +258,12 @@ abstract class Form extends Action {
 
         if(count($remove = json_decode($this->request->get('remove'), true)) > 0){
 
-            dump($remove);
+            foreach($remove as $rm){
+
+                if(!$this->file_remove(ake($rm, 'field'), array(ake($rm, 'file')), $params))
+                    throw new \Exception('Unknown error saving attachments!');
+
+            }
 
         }
 
@@ -273,7 +280,7 @@ abstract class Form extends Action {
     }
 
     //Placeholder Methods
-    protected function load(){
+    protected function load($params = array()){
 
         throw new \Exception('To load form data you must override the form controller load() method.');
 
@@ -355,6 +362,30 @@ abstract class Form extends Action {
     protected function file_remove($name, $files, $params = array()){
 
         $this->file_init($name, $params, $dir, $index, $key);
+
+        $fileindex = $index->get($key);
+
+        if(!is_array($fileindex))
+            return false;
+
+        if(!is_array($files))
+            $files = array($files);
+
+        foreach($files as $file){
+
+            if(!in_array(ake($file, 'name'), $fileindex))
+                continue;
+
+            $dir->get($file['name'])->unlink();
+
+            foreach(array_keys($fileindex, $file['name'], true) as $id)
+                unset($fileindex[$id]);
+
+        }
+
+        $index->set($key, $fileindex);
+
+        return true;
 
     }
 
