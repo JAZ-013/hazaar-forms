@@ -174,7 +174,13 @@ class HTML extends \Hazaar\Forms\Output {
         if($label = ake($field, 'label'))
             $group->add(new \Hazaar\Html\H4($label));
 
-        if(ake($field, 'type') == 'array'){
+        $type = ake($field, 'type');
+
+        if($type == 'button'){
+
+            return null;
+
+        }elseif($type == 'array'){
 
             if(property_exists($field, 'fields')){
 
@@ -215,9 +221,9 @@ class HTML extends \Hazaar\Forms\Output {
 
             }
 
-        }elseif(ake($field, 'type') !== null){
+        }elseif($type !== null){
 
-            if(ake($field, 'type') == 'boolean')
+            if($type == 'boolean')
                 $field->value = yn($field->value);
 
             $value_group = (new \Hazaar\Html\Div())->class('form-value');
