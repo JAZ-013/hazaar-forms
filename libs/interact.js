@@ -19,6 +19,11 @@
         });
     };
 
+    function _url(host, target) {
+        target = _match_replace(target, host.data.save(), true);
+        return (target.match(/^https?:\/\//) ? target : hazaar.url(target))
+    };
+
     function _exec(host, type, field) {
         if (!(type in host.events && field in host.events[type]))
             return false;
@@ -83,9 +88,9 @@
         if (!toggle) _nullify(host, def);
     };
 
-    function _match_replace(str, values) {
+    function _match_replace(str, values, force) {
         while (match = str.match(/\{\{(\w+)\}\}/)) {
-            if (!(match[1] in values) || values[match[1]] === null)
+            if ((!(match[1] in values) || values[match[1]] === null) && force !== true)
                 return false;
             str = str.replace(match[0], values[match[1]]);
         }
@@ -155,6 +160,27 @@
             _eval_code(host, def.blur);
     };
 
+    function _input_button(host, def) {
+        var group = $('<div class="form-group form-group-nolabel">');
+        var btn = $('<button type="button" class="form-control btn">')
+            .html(def.label || "Button")
+            .addClass(def.class || 'btn-default')
+            .data('def', def)
+            .appendTo(group);
+        switch (def.action) {
+            case "update":
+                btn.click(function () { _input_event_update(host, btn); });
+                break;
+            case "link":
+                btn.click(function () { document.location = _url(host, def.url); });
+                break;
+            default:
+                btn.click(function () { _eval_code(host, def.action); });
+                break;
+        }
+        return group;
+    };
+
     function _input_select_multi_items(host, def, data) {
         var items = [];
         var btnClass = def.class || 'default';
@@ -195,7 +221,7 @@
             return;
         }
         if (track == true) _track(host);
-        $.get((options.match(/^https?:\/\//) ? options : hazaar.url(options)))
+        $.get(_url(host, options))
             .done(function (data) {
                 var remove = host.data[def.name].save(true).filter(function (i) { return !(i in data); });
                 for (x in remove) host.data[def.name].remove(remove[x]);
@@ -245,7 +271,7 @@
             return;
         }
         select.html($('<option selected>').html('Loading...'));
-        $.get((url.match(/^https?:\/\//) ? url : hazaar.url(url)))
+        $.get(_url(host, url))
             .done(function (data) {
                 var item = host.data[def.name];
                 var required = ('required' in def) ? _eval_code(host, def.required) : false;
@@ -423,7 +449,7 @@
                 popup.css({ "min-width": input.parent().outerWidth(), "opacity": "1" }).show();
                 $.ajax({
                     method: def.lookup.method || 'GET',
-                    url: (url.match(/^https?:\/\//) ? url : hazaar.url(url)),
+                    url: _url(host, url),
                     data: query
                 }).done(function (items) {
                     popup.empty();
@@ -573,6 +599,9 @@
             field = _input_lookup(host, def);
         } else if (def.type) {
             switch (def.type) {
+                case 'button':
+                    field = _input_button(host, def);
+                    break;
                 case 'array':
                     field = _input_list(host, def);
                     break;
