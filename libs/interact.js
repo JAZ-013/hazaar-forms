@@ -664,7 +664,7 @@
 
     //Render a page
     function _page(host, page) {
-        var form = $('<div class="form-container">').data('def', page), sections = [];
+        var form = $('<div class="form-page">').data('def', page), sections = [];
         host.events = {
             show: [],
             disabled: [],
@@ -678,8 +678,7 @@
             for (x in host.events.show)
                 _toggle_show(host, host.events.show[x]);
         }
-        host.objects.container.html(form.html(sections));
-        host.data.resync();
+        return form.append(sections);
     };
 
     //Render the whole form
@@ -694,9 +693,17 @@
     //Navigate to a page
     function _nav(host, pageno) {
         _track(host);
-        host.page = pageno;
-        _page(host, host.def.pages[pageno]);
-        $(host).trigger('nav', [pageno + 1, host.def.pages.length]);
+        host.objects.container.empty();
+        if (host.settings.singlePage) {
+            host.page = 0;
+            for (x in host.def.pages)
+                host.objects.container.append(_page(host, host.def.pages[x]));
+        } else {
+            host.page = pageno;
+            host.objects.container.append(_page(host, host.def.pages[pageno]));
+            $(host).trigger('nav', [host.page + 1, host.def.pages.length]);
+        }
+        host.data.resync();
         _ready(host);
     };
 
@@ -980,7 +987,12 @@
                             _nav(host, host.page + 1);
                         break;
                     case 'save':
-                        return _save(host, args[1], args[2]);
+                        _save(host, args[1], args[2]);
+                        break;
+                    case 'single':
+                        host.settings.singlePage = Boolean(args[1]);
+                        _nav(host, 0);
+                        break;
                 }
             } else {
                 __initialise(host, args[0]);
@@ -992,6 +1004,7 @@
         "form": "default",
         "controller": "index",
         "encode": true,
+        "singlePage": false,
         "cachedActions": ["api"]
     };
 

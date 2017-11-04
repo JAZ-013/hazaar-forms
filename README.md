@@ -10,7 +10,7 @@ Form definitions are just that.  They are JSON that defines the fields on your f
 
 ### Prepare Your App
 
-There is a new application sub-directory in use now called 'forms'.  So create the directory ```{project_base}\application\forms``` to store your form definitions.
+There is a new application sub-directory in use now called 'forms'.  So create the directory `{project_base}\application\forms` to store your form definitions.
 
 ### Create a simple form definition
 
@@ -104,7 +104,7 @@ Here's one to get you started.  Documentation will come soon.
 
 ```
 
-There are currently only 3 required elements. ```name```, ```pages``` and ```fields```.  
+There are currently only 3 required elements. `name`, `pages` and `fields`.  
 
 * name - This is just a friendly label that can be displayed on the form layout
 * pages - The actual pages definition.  Each page contains one or more sections.  Each section contains one or more fields.  Fields are included either by just name, or by an object declaration.
@@ -112,7 +112,7 @@ There are currently only 3 required elements. ```name```, ```pages``` and ```fie
 
 ## Forms Controller
 
-Your application will need to have a forms controller to handle data communication with the form frontend.  The ```Hazaar\Controller\Forms``` class is used for that and is basically just a ```Hazaar\Controller\Action``` class that you use every day, but with a few extra helpful methods to get data in and out of your form.
+Your application will need to have a forms controller to handle data communication with the form frontend.  The `Hazaar\Controller\Forms` class is used for that and is basically just a `Hazaar\Controller\Action` class that you use every day, but with a few extra helpful methods to get data in and out of your form.
 
 Here's one I prepared earlier:
 
@@ -185,9 +185,9 @@ class IndexController extends \Hazaar\Controller\Form {
 
 Things to note: 
 
-* ```init()``` and ```index()``` are defined in the Action class so work just the same as normal.
-* ```save()``` and ```load()``` are simple methods that are required.  These methods get data in and out of the form module and allow your application to store and retrieve the actual form data anywhere it wants.  In this example we just cache it to a file.
-* The call to ```$this->form('formname')``` is REQUIRED.  This is usually done in the init method, although this may change, and simply tells the forms module which form we are using.  It also gives your application a chance to define some extra parameters that will be sent back and forth with each GET/POST call.  This would normally be used for a record ID or some form data identifier.
+* `init()` and `dex()` are defined in the Action class so work just the same as normal.
+* `save()` and``load()` are simple methods that are required.  These methods get data in and out of the form module and allow your application to store and retrieve the actual form data anywhere it wants.  In this example we just cache it to a file.
+* The call to `$this->form('formname')` is REQUIRED.  This is usually done in the init method, although this may change, and simply tells the forms module which form we are using.  It also gives your application a chance to define some extra parameters that will be sent back and forth with each GET/POST call.  This would normally be used for a record ID or some form data identifier.
 
 Now all we need is a view and things will work, but will add some JavaScript to get everything working.
 
@@ -242,7 +242,7 @@ The view itself can be pretty minimal.  However to get the best out of our forms
 </div>
 ```
 
-Really the only important bit here is the call to ```$this->layout()``` which actually tells the forms controller where to put the form.
+Really the only important bit here is the call to `$this->layout()` which actually tells the forms controller where to put the form.
 
 ## Extra JavaScript
 
@@ -312,7 +312,7 @@ It is possible to create a completely custom input using jQuery.  Adding custom 
 * Your code is responsible for rendering the entire field, including the label.
 * You code is responsible for handling events, such as on change or on keypress.
 * You code MUST return a jQuery object constainer.
-* If you want the input to correctly interract with the MVVM data binder you will need to remember to add the ```data-bind``` attribute to the actual input (see example 2 below).
+* If you want the input to correctly interract with the MVVM data binder you will need to remember to add the `data-bind` attribute to the actual input (see example 2 below).
 
 ### Available Variables
 
@@ -339,11 +339,11 @@ Below is an example of how to create a custom input.  This will generate a text 
   
 ```
 
-**NOTE** - Keep in mind that the above example will not actually do anything because we have not handled any ```onChange``` events that update the form data.
+**NOTE** - Keep in mind that the above example will not actually do anything because we have not handled any `onChange` events that update the form data.
 
 ### Example 2 - A Less Simple Text Input
 
-This code creates a slightly more advanced text input similar to the built in text input generator.  This custom input is defined in your application javascript somewhere as a function call that must be accessible and included in your form controller (use ```$this->require('yourscript.js');``` in your controller as usual).
+This code creates a slightly more advanced text input similar to the built in text input generator.  This custom input is defined in your application javascript somewhere as a function call that must be accessible and included in your form controller (use `$this->require('yourscript.js');` in your controller as usual).
 
 ```javascript
 function myCustomInput(field, form) {
