@@ -934,7 +934,12 @@
                         _validate(host);
                         break;
                     case 'save':
-                        return _save(host, args[1], args[2]);
+                        _save(host, args[1], args[2]);
+                        break;
+                    case 'single':
+                        host.settings.singlePage = Boolean(args[1]);
+                        _nav(host, 0);
+                        break;
                 }
             } else {
                 __initialise(host, args[0]);
