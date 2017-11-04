@@ -43,3 +43,7 @@
     .form-lookup-popup > tbody > tr > td {
         cursor: pointer;
     }
+
+.form-group-nolabel {
+    padding-top: 24px;
+}
