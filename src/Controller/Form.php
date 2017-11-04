@@ -190,6 +190,8 @@ abstract class Form extends Action {
             if(!($name = $this->request->get('name')))
                 throw new \Exception('No form name specified!');
 
+            $params = ($this->request->has('params') ? unserialize($this->request->params) : array());
+
             $this->form($name);
 
             $this->model->populate($this->load(unserialize($this->request->get('params'))));
@@ -209,6 +211,8 @@ abstract class Form extends Action {
                 $response = new \Hazaar\Controller\Response\PDF();
 
                 $response->setContent($output->render());
+
+                $response->setTitle($this->model->getTitle($params));
 
             }
 

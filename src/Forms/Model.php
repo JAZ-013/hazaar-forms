@@ -409,13 +409,20 @@ class Model extends \Hazaar\Model\Strict {
 
     }
 
-    public function matchReplace($string, $use_label = false){
+    public function matchReplace($string, $use_label = false, $params = array()){
 
         while (preg_match('/\{\{(\w+)\}\}/', $string, $match)){
 
             $item = $this->get($match[1]);
 
             $string = str_replace($match[0], ((!$use_label && $item instanceof \Hazaar\Model\dataBinderValue) ? $item->value : (string)$item), $string);
+
+        }
+
+        if(is_array($params) && count($params) > 0){
+
+            while (preg_match('/\$([a-zA-Z]\S+)/', $string, $match))
+                $string = str_replace($match[0], ake($params, $match[1], 'null'), $string);
 
         }
 
@@ -470,4 +477,16 @@ class Model extends \Hazaar\Model\Strict {
         return $result;
 
     }
+
+    public function getTitle($params = null){
+
+        $title = 'Form Document';
+
+        if(property_exists($this->__form, 'pdf') && property_exists($this->__form->pdf, 'title'))
+            $title = $this->__form->pdf->title;
+
+        return $this->matchReplace($title, true, $params);
+
+    }
+
 }
