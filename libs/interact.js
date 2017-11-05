@@ -20,7 +20,7 @@
     };
 
     function _url(host, target) {
-        target = _match_replace(target, host.data.save(), true);
+        target = _match_replace(host, target, null, true);
         return (target.match(/^https?:\/\//) ? target : hazaar.url(target))
     };
 
@@ -88,11 +88,19 @@
         if (!toggle) _nullify(host, def);
     };
 
-    function _match_replace(str, values, force) {
-        while (match = str.match(/\{\{(\w+)\}\}/)) {
-            if ((!(match[1] in values) || values[match[1]] === null) && force !== true)
+    function _match_replace(host, str, extra, force) {
+        var values = $.extend({}, host.data.save(true), extra);
+        while (match = str.match(/\{\{([\W]*)(\w+)\}\}/)) {
+            var modifiers = match[1].split('');
+            if (modifiers.indexOf('!') === -1
+                && (!(match[2] in values) || values[match[2]] === null)
+                && force !== true)
                 return false;
-            str = str.replace(match[0], values[match[1]]);
+            if (modifiers.indexOf('>') === -1
+                && _validate_field(host, match[2]) !== true
+                && force !== true)
+                return false;
+            str = str.replace(match[0], (values[match[2]] || ''));
         }
         return str;
     }
@@ -121,7 +129,7 @@
             };
             var check_api = function (api) {
                 if (typeof api == 'string') {
-                    if ((api = _match_replace(api, host.data.save(true))) === false)
+                    if ((api = _match_replace(host, api)) === false)
                         return false;
                     options.api = api;
                 }
@@ -214,8 +222,7 @@
     function _input_select_multi_populate(host, container, track) {
         var def = container.data('def');
         var options = def.options;
-        var data = $.extend({}, host.data.save(true), { "site_url": hazaar.url() });
-        if ((options = _match_replace(options, data)) === false) {
+        if ((options = _match_replace(host, options, { "site_url": hazaar.url() })) === false) {
             container.hide();
             host.data[def.name] = null;
             return;
@@ -264,8 +271,7 @@
 
     function _input_select_populate(host, select, track) {
         var def = select.data('def'), options = def.options, url = null;
-        var data = $.extend({}, host.data.save(true), { "site_url": hazaar.url() });
-        if ((url = _match_replace(options.url, data)) === false) {
+        if ((url = _match_replace(host, options.url, { "site_url": hazaar.url() })) === false) {
             select.empty().prop('disabled', true);
             host.data[def.name] = null;
             return;
@@ -452,16 +458,15 @@
         _check_input_disabled(host, input, def);
         if (def.lookup && 'url' in def.lookup) {
             input.on('keyup', function (event) {
-                var values = host.data.save(true), query = '';
-                var popup = input.parent().parent().children('.form-lookup-popup');
+                var query = '', popup = input.parent().parent().children('.form-lookup-popup');
                 var valueKey = def.lookup.value || 'value', labelKey = def.lookup.label || 'label';
                 if (event.target.value == '')
                     return host.data[def.name].set(null);
                 if ('startlen' in def.lookup && event.target.value.length < def.lookup.startlen)
                     return popup.hide();
-                values['__input__'] = event.target.value;
-                if ((url = _match_replace(def.lookup.url, values)) === false) return;
-                if ('query' in def.lookup && (query = _match_replace(def.lookup.query, values)) === false) return;
+                var values = { '__input__': event.target.value };
+                if ((url = _match_replace(host, def.lookup.url, values)) === false) return;
+                if ('query' in def.lookup && (query = _match_replace(host, def.lookup.query, values)) === false) return;
                 popup.css({ "min-width": input.parent().outerWidth(), "opacity": "1" }).show();
                 $.ajax({
                     method: def.lookup.method || 'GET',
