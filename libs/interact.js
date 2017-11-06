@@ -686,7 +686,7 @@
         }
         var fieldset = $('<fieldset>').data('def', section);
         if (section.label)
-            fieldset.append($('<legend>').html(section.label));
+            fieldset.append($('<legend>').html(_match_replace(host, section.label, null, true, true)));
         for (x in section.fields)
             fieldset.append(_form_field(host, section.fields[x]));
         if ('show' in section) {
@@ -707,7 +707,7 @@
             change: {}
         };
         host.data.unwatch();
-        if (page.label) form.append($('<h1>').html(page.label));
+        if (page.label) form.append($('<h1>').html(_match_replace(host, page.label, null, true, true)));
         for (x in page.sections)
             sections.push(_section(host, page.sections[x]));
         if (host.events.show.length > 0) {
