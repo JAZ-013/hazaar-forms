@@ -412,6 +412,7 @@
         var input = $('<div>').fileUpload({
             name: def.name,
             multiple: def.multiple || false,
+            btnClass: def.btnClass || null,
             select: function (files) {
                 for (x in files)
                     host.uploads.push({ "field": def.name, "file": files[x] });
@@ -1055,7 +1056,7 @@ $.fn.fileUpload = function () {
         return this;
     }
     host.files = [];
-    host.options = $.extend({ name: 'file', multiple: false }, arguments[0]);
+    host.options = $.extend({ name: 'file', multiple: false, btnClass: 'btn-default' }, arguments[0]);
     host._add = function (file) {
         if (Array.isArray(file)) {
             if (host.options.multiple === true) for (x in file) this._add(file[x]);
@@ -1081,6 +1082,9 @@ $.fn.fileUpload = function () {
         return true;
     };
     host._registerEvents = function () {
+        this.o.btnAdd.click(function (e) {
+            host.o.input.click();
+        });
         this.o.input.change(function (e) {
             var fileArray = Array.from(e.target.files);
             fileArray.forEach(function (file) {
@@ -1093,7 +1097,8 @@ $.fn.fileUpload = function () {
     };
     host._render = function (host) {
         this.o = {};
-        this.o.input = $('<input type="file" class="form-control">').appendTo(host);
+        this.o.input = $('<input type="file" class="form-control">').hide().appendTo(host);
+        this.o.btnAdd = $('<button type="button" class="btn">').addClass(this.options.btnClass).html('Select Files').appendTo(host);
         if (host.options.multiple) this.o.input.prop('multiple', true);
         this.o.list = $('<div>').appendTo(host);
     };
