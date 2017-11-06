@@ -762,6 +762,7 @@
 
     function _validate_field(host, name, sync) {
         var item = host.data[name], def = host.def.fields[name];
+        if (!def) return true;
         if (sync === true) {
             delete def.valid;
             return {
