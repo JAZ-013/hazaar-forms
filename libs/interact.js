@@ -782,13 +782,10 @@
                 }
             }
         }
-        if ('show' in def) {
-            if (!_eval(host, def.show)) return true;
-        }
+        if ('show' in def) if (!_eval(host, def.show)) return true;
         var required = ('required' in def) ? _eval_code(host, def.required) : false;
-        if (required && !item)
-            return { "field": def, "status": "required" };
-        if ('format' in def && item) {
+        if (!item.value && required) return { "field": def, "status": "required" };
+        if ('format' in def && item.value) {
             if (!Inputmask.isValid(String(item.value), def.format))
                 return _validation_error(name, def, "bad_format");
         }
@@ -868,7 +865,7 @@
     //By default calls validation and will only save data if the validation is successful
     function _save(host, validate, extra) {
         if (!(validate === false || ((validate === true || typeof validate == 'undefined') && _validate(host, true) === true)))
-            return false;
+            return $(host).trigger('saverror', ['validation_failed']);
         var data = host.data.save();
         $(host).trigger('saving', [data]);
         _post(host, 'post', { params: extra, form: data }, false).done(function (response) {
