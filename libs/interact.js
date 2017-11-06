@@ -88,7 +88,7 @@
         if (!toggle) _nullify(host, def);
     };
 
-    function _match_replace(host, str, extra, force) {
+    function _match_replace(host, str, extra, force, use_html) {
         var values = $.extend({}, host.data.save(true), extra);
         while (match = str.match(/\{\{([\W]*)(\w+)\}\}/)) {
             var modifiers = match[1].split('');
@@ -100,7 +100,8 @@
                 && _validate_field(host, match[2]) !== true
                 && force !== true)
                 return false;
-            str = str.replace(match[0], (values[match[2]] || ''));
+            var out = (use_html ? '<span data-bind="' + match[2] + '">' + values[match[2]] + '</span>' : values[match[2]] || '');
+            str = str.replace(match[0], out);
         }
         return str;
     }
@@ -171,10 +172,11 @@
     function _input_button(host, def) {
         var group = $('<div class="form-group form-group-nolabel">');
         var btn = $('<button type="button" class="form-control btn">')
-            .html(def.label || "Button")
             .addClass(def.class || 'btn-default')
             .data('def', def)
             .appendTo(group);
+        if (!('label' in def)) def.label = 'Button';
+        btn.html(_match_replace(host, def.label, null, true, true));
         switch (def.action) {
             case "update":
                 btn.click(function () { _input_event_update(host, btn); });
@@ -242,7 +244,7 @@
         var group = $('<div class="form-group">').data('def', def);
         var label = $('<label class="control-label">')
             .attr('for', def.name)
-            .html(def.label)
+            .html(_match_replace(host, def.label, null, true, true))
             .appendTo(group);
         var container = $('<div>').data('def', def).appendTo(group);
         if (def.buttons === true) {
@@ -303,7 +305,7 @@
         var group = $('<div class="form-group">').data('def', def);
         var label = $('<label class="control-label">')
             .attr('for', def.name)
-            .html(def.label)
+            .html(_match_replace(host, def.label, null, true, true))
             .appendTo(group);
         var select = $('<select class="form-control">')
             .attr('name', def.name)
@@ -354,7 +356,7 @@
             .blur(function (event) { _input_event_blur(host, $(event.target)); })
             .change(function (event) { _input_event_change(host, $(event.target)); })
             .on('update', function (event) { _input_event_update(host, $(event.target)); });
-        var label = $('<label>').html([input, def.label]).appendTo(group);
+        var label = $('<label>').html([input, _match_replace(host, def.label, null, true, true)]).appendTo(group);
         _check_input_disabled(host, input, def);
         return group;
     };
@@ -363,7 +365,7 @@
         var group = $('<div class="form-group">').data('def', def);
         var label = $('<label class="control-label">')
             .attr('for', def.name)
-            .html(def.label)
+            .html(_match_replace(host, def.label, null, true, true))
             .appendTo(group);
         var input_group = $('<div class="input-group date">');
         var input = $('<input class="form-control">')
@@ -405,7 +407,7 @@
         var group = $('<div class="form-group">');
         var label = $('<label class="control-label">')
             .attr('for', def.name)
-            .html(def.label)
+            .html(_match_replace(host, def.label, null, true, true))
             .appendTo(group);
         var input = $('<div>').fileUpload({
             name: def.name,
@@ -430,7 +432,7 @@
         var group = $('<div class="form-group">').data('def', def);
         var label = $('<label class="control-label">')
             .attr('for', def.name)
-            .html(def.label)
+            .html(_match_replace(host, def.label, null, true, true))
             .appendTo(group);
         var input_group = $('<div class="input-group">')
             .appendTo(group);
@@ -504,7 +506,7 @@
         var group = $('<div class="form-group">').data('def', def);
         var label = $('<label class="control-label">')
             .attr('for', def.name)
-            .html(def.label)
+            .html(_match_replace(host, def.label, null, true, true))
             .appendTo(group);
         var input = $('<input class="form-control">')
             .attr('type', type)
@@ -535,7 +537,7 @@
     function _input_list(host, def) {
         var group = $('<div class="form-group">').data('def', def);
         var label = $('<h4 class="control-label">')
-            .html(def.label)
+            .html(_match_replace(host, def.label, null, true, true))
             .appendTo(group);
         var btn = $('<button type="button" class="btn btn-success btn-sm">')
             .html($('<i class="fa fa-plus">'));
