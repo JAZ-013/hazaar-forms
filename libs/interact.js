@@ -475,20 +475,20 @@
                     url: _url(host, url),
                     data: query
                 }).done(function (items) {
-                    popup.empty();
+                    var list = $('<div class="list-group">').appendTo(popup.empty());
                     if (items.length > 0) {
                         for (x in items)
-                            popup.append($('<tr>').html($('<td class="form-lookup-item">')
-                                .html(items[x][labelKey]).attr('data-value', items[x][valueKey])));
-                    } else popup.append($('<tr>').html($('<td>').html('No results...')));
+                            list.append($('<li class="list-group-item">')
+                                .html(items[x][labelKey]).attr('data-value', items[x][valueKey]));
+                    } else list.append($('<li class="list-group-item">').html('No results...'));
                 });
             });
-            var popup = $('<table class="form-lookup-popup panel table table-hover">')
-                .html($('<tr>').html($('<td>').html('Loading results...')))
+            var popup = $('<div class="form-lookup-popup card">')
+                .html($('<ul class="list-group">').html($('<li class="list-group-item">').html('Loading results...')))
                 .hide()
                 .appendTo(group).on('click', function (event) {
                     var target = $(event.target);
-                    if (!target.is('.form-lookup-item'))
+                    if (!target.is('.list-group-item'))
                         return;
                     host.data[def.name].set(target.attr('data-value'), target.text());
                     value_input.trigger('update');

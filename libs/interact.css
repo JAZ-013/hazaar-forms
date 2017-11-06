@@ -40,7 +40,7 @@
     width: auto;
 }
 
-    .form-lookup-popup > tbody > tr > td {
+    .form-lookup-popup .list-group-item {
         cursor: pointer;
     }
 
