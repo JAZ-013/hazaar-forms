@@ -344,13 +344,17 @@ abstract class Form extends Action {
             if(!$file->exists())
                 continue;
 
-            $filelist[] = array(
+            $info = array(
                 'lastModified' => $file->mtime(),
                 'name' => $file->basename(),
                 'size' => $file->size(),
-                'type' => $file->mime_content_type(),
-                'preview' => (string)$this->url('preview/' . $this->model->getName() . '/' . $name . '/' . $file->basename(), $params)
+                'type' => $file->mime_content_type()
             );
+
+            if(substr($info['type'], 0, 5) == 'image')
+                $info['preview'] = (string)$this->url('preview/' . $this->model->getName() . '/' . $name . '/' . $file->basename(), $params);
+
+            $filelist[] = $info;
 
         }
 
