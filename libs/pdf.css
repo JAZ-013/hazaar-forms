@@ -22,12 +22,14 @@ h1, h2, h3, h4, h5, h6 {
         margin-bottom: 15px;
     }
 
-.panel {
+.panel,
+.card {
     margin-bottom: 25px;
     width: 100%;
 }
 
 .panel-body:after,
+.card-body:after,
 .row:after {
     clear: both;
     content: " ";

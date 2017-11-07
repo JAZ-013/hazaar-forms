@@ -40,10 +40,90 @@
     width: auto;
 }
 
-    .form-lookup-popup > tbody > tr > td {
+    .form-lookup-popup .list-group-item {
         cursor: pointer;
     }
 
 .form-group-nolabel {
     padding-top: 24px;
 }
+
+.form-dropzone {
+    display: flex;
+    border: 2px dashed #ddd;
+    color: #ccc;
+    width: 100%;
+    cursor: pointer;
+    transition: all .5s;
+}
+
+    .form-dropzone .form-dropzone-words {
+        align-self: center;
+        width: 100%;
+        text-align: center;
+        margin: 15px;
+    }
+
+    .form-dropzone .dz-items {
+        overflow-y: auto;
+        overflow-x: hidden;
+        color: #000;
+        padding: 15px;
+    }
+
+        .form-dropzone .dz-items .dz-item {
+            position: relative;
+            float: left;
+            cursor: default;
+            user-select: none;
+            overflow: hidden;
+            padding: 15px 15px 5px 15px;
+            border: 1px solid transparent;
+            font-size: .8em;
+        }
+
+            .form-dropzone .dz-items .dz-item:hover {
+                background-color: rgba(0,0,0,0.1);
+                border-color: rgba(0,0,0,0.1);
+            }
+
+            .form-dropzone .dz-items .dz-item .dz-preview {
+                box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+                width: 120px;
+                height: 120px;
+            }
+
+                .form-dropzone .dz-items .dz-item .dz-preview > img {
+                    object-fit: cover;
+                    width: 120px;
+                    height: 120px;
+                }
+
+            .form-dropzone .dz-items .dz-item .dz-size {
+                position: absolute;
+                top: 15px;
+                right: 15px;
+                background: rgba(255,255,255,0.6);
+                padding: 2px 5px;
+            }
+
+            .form-dropzone .dz-items .dz-item .dz-detail {
+                float: left;
+                width: 100px;
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                line-height: 22px;
+                vertical-align: middle;
+            }
+
+            .form-dropzone .dz-items .dz-item .dz-remove {
+                float: right;
+                color: red;
+                cursor: pointer;
+                font-size: 16px;
+            }
+
+            .form-dropzone .dz-items .dz-item .dz-remove:hover{
+                color: #b20000
+            }

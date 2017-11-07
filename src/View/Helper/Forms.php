@@ -14,13 +14,13 @@ class Forms extends \Hazaar\View\Helper {
 
     function import(){
 
+        $this->requires('cdnjs');
+
         $this->requires('jQuery');
 
         $this->requires('bootstrap');
 
         $this->requires('fontawesome');
-
-        $this->requires('cdnjs');
 
     }
 
@@ -32,6 +32,8 @@ class Forms extends \Hazaar\View\Helper {
 
         //Link required stylesheets
         $view->link($this->application->url('hazaar/forms', 'file/interact.css'));
+
+        $view->link($this->application->url('hazaar', 'file/css/fileicons.css'));
 
         $view->requires($this->application->url('hazaar/forms', 'file/interact.js'));
 

@@ -20,7 +20,7 @@
     };
 
     function _url(host, target) {
-        target = _match_replace(target, host.data.save(), true);
+        target = _match_replace(host, target, null, true);
         return (target.match(/^https?:\/\//) ? target : hazaar.url(target))
     };
 
@@ -88,11 +88,20 @@
         if (!toggle) _nullify(host, def);
     };
 
-    function _match_replace(str, values, force) {
-        while (match = str.match(/\{\{(\w+)\}\}/)) {
-            if ((!(match[1] in values) || values[match[1]] === null) && force !== true)
+    function _match_replace(host, str, extra, force, use_html) {
+        var values = $.extend({}, host.data.save(true), extra);
+        while (match = str.match(/\{\{([\W]*)(\w+)\}\}/)) {
+            var modifiers = match[1].split('');
+            if (modifiers.indexOf('!') === -1
+                && (!(match[2] in values) || values[match[2]] === null)
+                && force !== true)
                 return false;
-            str = str.replace(match[0], values[match[1]]);
+            if (modifiers.indexOf('>') === -1
+                && _validate_field(host, match[2]) !== true
+                && force !== true)
+                return false;
+            var out = (use_html ? '<span data-bind="' + match[2] + '">' + values[match[2]] + '</span>' : values[match[2]] || '');
+            str = str.replace(match[0], out);
         }
         return str;
     }
@@ -121,7 +130,7 @@
             };
             var check_api = function (api) {
                 if (typeof api == 'string') {
-                    if ((api = _match_replace(api, host.data.save(true))) === false)
+                    if ((api = _match_replace(host, api)) === false)
                         return false;
                     options.api = api;
                 }
@@ -163,10 +172,11 @@
     function _input_button(host, def) {
         var group = $('<div class="form-group form-group-nolabel">');
         var btn = $('<button type="button" class="form-control btn">')
-            .html(def.label || "Button")
             .addClass(def.class || 'btn-default')
             .data('def', def)
             .appendTo(group);
+        if (!('label' in def)) def.label = 'Button';
+        btn.html(_match_replace(host, def.label, null, true, true));
         switch (def.action) {
             case "update":
                 btn.click(function () { _input_event_update(host, btn); });
@@ -214,8 +224,7 @@
     function _input_select_multi_populate(host, container, track) {
         var def = container.data('def');
         var options = def.options;
-        var data = $.extend({}, host.data.save(true), { "site_url": hazaar.url() });
-        if ((options = _match_replace(options, data)) === false) {
+        if ((options = _match_replace(host, options, { "site_url": hazaar.url() })) === false) {
             container.hide();
             host.data[def.name] = null;
             return;
@@ -235,7 +244,7 @@
         var group = $('<div class="form-group">').data('def', def);
         var label = $('<label class="control-label">')
             .attr('for', def.name)
-            .html(def.label)
+            .html(_match_replace(host, def.label, null, true, true))
             .appendTo(group);
         var container = $('<div>').data('def', def).appendTo(group);
         if (def.buttons === true) {
@@ -264,8 +273,7 @@
 
     function _input_select_populate(host, select, track) {
         var def = select.data('def'), options = def.options, url = null;
-        var data = $.extend({}, host.data.save(true), { "site_url": hazaar.url() });
-        if ((url = _match_replace(options.url, data)) === false) {
+        if ((url = _match_replace(host, options.url, { "site_url": hazaar.url() })) === false) {
             select.empty().prop('disabled', true);
             host.data[def.name] = null;
             return;
@@ -297,7 +305,7 @@
         var group = $('<div class="form-group">').data('def', def);
         var label = $('<label class="control-label">')
             .attr('for', def.name)
-            .html(def.label)
+            .html(_match_replace(host, def.label, null, true, true))
             .appendTo(group);
         var select = $('<select class="form-control">')
             .attr('name', def.name)
@@ -348,7 +356,7 @@
             .blur(function (event) { _input_event_blur(host, $(event.target)); })
             .change(function (event) { _input_event_change(host, $(event.target)); })
             .on('update', function (event) { _input_event_update(host, $(event.target)); });
-        var label = $('<label>').html([input, def.label]).appendTo(group);
+        var label = $('<label>').html([input, _match_replace(host, def.label, null, true, true)]).appendTo(group);
         _check_input_disabled(host, input, def);
         return group;
     };
@@ -357,7 +365,7 @@
         var group = $('<div class="form-group">').data('def', def);
         var label = $('<label class="control-label">')
             .attr('for', def.name)
-            .html(def.label)
+            .html(_match_replace(host, def.label, null, true, true))
             .appendTo(group);
         var input_group = $('<div class="input-group date">');
         var input = $('<input class="form-control">')
@@ -396,7 +404,33 @@
     };
 
     function _input_file(host, def) {
-        var group = $('<div>').html('Not Yet!');
+        var group = $('<div class="form-group">');
+        var label = $('<label class="control-label">')
+            .attr('for', def.name)
+            .html(_match_replace(host, def.label, null, true, true))
+            .appendTo(group);
+        var input = $('<div>').fileUpload({
+            name: def.name,
+            multiple: def.multiple || false,
+            btnClass: def.btnClass || null,
+            height: def.height || null,
+            select: function (files) {
+                for (x in files)
+                    host.uploads.push({ "field": def.name, "file": files[x] });
+            },
+            remove: function (file) {
+                host.uploads = host.uploads.filter(function (item, index) {
+                    if (!(item.field == def.name && item.file.name == file.name))
+                        return item;
+                });
+                host.deloads.push({ "field": def.name, "file": file });
+                return true;
+            }
+        }).appendTo(group);
+        _post(host, 'fileinfo', { 'field': def.name }, true).done(function (response) {
+            if (!response.ok) return;
+            for (x in response.files) input.fileUpload('add', response.files[x]);
+        });
         return group;
     }
 
@@ -404,7 +438,7 @@
         var group = $('<div class="form-group">').data('def', def);
         var label = $('<label class="control-label">')
             .attr('for', def.name)
-            .html(def.label)
+            .html(_match_replace(host, def.label, null, true, true))
             .appendTo(group);
         var input_group = $('<div class="input-group">')
             .appendTo(group);
@@ -432,41 +466,35 @@
         _check_input_disabled(host, input, def);
         if (def.lookup && 'url' in def.lookup) {
             input.on('keyup', function (event) {
-                var values = host.data.save(true), query = '';
-                var popup = input.parent().parent().children('.form-lookup-popup');
+                var query = '', popup = input.parent().parent().children('.form-lookup-popup');
                 var valueKey = def.lookup.value || 'value', labelKey = def.lookup.label || 'label';
-                if (event.target.value == '') {
-                    host.data[def.name].set(null);
-                    return;
-                }
-                if ('startlen' in def.lookup && event.target.value.length < def.lookup.startlen) {
-                    popup.hide();
-                    return;
-                }
-                values['__input__'] = event.target.value;
-                if ((url = _match_replace(def.lookup.url, values)) === false) return;
-                if ('query' in def.lookup && (query = _match_replace(def.lookup.query, values)) === false) return;
+                if (event.target.value == '')
+                    return host.data[def.name].set(null);
+                if ('startlen' in def.lookup && event.target.value.length < def.lookup.startlen)
+                    return popup.hide();
+                var values = { '__input__': event.target.value };
+                if ((url = _match_replace(host, def.lookup.url, values)) === false) return;
+                if ('query' in def.lookup && (query = _match_replace(host, def.lookup.query, values)) === false) return;
                 popup.css({ "min-width": input.parent().outerWidth(), "opacity": "1" }).show();
                 $.ajax({
                     method: def.lookup.method || 'GET',
                     url: _url(host, url),
                     data: query
                 }).done(function (items) {
-                    popup.empty();
+                    var list = $('<div class="list-group">').appendTo(popup.empty());
                     if (items.length > 0) {
                         for (x in items)
-                            popup.append($('<tr>').html($('<td class="form-lookup-item">').html(items[x][labelKey]).attr('data-value', items[x][valueKey])));
-                    } else {
-                        popup.append($('<tr>').html($('<td>').html('No results...')));
-                    }
+                            list.append($('<li class="list-group-item">')
+                                .html(items[x][labelKey]).attr('data-value', items[x][valueKey]));
+                    } else list.append($('<li class="list-group-item">').html('No results...'));
                 });
             });
-            var popup = $('<table class="form-lookup-popup panel table table-hover">')
-                .html($('<tr>').html($('<td>').html('Loading results...')))
+            var popup = $('<div class="form-lookup-popup card">')
+                .html($('<ul class="list-group">').html($('<li class="list-group-item">').html('Loading results...')))
                 .hide()
                 .appendTo(group).on('click', function (event) {
                     var target = $(event.target);
-                    if (!target.is('.form-lookup-item'))
+                    if (!target.is('.list-group-item'))
                         return;
                     host.data[def.name].set(target.attr('data-value'), target.text());
                     value_input.trigger('update');
@@ -484,7 +512,7 @@
         var group = $('<div class="form-group">').data('def', def);
         var label = $('<label class="control-label">')
             .attr('for', def.name)
-            .html(def.label)
+            .html(_match_replace(host, def.label, null, true, true))
             .appendTo(group);
         var input = $('<input class="form-control">')
             .attr('type', type)
@@ -515,7 +543,7 @@
     function _input_list(host, def) {
         var group = $('<div class="form-group">').data('def', def);
         var label = $('<h4 class="control-label">')
-            .html(def.label)
+            .html(_match_replace(host, def.label, null, true, true))
             .appendTo(group);
         var btn = $('<button type="button" class="btn btn-success btn-sm">')
             .html($('<i class="fa fa-plus">'));
@@ -664,7 +692,7 @@
         }
         var fieldset = $('<fieldset>').data('def', section);
         if (section.label)
-            fieldset.append($('<legend>').html(section.label));
+            fieldset.append($('<legend>').html(_match_replace(host, section.label, null, true, true)));
         for (x in section.fields)
             fieldset.append(_form_field(host, section.fields[x]));
         if ('show' in section) {
@@ -685,7 +713,7 @@
             change: {}
         };
         host.data.unwatch();
-        if (page.label) form.append($('<h1>').html(page.label));
+        if (page.label) form.append($('<h1>').html(_match_replace(host, page.label, null, true, true)));
         for (x in page.sections)
             sections.push(_section(host, page.sections[x]));
         if (host.events.show.length > 0) {
@@ -732,8 +760,15 @@
         });
     };
 
+    function _validation_error(name, def, status) {
+        var error = { name: name, field: $.extend({}, def), status: status };
+        if ('valid' in error.field) delete error.field.valid;
+        return error;
+    };
+
     function _validate_field(host, name, sync) {
         var item = host.data[name], def = host.def.fields[name];
+        if (!def) return true;
         if (sync === true) {
             delete def.valid;
             return {
@@ -743,7 +778,7 @@
                         _post(host, 'api', {
                             target: [def.validate.api, { "name": name, "value": item.value }],
                         }, false).done(function (response) {
-                            var result = (response.ok === true) ? true : { "field": name, "status": response.reason || "api_failed(" + def.api + ")" };
+                            var result = (response.ok === true) ? true : _validation_error(name, def, response.reason || "api_failed(" + def.api + ")");
                             callback(result);
                         });
                     } else {
@@ -753,15 +788,12 @@
                 }
             }
         }
-        if ('show' in def) {
-            if (!_eval(host, def.show)) return true;
-        }
+        if ('show' in def) if (!_eval(host, def.show)) return true;
         var required = ('required' in def) ? _eval_code(host, def.required) : false;
-        if (required && !item)
-            return { "field": name, "status": "required" };
-        if ('format' in def && item) {
+        if (!item.value && required) return { "field": def, "status": "required" };
+        if ('format' in def && item.value) {
             if (!Inputmask.isValid(String(item.value), def.format))
-                return { "field": name, "status": "bad_format", "format": def.format };
+                return _validation_error(name, def, "bad_format");
         }
         if ('validate' in def) {
             for (type in def.validate) {
@@ -769,40 +801,39 @@
                 switch (type) {
                     case 'min':
                         if (parseInt(item.value) < data)
-                            return { "field": name, "status": "too_small" };
+                            return _validation_error(name, def, "too_small");
                         break;
                     case 'max':
                         if (parseInt(item.value) > data)
-                            return { "field": name, "status": "too_big" };
+                            return _validation_error(name, def, "too_big");
                         break;
                     case 'with':
                         var reg = new RegExp(data);
                         if (!(typeof item.value == 'string' && item.value.match(reg)))
-                            return { "field": name, "status": "regex_failed", "pattern": data };
+                            return _validation_error(name, def, "regex_failed");
                         break;
                     case 'equals':
                         if (item.value !== data)
-                            return { "field": name, "status": "not_equal" };
+                            return _validation_error(name, def, "not_equal");
                         break;
                     case 'minlen':
                         if ((item instanceof dataBinderValue && (!item.value || item.value.length < data))
                             || (!item || item.length < data))
-                            return { "field": name, "status": "too_short" };
+                            return _validation_error(name, def, "too_short");
                         break;
                     case 'maxlen':
                         if ((item instanceof dataBinderValue && (!item.value || item.value.length > data))
                             || (!item || item.length > data))
-                            return { "field": name, "status": "too_long" };
+                            return _validation_error(name, def, "too_long");
                         break;
                     case 'custom':
                         if (!_eval_code(host, data))
-                            return { "field": name, "status": "custom" };
+                            return _validation_error(name, def, "custom");
                         break;
                 }
             }
         }
-        if ('valid' in def)
-            return def.valid;
+        if ('valid' in def) return def.valid;
         return true;
     };
 
@@ -815,7 +846,6 @@
             var result = _validate_field(host, key);
             if (result !== true) errors.push(result);
         }
-        $(host).trigger('validate', [(errors.length == 0), errors]);
         if (errors.length > 0) return errors;
         return true;
     };
@@ -840,8 +870,8 @@
     //Save form data back to the controller
     //By default calls validation and will only save data if the validation is successful
     function _save(host, validate, extra) {
-        if (!(validate === false || ((validate === true || typeof validate == 'undefined') && _validate(host) === true)))
-            return false;
+        if (!(validate === false || ((validate === true || typeof validate == 'undefined') && _validate(host, true) === true)))
+            return $(host).trigger('saverror', ['validation_failed']);
         var data = host.data.save();
         $(host).trigger('saving', [data]);
         _post(host, 'post', { params: extra, form: data }, false).done(function (response) {
@@ -853,12 +883,28 @@
                         host.data[x] = response.form[x];
                 }
                 host.posts = {}; //Reset the post cache so we get clean data after 
-                $(host).trigger('saved', [response]);
+                if (host.uploads.length > 0 || host.deloads.length > 0) {
+                    _upload_files(host).done(function (upload_response) {
+                        if (upload_response.ok) {
+                            host.uploads = [];
+                            $(host).trigger('save', [host.settings.params]);
+                        } else {
+                            $('<div>').html(upload_response.reason).popup({
+                                title: 'Upload error',
+                                buttons: [{ label: 'OK', "class": "btn btn-default" }]
+                            });
+                            $(host).trigger('saverror', [upload_response.reason]);
+                        }
+                    }).fail(_error);
+                } else {
+                    $(host).trigger('save', [host.settings.params]);
+                }
             } else {
                 $('<div>').html(response.reason).popup({
                     title: 'Save error',
                     buttons: [{ label: 'OK', "class": "btn btn-default" }]
-                })
+                });
+                $(host).trigger('saverror', [response.reason]);
             }
         }).fail(_error);
         return true;
@@ -867,6 +913,23 @@
     //Register events that are used to control the form functions
     function _registerEvents(host) {
 
+    };
+
+    function _upload_files(host) {
+        var fd = new FormData();
+        fd.append('name', host.settings.form);
+        fd.append('params', JSON.stringify(host.settings.params));
+        if (host.deloads.length > 0)
+            fd.append('remove', JSON.stringify(host.deloads));
+        for (x in host.uploads)
+            fd.append(host.uploads[x].field + '[' + x + ']', host.uploads[x].file);
+        return $.ajax({
+            type: 'POST',
+            data: fd,
+            processData: false,
+            contentType: false,
+            url: hazaar.url(host.settings.controller, 'attach')
+        });
     };
 
     function _post(host, action, postdata, track) {
@@ -928,10 +991,12 @@
         host.posts = {};
         host.page = null;
         host.loading = 0;
+        host.uploads = [];
+        host.deloads = [];
         $(host).trigger('init');
         _registerEvents(host);
         _render(host);
-        _load(host, host.settings.url);
+        _load(host);
     };
 
     $.fn.hzForm = function () {
@@ -944,6 +1009,8 @@
             return info;
         } else if (args[0] == 'data') {
             return host.data;
+        } else if (args[0] == 'validate') {
+            return _validate(host);
         }
         return this.each(function (index, host) {
             if (host.settings) {
@@ -958,9 +1025,6 @@
                     case 'next':
                         if (host.page < (host.def.pages.length - 1))
                             _nav(host, host.page + 1);
-                        break;
-                    case 'validate':
-                        _validate(host);
                         break;
                     case 'save':
                         _save(host, args[1], args[2]);
@@ -986,3 +1050,108 @@
 
 })(jQuery);
 
+$.fn.fileUpload = function () {
+    var host = this.get(0);
+    if (host.options) {
+        switch (arguments[0]) {
+            case 'add':
+                host._add(arguments[1]);
+                break;
+        }
+        return this;
+    }
+    host.files = [];
+    host.options = $.extend({ name: 'file', multiple: false, btnClass: 'btn-default' }, arguments[0]);
+    host._add = function (file) {
+        if (Array.isArray(file)) {
+            if (host.options.multiple === true) for (x in file) this._add(file[x]);
+            return;
+        }
+        if (!('lastModifiedDate' in file)) file.lastModifiedDate = new Date(file.lastModified * 1000);
+        host.files.push(file);
+        host.o.dzwords.hide();
+        host.o.list.append($('<div class="dz-item">').html([
+            host._preview(file),
+            $('<div class="dz-size">').html(humanFileSize(file.size)),
+            $('<div class="dz-detail">').html(file.name),
+            $('<div class="dz-remove">').html($('<i class="fa fa-times">')).click(function (e) {
+                var item = $(this).parent();
+                if (host._remove(item.data('file')))
+                    item.remove();
+                e.stopPropagation();
+            })
+        ]).data('file', file).click(function (e) { e.stopPropagation(); }));
+    };
+    host._remove = function (file) {
+        if (!(typeof this.options.remove === 'function'
+            && this.options.remove(file)))
+            return false;
+        this.files = this.files.filter(function (item) {
+            return (item.name !== file.name);
+        });
+        if (this.files.length == 0) this.o.dzwords.show();
+        return true;
+    };
+    host._preview = function (file) {
+        var o = $('<div class="dz-preview">');
+        if (file.preview)
+            o.append($('<img>').attr('src', file.preview));
+        else if (file instanceof File && file.type.substr(0, 5) == 'image') {
+            var reader = new FileReader();
+            reader.onload = function (event) {
+                o.append($('<img>').attr('src', event.target.result));
+            };
+            reader.readAsDataURL(file);
+        } else
+            o.addClass('fileicon').attr('data-type', file.type.replace('/', '-'));
+        return o;
+    };
+    host._registerEvents = function () {
+        this.o.dropzone.click(function (e) {
+            host.o.input.click();
+        });
+        this.o.dropzone.on('dragenter', function (e) {
+            e.preventDefault();
+            e.stopPropagation();
+        });
+        this.o.dropzone.on('dragover', function (e) {
+            e.preventDefault();
+            e.stopPropagation();
+        });
+        this.o.dropzone.on('drop', function (e) {
+            var fileArray = Array.from(e.originalEvent.dataTransfer.files);
+            if (fileArray.length > 0) {
+                fileArray.forEach(function (file) {
+                    host._add(file);
+                });
+                host.o.input.val(null);
+                e.preventDefault();
+                e.stopPropagation();
+                if (typeof host.options.select == 'function')
+                    host.options.select(fileArray);
+            }
+        });
+        this.o.input.change(function (e) {
+            var fileArray = Array.from(e.target.files);
+            fileArray.forEach(function (file) {
+                host._add(file);
+            });
+            host.o.input.val(null);
+            if (typeof host.options.select == 'function')
+                host.options.select(fileArray);
+        });
+    };
+    host._render = function (host) {
+        $(this).addClass('form-fileupload');
+        this.o = {};
+        this.o.input = $('<input type="file" class="form-control">').hide().appendTo(host);
+        if (host.options.multiple) this.o.input.prop('multiple', true);
+        host.o.dzwords = $('<div class="form-dropzone-words">').html('Drop files here or click to upload.');
+        this.o.dropzone = $('<div class="form-dropzone">').html(this.o.dzwords).appendTo(host);
+        if (host.options.height) this.o.dropzone.height(host.options.height);
+        this.o.list = $('<div class="dz-items">').appendTo(this.o.dropzone);
+    };
+    host._render(host);
+    host._registerEvents();
+    return this;
+};

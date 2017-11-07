@@ -12,6 +12,12 @@ namespace Hazaar\Forms\Output;
  */
 class HTML extends \Hazaar\Forms\Output {
 
+    static public $pageClass = 'card card-default';
+
+    static public $pageHeaderClass = 'card-header';
+
+    static public $pageBodyClass = 'card-body';
+
     public function render($form = null, $ixes = null){
 
         if($form === null)
@@ -39,12 +45,12 @@ class HTML extends \Hazaar\Forms\Output {
 
     private function __page($page, $page_num){
 
-        $html = (new \Hazaar\Html\Div())->class('panel panel-default form-page page-' . $page_num);
+        $html = (new \Hazaar\Html\Div())->class(HTML::$pageClass . ' form-page page-' . $page_num);
 
         if(property_exists($page, 'label'))
-            $html->add((new \Hazaar\Html\Div((new \Hazaar\Html\H2($page->label))->class('panel-title')))->class('panel-heading'));
+            $html->add((new \Hazaar\Html\Div($this->model->matchReplace($page->label, true)))->class(HTML::$pageHeaderClass));
 
-        $body = (new \Hazaar\Html\Div())->class('panel-body');
+        $body = (new \Hazaar\Html\Div())->class(HTML::$pageBodyClass);
 
         foreach($page->sections as $section)
             $body->add($this->__section($section));
@@ -103,7 +109,7 @@ class HTML extends \Hazaar\Forms\Output {
         $html = (new \Hazaar\Html\Div())->class('form-section');
 
         if(property_exists($section, 'label'))
-            $html->add(new \Hazaar\Html\H3($section->label));
+            $html->add(new \Hazaar\Html\H3($this->model->matchReplace($section->label, true)));
 
         $html->add($this->__group($section->fields));
 
@@ -172,7 +178,7 @@ class HTML extends \Hazaar\Forms\Output {
         $group = (new \Hazaar\Html\Div())->class('form-group');
 
         if($label = ake($field, 'label'))
-            $group->add(new \Hazaar\Html\H4($label));
+            $group->add(new \Hazaar\Html\H4($this->model->matchReplace($label, true)));
 
         $type = ake($field, 'type');
 
