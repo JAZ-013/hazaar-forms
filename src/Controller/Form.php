@@ -277,12 +277,6 @@ abstract class Form extends Action {
 
     }
 
-    final public function download(){
-
-        dump($this->request);
-
-    }
-
     //Placeholder Methods
     protected function load($params = array()){
 
@@ -354,7 +348,8 @@ abstract class Form extends Action {
                 'lastModified' => $file->mtime(),
                 'name' => $file->basename(),
                 'size' => $file->size(),
-                'type' => $file->mime_content_type()
+                'type' => $file->mime_content_type(),
+                'preview' => (string)$this->url('preview/' . $this->model->getName() . '/' . $name . '/' . $file->basename(), $params)
             );
 
         }
@@ -417,6 +412,28 @@ abstract class Form extends Action {
         $index->set($key, $fileindex);
 
         return true;
+
+    }
+
+    public function preview($form, $name, $file){
+
+        if(!$form)
+            throw new \Exception('Missing form name in request!');
+
+        $this->form($form, $this->request->get('params', array()));
+
+        $this->file_init($name, $this->request->getParams(), $dir, $index, $key);
+
+        $file = $dir->get($file);
+
+        if(!$file->exists())
+            throw new \Exception('File not found!', 404);
+
+        $out = new \Hazaar\Controller\Response\Image($file);
+
+        $out->resize(120, 120, true);
+
+        return $out;
 
     }
 
