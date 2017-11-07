@@ -264,7 +264,7 @@ abstract class Form extends Action {
 
             foreach($remove as $rm){
 
-                if(!$this->file_remove(ake($rm, 'field'), array(ake($rm, 'file')), $params))
+                if(!$this->file_detach(ake($rm, 'field'), array(ake($rm, 'file')), $params))
                     throw new \Exception('Unknown error saving attachments!');
 
             }
@@ -362,7 +362,7 @@ abstract class Form extends Action {
 
     }
 
-    protected function file_remove($name, $files, $params = array()){
+    protected function file_detach($name, $files, $params = array()){
 
         $this->file_init($name, $params, $dir, $index, $key);
 
