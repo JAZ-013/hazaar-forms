@@ -413,11 +413,16 @@
             name: def.name,
             multiple: def.multiple || false,
             btnClass: def.btnClass || null,
+            height: def.height || null,
             select: function (files) {
                 for (x in files)
                     host.uploads.push({ "field": def.name, "file": files[x] });
             },
             remove: function (file) {
+                host.uploads = host.uploads.filter(function (item, index) {
+                    if (!(item.field == def.name && item.file.name == file.name))
+                        return item;
+                });
                 host.deloads.push({ "field": def.name, "file": file });
                 return true;
             }
@@ -1064,13 +1069,18 @@ $.fn.fileUpload = function () {
         }
         if (!('lastModifiedDate' in file)) file.lastModifiedDate = new Date(file.lastModified * 1000);
         host.files.push(file);
-        host.o.list.append($('<div>').html([
-            $('<span>').html(file.name + ' (' + file.size + ' bytes)'),
-            $('<button type="button">').html('X').click(function () {
-                if (host._remove($(this).parent().data('file')))
-                    $(this).parent().remove();
+        host.o.dzwords.hide();
+        host.o.list.append($('<div class="dz-item">').html([
+            host._preview(file),
+            $('<div class="dz-size">').html(humanFileSize(file.size)),
+            $('<div class="dz-detail">').html(file.name),
+            $('<div class="dz-remove">').html($('<i class="fa fa-times">')).click(function (e) {
+                var item = $(this).parent();
+                if (host._remove(item.data('file')))
+                    item.remove();
+                e.stopPropagation();
             })
-        ]).data('file', file));
+        ]).data('file', file).click(function (e) { e.stopPropagation(); }));
     };
     host._remove = function (file) {
         if (!(typeof this.options.remove === 'function'
@@ -1079,28 +1089,65 @@ $.fn.fileUpload = function () {
         this.files = this.files.filter(function (item) {
             return (item.name !== file.name);
         });
+        if (this.files.length == 0) this.o.dzwords.show();
         return true;
     };
+    host._preview = function (file) {
+        var o = $('<div class="dz-preview">');
+        if (file.preview)
+            o.append($('<img>').attr('src', file.preview));
+        else if (file instanceof File && file.type.substr(0, 5) == 'image') {
+            var reader = new FileReader();
+            reader.onload = function (event) {
+                o.append($('<img>').attr('src', event.target.result));
+            };
+            reader.readAsDataURL(file);
+        } else
+            o.addClass('fileicon').attr('data-type', file.type.replace('/', '-'));
+        return o;
+    };
     host._registerEvents = function () {
-        this.o.btnAdd.click(function (e) {
+        this.o.dropzone.click(function (e) {
             host.o.input.click();
+        });
+        this.o.dropzone.on('dragenter', function (e) {
+            e.preventDefault();
+            e.stopPropagation();
+        });
+        this.o.dropzone.on('dragover', function (e) {
+            e.preventDefault();
+            e.stopPropagation();
+        });
+        this.o.dropzone.on('drop', function (e) {
+            var fileArray = Array.from(e.originalEvent.dataTransfer.files);
+            if (fileArray.length > 0) {
+                fileArray.forEach(function (file) {
+                    host._add(file);
+                });
+                host.o.input.val(null);
+                e.preventDefault();
+                e.stopPropagation();
+            }
         });
         this.o.input.change(function (e) {
             var fileArray = Array.from(e.target.files);
             fileArray.forEach(function (file) {
                 host._add(file);
             });
-            this.value = null;
+            host.o.input.val(null);
             if (typeof host.options.select == 'function')
                 host.options.select(fileArray);
         });
     };
     host._render = function (host) {
+        $(this).addClass('form-fileupload');
         this.o = {};
         this.o.input = $('<input type="file" class="form-control">').hide().appendTo(host);
-        this.o.btnAdd = $('<button type="button" class="btn">').addClass(this.options.btnClass).html('Select Files').appendTo(host);
         if (host.options.multiple) this.o.input.prop('multiple', true);
-        this.o.list = $('<div>').appendTo(host);
+        host.o.dzwords = $('<div class="form-dropzone-words">').html('Drop files here or click to upload.');
+        this.o.dropzone = $('<div class="form-dropzone">').html(this.o.dzwords).appendTo(host);
+        if (host.options.height) this.o.dropzone.height(host.options.height);
+        this.o.list = $('<div class="dz-items">').appendTo(this.o.dropzone);
     };
     host._render(host);
     host._registerEvents();

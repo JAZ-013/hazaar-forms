@@ -47,3 +47,137 @@
 .form-group-nolabel {
     padding-top: 24px;
 }
+
+.form-dropzone {
+    display: flex;
+    border: 2px dashed #ddd;
+    color: #ccc;
+    width: 100%;
+    cursor: pointer;
+    transition: all .5s;
+}
+
+    .form-dropzone .form-dropzone-words {
+        align-self: center;
+        width: 100%;
+        text-align: center;
+        margin: 15px;
+    }
+
+    .form-dropzone .dz-items {
+        overflow-y: auto;
+        overflow-x: hidden;
+        color: #000;
+    }
+
+        .form-dropzone .dz-items .dz-item {
+            position: relative;
+            float: left;
+            margin: 15px;
+            cursor: default;
+            user-select: none;
+            width: 120px;
+            overflow: hidden;
+        }
+
+            .form-dropzone .dz-items .dz-item .dz-preview {
+                box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+                width: 120px;
+                height: 120px;
+            }
+
+                .form-dropzone .dz-items .dz-item .dz-preview > img {
+                    object-fit: cover;
+                    width: 120px;
+                    height: 120px;
+                }
+
+            .form-dropzone .dz-items .dz-item .dz-size {
+                position: absolute;
+                top: 0;
+                right: 0;
+                background: rgba(255,255,255,0.6);
+                font-size: 11px;
+                padding: 2px 5px;
+            }
+
+            .form-dropzone .dz-items .dz-item .dz-detail {
+                float: left;
+                width: 100px;
+                font-size: 11px;
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
+            }
+
+            .form-dropzone .dz-items .dz-item .dz-remove {
+                float: right;
+                color: red;
+            }
+
+.fileicon[data-type] {
+    background: url(images/fileicon/generic.png) no-repeat;
+    background-size: contain;
+}
+
+/*
+ * Generic Icons Classes
+ */
+.fileicon[data-type*=image-] {
+    background-image: url(images/fileicon/image.png);
+}
+
+.fileicon[data-type*=text-] {
+    background-image: url(images/fileicon/txt.png);
+}
+
+.fileicon[data-type*=audio-] {
+    background-image: url(images/fileicon/audio.png);
+}
+
+.fileicon[data-type*=video-] {
+    background-image: url(images/fileicon/video.png);
+}
+
+/*
+ * MIME Specific Classes
+ */
+.fileicon[data-type=text-html],
+.fileicon[data-type=application-xml] {
+    background-image: url(images/fileicon/ml.png);
+}
+
+.fileicon[data-type=application-json] {
+    background-image: url(images/fileicon/txt.png);
+}
+
+.fileicon[data-type=application-pdf] {
+    background-image: url(images/fileicon/pdf.png);
+}
+
+.fileicon[data-type=application-x-msdos-program],
+.fileicon[data-type=application-x-ms-dos-executable],
+.fileicon[data-type=application-x-msi],
+.fileicon[data-type=application-x-executable] {
+    background-image: url(images/fileicon/exe.png);
+}
+
+.fileicon[data-type=application-zip],
+.fileicon[data-type=application-x-tar],
+.fileicon[data-type=application-x-gzip],
+.fileicon[data-type=application-x-gtar-compressed],
+.fileicon[data-type=application-rar] {
+    background-image: url(images/fileicon/archive.png);
+}
+
+.fileicon[data-type=application-msword],
+.fileicon[data-type=application-rtf],
+.fileicon[data-type=application-vnd_sun_xml_writer],
+.fileicon[data-type=application-vnd_oasis_opendocument_text],
+.fileicon[data-type=application-vnd_google-apps_document] {
+    background-image: url(images/fileicon/doc.png);
+}
+
+.fileicon[data-type=application-vnd_oasis_opendocument_spreadsheet] {
+    background-image: url(images/fileicon/xls.png);
+}
