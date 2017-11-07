@@ -1127,6 +1127,8 @@ $.fn.fileUpload = function () {
                 host.o.input.val(null);
                 e.preventDefault();
                 e.stopPropagation();
+                if (typeof host.options.select == 'function')
+                    host.options.select(fileArray);
             }
         });
         this.o.input.change(function (e) {
