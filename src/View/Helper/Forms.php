@@ -33,6 +33,8 @@ class Forms extends \Hazaar\View\Helper {
         //Link required stylesheets
         $view->link($this->application->url('hazaar/forms', 'file/interact.css'));
 
+        $view->link($this->application->url('hazaar', 'file/css/fileicons.css'));
+
         $view->requires($this->application->url('hazaar/forms', 'file/interact.js'));
 
     }
