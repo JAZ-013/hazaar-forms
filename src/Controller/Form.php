@@ -156,7 +156,8 @@ abstract class Form extends Action {
         $settings = new \Hazaar\Map($settings, array(
             'form' => $this->model->getName(),
             'controller' => strtolower($this->getName()),
-            'update' => method_exists($this, 'update')
+            'update' => method_exists($this, 'update'),
+            'maxUploadSize' => \Hazaar\File\Upload::getMaxUploadSize()
         ));
 
         if($this->params)

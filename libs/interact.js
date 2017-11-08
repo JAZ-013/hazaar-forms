@@ -414,6 +414,7 @@
             multiple: def.multiple || false,
             btnClass: def.btnClass || null,
             height: def.height || null,
+            maxSize: def.maxSize || host.settings.maxUploadSize || null,
             select: function (files) {
                 for (x in files)
                     host.uploads.push({ "field": def.name, "file": files[x] });
@@ -1061,7 +1062,7 @@ $.fn.fileUpload = function () {
         return this;
     }
     host.files = [];
-    host.options = $.extend({ name: 'file', multiple: false, btnClass: 'btn-default' }, arguments[0]);
+    host.options = $.extend({ name: 'file', multiple: false, btnClass: 'btn-default', maxSize: 0 }, arguments[0]);
     host._add = function (file) {
         if (Array.isArray(file)) {
             if (host.options.multiple === true) for (x in file) this._add(file[x]);
@@ -1106,6 +1107,41 @@ $.fn.fileUpload = function () {
             o.addClass('fileicon').attr('data-type', file.type.replace('/', '-'));
         return o;
     };
+    host._checksize = function (file) {
+        if (host.options.maxSize == 0 || file.size < host.options.maxSize)
+            return true;
+        return false;
+    };
+    host._add_files = function (array) {
+        var fileArray = Array.from(array), added = [], failed = [];
+        fileArray.forEach(function (file) {
+            if (host._checksize(file)) {
+                host._add(file);
+                added.push(file);
+            } else {
+                failed.push(file);
+            }
+        });
+        host.o.input.val(null);
+        if (typeof host.options.select == 'function')
+            host.options.select(added);
+
+        if (failed.length > 0) {
+            var filesP = $('<p>');
+            for (x in failed)
+                filesP.append($('<strong>').html(failed[x].name));
+            $('<div>').html([
+                $('<p>').html('Failed to attach the following files:'),
+                filesP,
+                $('<p>').html('Files were too big as the maximum allowed file size is ' + humanFileSize(host.options.maxSize) + '.')
+            ]).popup({
+                title: "Bad Attachment",
+                icon: "danger",
+                buttons: [{ label: "OK", "class": "btn btn-danger" }]
+            });
+        }
+
+    };
     host._registerEvents = function () {
         this.o.dropzone.click(function (e) {
             host.o.input.click();
@@ -1119,26 +1155,12 @@ $.fn.fileUpload = function () {
             e.stopPropagation();
         });
         this.o.dropzone.on('drop', function (e) {
-            var fileArray = Array.from(e.originalEvent.dataTransfer.files);
-            if (fileArray.length > 0) {
-                fileArray.forEach(function (file) {
-                    host._add(file);
-                });
-                host.o.input.val(null);
-                e.preventDefault();
-                e.stopPropagation();
-                if (typeof host.options.select == 'function')
-                    host.options.select(fileArray);
-            }
+            host._add_files(e.originalEvent.dataTransfer.files);
+            e.preventDefault();
+            e.stopPropagation();
         });
         this.o.input.change(function (e) {
-            var fileArray = Array.from(e.target.files);
-            fileArray.forEach(function (file) {
-                host._add(file);
-            });
-            host.o.input.val(null);
-            if (typeof host.options.select == 'function')
-                host.options.select(fileArray);
+            host._add_files(e.target.files);
         });
     };
     host._render = function (host) {
