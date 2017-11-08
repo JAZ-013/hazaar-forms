@@ -681,14 +681,14 @@
                 group.addClass('row');
                 var length = section.length;
                 for (x in section) {
-                    if (!typeof section[x] == 'object') continue;
+                    if (typeof section[x] !== 'object' || Array.isArray(section[x])) continue;
                     if (!('weight' in section[x])) section[x].weight = 1;
                     length = length + (section[x].weight - 1);
                 }
                 col_width = (12 / length);
             }
             for (x in section)
-                group.append($('<div>').toggleClass('col-lg-' + Math.round(section[x].weight * col_width), p).html(_section(host, section[x], !p)));
+                group.append($('<div>').toggleClass('col-lg-' + Math.round((section[x].weight || 1) * col_width), p).html(_section(host, section[x], !p)));
             return group;
         }
         var fieldset = $('<fieldset>').data('def', section);
