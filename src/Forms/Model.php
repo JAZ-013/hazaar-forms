@@ -46,10 +46,11 @@ class Model extends \Hazaar\Model\Strict {
 
             foreach($this->__form->fields as $ext_fields){
 
-                $ext_fields_file = $ext_fields . '.json';
+                if(strtolower(substr($ext_fields, -5)) !== '.json')
+                    $ext_fields .= '.json';
 
-                if(!($source = $app->filePath('forms', $ext_fields_file, true)))
-                    throw new \Exception('Form include file not found: ' . $ext_fields_file, 404);
+                if(!($source = \Hazaar\Application::getInstance()->filePath('forms', $ext_fields)))
+                    throw new \Exception('Form include file not found: ' . $ext_fields, 404);
 
                 $include_file = new \Hazaar\File($source);
 
