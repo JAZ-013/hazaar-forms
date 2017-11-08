@@ -312,6 +312,36 @@ abstract class Form extends Action {
 
     }
 
+    protected function dir(){
+
+        $list = array();
+
+        $app = \Hazaar\Application::getInstance();
+
+        if(!($source = $app->filePath('forms')))
+            return $list;
+
+        $dir = new \Hazaar\File\Dir($source);
+
+        $files = $dir->find('*.json');
+
+        foreach($files as $file){
+
+            $info = $file->parseJSON();
+
+            if(!(property_exists($info, 'name')
+                && property_exists($info, 'pages')
+                && property_exists($info, 'fields')))
+                continue;
+
+            $list[$file->name()] = $info->name;
+
+        }
+
+        return $list;
+
+    }
+
     private function file_init($name, $params, &$dir, &$index, &$key){
 
         $manager = new \Hazaar\File\Manager('local', array('root' => $this->application->runtimePath('forms', true)));
