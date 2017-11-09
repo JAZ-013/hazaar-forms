@@ -27,7 +27,7 @@ abstract class Form extends Action {
 
         $this->view->addHelper('forms');
 
-        if(!($model = $this->get($name)) instanceof \Hazaar\Forms\Model)
+        if(!($model = $this->get($name, $params)) instanceof \Hazaar\Forms\Model)
             throw new \Exception(__CLASS__ . '::get() MUST return a form a Hazaar\Forms\Model object!');
 
         $this->model = $model;
@@ -291,7 +291,7 @@ abstract class Form extends Action {
 
     }
 
-    protected function get($name){
+    protected function get($name, $params = array()){
 
         $app = \Hazaar\Application::getInstance();
 
