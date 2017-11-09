@@ -334,6 +334,22 @@ abstract class Form extends Action {
                 && property_exists($info, 'fields')))
                 continue;
 
+            if(is_array($info->fields)){
+
+                $fields = array();
+
+                foreach($info->fields as &$import){
+
+                    if(strtolower(substr($import, -5)) !== '.json')
+                        $import .= '.json';
+
+                    $fields = array_merge($fields, $dir->get($import)->parseJSON(true));
+
+                }
+
+                $info->fields = $fields;
+
+            }
 
             $list[$file->name()] = array(
                 'name' => $info->name,
@@ -341,7 +357,7 @@ abstract class Form extends Action {
                 'version' => ake($info, 'version', 0),
                 'author' => ake($info, 'author'),
                 'pages' => count($info->pages),
-                'fields' => count(get_object_vars($info->fields)),
+                'fields' => count((is_array($info->fields) ? $info->fields : get_object_vars($info->fields))),
                 'size' => $file->size(),
                 'modified_on' => $file->mtime()
             );
