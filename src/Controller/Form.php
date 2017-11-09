@@ -334,7 +334,17 @@ abstract class Form extends Action {
                 && property_exists($info, 'fields')))
                 continue;
 
-            $list[$file->name()] = $info->name;
+
+            $list[$file->name()] = array(
+                'name' => $info->name,
+                'description' => ake($info, 'description'),
+                'version' => ake($info, 'version', 0),
+                'author' => ake($info, 'author'),
+                'pages' => count($info->pages),
+                'fields' => count(get_object_vars($info->fields)),
+                'size' => $file->size(),
+                'modified_on' => $file->mtime()
+            );
 
         }
 
