@@ -344,7 +344,8 @@ abstract class Form extends Action {
                     if(strtolower(substr($import, -5)) !== '.json')
                         $import .= '.json';
 
-                    $fields = array_merge($fields, $dir->get($import)->parseJSON(true));
+                    if($ext_fields = $dir->get($import)->parseJSON(true))
+                        $fields = array_merge($fields, $ext_fields);
 
                 }
 
