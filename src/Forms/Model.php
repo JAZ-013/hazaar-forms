@@ -39,34 +39,56 @@ class Model extends \Hazaar\Model\Strict {
         if(!array_key_exists('fields', $this->__form))
             throw new \Exception('Form definition does not contain any fields!');
 
-        //If fields is an array, then it is importing one or more field defs from other files.
-        if(is_array($this->__form->fields)){
+        foreach($this->__form as $name => $item){
 
-            $fields = array();
+            if(is_object($item) && property_exists($item, 'import')){
 
-            foreach($this->__form->fields as $ext_fields){
+                $ext = null;
 
-                if(strtolower(substr($ext_fields, -5)) !== '.json')
-                    $ext_fields .= '.json';
+                if(!is_array($item->import))
+                    $item->import = array($item->import);
 
-                if(!($source = \Hazaar\Application::getInstance()->filePath('forms', $ext_fields)))
-                    throw new \Exception('Form include file not found: ' . $ext_fields, 404);
+                foreach($item->import as $ext_item){
 
-                $include_file = new \Hazaar\File($source);
+                    if(strtolower(substr($ext_item, -5)) !== '.json')
+                        $ext_item .= '.json';
 
-                if(!($include_fields = $include_file->parseJSON(true)))
-                    throw new \Exception('An error ocurred parsing the form definition \'' . $include_file->name() . '\'');
+                    if(!($source = \Hazaar\Application::getInstance()->filePath('forms', $ext_item)))
+                        throw new \Exception('Form include file not found: ' . $ext_item, 404);
 
-                $fields = array_merge($fields, $include_fields);
+                    $include_file = new \Hazaar\File($source);
+
+                    if(!($include_items = $include_file->parseJSON()))
+                        throw new \Exception('An error ocurred parsing the form definition \'' . $include_file->name() . '\'');
+
+                    if(!$ext && is_object($include_items)){
+
+                        $ext = new \stdClass;
+
+                        foreach($include_items as $key => $value)
+                            $ext->$key = $value;
+
+                    }else{
+
+                        $ext = array();
+
+                        foreach($include_items as $key => $value)
+                            $ext[$key] = $value;
+
+                    }
+
+                }
+
+                $this->__form->$name = $ext;
 
             }
 
-            $this->__form->fields = $fields;
+        }
 
-        }else{
+        //If fields is an array, then it is importing one or more field defs from other files.
+        if(!is_array($this->__form->fields)){
 
-            //Make sure the fields property is an array otherwise strict models will have a tanty.
-            $this->__form->fields = (array)$this->__form->fields;
+            settype($this->__form->fields, 'array');
 
             array_walk_recursive($this->__form->fields, function(&$array){
                 $array = (array)$array;
