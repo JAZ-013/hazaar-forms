@@ -21,7 +21,7 @@
 
     function _url(host, target) {
         target = _match_replace(host, target, null, true);
-        return (target.match(/^https?:\/\//) ? target : hazaar.url(target))
+        return (target.match(/^https?:\/\//) ? target : hazaar.url(target));
     };
 
     function _exec(host, type, field) {
@@ -896,7 +896,10 @@
                             });
                             $(host).trigger('saverror', [upload_response.reason]);
                         }
-                    }).fail(_error);
+                    }).fail(function (error) {
+                        $(host).trigger('saverror', [error.responseJSON.error]);
+                        _error(error);
+                    });
                 } else {
                     $(host).trigger('save', [host.settings.params]);
                 }
@@ -907,7 +910,10 @@
                 });
                 $(host).trigger('saverror', [response.reason]);
             }
-        }).fail(_error);
+        }).fail(function (error) {
+            $(host).trigger('saverror', [error.responseJSON.error]);
+            _error(error);
+        });
         return true;
     };
 
