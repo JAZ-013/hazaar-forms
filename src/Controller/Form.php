@@ -329,7 +329,8 @@ abstract class Form extends Action {
 
             $info = $file->parseJSON();
 
-            if(!(property_exists($info, 'name')
+            if(!($info instanceof \stdClass
+                && property_exists($info, 'name')
                 && property_exists($info, 'pages')
                 && property_exists($info, 'fields')))
                 continue;
