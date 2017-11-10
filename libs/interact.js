@@ -691,6 +691,7 @@
                 group.append($('<div>').toggleClass('col-lg-' + Math.round((section[x].weight || 1) * col_width), p).html(_section(host, section[x], !p)));
             return group;
         }
+        if (typeof section !== 'object') return null;
         var fieldset = $('<fieldset>').data('def', section);
         if (section.label)
             fieldset.append($('<legend>').html(_match_replace(host, section.label, null, true, true)));
@@ -707,6 +708,7 @@
 
     //Render a page
     function _page(host, page) {
+        if (typeof page !== 'object') return null;
         var form = $('<div class="form-page">').data('def', page), sections = [];
         host.events = {
             show: [],
