@@ -364,6 +364,8 @@ abstract class Form extends Action {
 
         }
 
+        ksort($list);
+
         return $list;
 
     }
