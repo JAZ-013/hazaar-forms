@@ -38,7 +38,7 @@
             var values = host.data.save(true);
             for (key in values) {
                 var value = values[key];
-                if (typeof value == 'string') value = "'" + value + "'";
+                if (typeof value == 'string') value = '"' + value.replace(/"/g, '\\"') + '"';
                 else if (typeof value == 'object' || typeof value == 'array') value = JSON.stringify(value);
                 code += 'var ' + key + " = " + value + ";\n";
             }
