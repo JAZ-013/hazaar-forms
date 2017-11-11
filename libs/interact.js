@@ -849,6 +849,7 @@
             var result = _validate_field(host, key);
             if (result !== true) errors.push(result);
         }
+        $(host).trigger('validate', [(errors.length > 0), errors]);
         if (errors.length > 0) return errors;
         return true;
     };

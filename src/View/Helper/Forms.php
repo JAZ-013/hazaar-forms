@@ -16,6 +16,8 @@ class Forms extends \Hazaar\View\Helper {
 
         $this->requires('cdnjs');
 
+        $this->requires('html');
+
         $this->requires('jQuery');
 
         $this->requires('bootstrap');
@@ -36,6 +38,48 @@ class Forms extends \Hazaar\View\Helper {
         $view->link($this->application->url('hazaar', 'file/css/fileicons.css'));
 
         $view->requires($this->application->url('hazaar/forms', 'file/interact.js'));
+
+    }
+
+    public function btnValidate($label = 'Validate'){
+
+        $id = 'btn_' . uniqid();
+
+        $this->jquery->exec("$('#$id').click(function(){ hzForm.hzForm('validate'); });");
+
+        return $this->html->button($label)->id($id);
+
+    }
+
+    public function btnSave($label = 'Save', $validation = true, $params = array()){
+
+        $id = 'btn_' . uniqid();
+
+        $this->jquery->exec("$('#$id').click(function(){ hzForm.hzForm('save', "
+            . strbool($validation)
+            . ($params?', ' . json_encode($params):'') . "); });");
+
+        return $this->html->button($label)->id($id);
+
+    }
+
+    public function btnNext($label = 'Next'){
+
+        $id = 'btn_' . uniqid();
+
+        $this->jquery->exec("$('#$id').click(function(){ hzForm.hzForm('next'); });");
+
+        return $this->html->button($label)->id($id);
+
+    }
+
+    public function btnPrevious($label = 'Previous'){
+
+        $id = 'btn_' . uniqid();
+
+        $this->jquery->exec("$('#$id').click(function(){ hzForm.hzForm('prev'); });");
+
+        return $this->html->button($label)->id($id);
 
     }
 

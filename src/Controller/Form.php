@@ -165,7 +165,7 @@ abstract class Form extends Action {
 
         $div = new \Hazaar\Html\Form();
 
-        $this->view->jquery->exec("$('#$name').hzForm(" . $settings->toJSON() . ");");
+        $this->view->jquery->exec("var hzForm = $('#$name').hzForm(" . $settings->toJSON() . ");", 1);
 
         return $div->id($name);
 
