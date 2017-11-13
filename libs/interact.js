@@ -676,6 +676,7 @@
             else
                 host.events.show.push(field.data('show', def.show));
         }
+        host.pageInputs.push(field);
         return field;
     };
 
@@ -722,6 +723,7 @@
             disabled: [],
             change: {}
         };
+        host.pageInputs = [];
         host.data.unwatch();
         if (page.label) form.append($('<h1>').html(_match_replace(host, page.label, null, true, true)));
         for (x in page.sections)
@@ -744,6 +746,11 @@
 
     //Navigate to a page
     function _nav(host, pageno) {
+        if (host.page !== null && pageno > host.page) {
+            var page = host.def.pages[host.page];
+            if ('validate' in page && !_validate_page(host))
+                return;
+        }
         _track(host);
         host.objects.container.empty();
         if (host.settings.singlePage) {
@@ -759,14 +766,24 @@
         _ready(host);
     };
 
+    function _validate_page(host) {
+        var status = true;
+        for (x in host.pageInputs) {
+            var input = host.pageInputs[x];
+            var def = input.data('def');
+            if (!def) continue;
+            var result = _validate_field(host, def.name);
+            if (result !== true) status = false;
+            input.parent().parent().toggleClass('has-error', result);
+        }
+        return status;
+    };
+
     function _validate_input(host, input) {
         var name = input.attr('name'), def = host.def.fields[name];
         if (!def) return true;
         _validate_field(host, name, true).done(function (result) {
-            if ((def.valid = result) !== true)
-                input.parent().addClass('has-error');
-            else
-                input.parent().removeClass('has-error');
+            input.parent().parent().toggleClass('has-error', ((def.valid = result) !== true));
         });
     };
 
@@ -1008,6 +1025,7 @@
         host.events = {};
         host.posts = {};
         host.page = null;
+        host.pageInputs = [];
         host.loading = 0;
         host.uploads = [];
         host.deloads = [];
