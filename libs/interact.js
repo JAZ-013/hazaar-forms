@@ -202,8 +202,9 @@
             else
                 host.data[def.name].remove(index);
         };
+        var value = host.data[def.name];
         for (x in data) {
-            var active = (host.data[def.name].indexOf(x) > -1), name = def.name + '_' + x;
+            var active = (value instanceof dataBinderArray && value.indexOf(x) > -1), name = def.name + '_' + x;
             var label = $('<label>')
                 .html([$('<input type="checkbox">').attr('value', x).prop('checked', active), data[x]])
                 .attr('data-bind-value', x)
@@ -226,15 +227,18 @@
         var options = def.options;
         if ((options = _match_replace(host, options, { "site_url": hazaar.url() })) === false) {
             container.hide();
-            host.data[def.name] = null;
+            host.data[def.name] = [];
             return;
         }
         if (track == true) _track(host);
         $.get(_url(host, options))
             .done(function (data) {
-                var remove = host.data[def.name].save(true).filter(function (i) { return !(i in data); });
-                for (x in remove) host.data[def.name].remove(remove[x]);
-                container.empty().append(_input_select_multi_items(host, def, data));
+                var values = host.data[def.name].save(true);
+                if (values) {
+                    var remove = host.data[def.name].save(true).filter(function (i) { return !(i in data); });
+                    for (x in remove) host.data[def.name].remove(remove[x]);
+                }
+                container.html(_input_select_multi_items(host, def, data)).show();
                 _ready(host);
             }).fail(_error);
         return true;
