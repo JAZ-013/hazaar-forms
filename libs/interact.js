@@ -334,17 +334,18 @@
             }));
         } else {
             var required = ('required' in def) ? _eval_code(host, def.required) : false;
-            if (def.placeholder && (!required || host.data[def.name].value == null))
+            var value = host.data[def.name];
+            if (def.placeholder && (!required || host.data[def.name].value == null)) {
                 select.append($('<option>')
                     .attr('value', '')
                     .html(def.placeholder)
                     .prop('disabled', (required == true)));
+                if (!value.value)
+                    host.data[def.name].set(null, def.placeholder);
+            }
             for (x in def.options)
-                select.append($('<option>')
-                    .attr('value', x)
-                    .html(def.options[x]));
-            if (value = host.data[def.name])
-                select.val(value.value).change(function (event) { _input_event_change(host, $(event.target)); });
+                select.append($('<option>').attr('value', x).html(def.options[x]));
+            select.change(function (event) { _input_event_change(host, $(event.target)); });
         }
         return group;
     };
