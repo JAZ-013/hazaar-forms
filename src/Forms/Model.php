@@ -18,9 +18,13 @@ class Model extends \Hazaar\Model\Strict {
 
     private $__items = array();
 
-    function __construct($form_name, $form = null){
+    private $__tags = array();
+
+    function __construct($form_name, $form = null, $tags = array()){
 
         $this->__form_name = $form_name;
+
+        $this->setTags($tags);
 
         if($form) $this->load($form);
 
@@ -109,6 +113,15 @@ class Model extends \Hazaar\Model\Strict {
 
     }
 
+    public function setTags($tags){
+
+        if(!is_array($tags))
+            $tags = array($tags);
+
+        $this->__tags = $tags;
+
+    }
+
 
     public function getName(){
 
@@ -118,7 +131,52 @@ class Model extends \Hazaar\Model\Strict {
 
     public function getForm(){
 
+        //Remove any tagged fields
+        foreach($this->__form->fields as $name => $field){
+
+            if(!($tags = ake($field, 'tag')))
+                continue;
+
+            if(!is_array($tags))
+                $tags = array($tags);
+
+            if(count(array_intersect($tags, $this->__tags)) === 0)
+                unset($this->__form->fields[$name]);
+
+        }
+
         return $this->__form;
+
+    }
+
+    /**
+     * Return the form data to send to the client frontend
+     *
+     * This method returns forms data with fields stripped if they are tagged and those tags are not set.
+     *
+     * @param mixed $disable_callbacks
+     * @param mixed $depth
+     * @param mixed $show_hidden
+     * @return mixed
+     */
+    public function toFormArray(){
+
+        $array = parent::toArray();
+
+        foreach($this->__form->fields as $name => $field){
+
+            if(!($tags = ake($field, 'tag')))
+                continue;
+
+            if(!is_array($tags))
+                $tags = array($tags);
+
+            if(count(array_intersect($tags, $this->__tags)) === 0)
+                unset($array[$name]);
+
+        }
+
+        return $array;
 
     }
 
