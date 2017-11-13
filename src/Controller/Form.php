@@ -18,6 +18,16 @@ abstract class Form extends Action {
 
     private $__tags = array();
 
+    protected $__initialized = false;
+
+    public function __initialize(\Hazaar\Application\Request $request) {
+
+        parent::__initialize($request);
+
+        $this->__initialized = true;
+
+    }
+
     /**
      * Define the form definition to use.
      *
@@ -282,7 +292,15 @@ abstract class Form extends Action {
 
     }
 
+    /**
+     * Set any field tags that available on the current instance of the form.
+     *
+     * @param mixed $tags A tag string or an array of tag strings.
+     */
     final protected function setTags($tags){
+
+        if($this->__initialized !== false)
+            throw new \Exception('Failed to set form tags.  This controller has already been initiallised!');
 
         if(!is_array($tags))
             $tags = array($tags);
