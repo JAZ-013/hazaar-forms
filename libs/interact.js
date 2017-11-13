@@ -50,8 +50,10 @@
     function _nullify(host, def) {
         if (typeof def !== 'object')
             return;
-        if (def.name)
+        if (def.name) {
             host.data[def.name] = (('default' in def) ? def.default : null);
+            host.data[def.name].label = def.placeholder || '';
+        }
         if (def.fields) {
             for (x in def.fields) {
                 var sdef = def.fields[x];
