@@ -282,7 +282,7 @@
             host.data[def.name] = null;
             return;
         }
-        select.html($('<option selected>').html('Loading...'));
+        select.html($('<option value selected>').html('Loading...'));
         $.get(_url(host, url))
             .done(function (data) {
                 var item = host.data[def.name];
