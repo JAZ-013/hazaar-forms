@@ -848,7 +848,7 @@
     };
 
     //Run the data validation
-    function _validate(host) {
+    function _validate(host, notify) {
         if (!('def' in host && 'fields' in host.def))
             return false;
         var errors = [];
@@ -856,7 +856,7 @@
             var result = _validate_field(host, key);
             if (result !== true) errors.push(result);
         }
-        $(host).trigger('validate', [(errors.length > 0), errors]);
+        if (notify !== false) $(host).trigger('validate', [(errors.length === 0), errors]);
         if (errors.length > 0) return errors;
         return true;
     };
@@ -881,11 +881,12 @@
     //Save form data back to the controller
     //By default calls validation and will only save data if the validation is successful
     function _save(host, validate, extra) {
-        if (!(validate === false || ((validate === true || typeof validate == 'undefined') && _validate(host, true) === true)))
+        if (!(validate === false || ((validate === true || typeof validate == 'undefined') && _validate(host, false) === true)))
             return $(host).trigger('saverror', ['validation_failed']);
         var data = host.data.save();
+        var params = { params: extra, form: data };
         $(host).trigger('saving', [data]);
-        _post(host, 'post', { params: extra, form: data }, false).done(function (response) {
+        _post(host, 'post', params, false).done(function (response) {
             if (response.ok) {
                 if (response.params)
                     $.extend(host.settings.params, response.params);
@@ -904,10 +905,10 @@
                                 title: 'Upload error',
                                 buttons: [{ label: 'OK', "class": "btn btn-default" }]
                             });
-                            $(host).trigger('saverror', [upload_response.reason]);
+                            $(host).trigger('saverror', [upload_response.reason, params]);
                         }
                     }).fail(function (error) {
-                        $(host).trigger('saverror', [error.responseJSON.error]);
+                        $(host).trigger('saverror', [error.responseJSON.error.str, params]);
                         _error(error);
                     });
                 } else {
@@ -918,10 +919,10 @@
                     title: 'Save error',
                     buttons: [{ label: 'OK', "class": "btn btn-default" }]
                 });
-                $(host).trigger('saverror', [response.reason]);
+                $(host).trigger('saverror', [response.reason, params]);
             }
         }).fail(function (error) {
-            $(host).trigger('saverror', [error.responseJSON.error]);
+            $(host).trigger('saverror', [error.responseJSON.error.str, params]);
             _error(error);
         });
         return true;
