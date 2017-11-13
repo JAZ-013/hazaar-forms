@@ -16,18 +16,20 @@ abstract class Form extends Action {
 
     private $params;
 
+    private $__tags = array();
+
     /**
      * Define the form definition to use.
      *
      * @param mixed $type
      */
-    final protected function form($name, $params = array()){
+    final protected function form($name, $params = array(), $tags = array()){
 
         $this->view->addHelper('gui');
 
         $this->view->addHelper('forms');
 
-        if(!($model = $this->get($name, $params)) instanceof \Hazaar\Forms\Model)
+        if(!($model = $this->get($name, $params, $this->__tags)) instanceof \Hazaar\Forms\Model)
             throw new \Exception(__CLASS__ . '::get() MUST return a form a Hazaar\Forms\Model object!');
 
         $this->model = $model;
@@ -64,6 +66,8 @@ abstract class Form extends Action {
 
                 $postdata = $this->request->getParams();
 
+                $this->model->populate($this->load($this->request->get('params', array())));
+
                 $this->model->populate(ake($postdata, 'form', array()));
 
                 $params = ake($postdata, 'params');
@@ -83,7 +87,7 @@ abstract class Form extends Action {
 
                 $this->model->populate($this->load($this->request->get('params', array())));
 
-                $out->form = $this->model->toArray();
+                $out->form = $this->model->toFormArray();
 
                 $out->ok = true;
 
@@ -278,6 +282,15 @@ abstract class Form extends Action {
 
     }
 
+    final protected function setTags($tags){
+
+        if(!is_array($tags))
+            $tags = array($tags);
+
+        $this->__tags = $tags;
+
+    }
+
     //Placeholder Methods
     protected function load($params = array()){
 
@@ -291,7 +304,7 @@ abstract class Form extends Action {
 
     }
 
-    protected function get($name, $params = array()){
+    protected function get($name, $params = array(), $tags = array()){
 
         $app = \Hazaar\Application::getInstance();
 
@@ -308,7 +321,7 @@ abstract class Form extends Action {
         if(!($form = $source_file->parseJSON()))
             throw new \Exception('An error ocurred parsing the form definition \'' . $source_file->name() . '\'');
 
-        return new \Hazaar\Forms\Model($name, $form);
+        return new \Hazaar\Forms\Model($name, $form, $tags);
 
     }
 
