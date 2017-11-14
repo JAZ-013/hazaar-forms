@@ -172,7 +172,7 @@
     };
 
     function _input_button(host, def) {
-        var group = $('<div class="form-group form-group-nolabel">');
+        var group = $('<div class="form-group form-group-nolabel">').data('def', def);
         var btn = $('<button type="button" class="form-control btn">')
             .addClass(def.class || 'btn-default')
             .data('def', def)
@@ -411,7 +411,7 @@
     };
 
     function _input_file(host, def) {
-        var group = $('<div class="form-group">');
+        var group = $('<div class="form-group">').data('def', def);
         var label = $('<label class="control-label">')
             .attr('for', def.name)
             .html(_match_replace(host, def.label, null, true, true))
@@ -609,6 +609,7 @@
         if (!(def = _form_field_lookup(host, info))) return;
         if ('render' in def) {
             field = new Function('field', 'form', def.render)($.extend({}, def, { value: host.data[def.name].save(true) }), host);
+            host.pageInputs.push(field);
         } else if (def.fields && def.type != 'array') {
             var length = def.fields.length, fields = [];
             for (x in def.fields) {
@@ -631,8 +632,10 @@
                 field = _input_select_multi(host, def);
             else
                 field = _input_select(host, def);
+            host.pageInputs.push(field);
         } else if ('lookup' in def && def.type == 'text') {
             field = _input_lookup(host, def);
+            host.pageInputs.push(field);
         } else if (def.type) {
             switch (def.type) {
                 case 'button':
@@ -660,6 +663,7 @@
                     field = _input_std(host, def.type, def);
                     break;
             }
+            host.pageInputs.push(field);
         } else {
             field = $('<div>');
         }
@@ -676,7 +680,6 @@
             else
                 host.events.show.push(field.data('show', def.show));
         }
-        host.pageInputs.push(field);
         return field;
     };
 
@@ -746,35 +749,33 @@
 
     //Navigate to a page
     function _nav(host, pageno) {
+        var _page_nav = function (host, pageno) {
+            _track(host);
+            host.objects.container.empty();
+            if (host.settings.singlePage) {
+                host.page = 0;
+                for (x in host.def.pages)
+                    host.objects.container.append(_page(host, host.def.pages[x]));
+            } else {
+                host.page = pageno;
+                host.objects.container.append(_page(host, host.def.pages[pageno]));
+                $(host).trigger('nav', [host.page + 1, host.def.pages.length]);
+            }
+            host.data.resync();
+            _ready(host);
+        }
         if (host.page !== null && pageno > host.page) {
             var page = host.def.pages[host.page];
-            if ('validate' in page && !_validate_page(host))
+            if ('validate' in page) {
+                _validate_page(host).done(function (result) {
+                    if (result === true) _page_nav(host, pageno);
+                });
                 return;
+            }
         }
-        _track(host);
-        host.objects.container.empty();
-        if (host.settings.singlePage) {
-            host.page = 0;
-            for (x in host.def.pages)
-                host.objects.container.append(_page(host, host.def.pages[x]));
-        } else {
-            host.page = pageno;
-            host.objects.container.append(_page(host, host.def.pages[pageno]));
-            $(host).trigger('nav', [host.page + 1, host.def.pages.length]);
-        }
-        host.data.resync();
-        _ready(host);
+        return _page_nav(host, pageno);
     };
 
-    function _validate_page(host) {
-        var status = true;
-        for (x in host.pageInputs) {
-            var def = host.pageInputs[x].data('def');
-            if (!def) continue;
-            if (_validate_field(host, def.name) !== true) status = false;
-        }
-        return status;
-    };
 
     function _validate_input(host, input) {
         var name = input.attr('name'), def = host.def.fields[name];
@@ -858,15 +859,18 @@
     };
 
     //Run the data validation
-    function _validate(host) {
+    function _validate(host, fields) {
         var callbacks = [];
         setTimeout(function () {
-            if (!('def' in host && 'fields' in host.def))
-                return;
-            var queue = [], errors = []
-            for (key in host.def.fields) {
-                queue.push(key);
-                _validate_field(host, key).done(function (name, result) {
+            var queue = [], errors = [];
+            if (typeof fields == 'undefined') {
+                if (!('def' in host && 'fields' in host.def))
+                    return;
+                fields = Object.keys(host.def.fields);
+            }
+            for (key in fields) {
+                queue.push(fields[key]);
+                _validate_field(host, fields[key]).done(function (name, result) {
                     var index = queue.indexOf(name);
                     if (index >= 0) queue.splice(index, 1);
                     if (result !== true) errors.push(result);
@@ -877,6 +881,16 @@
             }
         });
         return { done: function (callback) { if (typeof callback == 'function') callbacks.push(callback); } };
+    };
+
+    function _validate_page(host) {
+        var fields = [];
+        for (x in host.pageInputs) {
+            var def = host.pageInputs[x].data('def');
+            if (!def) continue;
+            fields.push(def.name);
+        }
+        return _validate(host, fields);
     };
 
     //Signal that we're loading something and should show the loader.  MUST call _ready() when done.
