@@ -93,7 +93,7 @@ class HTML extends \Hazaar\Forms\Output {
 
                 if($p){
 
-                    $field_width = $s->weight * $col_width;
+                    $field_width = (is_object($s) ? $s->weight : 1) * $col_width;
 
                     $col->class('col-lg-' . round($field_width));
                 }
