@@ -769,12 +769,9 @@
     function _validate_page(host) {
         var status = true;
         for (x in host.pageInputs) {
-            var input = host.pageInputs[x];
-            var def = input.data('def');
+            var def = host.pageInputs[x].data('def');
             if (!def) continue;
-            var result = _validate_field(host, def.name);
-            if (result !== true) status = false;
-            input.parent().parent().toggleClass('has-error', result);
+            if (_validate_field(host, def.name) !== true) status = false;
         }
         return status;
     };
@@ -782,8 +779,8 @@
     function _validate_input(host, input) {
         var name = input.attr('name'), def = host.def.fields[name];
         if (!def) return true;
-        _validate_field(host, name, true).done(function (result) {
-            input.parent().parent().toggleClass('has-error', ((def.valid = result) !== true));
+        _validate_field(host, name).done(function (name, result) {
+            input.toggleClass('is-invalid', ((def.valid = result) !== true));
         });
     };
 
@@ -793,28 +790,8 @@
         return error;
     };
 
-    function _validate_field(host, name, sync) {
-        var item = host.data[name], def = host.def.fields[name];
+    function _validate_rule(host, name, item, def) {
         if (!def) return true;
-        if (sync === true) {
-            delete def.valid;
-            return {
-                done: function (callback) {
-                    var result = _validate_field(host, name);
-                    if (result === true && 'validate' in def && 'api' in def.validate) {
-                        _post(host, 'api', {
-                            target: [def.validate.api, { "name": name, "value": item.value }],
-                        }, false).done(function (response) {
-                            var result = (response.ok === true) ? true : _validation_error(name, def, response.reason || "api_failed(" + def.api + ")");
-                            callback(result);
-                        });
-                    } else {
-                        callback(result);
-                    }
-                    return this;
-                }
-            }
-        }
         if ('show' in def) if (!_eval(host, def.show)) return true;
         var required = ('required' in def) ? _eval_code(host, def.required) : false;
         if (!item.value && required) return { "field": def, "status": "required" };
@@ -860,22 +837,46 @@
                 }
             }
         }
-        if ('valid' in def) return def.valid;
         return true;
     };
 
+    function _validate_field(host, name) {
+        var callbacks = [];
+        setTimeout(function () {
+            var item = host.data[name], def = host.def.fields[name];
+            var result = _validate_rule(host, name, item, def);
+            if (result === true && 'validate' in def && 'api' in def.validate) {
+                _post(host, 'api', {
+                    target: [def.validate.api, { "name": name, "value": item.value }],
+                }, false).done(function (response) {
+                    var result = (response.ok === true) ? true : _validation_error(name, def, response.reason || "api_failed(" + def.validate.api + ")");
+                    if (callbacks.length > 0) for (x in callbacks) callbacks[x](name, result);
+                });
+            } else if (callbacks.length > 0) for (x in callbacks) callbacks[x](name, result);
+        });
+        return { done: function (callback) { if (typeof callback == 'function') callbacks.push(callback); } };
+    };
+
     //Run the data validation
-    function _validate(host, notify) {
-        if (!('def' in host && 'fields' in host.def))
-            return false;
-        var errors = [];
-        for (key in host.def.fields) {
-            var result = _validate_field(host, key);
-            if (result !== true) errors.push(result);
-        }
-        if (notify !== false) $(host).trigger('validate', [(errors.length === 0), errors]);
-        if (errors.length > 0) return errors;
-        return true;
+    function _validate(host) {
+        var callbacks = [];
+        setTimeout(function () {
+            if (!('def' in host && 'fields' in host.def))
+                return;
+            var queue = [], errors = []
+            for (key in host.def.fields) {
+                queue.push(key);
+                _validate_field(host, key).done(function (name, result) {
+                    var index = queue.indexOf(name);
+                    if (index >= 0) queue.splice(index, 1);
+                    if (result !== true) errors.push(result);
+                    $('[data-bind="' + name + '"]').toggleClass('is-invalid', (result !== true));
+                    if (queue.length == 0)
+                        for (x in callbacks) callbacks[x]((errors.length === 0), errors);
+                });
+            }
+        });
+        return { done: function (callback) { if (typeof callback == 'function') callbacks.push(callback); } };
     };
 
     //Signal that we're loading something and should show the loader.  MUST call _ready() when done.
@@ -898,56 +899,73 @@
     //Save form data back to the controller
     //By default calls validation and will only save data if the validation is successful
     function _save(host, validate, extra) {
-        if (!(validate === false || ((validate === true || typeof validate == 'undefined') && _validate(host, false) === true)))
-            return $(host).trigger('saverror', ['validation_failed']);
-        var data = host.data.save();
-        var params = { params: extra, form: data };
-        $(host).trigger('saving', [data]);
-        _post(host, 'post', params, false).done(function (response) {
-            if (response.ok) {
-                if (response.params)
-                    $.extend(host.settings.params, response.params);
-                if (response.form) {
-                    for (x in response.form)
-                        host.data[x] = response.form[x];
-                }
-                host.posts = {}; //Reset the post cache so we get clean data after 
-                if (host.uploads.length > 0 || host.deloads.length > 0) {
-                    _upload_files(host).done(function (upload_response) {
-                        if (upload_response.ok) {
-                            host.uploads = [];
-                            $(host).trigger('save', [host.settings.params]);
-                        } else {
-                            $('<div>').html(upload_response.reason).popup({
-                                title: 'Upload error',
-                                buttons: [{ label: 'OK', "class": "btn btn-default" }]
-                            });
-                            $(host).trigger('saverror', [upload_response.reason, params]);
-                        }
-                    }).fail(function (error) {
-                        $(host).trigger('saverror', [error.responseJSON.error.str, params]);
-                        _error(error);
-                    });
+        var save_data = function (host, extra) {
+            var data = host.data.save();
+            var params = { params: extra, form: data };
+            $(host).trigger('saving', [data]);
+            _post(host, 'post', params, false).done(function (response) {
+                if (response.ok) {
+                    if (response.params)
+                        $.extend(host.settings.params, response.params);
+                    if (response.form) {
+                        for (x in response.form)
+                            host.data[x] = response.form[x];
+                    }
+                    host.posts = {}; //Reset the post cache so we get clean data after 
+                    if (host.uploads.length > 0 || host.deloads.length > 0) {
+                        _upload_files(host).done(function (upload_response) {
+                            if (upload_response.ok) {
+                                host.uploads = [];
+                                $(host).trigger('save', [host.settings.params]);
+                            } else {
+                                $('<div>').html(upload_response.reason).popup({
+                                    title: 'Upload error',
+                                    buttons: [{ label: 'OK', "class": "btn btn-default" }]
+                                });
+                                $(host).trigger('saverror', [upload_response.reason, params]);
+                            }
+                        }).fail(function (error) {
+                            $(host).trigger('saverror', [error.responseJSON.error.str, params]);
+                            _error(error);
+                        });
+                    } else {
+                        $(host).trigger('save', [host.settings.params]);
+                    }
                 } else {
-                    $(host).trigger('save', [host.settings.params]);
+                    $('<div>').html(response.reason).popup({
+                        title: 'Save error',
+                        buttons: [{ label: 'OK', "class": "btn btn-default" }]
+                    });
+                    $(host).trigger('saverror', [response.reason, params]);
                 }
-            } else {
-                $('<div>').html(response.reason).popup({
-                    title: 'Save error',
-                    buttons: [{ label: 'OK', "class": "btn btn-default" }]
-                });
-                $(host).trigger('saverror', [response.reason, params]);
-            }
-        }).fail(function (error) {
-            $(host).trigger('saverror', [error.responseJSON.error.str, params]);
-            _error(error);
-        });
-        return true;
+            }).fail(function (error) {
+                $(host).trigger('saverror', [error.responseJSON.error.str, params]);
+                _error(error);
+            });
+        }
+        if (validate === true || typeof validate == 'undefined')
+            _validate(host).done(function (result) {
+                if (result) save_data(host, extra);
+                else $(host).trigger('saverror', ['validation_failed']);
+            });
+        else save_data(host, extra);
     };
 
     //Register events that are used to control the form functions
     function _registerEvents(host) {
+        var errors = [];
+        $(host).on('field_validation', function (e, name, result) {
+            var index = host.validation.queue.indexOf(name);
+            if (index >= 0) host.validation.queue.splice(index, 1);
+            if (result !== true) errors.push(result);
+            $('[data-bind="' + name + '"]').toggleClass('is-invalid', (result !== true));
+            if (host.validation.queue.length == 0) {
+                for (x in host.validation.callbacks)
+                    host.validation.callbacks[x](reulst);
 
+                errors = [];
+            }
+        });
     };
 
     function _upload_files(host) {
@@ -967,12 +985,7 @@
         });
     };
 
-    function _post(host, action, postdata, track) {
-        if (host.settings.cachedActions.indexOf(action) != -1) {
-            var index = btoa(action + JSON.stringify(postdata));
-            if (index in host.posts)
-                return { done: function (callback) { callback(host.posts[index]); } };
-        }
+    function _post(host, action, postdata, track, sync) {
         if (track === true) _track(host);
         var params = $.extend(true, {}, {
             name: host.settings.form,
@@ -981,11 +994,10 @@
         return $.ajax({
             method: "POST",
             url: hazaar.url(host.settings.controller, 'interact/' + action),
+            async: (sync !== true),
             contentType: "application/json",
             data: JSON.stringify(params)
         }).always(function (response) {
-            if (host.settings.cachedActions.indexOf(action) != -1)
-                host.posts[index] = response;
             if (track === true) _ready(host);
         }).fail(_error);
     };
@@ -1045,8 +1057,6 @@
             return info;
         } else if (args[0] == 'data') {
             return host.data;
-        } else if (args[0] == 'validate') {
-            return _validate(host);
         }
         return this.each(function (index, host) {
             if (host.settings) {
@@ -1069,6 +1079,11 @@
                         host.settings.singlePage = Boolean(args[1]);
                         _nav(host, 0);
                         break;
+                    case 'validate':
+                        _validate(host).done(function (result, errors) {
+                            $(host).trigger('validate', [result, errors]);
+                        });
+                        break;
                 }
             } else {
                 __initialise(host, args[0]);
@@ -1080,8 +1095,7 @@
         "form": "default",
         "controller": "index",
         "encode": true,
-        "singlePage": false,
-        "cachedActions": ["api"]
+        "singlePage": false
     };
 
 })(jQuery);
