@@ -25,7 +25,7 @@
     <Compile Include="src\Forms\Model.php" />
     <Compile Include="src\Forms\Output\HTML.php" />
     <Compile Include="src\Forms\Output\PDF.php" />
-    <Compile Include="src\Forms\Template.php" />
+    <Compile Include="src\Forms\Output\Template.php" />
     <Compile Include="src\View\Helper\Forms.php" />
   </ItemGroup>
   <ItemGroup>
