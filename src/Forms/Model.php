@@ -561,12 +561,11 @@ class Model extends \Hazaar\Model\Strict {
 
     public function getTitle($params = null){
 
-        $title = 'Form Document';
+        if(!(property_exists($this->__form, 'pdf')
+            && property_exists($this->__form->pdf, 'title')))
+            return 'Form Document';
 
-        if(property_exists($this->__form, 'pdf') && property_exists($this->__form->pdf, 'title'))
-            $title = $this->__form->pdf->title;
-
-        return $this->matchReplace($title, true, $params);
+        return $this->matchReplace($this->__form->pdf->title, true, $params);
 
     }
 
