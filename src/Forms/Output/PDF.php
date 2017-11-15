@@ -54,6 +54,15 @@ class PDF extends HTML {
 
         $form = $this->model->resolve();
 
+        if(property_exists($form, 'pdf')
+            && property_exists($form->pdf, 'template')){
+
+            $template = new Template($this->model, $form->pdf->template);
+
+            return $template->render();
+
+        }
+
         $html = (new \Hazaar\Html\Html())->class('form');
 
         $head = new \Hazaar\Html\Head();
