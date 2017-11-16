@@ -12,6 +12,8 @@ namespace Hazaar\View\Helper;
  */
 class Forms extends \Hazaar\View\Helper {
 
+    private $model;
+
     function import(){
 
         $this->requires('cdnjs');
@@ -38,6 +40,27 @@ class Forms extends \Hazaar\View\Helper {
         $view->link($this->application->url('hazaar', 'file/css/fileicons.css'));
 
         $view->requires($this->application->url('hazaar/forms', 'file/interact.js'));
+
+        $this->model = ake($args, 'model');
+
+    }
+
+    public function __get($key){
+
+        if($this->model && $this->model->has($key)){
+
+            $value = $this->model->get($key);
+
+            if(!$value instanceof \Hazaar\Model\dataBinderValue)
+                $value = new \Hazaar\Model\dataBinderValue($value);
+
+            $value->name = $key;
+
+            return $value;
+
+        }
+
+        return parent::__get($key);
 
     }
 

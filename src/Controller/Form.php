@@ -35,16 +35,18 @@ abstract class Form extends Action {
      */
     final protected function form($name, $params = array(), $tags = array()){
 
-        $this->view->addHelper('gui');
-
-        $this->view->addHelper('forms');
-
         if(!($model = $this->get($name, $params, $this->__tags)) instanceof \Hazaar\Forms\Model)
             throw new \Exception(__CLASS__ . '::get() MUST return a form a Hazaar\Forms\Model object!');
 
+        $this->params = $params;
+
         $this->model = $model;
 
-        $this->params = $params;
+        $this->model->populate($this->load($this->request->getParams()));
+
+        $this->view->addHelper('gui');
+
+        $this->view->addHelper('forms', array('model' => $model), 'form');
 
     }
 
@@ -189,8 +191,6 @@ abstract class Form extends Action {
 
         if(!$this->model instanceof \Hazaar\Forms\Model)
             throw new \Exception('No form type has been set for this form controller');
-
-        $this->model->populate($this->load($this->request->getParams()));
 
         $output = new \Hazaar\Forms\Output\HTML($this->model);
 
