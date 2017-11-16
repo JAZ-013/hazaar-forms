@@ -47,18 +47,8 @@ class Forms extends \Hazaar\View\Helper {
 
     public function __get($key){
 
-        if($this->model && $this->model->has($key)){
-
-            $value = $this->model->get($key);
-
-            if(!$value instanceof \Hazaar\Model\dataBinderValue)
-                $value = new \Hazaar\Model\dataBinderValue($value);
-
-            $value->name = $key;
-
-            return $value;
-
-        }
+        if($this->model && $this->model->has($key))
+            return $this->model->get($key);
 
         return parent::__get($key);
 
