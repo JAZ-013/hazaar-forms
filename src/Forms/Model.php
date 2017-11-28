@@ -107,7 +107,17 @@ class Model extends \Hazaar\Model\Strict {
         if(!(property_exists($this->__form, 'fields') && is_array($this->__form->fields)))
             $this->__form->fields == array();
 
-        return $this->__form->fields;
+        $fields = $this->__form->fields;
+
+        //Make any changes to the field defs for use in strict models.
+        foreach($fields as $name => &$def){
+
+            if($def['type'] == 'date')
+                $def['type'] = 'Hazaar\Date';
+
+        }
+
+        return $fields;
 
     }
 
