@@ -33,10 +33,15 @@ abstract class Form extends Action {
      *
      * @param mixed $type
      */
-    final protected function form($name, $params = array(), $tags = array()){
+    final protected function form($name, $params = array(), $tags = null){
+
+        if(is_array($tags))
+            $this->__tags = array_merge($this->__tags, $tags);
 
         if(!($model = $this->get($name, $params, $this->__tags)) instanceof \Hazaar\Forms\Model)
             throw new \Exception(__CLASS__ . '::get() MUST return a form a Hazaar\Forms\Model object!');
+
+        $model->setTags($this->__tags);
 
         $this->params = $params;
 
@@ -322,7 +327,7 @@ abstract class Form extends Action {
 
     }
 
-    protected function get($name, $params = array(), $tags = array()){
+    protected function get($name, $params = array()){
 
         $app = \Hazaar\Application::getInstance();
 
@@ -339,7 +344,7 @@ abstract class Form extends Action {
         if(!($form = $source_file->parseJSON()))
             throw new \Exception('An error ocurred parsing the form definition \'' . $source_file->name() . '\'');
 
-        return new \Hazaar\Forms\Model($name, $form, $tags);
+        return new \Hazaar\Forms\Model($name, $form);
 
     }
 
