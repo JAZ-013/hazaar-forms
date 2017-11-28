@@ -322,6 +322,7 @@
             .blur(function (event) { _input_event_blur(host, $(event.target)); })
             .on('update', function (event) { _input_event_update(host, $(event.target)); })
             .appendTo(group);
+        if (!("placeholder" in def)) def.placeholder = host.settings.placeholder;
         _check_input_disabled(host, select, def);
         if (typeof def.options == 'string') def.options = { url: def.options };
         if ('url' in def.options) {
@@ -338,7 +339,6 @@
         } else {
             var required = ('required' in def) ? _eval_code(host, def.required) : false;
             var value = host.data[def.name];
-            if (!("placeholder" in def)) def.placeholder = host.settings.placeholder;
             var placeholder = $('<option>')
                 .attr('value', '')
                 .html(def.placeholder)
