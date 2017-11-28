@@ -338,14 +338,12 @@
         } else {
             var required = ('required' in def) ? _eval_code(host, def.required) : false;
             var value = host.data[def.name];
-            if (def.placeholder && (!required || host.data[def.name].value == null)) {
-                select.append($('<option>')
-                    .attr('value', '')
-                    .html(def.placeholder)
-                    .prop('disabled', (required == true)));
-                if (!value.value)
-                    host.data[def.name].set(null, def.placeholder);
-            }
+            if (!("placeholder" in def)) def.placeholder = host.settings.placeholder;
+            var placeholder = $('<option>')
+                .attr('value', '')
+                .html(def.placeholder)
+                .prop('selected', (value.value == null))
+                .appendTo(select);
             for (x in def.options)
                 select.append($('<option>').attr('value', x).html(def.options[x]));
             select.change(function (event) { _input_event_change(host, $(event.target)); });
@@ -1110,7 +1108,8 @@
         "form": "default",
         "controller": "index",
         "encode": true,
-        "singlePage": false
+        "singlePage": false,
+        "placeholder": "Please select..."
     };
 
 })(jQuery);
