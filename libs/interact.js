@@ -1027,13 +1027,18 @@
         return data;
     };
 
-    //Load all the dynamic bits
-    function _load(host) {
-        _post(host, 'init').done(function (response) {
+    function _load_definition(host) {
+        return _post(host, 'init').done(function (response) {
             if (!response.ok) return;
             host.def = response.form;
             host.data = new dataBinder(_define(host.def.fields));
             $(host).trigger('load', [host.data.save()]);
+        });
+    };
+
+    //Load all the dynamic bits
+    function _load(host) {
+        _load_definition(host).done(function (response) {
             _post(host, 'load').done(function (response) {
                 if (!response.ok)
                     return;
@@ -1076,6 +1081,14 @@
         return this.each(function (index, host) {
             if (host.settings) {
                 switch (args[0]) {
+                    case 'reload':
+                        var values = host.data.save();
+                        _load_definition(host).done(function () {
+                            for (x in values)
+                                host.data[x] = values[x];
+                            _nav(host, host.page);
+                        });
+                        break;
                     case 'page':
                         _nav(host, args[1]);
                         break;
