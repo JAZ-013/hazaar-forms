@@ -133,11 +133,19 @@ abstract class Form extends Action {
 
             case 'update':
 
-                if($target = $this->request->get('api'))
-                    $out->populate($this->model->api($target, array('originator' => $this->request->get('originator'), 'form' => $this->request->get('form'))));
+                $this->model->populate($this->request->get('form'));
 
-                elseif(method_exists($this, 'update'))
-                    $out->populate((array)$this->update($this->request->get('originator'), $this->request->get('form')));
+                if($target = $this->request->get('api')){
+
+                    $args = array('originator' => $this->request->get('originator'));
+
+                    $out->populate($this->model->api($target, $args));
+
+                }elseif(method_exists($this, 'update')){
+
+                    $out->populate((array)$this->update($this->request->get('originator'), $this->model));
+
+                }
 
                 $out->ok = true;
 

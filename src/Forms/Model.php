@@ -511,12 +511,16 @@ class Model extends \Hazaar\Model\Strict {
 
     public function api($target, $args = array()){
 
+        if(!is_array($args))
+            $args = array();
+
+        $args['form'] = $this->toArray();
+
         if(strpos($target, ':') !== false){
 
             $url = new \Hazaar\Application\Url($target);
 
-            if($args)
-                $url->setParams($args);
+            $url->setParams($args);
 
             if(!($result = json_decode(file_get_contents((string)$url), true)))
                 throw new \Exception('Form API call failed.  Invalid response!');
