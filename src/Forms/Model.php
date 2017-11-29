@@ -434,8 +434,8 @@ class Model extends \Hazaar\Model\Strict {
                 if($value instanceof \Hazaar\Model\dataBinderValue)
                     $value = $value->value;
 
-                if (is_string($value) && $quote)
-                    $value = "'" . $value . "'";
+                if($value instanceof \Hazaar\Date)
+                    $value = $value->sec();
                 elseif(is_bool($value))
                     $value = strbool($value);
                 elseif(is_null($value))
@@ -447,7 +447,8 @@ class Model extends \Hazaar\Model\Strict {
 
                     $value = var_export($value, true);
 
-                }
+                }elseif ((is_string($value) || is_object($value)) && $quote)
+                    $value = "'" . addslashes((string)$value) . "'";
 
                 return $value;
             };
