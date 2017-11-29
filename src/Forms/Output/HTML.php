@@ -216,7 +216,7 @@ class HTML extends \Hazaar\Forms\Output {
 
                 $list = (new \Hazaar\Html\Ul())->class('form-value-group');
 
-                if(property_exists($field, 'options')){
+                if(property_exists($field, 'options') && is_array($field->value)){
 
                     foreach($field->value as $item)
                         $list->add((new \Hazaar\Html\Li(ake($field->options, $item, $item)))->class('form-value'));
