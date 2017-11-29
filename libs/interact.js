@@ -300,10 +300,8 @@
                 }
                 for (x in data)
                     select.append($('<option>').attr('value', x).html(data[x]));
-                if (item && (item.value in data))
-                    select.val(item.value);
-                else
-                    host.data[def.name] = null;
+                if (item && (item.value in data)) select.val(item.value);
+                else host.data[def.name] = null;
             }).fail(_error);
         return true;
     };
@@ -601,7 +599,7 @@
         return def;
     };
 
-    function _form_field(host, info) {
+    function _form_field(host, info, p) {
         var def = null, field = null;
         if (info instanceof Array)
             info = { fields: info };
@@ -610,21 +608,30 @@
             field = new Function('field', 'form', def.render)($.extend({}, def, { value: host.data[def.name].save(true) }), host);
             host.pageInputs.push(field);
         } else if (def.fields && def.type != 'array') {
-            var length = def.fields.length, fields = [];
-            for (x in def.fields) {
-                var field = _form_field_lookup(host, def.fields[x]);
-                if (!field) continue;
-                if (!('weight' in field)) field.weight = 1;
-                length = length + (field.weight - 1);
-                fields.push(field);
-            }
-            var col_width = (12 / length);
-            field = $('<div class="row">').data('def', def);
+            var length = def.fields.length, fields = [], col_width;
+            if (typeof p == 'undefined') p = true;
+            if (p) {
+                for (x in def.fields) {
+                    var item;
+                    if (Array.isArray(def.fields[x])) {
+                        item = def.fields[x];
+                    } else {
+                        item = _form_field_lookup(host, def.fields[x]);
+                        if (!item) continue;
+                        if (!('weight' in item)) item.weight = 1;
+                        length = length + (item.weight - 1);
+                    }
+                    fields.push(item);
+                }
+                col_width = (12 / length);
+            } else fields = def.fields;
+            field = $('<div>').toggleClass('row', p).data('def', def);
             for (x in fields) {
                 var field_width = col_width;
                 if (fields[x] instanceof Object && ('weight' in fields[x]))
                     field_width = Math.round(field_width * fields[x].weight);
-                field.append($('<div>').addClass('col-lg-' + field_width).html(_form_field(host, fields[x])));
+                console.log(fields[x]);
+                field.append($('<div>').toggleClass('col-lg-' + field_width, p).html(_form_field(host, fields[x], !p)));
             }
         } else if ('options' in def) {
             if (def.type == 'array')
