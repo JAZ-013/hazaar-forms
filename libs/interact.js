@@ -37,12 +37,13 @@
         if (evaluate.indexOf(';') < 0) {
             var values = host.data.save(true);
             for (key in values) {
+                if (key == 'form') continue;
                 var value = values[key];
                 if (typeof value == 'string') value = '"' + value.replace(/"/g, '\\"') + '"';
                 else if (typeof value == 'object' || typeof value == 'array') value = JSON.stringify(value);
                 code += 'var ' + key + " = " + value + ";\n";
             }
-            return new Function('form', code + "\nreturn ( " + evaluate + " );")();
+            return new Function('form', code + "\nreturn ( " + evaluate + " );")(host.data);
         }
         return new Function('form', evaluate)(host.data);
     };
@@ -71,11 +72,10 @@
         if (typeof script == 'boolean') return script;
         if (script.indexOf(';') != -1)
             return _eval_code(host, script);
-        var script = script.replace(/\s/g, '');
         var parts = script.split(/(\&\&|\|\|)/);
         for (var x = 0; x < parts.length; x += 2) {
             var matches = null;
-            if (!(matches = parts[x].match(/([\w\.]+)([=\!\<\>]+)(.+)/))) {
+            if (!(matches = parts[x].match(/([\w\.]+)\s*([=\!\<\>]+)\s*(.+)/))) {
                 alert('Invalid evaluation script: ' + script);
                 return;
             }
