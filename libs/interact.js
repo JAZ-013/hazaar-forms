@@ -641,6 +641,7 @@
                 field = _input_select(host, def);
             host.pageInputs.push(field);
         } else if ('lookup' in def && def.type == 'text') {
+            if (typeof def.lookup == 'string') def.lookup = { url: def.lookup };
             field = _input_lookup(host, def);
             host.pageInputs.push(field);
         } else if (def.type) {
