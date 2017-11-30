@@ -173,6 +173,9 @@ class Model extends \Hazaar\Model\Strict {
 
         foreach($this->__form->fields as $name => $field){
 
+            if(array_key_exists('type', $field) && $field['type'] == 'date' && $array[$name] instanceof \Hazaar\Date)
+                $array[$name] = $array[$name]->format('Y-m-d');
+
             if(!($tags = ake($field, 'tag')))
                 continue;
 
