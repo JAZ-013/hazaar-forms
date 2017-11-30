@@ -855,9 +855,9 @@
             var result = _validate_rule(host, name, item, def);
             if (result === true && 'validate' in def && 'api' in def.validate) {
                 _post(host, 'api', {
-                    target: [def.validate.api, { "name": name, "value": item.value }],
+                    target: [def.validate.url, { "name": name, "value": item.value }],
                 }, false).done(function (response) {
-                    var result = (response.ok === true) ? true : _validation_error(name, def, response.reason || "api_failed(" + def.validate.api + ")");
+                    var result = (response.ok === true) ? true : _validation_error(name, def, response.reason || "api_failed(" + def.validate.url + ")");
                     if (callbacks.length > 0) for (x in callbacks) callbacks[x](name, result);
                 });
             } else if (callbacks.length > 0) for (x in callbacks) callbacks[x](name, result);
