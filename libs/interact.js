@@ -282,7 +282,7 @@
         var def = select.data('def'), options = def.options, url = null;
         if ((url = _match_replace(host, options.url, { "site_url": hazaar.url() })) === false) {
             select.empty().prop('disabled', true);
-            host.data[def.name] = null;
+            host.data[def.name] = (('default' in def) ? def.default : null);
             return;
         }
         select.html($('<option value selected>').html('Loading...'));
