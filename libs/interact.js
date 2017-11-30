@@ -480,7 +480,9 @@
                 var values = { '__input__': event.target.value };
                 if ((url = _match_replace(host, def.lookup.url, values)) === false) return;
                 if ('query' in def.lookup && (query = _match_replace(host, def.lookup.query, values)) === false) return;
-                popup.css({ "min-width": input.parent().outerWidth(), "opacity": "1" }).show();
+                popup.css({ "min-width": input.parent().outerWidth(), "opacity": "1" })
+                    .html($('<ul class="list-group">').html($('<li class="list-group-item">').html('Loading results...')))
+                    .show();
                 $.ajax({
                     method: def.lookup.method || 'GET',
                     url: _url(host, url),
@@ -495,12 +497,11 @@
                 });
             });
             var popup = $('<div class="form-lookup-popup card">')
-                .html($('<ul class="list-group">').html($('<li class="list-group-item">').html('Loading results...')))
                 .hide()
                 .appendTo(group).on('click', function (event) {
                     var target = $(event.target);
-                    if (!target.is('.list-group-item'))
-                        return;
+                    if (!(target.is('.list-group-item') && typeof target.attr('data-value') == 'string'))
+                        return false;
                     host.data[def.name].set(target.attr('data-value'), target.text());
                     value_input.trigger('update');
                     popup.hide();
@@ -641,6 +642,7 @@
                 field = _input_select(host, def);
             host.pageInputs.push(field);
         } else if ('lookup' in def && def.type == 'text') {
+            if (typeof def.lookup == 'string') def.lookup = { url: def.lookup };
             field = _input_lookup(host, def);
             host.pageInputs.push(field);
         } else if (def.type) {
@@ -855,9 +857,9 @@
             var result = _validate_rule(host, name, item, def);
             if (result === true && 'validate' in def && 'api' in def.validate) {
                 _post(host, 'api', {
-                    target: [def.validate.api, { "name": name, "value": item.value }],
+                    target: [def.validate.url, { "name": name, "value": item.value }],
                 }, false).done(function (response) {
-                    var result = (response.ok === true) ? true : _validation_error(name, def, response.reason || "api_failed(" + def.validate.api + ")");
+                    var result = (response.ok === true) ? true : _validation_error(name, def, response.reason || "api_failed(" + def.validate.url + ")");
                     if (callbacks.length > 0) for (x in callbacks) callbacks[x](name, result);
                 });
             } else if (callbacks.length > 0) for (x in callbacks) callbacks[x](name, result);
