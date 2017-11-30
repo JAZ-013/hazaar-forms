@@ -480,7 +480,9 @@
                 var values = { '__input__': event.target.value };
                 if ((url = _match_replace(host, def.lookup.url, values)) === false) return;
                 if ('query' in def.lookup && (query = _match_replace(host, def.lookup.query, values)) === false) return;
-                popup.css({ "min-width": input.parent().outerWidth(), "opacity": "1" }).show();
+                popup.css({ "min-width": input.parent().outerWidth(), "opacity": "1" })
+                    .html($('<ul class="list-group">').html($('<li class="list-group-item">').html('Loading results...')))
+                    .show();
                 $.ajax({
                     method: def.lookup.method || 'GET',
                     url: _url(host, url),
@@ -495,12 +497,11 @@
                 });
             });
             var popup = $('<div class="form-lookup-popup card">')
-                .html($('<ul class="list-group">').html($('<li class="list-group-item">').html('Loading results...')))
                 .hide()
                 .appendTo(group).on('click', function (event) {
                     var target = $(event.target);
-                    if (!target.is('.list-group-item'))
-                        return;
+                    if (!(target.is('.list-group-item') && typeof target.attr('data-value') == 'string'))
+                        return false;
                     host.data[def.name].set(target.attr('data-value'), target.text());
                     value_input.trigger('update');
                     popup.hide();
