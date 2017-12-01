@@ -776,8 +776,9 @@
         if (host.page !== null && pageno > host.page) {
             var page = host.def.pages[host.page];
             if ('validate' in page) {
-                _validate_page(host).done(function (result) {
+                _validate_page(host).done(function (result, errors) {
                     if (result === true) _page_nav(host, pageno);
+                    else $(host).trigger('validate', [result, errors]);
                 });
                 return;
             }
