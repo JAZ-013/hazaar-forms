@@ -291,8 +291,7 @@
                 var item = host.data[def.name];
                 var required = ('required' in def) ? _eval_code(host, def.required) : false;
                 if (def.disabled !== true) select.empty().prop('disabled', false);
-                if (def.placeholder && (!required || item == null))
-                    select.append($('<option>').attr('value', '').html(def.placeholder).prop('disabled', (required == true)));
+                select.append($('<option>').attr('value', '').html(def.placeholder));
                 if ('value' in options || 'label' in options) {
                     var valueKey = options.value || 'value', labelKey = options.label || 'label', newdata = {};
                     for (x in data) newdata[data[x][valueKey]] = data[x][labelKey];
