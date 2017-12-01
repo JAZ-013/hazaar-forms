@@ -379,12 +379,12 @@ class Model extends \Hazaar\Model\Strict {
 
                 }
 
-                foreach($value as &$item){
+                foreach($value as $key => $item){
 
                     if(($item instanceof \Hazaar\Model\dataBinderValue) && $label = $item->label)
-                        $item = $item->label;
+                        $value[$key] = $item->label;
                     else
-                        $item = ake((array)$options, (($item instanceof \Hazaar\Model\dataBinderValue)?$item->value:$item));
+                        $value[$key] = ake((array)$options, (($item instanceof \Hazaar\Model\dataBinderValue)?$item->value:$item));
 
                 }
 
@@ -443,12 +443,14 @@ class Model extends \Hazaar\Model\Strict {
                     $value = strbool($value);
                 elseif(is_null($value))
                     $value = 'null';
-                elseif (is_array($value)){
+                elseif (is_array($value) || $value instanceof \Hazaar\Model\ChildArray){
 
-                    foreach($value as &$subValue)
-                        $subValue = $export($export, $subValue, false);
+                    $values = array();
 
-                    $value = var_export($value, true);
+                    foreach($value as $key => $subValue)
+                        $values[$key] = $export($export, $subValue, false);
+
+                    $value = var_export($values, true);
 
                 }elseif ((is_string($value) || is_object($value)) && $quote)
                     $value = "'" . addslashes((string)$value) . "'";
