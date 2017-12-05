@@ -96,4 +96,18 @@ class Forms extends \Hazaar\View\Helper {
 
     }
 
+    public function render($controller, $form, $params = array(), $tags = null){
+
+        $controller = \Hazaar\Loader::getInstance()->loadController($controller);
+
+        $controller->__initialize($this->application->request);
+
+        $model = $controller->form($form, $params, $tags);
+
+        $html = new \Hazaar\Forms\Output\HTML($model);
+
+        return $html->render();
+
+    }
+
 }
