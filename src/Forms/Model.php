@@ -41,7 +41,7 @@ class Model extends \Hazaar\Model\Strict {
         if(!array_key_exists('fields', $this->__form))
             throw new \Exception('Form definition does not contain any fields!');
 
-        foreach($this->__form as $name => $item){
+        foreach($this->__form as $name => &$item){
 
             if(is_object($item) && property_exists($item, 'import')){
 
@@ -81,7 +81,9 @@ class Model extends \Hazaar\Model\Strict {
 
                 }
 
-                $this->__form->$name = $ext;
+                unset($this->__form->$name->import);
+
+                $this->__form->$name = (object)array_merge((array)$ext, (array)$this->__form->$name);
 
             }
 
