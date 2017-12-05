@@ -45,8 +45,6 @@ class Model extends \Hazaar\Model\Strict {
 
             if(is_object($item) && property_exists($item, 'import')){
 
-                $ext = null;
-
                 if(!is_array($item->import))
                     $item->import = array($item->import);
 
@@ -63,27 +61,22 @@ class Model extends \Hazaar\Model\Strict {
                     if(!($include_items = $include_file->parseJSON()))
                         throw new \Exception('An error ocurred parsing the form definition \'' . $include_file->name() . '\'');
 
-                    if(!$ext && is_object($include_items)){
+                    if(is_object($include_items)){
 
-                        $ext = new \stdClass;
+                        foreach($include_items as $key => $value){
 
-                        foreach($include_items as $key => $value)
-                            $ext->$key = $value;
+                            if(property_exists($this->__form->$name, $key))
+                                $value = (object)array_merge((array)$value, (array)$this->__form->$name->$key);
 
-                    }else{
+                            $this->__form->$name->$key = $value;
 
-                        $ext = array();
-
-                        foreach($include_items as $key => $value)
-                            $ext[$key] = $value;
+                        }
 
                     }
 
                 }
 
                 unset($this->__form->$name->import);
-
-                $this->__form->$name = (object)array_merge((array)$ext, (array)$this->__form->$name);
 
             }
 
@@ -97,6 +90,8 @@ class Model extends \Hazaar\Model\Strict {
             array_walk_recursive($this->__form->fields, function(&$array){
                 $array = (array)$array;
             });
+
+            ksort($this->__form->fields);
 
         }
 
@@ -114,7 +109,7 @@ class Model extends \Hazaar\Model\Strict {
         //Make any changes to the field defs for use in strict models.
         foreach($fields as $name => &$def){
 
-            if($def['type'] == 'date')
+            if(ake($def, 'type') == 'date')
                 $def['type'] = 'Hazaar\Date';
 
         }
