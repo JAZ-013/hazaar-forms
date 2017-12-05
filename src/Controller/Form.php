@@ -155,15 +155,38 @@ abstract class Form extends Action {
 
             case 'fileinfo':
 
-                $fileinfo = $this->file_info($this->request->field, $this->request->params);
+                $params = $this->request->getParams();
 
-                if(is_array($fileinfo)){
+                $name = ake($params, 'field');
+
+                $filelist = $this->file_list($name, ake($params, 'params'));
+
+                if(is_array($filelist)){
+
+                    $out->files = array();
+
+                    foreach($filelist as $file){
+
+                        if(!$file instanceof \Hazaar\File)
+                            continue;
+
+                        $info = array(
+                            'lastModified' => $file->mtime(),
+                            'name' => $file->basename(),
+                            'size' => $file->size(),
+                            'type' => $file->mime_content_type()
+                        );
+
+                        if(substr($info['type'], 0, 5) == 'image')
+                            $info['preview'] = (string)$this->url('preview/' . $this->model->getName() . '/' . $name . '/' . $file->basename(), $params);
+
+                        $out->files[] = $info;
+
+                    }
 
                     $out->ok = true;
 
                     $out->field = $this->request->field;
-
-                    $out->files = $fileinfo;
 
                 }
 
@@ -271,7 +294,10 @@ abstract class Form extends Action {
         if(!$this->request->has('name'))
             throw new \Exception('Missing form name in request!');
 
-        $this->form($this->request->name);
+        if($params = $this->request->get('params'))
+            $params = json_decode($params, true);
+
+        $this->form($this->request->name, $params);
 
         $out = new \Hazaar\Controller\Response\Json(array( 'ok' => false, 'name' => $this->request->name));
 
@@ -433,7 +459,7 @@ abstract class Form extends Action {
 
     }
 
-    protected function file_info($name, $params = array()){
+    protected function file_list($name, $params = array()){
 
         $this->file_init($name, $params, $dir, $index, $key);
 
@@ -451,17 +477,7 @@ abstract class Form extends Action {
             if(!$file->exists())
                 continue;
 
-            $info = array(
-                'lastModified' => $file->mtime(),
-                'name' => $file->basename(),
-                'size' => $file->size(),
-                'type' => $file->mime_content_type()
-            );
-
-            if(substr($info['type'], 0, 5) == 'image')
-                $info['preview'] = (string)$this->url('preview/' . $this->model->getName() . '/' . $name . '/' . $file->basename(), $params);
-
-            $filelist[] = $info;
+            $filelist[] = $file;
 
         }
 
