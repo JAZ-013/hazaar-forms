@@ -33,7 +33,7 @@ abstract class Form extends Action {
      *
      * @param mixed $type
      */
-    final protected function form($name, $params = array(), $tags = null){
+    final public function form($name, $params = array(), $tags = null){
 
         if(is_array($tags))
             $this->__tags = array_merge($this->__tags, $tags);
@@ -47,11 +47,13 @@ abstract class Form extends Action {
 
         $this->model = $model;
 
-        $this->model->populate($this->load($this->request->getParams()));
+        $this->model->populate($this->load($params));
 
         $this->view->addHelper('gui');
 
         $this->view->addHelper('forms', array('model' => $model), 'form');
+
+        return $this->model;
 
     }
 
