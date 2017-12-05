@@ -309,6 +309,9 @@ abstract class Form extends Action {
 
             foreach($files->getFile() as $key => $attachments){
 
+                if(!(is_array($attachments) && count($attachments) > 0))
+                    continue;
+
                 if(!$this->file_attach($key, $attachments, $params))
                     throw new \Exception('Unknown error saving attachments!');
 
@@ -320,7 +323,10 @@ abstract class Form extends Action {
 
             foreach($remove as $rm){
 
-                if(!$this->file_detach(ake($rm, 'field'), array(ake($rm, 'file')), $params))
+                if(!(($field = ake($rm, 'field')) && ($file = ake($rm, 'file'))))
+                    continue;
+
+                if(!$this->file_detach($field, array($file), $params))
                     throw new \Exception('Unknown error saving attachments!');
 
             }
