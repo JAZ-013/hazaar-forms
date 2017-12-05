@@ -967,9 +967,9 @@
             });
         }
         if (validate === true || typeof validate == 'undefined')
-            _validate(host).done(function (result) {
+            _validate(host).done(function (result, errors) {
                 if (result) save_data(host, extra);
-                else $(host).trigger('saverror', ['validation_failed']);
+                else $(host).trigger('validate', [result, errors]);
             });
         else save_data(host, extra);
     };
