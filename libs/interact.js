@@ -195,7 +195,6 @@
     };
 
     function _input_select_multi_items(host, def, data) {
-        var items = [];
         var btnClass = def.class || 'default';
         var fChange = function () {
             var value = this.childNodes[0].value;
@@ -206,6 +205,12 @@
                 host.data[def.name].remove(index);
         };
         var value = host.data[def.name];
+        if (!('columns' in def)) def.columns = 1;
+        if (def.columns > 6) def.columns = 6;
+        var col_width = Math.floor(12 / def.columns), per_col = (Math.ceil(Object.keys(data).length / def.columns));
+        var cols = $('<div class="row">'), items = [], column = 0;
+        for (col = 0; col < def.columns; col++)
+            items.push($('<div>').addClass('col-' + col_width));
         for (x in data) {
             var active = (value instanceof dataBinderArray && value.indexOf(x) > -1), name = def.name + '_' + x;
             var label = $('<label>')
@@ -213,16 +218,17 @@
                 .attr('data-bind-value', x)
                 .change(fChange);
             if (def.buttons === true) {
-                items.push(label.toggleClass('btn', (def.buttons === true))
+                items[column].append(label.toggleClass('btn', (def.buttons === true))
                     .toggleClass('btn-' + btnClass, (def.buttons === true))
                     .toggleClass('active', active));
             } else if (def.inline === true) {
-                items.push(label.addClass('checkbox-inline'));
+                items[column].append(label.addClass('checkbox-inline'));
             } else {
-                items.push($('<div class="checkbox">').html(label));
+                items[column].append($('<div class="checkbox">').html(label));
             }
+            if (items[column].children().length >= per_col) column++;
         }
-        return items;
+        return cols.html(items);
     };
 
     function _input_select_multi_populate(host, container, track) {
