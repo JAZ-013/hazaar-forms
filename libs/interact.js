@@ -149,6 +149,12 @@
             for (x in host.events.show)
                 _toggle_show(host, host.events.show[x]);
         }
+        if (host.events.required.length > 0) {
+            for (x in host.events.required) {
+                var group = host.events.required[x];
+                group.toggleClass('required', _eval_code(host, group.data('required')));
+            }
+        }
         if (host.events.disabled.length > 0) {
             for (x in host.events.disabled) {
                 var i = host.events.disabled[x];
@@ -681,6 +687,10 @@
         } else {
             field = $('<div>');
         }
+        if ('required' in def) {
+            if (_eval_code(host, def.required)) field.addClass('required');
+            if (typeof def.required !== 'boolean') host.events.required.push(field.data('required', def.required));
+        }
         if ('width' in def) field.width(def.width);
         if ('html' in def) {
             var html = def.html;
@@ -737,6 +747,7 @@
         var form = $('<div class="form-page">').data('def', page), sections = [];
         host.events = {
             show: [],
+            required: [],
             disabled: [],
             change: {}
         };
