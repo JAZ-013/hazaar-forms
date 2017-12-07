@@ -1,4 +1,4 @@
-﻿form.form-horizontal {
+﻿.form-horizontal {
     position: relative;
     min-height: 200px;
 }
@@ -83,8 +83,8 @@
         }
 
             .form-dropzone .dz-items .dz-item:hover {
-                background-color: rgba(0,0,0,0.1);
-                border-color: rgba(0,0,0,0.1);
+                background-color: #eee rgba(0,0,0,0.1);
+                border-color: #eee rgba(0,0,0,0.1);
             }
 
             .form-dropzone .dz-items .dz-item .dz-preview {
@@ -103,7 +103,7 @@
                 position: absolute;
                 top: 15px;
                 right: 15px;
-                background: rgba(255,255,255,0.6);
+                background: #999 rgba(255,255,255,0.6);
                 padding: 2px 5px;
             }
 

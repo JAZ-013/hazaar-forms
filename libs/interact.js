@@ -2,7 +2,7 @@
 
     //Error capture method
     function _error(error) {
-        if (typeof error == 'string') error = { str: error };
+        if (typeof error === 'string') error = { str: error };
         else if (error instanceof Error) error = { status: 'JavaScript Error', str: error.message, line: error.lineNumber, file: error.fileName };
         else if ('done' in error) error = error.responseJSON.error;
         $('<div>').html([
@@ -37,10 +37,10 @@
         if (evaluate.indexOf(';') < 0) {
             var values = host.data.save(true);
             for (key in values) {
-                if (key == 'form') continue;
+                if (key === 'form') continue;
                 var value = values[key];
-                if (typeof value == 'string') value = '"' + value.replace(/"/g, '\\"') + '"';
-                else if (typeof value == 'object' || typeof value == 'array') value = JSON.stringify(value);
+                if (typeof value === 'string') value = '"' + value.replace(/"/g, '\\"') + '"';
+                else if (typeof value === 'object' || typeof value === 'array') value = JSON.stringify(value);
                 code += 'var ' + key + " = " + value + ";\n";
             }
             return new Function('form', code + "\nreturn ( " + evaluate + " );")(host.data);
@@ -60,16 +60,16 @@
                 var sdef = def.fields[x];
                 if (sdef instanceof Array)
                     _nullify(host, { fields: sdef });
-                else if (typeof sdef == 'object')
+                else if (typeof sdef === 'object')
                     host.data[sdef.name] = null;
-                else if (typeof sdef == 'string')
+                else if (typeof sdef === 'string')
                     host.data[sdef] = null;
             }
         }
     };
 
     function _eval(host, script) {
-        if (typeof script == 'boolean') return script;
+        if (typeof script === 'boolean') return script;
         if (script.indexOf(';') != -1)
             return _eval_code(host, script);
         var parts = script.split(/(\&\&|\|\|)/);
@@ -107,7 +107,7 @@
             str = str.replace(match[0], out);
         }
         return str;
-    }
+    };
 
     //Input events
     function _input_event_change(host, input) {
@@ -126,13 +126,13 @@
         var def = input.data('def');
         if (def.change)
             _eval_code(host, def.change);
-        if (def.update && (typeof def.update == 'string' || host.settings.update === true)) {
+        if (def.update && (typeof def.update === 'string' || host.settings.update === true)) {
             var options = {
                 originator: def.name,
                 form: host.data.save()
             };
             var check_api = function (api) {
-                if (typeof api == 'string') {
+                if (typeof api === 'string') {
                     if ((api = _match_replace(host, api)) === false)
                         return false;
                     options.api = api;
@@ -199,7 +199,7 @@
         var fChange = function () {
             var value = this.childNodes[0].value;
             var index = host.data[def.name].indexOf(value);
-            if (this.childNodes[0].checked && index == -1)
+            if (this.childNodes[0].checked && index === -1)
                 host.data[def.name].push({ '__hz_value': value, '__hz_label': this.childNodes[1].nodeValue });
             else
                 host.data[def.name].remove(index);
@@ -239,7 +239,7 @@
             host.data[def.name] = [];
             return;
         }
-        if (track == true) _track(host);
+        if (track === true) _track(host);
         $.get(_url(host, options))
             .done(function (data) {
                 var values = host.data[def.name].save(true);
@@ -269,7 +269,7 @@
         } else {
             container.attr('data-bind', def.name).attr('data-toggle', 'checks');
         }
-        if (typeof def.options == 'string') {
+        if (typeof def.options === 'string') {
             var matches = def.options.match(/\{\{\w+\}\}/g);
             for (x in matches) {
                 var match = matches[x].substr(2, matches[x].length - 4);
@@ -327,7 +327,7 @@
             .appendTo(group);
         if (!("placeholder" in def)) def.placeholder = host.settings.placeholder;
         _check_input_disabled(host, select, def);
-        if (typeof def.options == 'string') def.options = { url: def.options };
+        if (typeof def.options === 'string') def.options = { url: def.options };
         if ('url' in def.options) {
             var matches = def.options.url.match(/\{\{\w+\}\}/g);
             for (x in matches) {
@@ -345,7 +345,7 @@
             var placeholder = $('<option>')
                 .attr('value', '')
                 .html(def.placeholder)
-                .prop('selected', (value.value == null))
+                .prop('selected', (value.value === null))
                 .appendTo(select);
             for (x in def.options)
                 select.append($('<option>').attr('value', x).html(def.options[x]));
@@ -430,7 +430,7 @@
             },
             remove: function (file) {
                 host.uploads = host.uploads.filter(function (item, index) {
-                    if (!(item.field == def.name && item.file.name == file.name))
+                    if (!(item.field === def.name && item.file.name === file.name))
                         return item;
                 });
                 host.deloads.push({ "field": def.name, "file": file });
@@ -442,7 +442,7 @@
             for (x in response.files) input.fileUpload('add', response.files[x]);
         });
         return group;
-    }
+    };
 
     function _input_lookup(host, def) {
         var group = $('<div class="form-group">').data('def', def);
@@ -478,7 +478,7 @@
             input.on('keyup', function (event) {
                 var query = '', popup = input.parent().parent().children('.form-lookup-popup');
                 var valueKey = def.lookup.value || 'value', labelKey = def.lookup.label || 'label';
-                if (event.target.value == '')
+                if (event.target.value === '')
                     return host.data[def.name].set(null);
                 if ('startlen' in def.lookup && event.target.value.length < def.lookup.startlen)
                     return popup.hide();
@@ -505,7 +505,7 @@
                 .hide()
                 .appendTo(group).on('click', function (event) {
                     var target = $(event.target);
-                    if (!(target.is('.list-group-item') && typeof target.attr('data-value') == 'string'))
+                    if (!(target.is('.list-group-item') && typeof target.attr('data-value') === 'string'))
                         return false;
                     host.data[def.name].set(target.attr('data-value'), target.text());
                     value_input.trigger('update');
@@ -517,7 +517,7 @@
         input_group.append($('<div class="input-group-addon">')
             .html($('<i class="fa fa-search">')));
         return group;
-    }
+    };
 
     function _input_std(host, type, def) {
         var group = $('<div class="form-group">').data('def', def);
@@ -592,7 +592,7 @@
     function _check_input_disabled(host, input, def) {
         if (!('disabled' in def)) return false;
         input.prop('disabled', _eval(host, def.disabled));
-        if (typeof def.disabled == 'string')
+        if (typeof def.disabled === 'string')
             host.events.disabled.push(input.data('disabled', def.disabled));
     };
 
@@ -610,14 +610,14 @@
         if (info instanceof Array)
             info = { fields: info };
         if (!(def = _form_field_lookup(host, info))) return;
-        if ('name' in def && 'default' in def && host.data[def.name].value == null)
+        if ('name' in def && 'default' in def && host.data[def.name].value === null)
             host.data[def.name] = def.default;
         if ('render' in def) {
             field = new Function('field', 'form', def.render)($.extend({}, def, { value: host.data[def.name].save(true) }), host);
             host.pageInputs.push(field);
         } else if (def.fields && def.type != 'array') {
             var length = def.fields.length, fields = [], col_width;
-            if (typeof p == 'undefined') p = true;
+            if (typeof p === 'undefined') p = true;
             if (p) {
                 for (x in def.fields) {
                     var item;
@@ -641,13 +641,13 @@
                 field.append($('<div>').toggleClass('col-lg-' + field_width, p).html(_form_field(host, fields[x], !p)));
             }
         } else if ('options' in def) {
-            if (def.type == 'array')
+            if (def.type === 'array')
                 field = _input_select_multi(host, def);
             else
                 field = _input_select(host, def);
             host.pageInputs.push(field);
-        } else if ('lookup' in def && def.type == 'text') {
-            if (typeof def.lookup == 'string') def.lookup = { url: def.lookup };
+        } else if ('lookup' in def && def.type === 'text') {
+            if (typeof def.lookup === 'string') def.lookup = { url: def.lookup };
             field = _input_lookup(host, def);
             host.pageInputs.push(field);
         } else if (def.type) {
@@ -689,7 +689,7 @@
             field.append(html);
         }
         if ('show' in def) {
-            if (typeof def.show == 'boolean')
+            if (typeof def.show === 'boolean')
                 field.toggle(def.show);
             else
                 host.events.show.push(field.data('show', def.show));
@@ -701,7 +701,7 @@
     function _section(host, section, p) {
         if (Array.isArray(section)) {
             var group = $('<div>'), col_width = null;
-            if (typeof p == 'undefined') p = true;
+            if (typeof p === 'undefined') p = true;
             if (p) {
                 group.addClass('row');
                 var length = section.length;
@@ -723,7 +723,7 @@
         for (x in section.fields)
             fieldset.append(_form_field(host, section.fields[x]));
         if ('show' in section) {
-            if (typeof section.show == 'boolean')
+            if (typeof section.show === 'boolean')
                 fieldset.toggle(section.show);
             else
                 host.events.show.push(fieldset.data('show', section.show));
@@ -777,7 +777,7 @@
             }
             host.data.resync();
             _ready(host);
-        }
+        };
         if (host.page !== null && pageno > host.page) {
             var page = host.def.pages[host.page];
             if ('validate' in page) {
@@ -829,7 +829,7 @@
                         break;
                     case 'with':
                         var reg = new RegExp(data);
-                        if (!(typeof item.value == 'string' && item.value.match(reg)))
+                        if (!(typeof item.value === 'string' && item.value.match(reg)))
                             return _validation_error(name, def, "regex_failed");
                         break;
                     case 'equals':
@@ -870,7 +870,7 @@
                 });
             } else if (callbacks.length > 0) for (x in callbacks) callbacks[x](name, result);
         });
-        return { done: function (callback) { if (typeof callback == 'function') callbacks.push(callback); } };
+        return { done: function (callback) { if (typeof callback === 'function') callbacks.push(callback); } };
     };
 
     //Run the data validation
@@ -878,7 +878,7 @@
         var callbacks = [];
         setTimeout(function () {
             var queue = [], errors = [];
-            if (typeof fields == 'undefined') {
+            if (typeof fields === 'undefined') {
                 if (!('def' in host && 'fields' in host.def))
                     return;
                 fields = Object.keys(host.def.fields);
@@ -890,12 +890,12 @@
                     if (index >= 0) queue.splice(index, 1);
                     if (result !== true) errors.push(result);
                     $('[data-bind="' + name + '"]').toggleClass('is-invalid', (result !== true));
-                    if (queue.length == 0)
+                    if (queue.length === 0)
                         for (x in callbacks) callbacks[x]((errors.length === 0), errors);
                 });
             }
         });
-        return { done: function (callback) { if (typeof callback == 'function') callbacks.push(callback); } };
+        return { done: function (callback) { if (typeof callback === 'function') callbacks.push(callback); } };
     };
 
     function _validate_page(host) {
@@ -971,8 +971,8 @@
                 $(host).trigger('saverror', [error.responseJSON.error.str, params]);
                 _error(error);
             });
-        }
-        if (validate === true || typeof validate == 'undefined')
+        };
+        if (validate === true || typeof validate === 'undefined')
             _validate(host).done(function (result, errors) {
                 if (result) save_data(host, extra);
                 else $(host).trigger('validate', [result, errors]);
@@ -988,7 +988,7 @@
             if (index >= 0) host.validation.queue.splice(index, 1);
             if (result !== true) errors.push(result);
             $('[data-bind="' + name + '"]').toggleClass('is-invalid', (result !== true));
-            if (host.validation.queue.length == 0) {
+            if (host.validation.queue.length === 0) {
                 for (x in host.validation.callbacks)
                     host.validation.callbacks[x](reulst);
 
@@ -1035,7 +1035,7 @@
         if (!values) return;
         var data = {};
         for (x in values) {
-            if (values[x].type == 'array' && !values[x].default) values[x].default = [];
+            if (values[x].type === 'array' && !values[x].default) values[x].default = [];
             data[x] = values[x].default ? values[x].default : null;
         }
         return data;
@@ -1084,12 +1084,12 @@
     $.fn.hzForm = function () {
         var args = arguments;
         var host = this.get(0);
-        if (args[0] == 'info') {
+        if (args[0] === 'info') {
             var data = host.data.save(), info = {};
             for (x in data)
                 info[x] = { label: host.def.fields[x].label, value: data[x] };
             return info;
-        } else if (args[0] == 'data') {
+        } else if (args[0] === 'data') {
             return host.data;
         }
         return this.each(function (index, host) {
@@ -1182,14 +1182,14 @@ $.fn.fileUpload = function () {
         this.files = this.files.filter(function (item) {
             return (item.name !== file.name);
         });
-        if (this.files.length == 0) this.o.dzwords.show();
+        if (this.files.length === 0) this.o.dzwords.show();
         return true;
     };
     host._preview = function (file) {
         var o = $('<div class="dz-preview">');
         if (file.preview)
             o.append($('<img>').attr('src', file.preview));
-        else if (file instanceof File && file.type.substr(0, 5) == 'image') {
+        else if (file instanceof File && file.type.substr(0, 5) === 'image') {
             var reader = new FileReader();
             reader.onload = function (event) {
                 o.append($('<img>').attr('src', event.target.result));
@@ -1200,7 +1200,7 @@ $.fn.fileUpload = function () {
         return o;
     };
     host._checksize = function (file) {
-        if (host.options.maxSize == 0 || file.size < host.options.maxSize)
+        if (host.options.maxSize === 0 || file.size < host.options.maxSize)
             return true;
         return false;
     };
@@ -1215,7 +1215,7 @@ $.fn.fileUpload = function () {
             }
         });
         host.o.input.val(null);
-        if (typeof host.options.select == 'function')
+        if (typeof host.options.select === 'function')
             host.options.select(added);
 
         if (failed.length > 0) {
