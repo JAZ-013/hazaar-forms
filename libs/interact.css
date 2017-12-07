@@ -48,6 +48,13 @@
     padding-top: 24px;
 }
 
+.form-group.required label:after {
+    font: normal normal normal 14px/1 FontAwesome;
+    content: "\f06a";
+    color: #ed2b2b;
+    margin-left: 5px;
+}
+
 .form-dropzone {
     display: flex;
     border: 2px dashed #ddd;
@@ -124,6 +131,6 @@
                 font-size: 16px;
             }
 
-            .form-dropzone .dz-items .dz-item .dz-remove:hover{
-                color: #b20000
-            }
+                .form-dropzone .dz-items .dz-item .dz-remove:hover {
+                    color: #b20000
+                }
