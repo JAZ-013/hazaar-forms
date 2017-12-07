@@ -210,11 +210,11 @@
         var col_width = Math.floor(12 / def.columns), per_col = (Math.ceil(Object.keys(data).length / def.columns));
         var cols = $('<div class="row">'), items = [], column = 0;
         for (col = 0; col < def.columns; col++)
-            items.push($('<div>').addClass('col-' + col_width));
+            items.push($('<div>').addClass('col-md-' + col_width));
         for (x in data) {
             var active = (value instanceof dataBinderArray && value.indexOf(x) > -1), name = def.name + '_' + x;
-            var label = $('<label>')
-                .html([$('<input type="checkbox">').attr('value', x).prop('checked', active), data[x]])
+            var label = $('<label class="form-check-label">')
+                .html([$('<input class="form-check-input" type="checkbox">').attr('value', x).prop('checked', active), data[x]])
                 .attr('data-bind-value', x)
                 .change(fChange);
             if (def.buttons === true) {
@@ -224,7 +224,7 @@
             } else if (def.inline === true) {
                 items[column].append(label.addClass('checkbox-inline'));
             } else {
-                items[column].append($('<div class="checkbox">').html(label));
+                items[column].append($('<div class="form-check">').html(label));
             }
             if (items[column].children().length >= per_col) column++;
         }
