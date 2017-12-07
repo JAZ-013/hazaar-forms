@@ -36,7 +36,7 @@
         var code = '';
         if (evaluate.indexOf(';') < 0) {
             var values = host.data.save(true);
-            for (key in values) {
+            for (var key in values) {
                 if (key === 'form') continue;
                 var value = values[key];
                 if (typeof value === 'string') value = '"' + value.replace(/"/g, '\\"') + '"';
@@ -56,7 +56,7 @@
             host.data[def.name].label = def.placeholder || '';
         }
         if (def.fields) {
-            for (x in def.fields) {
+            for (var x in def.fields) {
                 var sdef = def.fields[x];
                 if (sdef instanceof Array)
                     _nullify(host, { fields: sdef });
@@ -146,17 +146,17 @@
             }
         }
         if (host.events.show.length > 0) {
-            for (x in host.events.show)
+            for (var x in host.events.show)
                 _toggle_show(host, host.events.show[x]);
         }
         if (host.events.required.length > 0) {
-            for (x in host.events.required) {
+            for (var x in host.events.required) {
                 var group = host.events.required[x];
                 group.toggleClass('required', _eval_code(host, group.data('required')));
             }
         }
         if (host.events.disabled.length > 0) {
-            for (x in host.events.disabled) {
+            for (var x in host.events.disabled) {
                 var i = host.events.disabled[x];
                 var disabled = _eval(host, i.data('disabled'));
                 i.prop('disabled', disabled);
@@ -215,9 +215,9 @@
         if (def.columns > 6) def.columns = 6;
         var col_width = Math.floor(12 / def.columns), per_col = (Math.ceil(Object.keys(data).length / def.columns));
         var cols = $('<div class="row">'), items = [], column = 0;
-        for (col = 0; col < def.columns; col++)
+        for (var col = 0; col < def.columns; col++)
             items.push($('<div>').addClass('col-md-' + col_width));
-        for (x in data) {
+        for (var x in data) {
             var active = (value instanceof dataBinderArray && value.indexOf(x) > -1), name = def.name + '_' + x;
             var label = $('<label class="form-check-label">')
                 .html([$('<input class="form-check-input" type="checkbox">').attr('value', x).prop('checked', active), data[x]])
@@ -251,7 +251,7 @@
                 var values = host.data[def.name].save(true);
                 if (values) {
                     var remove = host.data[def.name].save(true).filter(function (i) { return !(i in data); });
-                    for (x in remove) host.data[def.name].remove(remove[x]);
+                    for (var x in remove) host.data[def.name].remove(remove[x]);
                 }
                 container.html(_input_select_multi_items(host, def, data)).show();
                 _ready(host);
@@ -277,7 +277,7 @@
         }
         if (typeof def.options === 'string') {
             var matches = def.options.match(/\{\{\w+\}\}/g);
-            for (x in matches) {
+            for (var x in matches) {
                 var match = matches[x].substr(2, matches[x].length - 4);
                 host.data.watch(match, function (key, value, container) {
                     _input_select_multi_populate(host, container, false);
@@ -306,10 +306,10 @@
                 select.append($('<option>').attr('value', '').html(def.placeholder));
                 if ('value' in options || 'label' in options) {
                     var valueKey = options.value || 'value', labelKey = options.label || 'label', newdata = {};
-                    for (x in data) newdata[data[x][valueKey]] = data[x][labelKey];
+                    for (var x in data) newdata[data[x][valueKey]] = data[x][labelKey];
                     data = newdata;
                 }
-                for (x in data)
+                for (var x in data)
                     select.append($('<option>').attr('value', x).html(data[x]));
                 if (item && (item.value in data)) select.val(item.value);
                 else host.data[def.name] = null;
@@ -336,7 +336,7 @@
         if (typeof def.options === 'string') def.options = { url: def.options };
         if ('url' in def.options) {
             var matches = def.options.url.match(/\{\{\w+\}\}/g);
-            for (x in matches) {
+            for (var x in matches) {
                 var match = matches[x].substr(2, matches[x].length - 4);
                 host.data.watch(match, function (key, value, select) {
                     _input_select_populate(host, select, false);
@@ -353,7 +353,7 @@
                 .html(def.placeholder)
                 .prop('selected', (value.value === null))
                 .appendTo(select);
-            for (x in def.options)
+            for (var x in def.options)
                 select.append($('<option>').attr('value', x).html(def.options[x]));
             select.change(function (event) { _input_event_change(host, $(event.target)); });
         }
@@ -431,7 +431,7 @@
             height: def.height || null,
             maxSize: def.maxSize || host.settings.maxUploadSize || null,
             select: function (files) {
-                for (x in files)
+                for (var x in files)
                     host.uploads.push({ "field": def.name, "file": files[x] });
             },
             remove: function (file) {
@@ -445,7 +445,7 @@
         }).appendTo(group);
         _post(host, 'fileinfo', { 'field': def.name }, true).done(function (response) {
             if (!response.ok) return;
-            for (x in response.files) input.fileUpload('add', response.files[x]);
+            for (var x in response.files) input.fileUpload('add', response.files[x]);
         });
         return group;
     };
@@ -501,7 +501,7 @@
                 }).done(function (items) {
                     var list = $('<div class="list-group">').appendTo(popup.empty());
                     if (items.length > 0) {
-                        for (x in items)
+                        for (var x in items)
                             list.append($('<li class="list-group-item">')
                                 .html(items[x][labelKey]).attr('data-value', items[x][valueKey]));
                     } else list.append($('<li class="list-group-item">').html('No results...'));
@@ -569,7 +569,7 @@
         var col_width = 12 / Object.keys(def.fields).length;
         template.append($('<div style="float: right;">')
             .html($('<button type="button" class="btn btn-danger btn-sm">').html($('<i class="fa fa-minus">')))).append(t_container);
-        for (x in def.fields) {
+        for (var x in def.fields) {
             fields.push($.extend(def.fields[x], { name: x }));
             t_container.append($('<div>').addClass('col-lg-' + col_width).attr('data-bind', x));
         }
@@ -625,7 +625,7 @@
             var length = def.fields.length, fields = [], col_width;
             if (typeof p === 'undefined') p = true;
             if (p) {
-                for (x in def.fields) {
+                for (var x in def.fields) {
                     var item;
                     if (Array.isArray(def.fields[x])) {
                         item = def.fields[x];
@@ -640,7 +640,7 @@
                 col_width = (12 / length);
             } else fields = def.fields;
             field = $('<div>').toggleClass('row', p).data('def', def);
-            for (x in fields) {
+            for (var x in fields) {
                 var field_width = col_width;
                 if (fields[x] instanceof Object && ('weight' in fields[x]))
                     field_width = Math.round(field_width * fields[x].weight);
@@ -715,14 +715,14 @@
             if (p) {
                 group.addClass('row');
                 var length = section.length;
-                for (x in section) {
+                for (var x in section) {
                     if (typeof section[x] !== 'object' || Array.isArray(section[x])) continue;
                     if (!('weight' in section[x])) section[x].weight = 1;
                     length = length + (section[x].weight - 1);
                 }
                 col_width = (12 / length);
             }
-            for (x in section)
+            for (var x in section)
                 group.append($('<div>').toggleClass('col-lg-' + Math.round((section[x].weight || 1) * col_width), p).html(_section(host, section[x], !p)));
             return group;
         }
@@ -730,7 +730,7 @@
         var fieldset = $('<fieldset>').data('def', section);
         if (section.label)
             fieldset.append($('<legend>').html(_match_replace(host, section.label, null, true, true)));
-        for (x in section.fields)
+        for (var x in section.fields)
             fieldset.append(_form_field(host, section.fields[x]));
         if ('show' in section) {
             if (typeof section.show === 'boolean')
@@ -754,10 +754,10 @@
         host.pageInputs = [];
         host.data.unwatch();
         if (page.label) form.append($('<h1>').html(_match_replace(host, page.label, null, true, true)));
-        for (x in page.sections)
+        for (var x in page.sections)
             sections.push(_section(host, page.sections[x]));
         if (host.events.show.length > 0) {
-            for (x in host.events.show)
+            for (var x in host.events.show)
                 _toggle_show(host, host.events.show[x]);
         }
         return form.append(sections);
@@ -779,7 +779,7 @@
             host.objects.container.empty();
             if (host.settings.singlePage) {
                 host.page = 0;
-                for (x in host.def.pages)
+                for (var x in host.def.pages)
                     host.objects.container.append(_page(host, host.def.pages[x]));
             } else {
                 host.page = pageno;
@@ -807,13 +807,12 @@
         var name = input.attr('name'), def = host.def.fields[name];
         if (!def) return true;
         _validate_field(host, name).done(function (name, result) {
-            input.toggleClass('is-invalid', ((def.valid = result) !== true));
+            input.toggleClass('is-invalid', result !== true);
         });
     };
 
     function _validation_error(name, def, status) {
         var error = { name: name, field: $.extend({}, def), status: status };
-        if ('valid' in error.field) delete error.field.valid;
         return error;
     };
 
@@ -821,13 +820,13 @@
         if (!def) return true;
         if ('show' in def) if (!_eval(host, def.show)) return true;
         var required = ('required' in def) ? _eval_code(host, def.required) : false;
-        if (!item.value && required) return { "field": def, "status": "required" };
+        if (!item.value && required) return _validation_error(name, def, "required");
         if ('format' in def && item.value) {
             if (!Inputmask.isValid(String(item.value), def.format))
                 return _validation_error(name, def, "bad_format");
         }
         if ('validate' in def) {
-            for (type in def.validate) {
+            for (var type in def.validate) {
                 var data = def.validate[type];
                 switch (type) {
                     case 'min':
@@ -877,11 +876,38 @@
                     target: [def.validate.url, { "name": name, "value": item.value }],
                 }, false).done(function (response) {
                     var result = (response.ok === true) ? true : _validation_error(name, def, response.reason || "api_failed(" + def.validate.url + ")");
-                    if (callbacks.length > 0) for (x in callbacks) callbacks[x](name, result);
+                    if (callbacks.length > 0) for (var x in callbacks) callbacks[x](name, result);
                 });
-            } else if (callbacks.length > 0) for (x in callbacks) callbacks[x](name, result);
+            } else if (callbacks.length > 0) for (var x in callbacks) callbacks[x](name, result);
         });
         return { done: function (callback) { if (typeof callback === 'function') callbacks.push(callback); } };
+    };
+
+    function _validate_nav_field(field, error) {
+        if (Array.isArray(field)) {
+            for (var x in field)
+                if (_validate_nav_field(field[x], error)) return true;
+        } else {
+            var name = (typeof field == 'string' ? field : field.name);
+            if (error.name === name) return true;
+        }
+        return false;
+    };
+
+    function _validate_nav(host, errors) {
+        for (var x in errors) {
+            for (var p in host.def.pages) {
+                for (var s in host.def.pages[p].sections) {
+                    for (var f in host.def.pages[p].sections[s].fields) {
+                        if (_validate_nav_field(host.def.pages[p].sections[s].fields[f], errors[x])) {
+                            _nav(host, parseInt(p));
+                            _validate_page(host);
+                            return;
+                        }
+                    }
+                }
+            }
+        }
     };
 
     //Run the data validation
@@ -894,7 +920,7 @@
                     return;
                 fields = Object.keys(host.def.fields);
             }
-            for (key in fields) {
+            for (var key in fields) {
                 queue.push(fields[key]);
                 _validate_field(host, fields[key]).done(function (name, result) {
                     var index = queue.indexOf(name);
@@ -902,7 +928,7 @@
                     if (result !== true) errors.push(result);
                     $('[data-bind="' + name + '"]').toggleClass('is-invalid', (result !== true));
                     if (queue.length === 0)
-                        for (x in callbacks) callbacks[x]((errors.length === 0), errors);
+                        for (var x in callbacks) callbacks[x]((errors.length === 0), errors);
                 });
             }
         });
@@ -911,7 +937,7 @@
 
     function _validate_page(host) {
         var fields = [];
-        for (x in host.pageInputs) {
+        for (var x in host.pageInputs) {
             var def = host.pageInputs[x].data('def');
             if (!def) continue;
             fields.push(def.name);
@@ -948,7 +974,7 @@
                     if (response.params)
                         $.extend(host.settings.params, response.params);
                     if (response.form) {
-                        for (x in response.form)
+                        for (var x in response.form)
                             host.data[x] = response.form[x];
                     }
                     host.posts = {}; //Reset the post cache so we get clean data after 
@@ -986,7 +1012,10 @@
         if (validate === true || typeof validate === 'undefined')
             _validate(host).done(function (result, errors) {
                 if (result) save_data(host, extra);
-                else $(host).trigger('validate', [result, errors]);
+                else {
+                    $(host).trigger('validate', [result, errors]);
+                    _validate_nav(host, errors);
+                }
             });
         else save_data(host, extra);
     };
@@ -1000,7 +1029,7 @@
             if (result !== true) errors.push(result);
             $('[data-bind="' + name + '"]').toggleClass('is-invalid', (result !== true));
             if (host.validation.queue.length === 0) {
-                for (x in host.validation.callbacks)
+                for (var x in host.validation.callbacks)
                     host.validation.callbacks[x](reulst);
 
                 errors = [];
@@ -1014,7 +1043,7 @@
         fd.append('params', JSON.stringify(host.settings.params));
         if (host.deloads.length > 0)
             fd.append('remove', JSON.stringify(host.deloads));
-        for (x in host.uploads)
+        for (var x in host.uploads)
             fd.append(host.uploads[x].field + '[' + x + ']', host.uploads[x].file);
         return $.ajax({
             type: 'POST',
@@ -1045,7 +1074,7 @@
     function _define(values) {
         if (!values) return;
         var data = {};
-        for (x in values) {
+        for (var x in values) {
             if (values[x].type === 'array' && !values[x].default) values[x].default = [];
             data[x] = values[x].default ? values[x].default : null;
         }
@@ -1067,7 +1096,7 @@
             _post(host, 'load').done(function (response) {
                 if (!response.ok)
                     return;
-                for (x in response.form)
+                for (var x in response.form)
                     host.data[x] = response.form[x];
                 $(host).trigger('data', [host.data.save()]);
                 _nav(host, 0);
@@ -1097,7 +1126,7 @@
         var host = this.get(0);
         if (args[0] === 'info') {
             var data = host.data.save(), info = {};
-            for (x in data)
+            for (var x in data)
                 info[x] = { label: host.def.fields[x].label, value: data[x] };
             return info;
         } else if (args[0] === 'data') {
@@ -1109,7 +1138,7 @@
                     case 'reload':
                         var values = host.data.save();
                         _load_definition(host).done(function () {
-                            for (x in values)
+                            for (var x in values)
                                 host.data[x] = values[x];
                             _nav(host, host.page);
                         });
@@ -1135,6 +1164,7 @@
                     case 'validate':
                         _validate(host).done(function (result, errors) {
                             $(host).trigger('validate', [result, errors]);
+                            if (!result) _validate_nav(host, errors);
                         });
                         break;
                 }
@@ -1168,7 +1198,7 @@ $.fn.fileUpload = function () {
     host.options = $.extend({ name: 'file', multiple: false, btnClass: 'btn-default', maxSize: 0 }, arguments[0]);
     host._add = function (file) {
         if (Array.isArray(file)) {
-            if (host.options.multiple === true) for (x in file) this._add(file[x]);
+            if (host.options.multiple === true) for (var x in file) this._add(file[x]);
             return;
         }
         if (!('lastModifiedDate' in file)) file.lastModifiedDate = new Date(file.lastModified * 1000);
@@ -1231,7 +1261,7 @@ $.fn.fileUpload = function () {
 
         if (failed.length > 0) {
             var filesP = $('<p>');
-            for (x in failed)
+            for (var x in failed)
                 filesP.append($('<strong>').html(failed[x].name));
             $('<div>').html([
                 $('<p>').html('Failed to attach the following files:'),
