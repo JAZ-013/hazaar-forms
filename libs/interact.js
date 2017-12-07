@@ -355,8 +355,8 @@
     };
 
     function _input_checkbox(host, def) {
-        var group = $('<div class="checkbox">').data('def', def);
-        var input = $('<input type="checkbox">')
+        var group = $('<div class="form-check">').data('def', def);
+        var input = $('<input class="form-check-input" type="checkbox">')
             .attr('name', def.name)
             .attr('data-bind', def.name)
             .attr('checked', host.data[def.name])
@@ -365,7 +365,7 @@
             .blur(function (event) { _input_event_blur(host, $(event.target)); })
             .change(function (event) { _input_event_change(host, $(event.target)); })
             .on('update', function (event) { _input_event_update(host, $(event.target)); });
-        var label = $('<label>').html([input, _match_replace(host, def.label, null, true, true)]).appendTo(group);
+        var label = $('<label class="form-check-label">').html([input, _match_replace(host, def.label, null, true, true)]).appendTo(group);
         _check_input_disabled(host, input, def);
         return group;
     };
