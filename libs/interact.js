@@ -541,6 +541,7 @@
             .blur(function (event) { _input_event_blur(host, $(event.target)); })
             .change(function (event) { _input_event_change(host, $(event.target)); })
             .on('update', function (event) { _input_event_update(host, $(event.target)); });
+        if (type === 'text' && 'validate' in def && 'maxlen' in def.validate) input.attr('maxlength', def.validate.maxlen);
         if ('format' in def) input.attr('type', 'text').inputmask(def.format);
         if ('placeholder' in def) input.attr('placeholder', def.placeholder);
         _check_input_disabled(host, input, def);
