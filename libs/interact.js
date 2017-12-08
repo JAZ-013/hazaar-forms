@@ -313,6 +313,7 @@
                     select.append($('<option>').attr('value', x).html(data[x]));
                 if (item && (item.value in data)) select.val(item.value);
                 else host.data[def.name] = null;
+                if (Object.keys(data).length === 1 && def.options.single === true) host.data[def.name] = Object.keys(data)[0];
             }).fail(_error);
         return true;
     };
