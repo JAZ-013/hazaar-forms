@@ -48,11 +48,22 @@
     padding-top: 24px;
 }
 
-.form-group.required label:after {
-    font: normal normal normal 14px/1 FontAwesome;
-    content: "\f06a";
-    color: #ed2b2b;
+.form-group label .fa {
     margin-left: 5px;
+}
+
+.form-group label .form-required {
+    color: #ed2b2b;
+    display: none;
+}
+
+.form-group.required label .form-required {
+    display: inline;
+}
+
+.form-group label .form-tip {
+    position: absolute;
+    right: 15px;
 }
 
 .form-dropzone {
