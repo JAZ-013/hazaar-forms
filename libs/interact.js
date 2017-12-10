@@ -689,7 +689,10 @@
         } else {
             field = $('<div>');
         }
+        if ('tip' in def)
+            field.children('label').append($('<i class="fa fa-question-circle form-tip">').attr('title', def.tip).tooltip({ placement: 'auto' }));
         if ('required' in def) {
+            field.children('label').append($('<i class="fa fa-exclamation-circle form-required">'));
             if (_eval_code(host, def.required)) field.addClass('required');
             if (typeof def.required !== 'boolean') host.events.required.push(field.data('required', def.required));
         }
