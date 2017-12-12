@@ -712,7 +712,7 @@
                 host.events.show.push(field.data('show', def.show));
         }
         if ('hint' in def)
-            field.append($('<small class="form-text text-muted">').html(def.hint));
+            field.append($('<small class="form-text text-muted">').html(_match_replace(host, def.hint, null, true, true)));
         return field;
     };
 
