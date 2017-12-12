@@ -692,7 +692,14 @@
             field = $('<div>');
         }
         if ('tip' in def)
-            field.children('label').append($('<i class="fa fa-question-circle form-tip">').attr('title', def.tip).tooltip({ placement: 'auto' }));
+            field.children('label')
+                .append($('<i class="fa fa-question-circle form-tip">')
+                    .attr('data-title', def.tip)
+                    .tooltip({ placement: 'auto', html: true }))
+                .on('show.bs.tooltip', function (e) {
+                    var o = $(this).children('.form-tip');
+                    o.attr('data-original-title', _match_replace(host, o.attr('data-title'), null, true)).tooltip('_fixTitle');
+                });
         if ('required' in def) {
             field.children('label').append($('<i class="fa fa-exclamation-circle form-required">'));
             if (_eval_code(host, def.required)) field.addClass('required');
@@ -712,7 +719,7 @@
                 host.events.show.push(field.data('show', def.show));
         }
         if ('hint' in def)
-            field.append($('<small class="form-text text-muted">').html(def.hint));
+            field.append($('<small class="form-text text-muted">').html(_match_replace(host, def.hint, null, true, true)));
         return field;
     };
 
