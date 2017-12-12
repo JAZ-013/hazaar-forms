@@ -291,30 +291,32 @@
     };
 
     function _input_select_populate(host, select, track) {
-        var def = select.data('def'), options = def.options, url = null;
-        if ((url = _match_replace(host, options.url, { "site_url": hazaar.url() })) === false) {
+        var def = select.data('def'), options = def.options, postops = { url: null };
+        if ((postops.url = _match_replace(host, options.url, { "site_url": hazaar.url() })) === false) {
             select.empty().prop('disabled', true);
             host.data[def.name] = (('default' in def) ? def.default : null);
             return;
         }
         select.html($('<option value selected>').html('Loading...'));
-        $.get(_url(host, url))
-            .done(function (data) {
-                var item = host.data[def.name];
-                var required = ('required' in def) ? _eval_code(host, def.required) : false;
-                if (def.disabled !== true) select.empty().prop('disabled', false);
-                select.append($('<option>').attr('value', '').html(def.placeholder));
-                if ('value' in options || 'label' in options) {
-                    var valueKey = options.value || 'value', labelKey = options.label || 'label', newdata = {};
-                    for (var x in data) newdata[data[x][valueKey]] = data[x][labelKey];
-                    data = newdata;
-                }
-                for (var x in data)
-                    select.append($('<option>').attr('value', x).html(data[x]));
-                if (item && (item.value in data)) select.val(item.value);
-                else host.data[def.name] = null;
-                if (Object.keys(data).length === 1 && def.options.single === true) host.data[def.name] = Object.keys(data)[0];
-            }).fail(_error);
+        postops.url = _url(host, postops.url);
+        if ('method' in options) postops.method = options.method;
+        if ('data' in options) postops.data = options.data;
+        $.ajax(postops).done(function (data) {
+            var item = host.data[def.name];
+            var required = ('required' in def) ? _eval_code(host, def.required) : false;
+            if (def.disabled !== true) select.empty().prop('disabled', false);
+            select.append($('<option>').attr('value', '').html(def.placeholder));
+            if ('value' in options || 'label' in options) {
+                var valueKey = options.value || 'value', labelKey = options.label || 'label', newdata = {};
+                for (var x in data) newdata[data[x][valueKey]] = data[x][labelKey];
+                data = newdata;
+            }
+            for (var x in data)
+                select.append($('<option>').attr('value', x).html(data[x]));
+            if (item && (item.value in data)) select.val(item.value);
+            else host.data[def.name] = null;
+            if (Object.keys(data).length === 1 && def.options.single === true) host.data[def.name] = Object.keys(data)[0];
+        }).fail(_error);
         return true;
     };
 
