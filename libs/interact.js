@@ -112,7 +112,18 @@
             var value = input.is(':checked');
             host.data[def.name].set(value, (value ? 'Yes' : 'No'));
         } else if (input.is('select')) {
-            host.data[def.name].set(input.val(), input.children('option:selected').text());
+            var value = input.val();
+            if (value === '_hzForm_Other') {
+                var otherInput = $('<input type="text" class="form-control" placeholder="Enter other option...">');
+                input.after(otherInput).hide();
+                otherInput.val(host.data[def.name].other)
+                    .data('def', def)
+                    .change(function (event) { _input_event_change(host, $(event.target)); }).focus();
+                host.data[def.name] = null;
+            } else
+                host.data[def.name].set(value, input.children('option:selected').text());
+        } else if (def.other === true) {
+            host.data[def.name].other = input.val();
         } else {
             host.data[def.name] = input.val();
         }
@@ -317,6 +328,12 @@
             }
             for (var x in data)
                 select.append($('<option>').attr('value', x).html(data[x]));
+            if (def.other === true) {
+                var otherOption = $('<option>').attr('value', '_hzForm_Other').html("Other");
+                select.append(otherOption);
+                if (item.value === null & item.other !== null)
+                    select.val('_hzForm_Other').change();
+            }
             if (item && (item.value in data)) select.val(item.value);
             else host.data[def.name] = null;
             if (Object.keys(data).length === 1 && def.options.single === true) host.data[def.name] = Object.keys(data)[0];
@@ -363,6 +380,12 @@
             for (var x in def.options)
                 select.append($('<option>').attr('value', x).html(def.options[x]));
             select.change(function (event) { _input_event_change(host, $(event.target)); });
+            if (def.other === true) {
+                var otherOption = $('<option>').attr('value', '_hzForm_Other').html("Other");
+                select.append(otherOption);
+                if (value.value === null & value.other !== null)
+                    select.val('_hzForm_Other').change();
+            }
         }
         return group;
     };
