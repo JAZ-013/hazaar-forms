@@ -98,12 +98,7 @@
                 && (!(match[2] in values) || values[match[2]] === null)
                 && force !== true)
                 return false;
-            //Disabled because we now do asynchronous validation so this wont work.
-            /*if (modifiers.indexOf('>') === -1
-                && _validate_field(host, match[2]) !== true
-                && force !== true)
-                return false;*/
-            var out = (use_html ? '<span data-bind="' + match[2] + '">' + values[match[2]] + '</span>' : values[match[2]] || '');
+            var out = (use_html ? '<span data-bind="' + match[2] + '">' + values[match[2]] + '</span>' : host.data[match[2]] || '');
             str = str.replace(match[0], out);
         }
         return str;
