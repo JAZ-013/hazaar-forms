@@ -98,12 +98,7 @@
                 && (!(match[2] in values) || values[match[2]] === null)
                 && force !== true)
                 return false;
-            //Disabled because we now do asynchronous validation so this wont work.
-            /*if (modifiers.indexOf('>') === -1
-                && _validate_field(host, match[2]) !== true
-                && force !== true)
-                return false;*/
-            var out = (use_html ? '<span data-bind="' + match[2] + '">' + values[match[2]] + '</span>' : values[match[2]] || '');
+            var out = (use_html ? '<span data-bind="' + match[2] + '">' + values[match[2]] + '</span>' : host.data[match[2]] || '');
             str = str.replace(match[0], out);
         }
         return str;
@@ -209,7 +204,6 @@
     };
 
     function _input_select_multi_items(host, def, data) {
-        var btnClass = def.class || 'default';
         var fChange = function () {
             var value = this.childNodes[0].value;
             var index = host.data[def.name].indexOf(value);
@@ -218,28 +212,37 @@
             else
                 host.data[def.name].remove(index);
         };
-        var value = host.data[def.name];
+        var value = host.data[def.name], items = [];
+        if (def.buttons === true) {
+            var btnClass = def.class || 'primary';
+            for (var x in data) {
+                var active = (value instanceof dataBinderArray && value.indexOf(x) > -1), name = def.name + '_' + x;
+                var label = $('<label class="btn">').addClass('btn-' + btnClass).html([
+                    $('<input type="checkbox" autocomplete="off">')
+                        .attr('value', x)
+                        .prop('checked', active)
+                        .attr('data-bind-value', x),
+                    data[x]
+                ]).toggleClass('active', active).change(fChange);
+                items.push(label);
+            }
+            return items;
+        }
         if (!('columns' in def)) def.columns = 1;
         if (def.columns > 6) def.columns = 6;
         var col_width = Math.floor(12 / def.columns), per_col = (Math.ceil(Object.keys(data).length / def.columns));
-        var cols = $('<div class="row">'), items = [], column = 0;
+        var cols = $('<div class="row">'), column = 0;
         for (var col = 0; col < def.columns; col++)
-            items.push($('<div>').addClass('col-md-' + col_width));
+            items.push($('<div>').addClass('col-md-' + col_width)
+                .toggleClass('custom-controls-stacked', def.inline));
         for (var x in data) {
             var active = (value instanceof dataBinderArray && value.indexOf(x) > -1), name = def.name + '_' + x;
-            var label = $('<label class="form-check-label">')
-                .html([$('<input class="form-check-input" type="checkbox">').attr('value', x).prop('checked', active), data[x]])
-                .attr('data-bind-value', x)
-                .change(fChange);
-            if (def.buttons === true) {
-                items[column].append(label.toggleClass('btn', (def.buttons === true))
-                    .toggleClass('btn-' + btnClass, (def.buttons === true))
-                    .toggleClass('active', active));
-            } else if (def.inline === true) {
-                items[column].append(label.addClass('checkbox-inline'));
-            } else {
-                items[column].append($('<div class="custom-control custom-checkbox">').html(label));
-            }
+            var label = $('<label class="custom-control custom-checkbox">').html([
+                $('<input class="custom-control-input" type="checkbox">').attr('value', x).prop('checked', active),
+                $('<span class="custom-control-indicator">'),
+                $('<span class="custom-control-description">').html(data[x])
+            ]).attr('data-bind-value', x).change(fChange);
+            items[column].append(label);
             if (items[column].children().length >= per_col) column++;
         }
         return cols.html(items);
@@ -374,8 +377,8 @@
     };
 
     function _input_checkbox(host, def) {
-        var group = $('<div class="form-check">').data('def', def);
-        var input = $('<input class="form-check-input" type="checkbox">')
+        var group = $('<label class="custom-control custom-checkbox">').data('def', def);
+        var input = $('<input class="custom-control-input" type="checkbox">')
             .attr('name', def.name)
             .attr('data-bind', def.name)
             .attr('checked', host.data[def.name])
@@ -383,8 +386,10 @@
             .focus(function (event) { _input_event_focus(host, $(event.target)); })
             .blur(function (event) { _input_event_blur(host, $(event.target)); })
             .change(function (event) { _input_event_change(host, $(event.target)); })
-            .on('update', function (event) { _input_event_update(host, $(event.target)); });
-        var label = $('<label class="form-check-label">').html([input, _match_replace(host, def.label, null, true, true)]).appendTo(group);
+            .on('update', function (event) { _input_event_update(host, $(event.target)); })
+            .appendTo(group);
+        var indicator = $('<span class="custom-control-indicator">').appendTo(group);
+        var label = $('<span class="custom-control-description">').html(_match_replace(host, def.label, null, true, true)).appendTo(group);
         _check_input_disabled(host, input, def);
         return group;
     };
@@ -711,7 +716,7 @@
                     o.attr('data-original-title', _match_replace(host, o.attr('data-title'), null, true)).tooltip('_fixTitle');
                 });
         if ('required' in def) {
-            field.children('label').append($('<i class="fa fa-exclamation-circle form-required">'));
+            field.children('label').append($('<i class="fa fa-exclamation-circle form-required" title="Required">'));
             if (_eval_code(host, def.required)) field.addClass('required');
             if (typeof def.required !== 'boolean') host.events.required.push(field.data('required', def.required));
         }
