@@ -98,7 +98,8 @@
                 && (!(match[2] in values) || values[match[2]] === null)
                 && force !== true)
                 return false;
-            var out = (use_html ? '<span data-bind="' + match[2] + '">' + values[match[2]] + '</span>' : host.data[match[2]] || '');
+            var out = (use_html ? '<span data-bind="' + match[2] + '">' + values[match[2]] + '</span>'
+                : (modifiers.indexOf(':') === -1 ? values[match[2]] : host.data[match[2]]) || '');
             str = str.replace(match[0], out);
         }
         return str;
