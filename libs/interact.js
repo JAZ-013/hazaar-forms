@@ -698,7 +698,7 @@
                     o.attr('data-original-title', _match_replace(host, o.attr('data-title'), null, true)).tooltip('_fixTitle');
                 });
         if ('required' in def) {
-            field.children('label').append($('<i class="fa fa-exclamation-circle form-required">'));
+            field.children('label').append($('<i class="fa fa-exclamation-circle form-required" title="Required">'));
             if (_eval_code(host, def.required)) field.addClass('required');
             if (typeof def.required !== 'boolean') host.events.required.push(field.data('required', def.required));
         }
