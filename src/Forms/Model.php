@@ -134,23 +134,67 @@ class Model extends \Hazaar\Model\Strict {
 
     }
 
-    public function getForm(){
+    private function filterItems(&$items, $no_reindex = false, $sub = null){
 
-        //Remove any tagged fields
-        foreach($this->__form->fields as $name => $field){
+        if($sub && !is_array($sub)) $sub = array($sub);
 
-            if(!($tags = ake($field, 'tag')))
+        //Remove any tagged fields where the tag is not set
+        foreach($items as $name => $item){
+
+            if(!(is_object($item) || is_array($item)))
                 continue;
 
-            if(!is_array($tags))
-                $tags = array($tags);
+            if(!is_object($item) && $no_reindex !== true){
 
-            if(count(array_intersect($tags, $this->__tags)) === 0)
-                unset($this->__form->fields[$name]);
+                $items[$name] = $this->filterItems($item, $no_reindex, $sub);
+
+                continue;
+
+            }
+
+            if($tags = ake($item, 'tag')){
+
+                if(!is_array($tags))
+                    $tags = array($tags);
+
+                if(count(array_intersect($tags, $this->__tags)) === 0){
+
+                    unset($items[$name]);
+
+                    continue;
+
+                }
+
+            }
+
+            if(!is_object($item))
+                continue;
+
+            if($subs = array_intersect(array_keys(get_object_vars($item)), $sub)){
+
+                foreach($subs as $key)
+                    $items[$name]->$key = $this->filterItems($item->$key, $no_reindex, $sub);
+
+            }
 
         }
 
-        return $this->__form;
+        if($no_reindex !== true)
+            $items = array_values($items);
+
+        return $items;
+
+    }
+
+    public function getForm(){
+
+        $form = clone $this->__form;
+
+        $this->filterItems($form->fields, true);
+
+        $this->filterItems($form->pages, false, array('sections', 'fields'));
+
+        return $form;
 
     }
 
