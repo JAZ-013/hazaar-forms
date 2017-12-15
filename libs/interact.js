@@ -160,7 +160,7 @@
                 _post(host, 'update', options, false).done(function (response) {
                     if (response.ok)
                         host.data.extend(response.updates);
-                });
+                }).fail(_error);
             }
         }
         if (host.events.show.length > 0) {
