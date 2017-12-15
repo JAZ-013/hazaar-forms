@@ -114,11 +114,21 @@
         } else if (input.is('select')) {
             var value = input.val();
             if (value === '_hzForm_Other') {
-                var otherInput = $('<input type="text" class="form-control" placeholder="Enter other option...">');
-                input.after(otherInput).hide();
-                otherInput.val(host.data[def.name].other)
+                var group = $('<div class="input-group">');
+                var oInput = $('<input type="text" class="form-control" placeholder="Enter other option...">')
                     .data('def', def)
-                    .change(function (event) { _input_event_change(host, $(event.target)); }).focus();
+                    .val(host.data[def.name].other)
+                    .change(function (event) { _input_event_change(host, $(event.target)); })
+                    .appendTo(group);
+                var button = $('<button class="btn btn-secondary" type="button">')
+                    .html($('<i class="fa fa-times">'))
+                    .click(function (e) {
+                        group.remove();
+                        input.val('').show();
+                    });
+                $('<span class="input-group-btn">').html(button).appendTo(group);
+                input.hide().after(group);
+                oInput.focus();
                 host.data[def.name] = null;
             } else
                 host.data[def.name].set(value, input.children('option:selected').text());
