@@ -158,7 +158,8 @@
             };
             if (check_api(def.update)) {
                 _post(host, 'update', options, false).done(function (response) {
-                    host.data.extend(response);
+                    if (response.ok)
+                        host.data.extend(response.updates);
                 });
             }
         }
