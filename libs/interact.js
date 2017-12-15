@@ -391,7 +391,8 @@
     };
 
     function _input_checkbox(host, def) {
-        var group = $('<label class="custom-control custom-checkbox">').data('def', def);
+        var group = $('<div class="form-group">').data('def', def);
+        var label = $('<label class="custom-control custom-checkbox">').appendTo(group);
         var input = $('<input class="custom-control-input" type="checkbox">')
             .attr('name', def.name)
             .attr('data-bind', def.name)
@@ -401,9 +402,9 @@
             .blur(function (event) { _input_event_blur(host, $(event.target)); })
             .change(function (event) { _input_event_change(host, $(event.target)); })
             .on('update', function (event) { _input_event_update(host, $(event.target)); })
-            .appendTo(group);
-        var indicator = $('<span class="custom-control-indicator">').appendTo(group);
-        var label = $('<span class="custom-control-description">').html(_match_replace(host, def.label, null, true, true)).appendTo(group);
+            .appendTo(label);
+        var indicator = $('<span class="custom-control-indicator">').appendTo(label);
+        var label = $('<span class="custom-control-description">').html(_match_replace(host, def.label, null, true, true)).appendTo(label);
         _check_input_disabled(host, input, def);
         return group;
     };
@@ -720,15 +721,18 @@
         } else {
             field = $('<div>');
         }
-        if ('tip' in def)
-            field.children('label')
-                .append($('<i class="fa fa-question-circle form-tip">')
-                    .attr('data-title', def.tip)
-                    .tooltip({ placement: 'auto', html: true }))
+        if ('tip' in def) {
+            var item;
+            if (def.type == 'boolean') item = field;
+            else item = field.children('label');
+            item.append($('<i class="fa fa-question-circle form-tip">')
+                .attr('data-title', def.tip)
+                .tooltip({ placement: 'auto', html: true }))
                 .on('show.bs.tooltip', function (e) {
                     var o = $(this).children('.form-tip');
                     o.attr('data-original-title', _match_replace(host, o.attr('data-title'), null, true)).tooltip('_fixTitle');
                 });
+        }
         if ('required' in def) {
             field.children('label').append($('<i class="fa fa-exclamation-circle form-required" title="Required">'));
             if (_eval_code(host, def.required)) field.addClass('required');
