@@ -825,7 +825,7 @@
     //Render the whole form
     function _render(host, data) {
         host.objects = {
-            loader: $('<div class="forms-loader-container">').html($('<div class="forms-loader">')),
+            loader: $('<div class="forms-loader-container">').html($('<div>').addClass(host.settings.loaderClass)),
             container: $('<div class="forms-container">').hide()
         };
         $(host).html([host.objects.loader, host.objects.container]).css('min-height', '200px');
@@ -1238,7 +1238,8 @@
         "controller": "index",
         "encode": true,
         "singlePage": false,
-        "placeholder": "Please select..."
+        "placeholder": "Please select...",
+        "loaderClass": "forms-loader"
     };
 
 })(jQuery);
