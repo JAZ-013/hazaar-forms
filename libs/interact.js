@@ -118,14 +118,18 @@
                 var oInput = $('<input type="text" class="form-control" placeholder="Enter other option...">')
                     .data('def', def)
                     .val(host.data[def.name].other)
+                    .attr('data-bind', def.name)
+                    .attr('data-bind-other', true)
                     .change(function (event) { _input_event_change(host, $(event.target)); })
                     .appendTo(group);
                 var button = $('<button class="btn btn-secondary" type="button">')
                     .html($('<i class="fa fa-times">'))
                     .click(function (e) {
                         group.remove();
+                        host.data[def.name] = null;
                         input.val('').show();
                     });
+                if ('format' in def) oInput.inputmask(def.format);
                 $('<span class="input-group-btn">').html(button).appendTo(group);
                 input.hide().after(group);
                 oInput.focus();
@@ -880,7 +884,7 @@
         if (!def) return true;
         if ('show' in def) if (!_eval(host, def.show)) return true;
         var required = ('required' in def) ? _eval_code(host, def.required) : false;
-        if (!item.value && required) return _validation_error(name, def, "required");
+        if (required && !item.value && !(def.other && item.other)) return _validation_error(name, def, "required");
         if ('format' in def && item.value) {
             if (!Inputmask.isValid(String(item.value), def.format))
                 return _validation_error(name, def, "bad_format");
