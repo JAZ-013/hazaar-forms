@@ -869,6 +869,7 @@
 
     function _validate_input(host, input) {
         var name = input.attr('name'), def = host.def.fields[name];
+        console.log(name);
         if (!def) return true;
         _validate_field(host, name).done(function (name, result) {
             input.toggleClass('is-invalid', result !== true);
@@ -884,9 +885,10 @@
         if (!def) return true;
         if ('show' in def) if (!_eval(host, def.show)) return true;
         var required = ('required' in def) ? _eval_code(host, def.required) : false;
-        if (required && !item.value && !(def.other && item.other)) return _validation_error(name, def, "required");
-        if ('format' in def && item.value) {
-            if (!Inputmask.isValid(String(item.value), def.format))
+        var value = (def.other && !item.value) ? item.other : item.value;
+        if (required && !value) return _validation_error(name, def, "required");
+        if ('format' in def && value) {
+            if (!Inputmask.isValid(String(value), def.format))
                 return _validation_error(name, def, "bad_format");
         }
         if ('validate' in def) {
@@ -894,29 +896,29 @@
                 var data = def.validate[type];
                 switch (type) {
                     case 'min':
-                        if (parseInt(item.value) < data)
+                        if (parseInt(value) < data)
                             return _validation_error(name, def, "too_small");
                         break;
                     case 'max':
-                        if (parseInt(item.value) > data)
+                        if (parseInt(value) > data)
                             return _validation_error(name, def, "too_big");
                         break;
                     case 'with':
                         var reg = new RegExp(data);
-                        if (!(typeof item.value === 'string' && item.value.match(reg)))
+                        if (!(typeof value === 'string' && value.match(reg)))
                             return _validation_error(name, def, "regex_failed");
                         break;
                     case 'equals':
-                        if (item.value !== data)
+                        if (value !== data)
                             return _validation_error(name, def, "not_equal");
                         break;
                     case 'minlen':
-                        if ((item instanceof dataBinderValue && (!item.value || item.value.length < data))
+                        if ((item instanceof dataBinderValue && (!value || value.length < data))
                             || (!item || item.length < data))
                             return _validation_error(name, def, "too_short");
                         break;
                     case 'maxlen':
-                        if ((item instanceof dataBinderValue && (!item.value || item.value.length > data))
+                        if ((item instanceof dataBinderValue && (!value || value.length > data))
                             || (!item || item.length > data))
                             return _validation_error(name, def, "too_long");
                         break;
@@ -958,13 +960,19 @@
         return false;
     };
 
+    /**
+     * Navigate to the first page that contains an invalid field and highlight all invalid inputs
+     * @param {any} host
+     * @param {any} errors
+     */
     function _validate_nav(host, errors) {
         for (var x in errors) {
             for (var p in host.def.pages) {
                 for (var s in host.def.pages[p].sections) {
                     for (var f in host.def.pages[p].sections[s].fields) {
                         if (_validate_nav_field(host.def.pages[p].sections[s].fields[f], errors[x])) {
-                            _nav(host, parseInt(p));
+                            var page = parseInt(p);
+                            if (host.page !== page) _nav(host, page);
                             _validate_page(host);
                             return;
                         }
