@@ -91,7 +91,7 @@
     };
 
     function _match_replace(host, str, extra, force, use_html) {
-        var values = $.extend({}, host.data.save(true), extra);
+        var values = (host ? $.extend({}, host.data.save(true), extra) : extra);
         while (match = str.match(/\{\{([\W]*)(\w+)\}\}/)) {
             var modifiers = match[1].split('');
             if (modifiers.indexOf('!') === -1
@@ -338,7 +338,8 @@
             select.append($('<option>').attr('value', '').html(def.placeholder));
             if ('value' in options || 'label' in options) {
                 var valueKey = options.value || 'value', labelKey = options.label || 'label', newdata = {};
-                for (var x in data) newdata[data[x][valueKey]] = data[x][labelKey];
+                var mr = (labelKey.indexOf('{{') >= 0);
+                for (var x in data) newdata[data[x][valueKey]] = (mr ? _match_replace(null, labelKey, data[x], true) : data[x][labelKey]);
                 data = newdata;
             }
             for (var x in data)
