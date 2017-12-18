@@ -887,6 +887,7 @@
         var required = ('required' in def) ? _eval_code(host, def.required) : false;
         var value = (def.other && !item.value) ? item.other : item.value;
         if (required && !value) return _validation_error(name, def, "required");
+        if (!value) return true; //Return now if there is no value and the field is not required!
         if ('format' in def && value) {
             if (!Inputmask.isValid(String(value), def.format))
                 return _validation_error(name, def, "bad_format");
