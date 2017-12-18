@@ -417,6 +417,10 @@ abstract class Form extends Action {
                 && property_exists($info, 'fields')))
                 continue;
 
+            if(property_exists($info, 'hide')
+                && $info->hide === true)
+                continue;
+
             if(is_array($info->fields)){
 
                 $fields = array();
