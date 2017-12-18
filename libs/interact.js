@@ -39,7 +39,7 @@
             for (var key in values) {
                 if (key === 'form') continue;
                 var value = values[key];
-                if (typeof value === 'string') value = '"' + value.replace(/"/g, '\\"') + '"';
+                if (typeof value === 'string') value = '"' + value.replace(/"/g, '\\"').replace("\n", "\\n") + '"';
                 else if (typeof value === 'object' || typeof value === 'array') value = JSON.stringify(value);
                 code += 'var ' + key + " = " + value + ";\n";
             }
@@ -580,9 +580,12 @@
             .attr('for', def.name)
             .html(_match_replace(host, def.label, null, true, true))
             .appendTo(group);
-        var input = $('<input class="form-control">')
-            .attr('type', type)
-            .attr('name', def.name)
+        var input = null;
+        if (def.multiline) {
+            input = $('<textarea class="form-control">');
+            if ('height' in def) input.css('height', def.height);
+        } else input = $('<input class="form-control">').attr('type', type);
+        input.attr('name', def.name)
             .attr('data-bind', def.name)
             .data('def', def)
             .val(host.data[def.name])
