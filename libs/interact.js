@@ -756,9 +756,10 @@
         if ('width' in def) field.width(def.width);
         if ('html' in def) {
             var html = def.html;
+            if ('label' in def && field.children().length === 0) field.append($('<label class="control-label">').html(def.label));
             while (match = html.match(/\{\{(\w+)\}\}/))
                 html = html.replace(match[0], '<span data-bind="' + [match[1]] + '"></span>');
-            field.append(html);
+            field.append($('<div>').html(html));
         }
         if ('show' in def) {
             if (typeof def.show === 'boolean')
