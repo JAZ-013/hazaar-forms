@@ -571,7 +571,7 @@
         }
         if ('placeholder' in def)
             input.attr('placeholder', def.placeholder);
-        input_group.append($('<div>').addClass(host.settings.styleClasses.inputGroupAdd)
+        input_group.append($('<div>').addClass(host.settings.styleClasses.inputGroupAddon)
             .html($('<i class="fa fa-search">')));
         return group;
     };
