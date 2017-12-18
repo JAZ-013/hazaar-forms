@@ -1206,13 +1206,16 @@
     $.fn.hzForm = function () {
         var args = arguments;
         var host = this.get(0);
-        if (args[0] === 'info') {
-            var data = host.data.save(), info = {};
-            for (var x in data)
-                info[x] = { label: host.def.fields[x].label, value: data[x] };
-            return info;
-        } else if (args[0] === 'data') {
-            return host.data;
+        switch (args[0]) {
+            case 'info':
+                var data = host.data.save(), info = {};
+                for (var x in data)
+                    info[x] = { label: host.def.fields[x].label, value: data[x] };
+                return info;
+            case 'data':
+                return host.data;
+            case 'def':
+                return host.def;
         }
         return this.each(function (index, host) {
             if (host.settings) {
