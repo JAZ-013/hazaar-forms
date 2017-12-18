@@ -870,7 +870,6 @@
 
     function _validate_input(host, input) {
         var name = input.attr('name'), def = host.def.fields[name];
-        console.log(name);
         if (!def) return true;
         _validate_field(host, name).done(function (name, result) {
             input.toggleClass('is-invalid', result !== true);
