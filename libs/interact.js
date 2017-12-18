@@ -114,8 +114,9 @@
         } else if (input.is('select')) {
             var value = input.val();
             if (value === '_hzForm_Other') {
-                var group = $('<div class="input-group">');
-                var oInput = $('<input type="text" class="form-control" placeholder="Enter other option...">')
+                var group = $('<div>').addClass(host.settings.styleClasses.inputGroup);
+                var oInput = $('<input type="text" placeholder="Enter other option...">')
+                    .addClass(host.settings.styleClasses.input)
                     .data('def', def)
                     .val(host.data[def.name].other)
                     .attr('data-bind', def.name)
@@ -201,8 +202,9 @@
     };
 
     function _input_button(host, def) {
-        var group = $('<div class="form-group form-group-nolabel">').data('def', def);
-        var btn = $('<button type="button" class="form-control btn">')
+        var group = $('<div class="form-group-nolabel">').addClass(host.settings.styleClasses.group).data('def', def);
+        var btn = $('<button type="button" class="btn">')
+            .addClass(host.settings.styleClasses.input)
             .addClass(def.class || 'btn-default')
             .data('def', def)
             .appendTo(group);
@@ -256,10 +258,10 @@
                 .toggleClass('custom-controls-stacked', def.inline));
         for (var x in data) {
             var active = (value instanceof dataBinderArray && value.indexOf(x) > -1), name = def.name + '_' + x;
-            var label = $('<label class="custom-control custom-checkbox">').html([
-                $('<input class="custom-control-input" type="checkbox">').attr('value', x).prop('checked', active),
-                $('<span class="custom-control-indicator">'),
-                $('<span class="custom-control-description">').html(data[x])
+            var label = $('<label>').addClass(host.settings.styleClasses.chkLabel).html([
+                $('<input type="checkbox">').addClass(host.settings.styleClasses.chkInput).attr('value', x).prop('checked', active),
+                $('<span>').addClass(host.settings.styleClasses.chkIndicator),
+                $('<span>').addClass(host.settings.styleClasses.chkDescription).html(data[x])
             ]).attr('data-bind-value', x).change(fChange);
             items[column].append(label);
             if (items[column].children().length >= per_col) column++;
@@ -290,8 +292,8 @@
     };
 
     function _input_select_multi(host, def) {
-        var group = $('<div class="form-group">').data('def', def);
-        var label = $('<label class="control-label">')
+        var group = $('<div>').addClass(host.settings.styleClasses.group).data('def', def);
+        var label = $('<label>').addClass(host.settings.styleClasses.label)
             .attr('for', def.name)
             .html(_match_replace(host, def.label, null, true, true))
             .appendTo(group);
@@ -358,12 +360,12 @@
     };
 
     function _input_select(host, def) {
-        var group = $('<div class="form-group">').data('def', def);
-        var label = $('<label class="control-label">')
+        var group = $('<div>').addClass(host.settings.styleClasses.group).data('def', def);
+        var label = $('<label>').addClass(host.settings.styleClasses.label)
             .attr('for', def.name)
             .html(_match_replace(host, def.label, null, true, true))
             .appendTo(group);
-        var select = $('<select class="form-control">')
+        var select = $('<select>').addClass(host.settings.styleClasses.input)
             .attr('name', def.name)
             .attr('data-bind', def.name)
             .data('def', def)
@@ -407,9 +409,9 @@
     };
 
     function _input_checkbox(host, def) {
-        var group = $('<div class="form-group">').data('def', def);
-        var label = $('<label class="custom-control custom-checkbox">').appendTo(group);
-        var input = $('<input class="custom-control-input" type="checkbox">')
+        var group = $('<div>').addClass(host.settings.styleClasses.group).data('def', def);
+        var label = $('<label>').addClass(host.settings.styleClasses.chkLabel).appendTo(group);
+        var input = $('<input type="checkbox">').addClass(host.settings.styleClasses.chkInput)
             .attr('name', def.name)
             .attr('data-bind', def.name)
             .attr('checked', host.data[def.name])
@@ -419,20 +421,20 @@
             .change(function (event) { _input_event_change(host, $(event.target)); })
             .on('update', function (event) { _input_event_update(host, $(event.target)); })
             .appendTo(label);
-        var indicator = $('<span class="custom-control-indicator">').appendTo(label);
-        var label = $('<span class="custom-control-description">').html(_match_replace(host, def.label, null, true, true)).appendTo(label);
+        var indicator = $('<span>').addClass(host.settings.styleClasses.chkIndicator).appendTo(label);
+        var label = $('<span>').addClass(host.settings.styleClasses.chkDescription).html(_match_replace(host, def.label, null, true, true)).appendTo(label);
         _check_input_disabled(host, input, def);
         return group;
     };
 
     function _input_date(host, def) {
-        var group = $('<div class="form-group">').data('def', def);
-        var label = $('<label class="control-label">')
+        var group = $('<div>').addClass(host.settings.styleClasses.group).data('def', def);
+        var label = $('<label>').addClass(host.settings.styleClasses.label)
             .attr('for', def.name)
             .html(_match_replace(host, def.label, null, true, true))
             .appendTo(group);
-        var input_group = $('<div class="input-group date">');
-        var input = $('<input class="form-control">')
+        var input_group = $('<div class="date">').addClass(host.settings.styleClasses.inputGroup);
+        var input = $('<input>').addClass(host.settings.styleClasses.input)
             .attr('type', 'date')
             .attr('name', def.name)
             .attr('data-bind', def.name)
@@ -443,7 +445,7 @@
             .blur(function (event) { _input_event_blur(host, $(event.target)); })
             .change(function (event) { _input_event_change(host, $(event.target)); })
             .on('update', function (event) { _input_event_update(host, $(event.target)); });
-        var glyph = $('<span class="input-group-addon">')
+        var glyph = $('<span>').addClass(host.settings.styleClasses.inputGroupAddon)
             .html($('<i class="fa fa-calendar">'))
             .appendTo(input_group);
         if (def.format) {
@@ -468,8 +470,8 @@
     };
 
     function _input_file(host, def) {
-        var group = $('<div class="form-group">').data('def', def);
-        var label = $('<label class="control-label">')
+        var group = $('<div>').addClass(host.settings.styleClasses.group).data('def', def);
+        var label = $('<label>').addClass(host.settings.styleClasses.label)
             .attr('for', def.name)
             .html(_match_replace(host, def.label, null, true, true))
             .appendTo(group);
@@ -500,14 +502,14 @@
     };
 
     function _input_lookup(host, def) {
-        var group = $('<div class="form-group">').data('def', def);
-        var label = $('<label class="control-label">')
+        var group = $('<div>').addClass(host.settings.styleClasses.group).data('def', def);
+        var label = $('<label>').addClass(host.settings.styleClasses.label)
             .attr('for', def.name)
             .html(_match_replace(host, def.label, null, true, true))
             .appendTo(group);
-        var input_group = $('<div class="input-group">')
+        var input_group = $('<div>').addClass(host.settings.styleClasses.inputGroup)
             .appendTo(group);
-        var input = $('<input type="text" class="form-control">')
+        var input = $('<input type="text">').addClass(host.settings.styleClasses.input)
             .attr('data-bind', def.name)
             .attr('data-bind-label', true)
             .data('def', def)
@@ -569,22 +571,22 @@
         }
         if ('placeholder' in def)
             input.attr('placeholder', def.placeholder);
-        input_group.append($('<div class="input-group-addon">')
+        input_group.append($('<div>').addClass(host.settings.styleClasses.inputGroupAdd)
             .html($('<i class="fa fa-search">')));
         return group;
     };
 
     function _input_std(host, type, def) {
-        var group = $('<div class="form-group">').data('def', def);
-        var label = $('<label class="control-label">')
+        var group = $('<div>').addClass(host.settings.styleClasses.group).data('def', def);
+        var label = $('<label>').addClass(host.settings.styleClasses.label)
             .attr('for', def.name)
             .html(_match_replace(host, def.label, null, true, true))
             .appendTo(group);
         var input = null;
         if (def.multiline) {
-            input = $('<textarea class="form-control">');
+            input = $('<textarea>').addClass(host.settings.styleClasses.input);
             if ('height' in def) input.css('height', def.height);
-        } else input = $('<input class="form-control">').attr('type', type);
+        } else input = $('<input>').addClass(host.settings.styleClasses.input).attr('type', type);
         input.attr('name', def.name)
             .attr('data-bind', def.name)
             .data('def', def)
@@ -598,11 +600,13 @@
         if ('placeholder' in def) input.attr('placeholder', def.placeholder);
         _check_input_disabled(host, input, def);
         if (('prefix' in def) || ('suffix' in def)) {
-            var inputDIV = $('<div class="input-group">')
+            var inputDIV = $('<div>').addClass(host.settings.styleClasses.inputGroup)
                 .appendTo(group);
-            if (def.prefix) inputDIV.append($('<span class="input-group-addon">').html(def.prefix));
+            if (def.prefix) inputDIV.append($('<span>')
+                .addClass(host.settings.styleClasses.inputGroupAddon)
+                .html(def.prefix));
             inputDIV.append(input);
-            if (def.suffix) inputDIV.append($('<span class="input-group-addon">').html(def.suffix));
+            if (def.suffix) inputDIV.append($('<span>').addClass(host.settings.styleClasses.inputGroupAddon).html(def.suffix));
         } else {
             group.append(input);
         }
@@ -611,8 +615,8 @@
     };
 
     function _input_list(host, def) {
-        var group = $('<div class="form-group">').data('def', def);
-        var label = $('<h4 class="control-label">')
+        var group = $('<div>').addClass(host.settings.styleClasses.group).data('def', def);
+        var label = $('<h4>').addClass(host.settings.styleClasses.label)
             .html(_match_replace(host, def.label, null, true, true))
             .appendTo(group);
         var btn = $('<button type="button" class="btn btn-success btn-sm">')
@@ -761,7 +765,7 @@
         if ('width' in def) field.width(def.width);
         if ('html' in def) {
             var html = def.html;
-            if ('label' in def && field.children().length === 0) field.append($('<label class="control-label">').html(def.label));
+            if ('label' in def && field.children().length === 0) field.append($('<label>').addClass(host.settings.styleClasses.label).html(def.label));
             while (match = html.match(/\{\{(\w+)\}\}/))
                 html = html.replace(match[0], '<span data-bind="' + [match[1]] + '"></span>');
             field.append($('<div>').html(html));
@@ -814,7 +818,7 @@
     //Render a page
     function _page(host, page) {
         if (typeof page !== 'object') return null;
-        var form = $('<div class="form-page">').data('def', page), sections = [];
+        var form = $('<div>').addClass(host.settings.styleClasses.page).data('def', page), sections = [];
         host.events = {
             show: [],
             required: [],
@@ -837,7 +841,7 @@
     function _render(host, data) {
         host.objects = {
             loader: $('<div class="forms-loader-container">').html($('<div>').addClass(host.settings.loaderClass)),
-            container: $('<div class="forms-container">').hide()
+            container: $('<div>').addClass(host.settings.styleClasses.container).hide()
         };
         $(host).html([host.objects.loader, host.objects.container]).css('min-height', '200px');
     };
@@ -1258,7 +1262,20 @@
         "encode": true,
         "singlePage": false,
         "placeholder": "Please select...",
-        "loaderClass": "forms-loader"
+        "loaderClass": "forms-loader",
+        "styleClasses": {
+            "container": "forms-container",
+            "page": "form-page",
+            "group": "form-group",
+            "label": "control-label",
+            "inputGroup": "input-group",
+            "input": "form-control",
+            "inputGroupAddon": "input-group-addon",
+            "chkLabel": "custom-control custom-checkbox",
+            "chkInput": "custom-control-input",
+            "chkIndicator": "custom-control-indicator",
+            "chkDescription": "custom-control-description"
+        }
     };
 
 })(jQuery);
