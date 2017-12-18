@@ -753,6 +753,7 @@
             if (_eval_code(host, def.required)) field.addClass('required');
             if (typeof def.required !== 'boolean') host.events.required.push(field.data('required', def.required));
         }
+        if ('invalid' in def) field.append($('<div class="invalid-feedback">').html(def.invalid));
         if ('width' in def) field.width(def.width);
         if ('html' in def) {
             var html = def.html;
