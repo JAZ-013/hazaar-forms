@@ -221,11 +221,11 @@ abstract class Form extends Action {
         if($this->params)
             $settings->params = $this->params;
 
-        $div = new \Hazaar\Html\Form();
+        $form = new \Hazaar\Html\Form();
 
         $this->view->jquery->exec("var hzForm = $('#$name').hzForm(" . $settings->toJSON() . ");", 1);
 
-        return $div->id($name);
+        return $form->id($name);
 
     }
 

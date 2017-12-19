@@ -843,7 +843,7 @@
             loader: $('<div class="forms-loader-container">').html($('<div>').addClass(host.settings.loaderClass)),
             container: $('<div>').addClass(host.settings.styleClasses.container).hide()
         };
-        $(host).html([host.objects.loader, host.objects.container]).css('min-height', '200px');
+        $(host).html([host.objects.loader, host.objects.container]);
     };
 
     //Navigate to a page
