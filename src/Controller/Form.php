@@ -431,7 +431,7 @@ abstract class Form extends Action {
                         $import .= '.json';
 
                     if($ext_fields = $dir->get($import)->parseJSON(true))
-                        $fields = array_merge($fields, $ext_fields);
+                        $fields = array_replace_recursive($fields, $ext_fields);
 
                 }
 

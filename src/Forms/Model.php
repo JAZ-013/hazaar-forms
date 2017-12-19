@@ -66,7 +66,7 @@ class Model extends \Hazaar\Model\Strict {
                         foreach($include_items as $key => $value){
 
                             if(property_exists($this->__form->$name, $key))
-                                $value = (object)array_merge_recursive((array)$value, (array)$this->__form->$name->$key);
+                                $value = (object)array_replace_recursive((array)$value, (array)$this->__form->$name->$key);
 
                             $this->__form->$name->$key = $value;
 
@@ -358,14 +358,14 @@ class Model extends \Hazaar\Model\Strict {
             if(!array_key_exists($field, $this->__form->fields))
                 return null;
 
-            $field = (object)array_merge($this->__form->fields[$field], array('name' => $field));
+            $field = (object)array_replace($this->__form->fields[$field], array('name' => $field));
 
         }elseif(is_object($field)){
 
             if(!property_exists($field, 'name'))
                 return $field;
 
-            $field = (object)array_merge(ake($this->__form->fields, $field->name, array()), (array)$field);
+            $field = (object)array_replace(ake($this->__form->fields, $field->name, array()), (array)$field);
 
         }else{
 
