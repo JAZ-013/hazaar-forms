@@ -847,7 +847,7 @@
     };
 
     //Navigate to a page
-    function _nav(host, pageno) {
+    function _nav(host, pageno, cbComplete) {
         var _page_nav = function (host, pageno) {
             _track(host);
             host.objects.container.empty();
@@ -862,6 +862,7 @@
             }
             host.data.resync();
             _ready(host);
+            if (typeof cbComplete === 'function') cbComplete();
         };
         if (host.page !== null && pageno > host.page) {
             var page = host.def.pages[host.page];
@@ -976,14 +977,14 @@
      * @param {any} errors
      */
     function _validate_nav(host, errors) {
-        for (var x in errors) {
-            for (var p in host.def.pages) {
-                for (var s in host.def.pages[p].sections) {
-                    for (var f in host.def.pages[p].sections[s].fields) {
+        for (var p in host.def.pages) {
+            for (var s in host.def.pages[p].sections) {
+                for (var f in host.def.pages[p].sections[s].fields) {
+                    for (var x in errors) {
                         if (_validate_nav_field(host.def.pages[p].sections[s].fields[f], errors[x])) {
                             var page = parseInt(p);
-                            if (host.page !== page) _nav(host, page);
-                            _validate_page(host);
+                            if (host.page !== page)
+                                _nav(host, page, function () { _validate_page(host); });
                             return;
                         }
                     }
