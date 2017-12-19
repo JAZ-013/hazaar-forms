@@ -604,9 +604,10 @@
                 .appendTo(group);
             if (def.prefix) inputDIV.append($('<span>')
                 .addClass(host.settings.styleClasses.inputGroupAddon)
-                .html(def.prefix));
+                .html(_match_replace(host, def.prefix, null, true, true)));
             inputDIV.append(input);
-            if (def.suffix) inputDIV.append($('<span>').addClass(host.settings.styleClasses.inputGroupAddon).html(def.suffix));
+            if (def.suffix) inputDIV.append($('<span>').addClass(host.settings.styleClasses.inputGroupAddon)
+                .html(_match_replace(host, def.suffix, null, true, true)));
         } else {
             group.append(input);
         }
