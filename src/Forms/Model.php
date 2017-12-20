@@ -420,14 +420,18 @@ class Model extends \Hazaar\Model\Strict {
 
                 }
 
+                $values = array();
+
                 foreach($value as $key => $item){
 
-                    if(($item instanceof \Hazaar\Model\dataBinderValue) && $label = $item->label)
-                        $value[$key] = $item->label;
+                    if(($item instanceof \Hazaar\Model\dataBinderValue) && ($label = $item->label))
+                        $values[$key] = $label;
                     else
-                        $value[$key] = ake((array)$options, (($item instanceof \Hazaar\Model\dataBinderValue)?$item->value:$item));
+                        $values[$key] = ake((array)$options, (($item instanceof \Hazaar\Model\dataBinderValue)?$item->value:$item));
 
                 }
+
+                $value = $values;
 
             }
 
