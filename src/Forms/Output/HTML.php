@@ -235,12 +235,12 @@ class HTML extends \Hazaar\Forms\Output {
             $value_group = (new \Hazaar\Html\Div())->class('form-value');
 
             if($prefix = ake($field, 'prefix'))
-                $value_group->add($prefix . ' ');
+                $value_group->add($this->model->matchReplace((string)$prefix) . ' ');
 
             $value_group->add($field->value);
 
             if($suffix = ake($field, 'suffix'))
-                $value_group->add(' ' . $suffix);
+                $value_group->add(' ' . $this->model->matchReplace((string)$suffix));
 
             $group->add($value_group);
 
