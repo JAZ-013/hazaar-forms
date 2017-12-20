@@ -145,23 +145,34 @@
     };
 
     function _input_event_update(host, input) {
-        var def = input.data('def');
+        var def = input.data('def'), update = def.update;
         if (def.change)
             _eval_code(host, def.change);
-        if (def.update && (typeof def.update === 'string' || host.settings.update === true)) {
+        if (typeof update === 'string')
+            update = { "url": update };
+        console.log(update);
+        if (update && ('url' in update || host.settings.update === true)) {
             var options = {
                 originator: def.name,
                 form: host.data.save()
             };
-            var check_api = function (api) {
-                if (typeof api === 'string') {
-                    if ((api = _match_replace(host, api)) === false)
-                        return false;
-                    options.api = api;
+            var check_api = function (host, update) {
+                var url = null;
+                if (typeof update === 'boolean')
+                    return update;
+                if (typeof update !== 'object') return false;
+                if (!('enabled' in update)) update.enabled = true;
+                if ('when' in update) update.enabled = _eval_code(host, update.when);
+                if (update.enabled) {
+                    if (!('url' in update)) return true;
+                    if ((url = _match_replace(host, update.url)) !== false) {
+                        options.api = url;
+                        return true;
+                    }
                 }
-                return true;
+                return false;
             };
-            if (check_api(def.update)) {
+            if (check_api(host, update)) {
                 _post(host, 'update', options, false).done(function (response) {
                     if (response.ok)
                         host.data.extend(response.updates);
