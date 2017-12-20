@@ -148,9 +148,7 @@
         var def = input.data('def'), update = def.update;
         if (def.change)
             _eval_code(host, def.change);
-        if (typeof update === 'string')
-            update = { "url": update };
-        console.log(update);
+        if (typeof update === 'string') update = { "url": update };
         if (update && ('url' in update || host.settings.update === true)) {
             var options = {
                 originator: def.name,
@@ -282,14 +280,14 @@
 
     function _input_select_multi_populate(host, container, track) {
         var def = container.data('def');
-        var options = def.options;
-        if ((options = _match_replace(host, options, { "site_url": hazaar.url() })) === false) {
+        var options = (typeof def.options === 'string') ? { "url": def.options } : def.options;
+        if ((options.url = _match_replace(host, options.url, { "site_url": hazaar.url() })) === false) {
             container.hide();
             host.data[def.name] = [];
             return;
         }
         if (track === true) _track(host);
-        $.get(_url(host, options))
+        $.get(_url(host, options.url))
             .done(function (data) {
                 var values = host.data[def.name].save(true);
                 if (values) {
@@ -318,8 +316,9 @@
         } else {
             container.attr('data-bind', def.name).attr('data-toggle', 'checks');
         }
-        if (typeof def.options === 'string') {
-            var matches = def.options.match(/\{\{\w+\}\}/g);
+        if (typeof def.options === 'string') def.options = { "url": def.options };
+        if ('url' in def.options) {
+            var matches = def.options.url.match(/\{\{\w+\}\}/g);
             for (var x in matches) {
                 var match = matches[x].substr(2, matches[x].length - 4);
                 host.data.watch(match, function (key, value, container) {
