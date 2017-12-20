@@ -354,8 +354,10 @@
                 for (var x in data) newdata[data[x][valueKey]] = (mr ? _match_replace(null, labelKey, data[x], true) : data[x][labelKey]);
                 data = newdata;
             }
-            for (var x in data)
+            for (var x in data) {
+                if ('filter' in options && options.filter.indexOf(data[x]) === -1) continue;
                 select.append($('<option>').attr('value', x).html(data[x]));
+            }
             if (def.other === true) {
                 var otherOption = $('<option>').attr('value', '_hzForm_Other').html("Other");
                 select.append(otherOption);
