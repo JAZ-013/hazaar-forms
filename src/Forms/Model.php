@@ -242,7 +242,7 @@ class Model extends \Hazaar\Model\Strict {
 
             foreach($form->pages as $page){
 
-                if($page = $this->__page($page))
+                if($page = $this->__page($page, $form))
                     $pages[] = $page;
 
             }
@@ -255,7 +255,7 @@ class Model extends \Hazaar\Model\Strict {
 
     }
 
-    private function __page($page){
+    private function __page($page, &$form){
 
         if(!is_object($page) || (property_exists($page, 'show') && !$this->evaluate($page->show)))
             return null;
@@ -266,7 +266,7 @@ class Model extends \Hazaar\Model\Strict {
 
             foreach($page->sections as $section){
 
-                if($section = $this->__section($section))
+                if($section = $this->__section($section, $form))
                     $sections[] = $section;
 
             }
@@ -279,14 +279,14 @@ class Model extends \Hazaar\Model\Strict {
 
     }
 
-    private function __section($section){
+    private function __section($section, &$form){
 
         if(is_array($section)){
 
             $group = array();
 
             foreach($section as $s)
-                $group[] = $this->__section($s);
+                $group[] = $this->__section($s, $form);
 
             return $group;
 
@@ -301,7 +301,7 @@ class Model extends \Hazaar\Model\Strict {
 
             foreach($section->fields as $row){
 
-                if($row = $this->__group($row))
+                if($row = $this->__group($row, $form))
                     $fields[] = $row;
 
             }
@@ -314,7 +314,7 @@ class Model extends \Hazaar\Model\Strict {
 
     }
 
-    private function __group($fields){
+    private function __group($fields, &$form){
 
         if(is_array($fields)){
 
@@ -322,7 +322,7 @@ class Model extends \Hazaar\Model\Strict {
 
             foreach($fields as $item){
 
-                if($item = $this->__group($item))
+                if($item = $this->__group($item, $form))
                     $items[] = $item;
 
             }
@@ -338,7 +338,7 @@ class Model extends \Hazaar\Model\Strict {
 
             foreach($fields->fields as $field_item){
 
-                if($item = $this->__group($field_item))
+                if($item = $this->__group($field_item, $form))
                     $items[] = $item;
 
             }
@@ -347,25 +347,25 @@ class Model extends \Hazaar\Model\Strict {
 
         }
 
-        return $this->__field($fields);
+        return $this->__field($fields, $form);
 
     }
 
-    private function __field($field){
+    private function __field($field, &$form){
 
         if(is_string($field)){
 
-            if(!array_key_exists($field, $this->__form->fields))
+            if(!array_key_exists($field, $form->fields))
                 return null;
 
-            $field = (object)array_replace($this->__form->fields[$field], array('name' => $field));
+            $field = (object)array_replace($form->fields[$field], array('name' => $field));
 
         }elseif(is_object($field)){
 
             if(!property_exists($field, 'name'))
                 return $field;
 
-            $field = (object)array_replace(ake($this->__form->fields, $field->name, array()), (array)$field);
+            $field = (object)array_replace(ake($form->fields, $field->name, array()), (array)$field);
 
         }else{
 
@@ -403,7 +403,7 @@ class Model extends \Hazaar\Model\Strict {
 
                         $def->value = ake($item, $key);
 
-                        $items[$id][$key] = $this->__field($def);
+                        $items[$id][$key] = $this->__field($def, $form);
 
                     }
 
