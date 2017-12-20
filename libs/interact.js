@@ -229,7 +229,7 @@
             var value = this.childNodes[0].value;
             var index = host.data[def.name].indexOf(value);
             if (this.childNodes[0].checked && index === -1)
-                host.data[def.name].push({ '__hz_value': value, '__hz_label': this.childNodes[1].nodeValue });
+                host.data[def.name].push({ '__hz_value': value, '__hz_label': this.childNodes[2].innerText });
             else
                 host.data[def.name].remove(index);
         };

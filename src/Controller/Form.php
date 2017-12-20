@@ -38,7 +38,7 @@ abstract class Form extends Action {
         if(is_array($tags))
             $this->__tags = array_merge($this->__tags, $tags);
 
-        if(!($model = $this->get($name, $params, $this->__tags)) instanceof \Hazaar\Forms\Model)
+        if(!($model = $this->get($name)) instanceof \Hazaar\Forms\Model)
             throw new \Exception(__CLASS__ . '::get() MUST return a form a Hazaar\Forms\Model object!');
 
         $model->setTags($this->__tags);
@@ -373,7 +373,7 @@ abstract class Form extends Action {
 
     }
 
-    protected function get($name, $params = array()){
+    protected function get($name){
 
         $app = \Hazaar\Application::getInstance();
 
