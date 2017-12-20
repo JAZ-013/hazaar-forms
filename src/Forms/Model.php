@@ -382,7 +382,7 @@ class Model extends \Hazaar\Model\Strict {
         if(!$value && ake($output, 'empty', true) === false)
             return null;
 
-        if(!$this->evaluate(ake($field, 'show')))
+        if(!is_object($field) || (property_exists($field, 'show') && !$this->evaluate($field->show)))
             return null;
 
         if($value === null){
@@ -455,16 +455,13 @@ class Model extends \Hazaar\Model\Strict {
         if(is_bool($code))
             return $code;
 
-        if(!($code = str_replace(' ', '', $code)))
-            return true;
-
-        $parts = preg_split('/(\&\&|\|\|)/', $code, -1, PREG_SPLIT_DELIM_CAPTURE);
+        $parts = preg_split('/\s*(\&{2}|\|{2})\s*/', $code, -1, PREG_SPLIT_DELIM_CAPTURE);
 
         $count = count($parts);
 
         for($i = 0; $i < $count; $i+=2){
 
-            if(!preg_match('/([\w\.]+)([=\!\<\>]+)(.+)/', $parts[$i], $matches))
+            if(!preg_match('/([\w\.]+)\s*([=\!\<\>]+)\s*(.+)/', $parts[$i], $matches))
                 throw new \Exception('Invalid show script: ' . $parts[$i]);
 
             $parts[$i] = $this->fixCodeItem($matches[1]) . ' ' . $matches[2] . ' ' . $this->fixCodeItem($matches[3]);
@@ -508,6 +505,9 @@ class Model extends \Hazaar\Model\Strict {
 
             try{
 
+                //Form is also acessible in the evaluted code.
+                $form = $this;
+
                 return eval($code);
 
             }
@@ -521,7 +521,17 @@ class Model extends \Hazaar\Model\Strict {
 
         try{
 
+            ob_start();
+
             $result = $func($this->values, implode(' ', $parts));
+
+            if($buf = ob_get_clean()){
+
+                echo $buf;
+
+                var_dump(implode(' ', $parts));
+
+            }
 
         }
         catch(\Exception $e){
@@ -537,6 +547,9 @@ class Model extends \Hazaar\Model\Strict {
     private function fixCodeItem($item){
 
         $keywords = array('true', 'false', 'null');
+
+        if(strpos($item, '.') !== false)
+            $item = str_replace('.', '->', $item);
 
         if(!($item[0] == "'" && $item[-1] == "'") && !in_array(strtolower($item), $keywords) && !is_numeric($item))
             $item = '$' . $item;
