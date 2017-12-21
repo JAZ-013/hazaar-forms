@@ -149,7 +149,7 @@
         if (def.change)
             _eval_code(host, def.change);
         if (typeof update === 'string') update = { "url": update };
-        if (update && ('url' in update || host.settings.update === true)) {
+        if (typeof update === 'boolean' || (update && ('url' in update || host.settings.update === true))) {
             var options = {
                 originator: def.name,
                 form: host.data.save()
@@ -422,7 +422,7 @@
 
     function _input_checkbox(host, def) {
         var group = $('<div>').addClass(host.settings.styleClasses.group).data('def', def);
-        var fill = $('<label>').html((('title' in def) ? def.title : '&nbsp;')).appendTo(group);
+        if ('title' in def) $('<label>').html(def.title).appendTo(group);
         var label = $('<label>').addClass(host.settings.styleClasses.chkLabel).appendTo(group);
         var input = $('<input type="checkbox">').addClass(host.settings.styleClasses.chkInput)
             .attr('name', def.name)
@@ -759,13 +759,12 @@
             field = $('<div>');
         }
         if ('tip' in def) {
-            field.children('label').first().append($('<i class="fa fa-question-circle form-tip">')
+            field.children('label').last().append($('<i class="fa fa-question-circle form-tip">')
                 .attr('data-title', def.tip)
                 .tooltip({ placement: 'auto', html: true }))
                 .on('show.bs.tooltip', function (e) {
                     var o = $(this).children('.form-tip');
                     var func = ($.fn.tooltip.prototype.constructor.Constructor.VERSION ? '' : '_') + 'fixTitle';
-                    console.log(func);
                     o.attr('data-original-title', _match_replace(host, o.attr('data-title'), null, true)).tooltip(func);
                 });
         }
