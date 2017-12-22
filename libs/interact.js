@@ -135,8 +135,11 @@
                 input.hide().after(group);
                 oInput.focus();
                 host.data[def.name] = null;
-            } else
+            } else {
                 host.data[def.name].set(value, input.children('option:selected').text());
+                if (other = input.children('option[value="' + value + '"]').data('other'))
+                    host.data[def.name].other = other;
+            }
         } else if (def.other === true) {
             host.data[def.name].other = input.val();
         } else {
@@ -350,13 +353,21 @@
             select.append($('<option>').attr('value', '').html(def.placeholder));
             if ('value' in options || 'label' in options) {
                 var valueKey = options.value || 'value', labelKey = options.label || 'label', newdata = {};
-                var mr = (labelKey.indexOf('{{') >= 0);
-                for (var x in data) newdata[data[x][valueKey]] = (mr ? _match_replace(null, labelKey, data[x], true) : data[x][labelKey]);
+                var mr = (labelKey.indexOf('{{') > -1);
+                var mro = ('other' in options) ? (options.other.indexOf('{{') > -1) : false;
+                for (var x in data)
+                    newdata[data[x][valueKey]] = {
+                        label: (mr ? _match_replace(null, labelKey, data[x], true) : data[x][labelKey]),
+                        other: (('other' in options) ? (mro ? _match_replace(null, options.other, data[x], true)
+                            : data[x][options.other]) : null)
+                    };
                 data = newdata;
             }
             for (var x in data) {
                 if ('filter' in options && options.filter.indexOf(data[x]) === -1) continue;
-                select.append($('<option>').attr('value', x).html(data[x]));
+                var option = $('<option>').attr('value', x).html((typeof data[x] == 'object' ? data[x].label : data[x]));
+                if (data[x].other) option.data('other', data[x].other);
+                select.append(option);
             }
             if (def.other === true) {
                 var otherOption = $('<option>').attr('value', '_hzForm_Other').html("Other");
