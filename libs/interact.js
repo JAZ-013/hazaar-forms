@@ -195,7 +195,6 @@
                 var i = host.events.disabled[x];
                 var disabled = _eval(host, i.data('disabled'));
                 i.prop('disabled', disabled);
-                if (disabled) i.val('').change();
             }
         }
         _validate_input(host, input);
