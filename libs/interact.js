@@ -270,10 +270,15 @@
                 .toggleClass('custom-controls-stacked', def.inline));
         for (var x in data) {
             var active = (value instanceof dataBinderArray && value.indexOf(x) > -1), name = def.name + '_' + x;
-            var label = $('<label>').addClass(host.settings.styleClasses.chkLabel).html([
-                $('<input type="checkbox">').addClass(host.settings.styleClasses.chkInput).attr('value', x).prop('checked', active),
-                $('<span>').addClass(host.settings.styleClasses.chkIndicator),
-                $('<span>').addClass(host.settings.styleClasses.chkDescription).html(data[x])
+            var label = $('<div>').addClass(host.settings.styleClasses.chkDiv).html([
+                $('<input type="checkbox">')
+                    .addClass(host.settings.styleClasses.chkInput)
+                    .attr('id', '__field_' + name)
+                    .attr('value', x)
+                    .prop('checked', active),
+                $('<label>').addClass(host.settings.styleClasses.chkLabel)
+                    .html(data[x])
+                    .attr('for', '__field_' + name)
             ]).attr('data-bind-value', x).change(fChange);
             items[column].append(label);
             if (items[column].children().length >= per_col) column++;
@@ -434,9 +439,10 @@
     function _input_checkbox(host, def) {
         var group = $('<div>').addClass(host.settings.styleClasses.group).data('def', def);
         if ('title' in def) $('<label>').html(def.title).appendTo(group);
-        var label = $('<label>').addClass(host.settings.styleClasses.chkLabel).appendTo(group);
+        var div = $('<div>').addClass(host.settings.styleClasses.chkDiv).appendTo(group);
         var input = $('<input type="checkbox">').addClass(host.settings.styleClasses.chkInput)
             .attr('name', def.name)
+            .attr('id', '__field_' + name)
             .attr('data-bind', def.name)
             .attr('checked', host.data[def.name])
             .data('def', def)
@@ -444,9 +450,11 @@
             .blur(function (event) { _input_event_blur(host, $(event.target)); })
             .change(function (event) { _input_event_change(host, $(event.target)); })
             .on('update', function (event) { _input_event_update(host, $(event.target)); })
-            .appendTo(label);
-        var indicator = $('<span>').addClass(host.settings.styleClasses.chkIndicator).appendTo(label);
-        var label = $('<span>').addClass(host.settings.styleClasses.chkDescription).html(_match_replace(host, def.label, null, true, true)).appendTo(label);
+            .appendTo(div);
+        $('<label>').addClass(host.settings.styleClasses.chkLabel)
+            .html(_match_replace(host, def.label, null, true, true))
+            .attr('for', '__field_' + name)
+            .appendTo(div);
         _check_input_disabled(host, input, def);
         return group;
     };
@@ -1298,10 +1306,9 @@
             "inputGroup": "input-group",
             "input": "form-control",
             "inputGroupAddon": "input-group-addon",
-            "chkLabel": "custom-control custom-checkbox",
+            "chkDiv": "custom-control custom-checkbox",
             "chkInput": "custom-control-input",
-            "chkIndicator": "custom-control-indicator",
-            "chkDescription": "custom-control-description"
+            "chkLabel": "custom-control-label"
         }
     };
 
