@@ -442,7 +442,7 @@
         var div = $('<div>').addClass(host.settings.styleClasses.chkDiv).appendTo(group);
         var input = $('<input type="checkbox">').addClass(host.settings.styleClasses.chkInput)
             .attr('name', def.name)
-            .attr('id', '__field_' + name)
+            .attr('id', '__field_' + def.name)
             .attr('data-bind', def.name)
             .attr('checked', host.data[def.name])
             .data('def', def)
@@ -453,7 +453,7 @@
             .appendTo(div);
         $('<label>').addClass(host.settings.styleClasses.chkLabel)
             .html(_match_replace(host, def.label, null, true, true))
-            .attr('for', '__field_' + name)
+            .attr('for', '__field_' + def.name)
             .appendTo(div);
         _check_input_disabled(host, input, def);
         return group;
