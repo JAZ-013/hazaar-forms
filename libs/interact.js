@@ -282,24 +282,25 @@
     };
 
     function _input_select_multi_populate(host, container, track) {
-        var def = container.data('def');
-        var options = (typeof def.options === 'string') ? { "url": def.options } : def.options;
-        if ((options.url = _match_replace(host, options.url, { "site_url": hazaar.url() })) === false) {
+        var def = container.data('def'), options = def.options, postops = { url: null };
+        if ((postops.url = _match_replace(host, options.url, { "site_url": hazaar.url() })) === false) {
             container.hide();
             host.data[def.name] = [];
             return;
         }
         if (track === true) _track(host);
-        $.get(_url(host, options.url))
-            .done(function (data) {
-                var values = host.data[def.name].save(true);
-                if (values) {
-                    var remove = host.data[def.name].save(true).filter(function (i) { return !(i in data); });
-                    for (var x in remove) host.data[def.name].remove(remove[x]);
-                }
-                container.html(_input_select_multi_items(host, def, data)).show();
-                _ready(host);
-            }).fail(_error);
+        postops.url = _url(host, postops.url);
+        if ('method' in options) postops.method = options.method;
+        if ('data' in options) postops.data = options.data;
+        $.ajax(postops).done(function (data) {
+            var values = host.data[def.name].save(true);
+            if (values) {
+                var remove = host.data[def.name].save(true).filter(function (i) { return !(i in data); });
+                for (var x in remove) host.data[def.name].remove(remove[x]);
+            }
+            container.html(_input_select_multi_items(host, def, data)).show();
+            _ready(host);
+        }).fail(_error);
         return true;
     };
 
