@@ -512,7 +512,7 @@ class Model extends \Hazaar\Model\Strict {
                 //Form is also acessible in the evaluted code.
                 $form = $this;
 
-                return eval($code);
+                return @eval($code);
 
             }
             catch(ParseError $e){
