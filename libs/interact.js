@@ -978,15 +978,19 @@
         var callbacks = [];
         setTimeout(function () {
             var item = host.data[name], def = host.def.fields[name];
-            var result = _validate_rule(host, name, item, def);
-            if (result === true && 'validate' in def && 'api' in def.validate) {
-                _post(host, 'api', {
-                    target: [def.validate.url, { "name": name, "value": item.value }],
-                }, false).done(function (response) {
-                    var result = (response.ok === true) ? true : _validation_error(name, def, response.reason || "api_failed(" + def.validate.url + ")");
-                    if (callbacks.length > 0) for (var x in callbacks) callbacks[x](name, result);
-                });
-            } else if (callbacks.length > 0) for (var x in callbacks) callbacks[x](name, result);
+            if ('disabled' in def && _eval(host, def.disabled))
+                for (var x in callbacks) callbacks[x](name, true);
+            else {
+                var result = _validate_rule(host, name, item, def);
+                if (result === true && 'validate' in def && 'api' in def.validate) {
+                    _post(host, 'api', {
+                        target: [def.validate.url, { "name": name, "value": item.value }],
+                    }, false).done(function (response) {
+                        var result = (response.ok === true) ? true : _validation_error(name, def, response.reason || "api_failed(" + def.validate.url + ")");
+                        if (callbacks.length > 0) for (var x in callbacks) callbacks[x](name, result);
+                    });
+                } else if (callbacks.length > 0) for (var x in callbacks) callbacks[x](name, result);
+            }
         });
         return { done: function (callback) { if (typeof callback === 'function') callbacks.push(callback); } };
     };
