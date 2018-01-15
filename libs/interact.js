@@ -248,15 +248,16 @@
         if (def.buttons === true) {
             var btnClass = def.class || 'primary';
             for (var x in data) {
+                var value = (typeof data[x] === 'object') ? data[x].value : x;
+                var label = (typeof data[x] === 'object') ? data[x].label : data[x];
                 var active = (value instanceof dataBinderArray && value.indexOf(x) > -1), name = def.name + '_' + x;
-                var label = $('<label class="btn">').addClass('btn-' + btnClass).html([
+                items.push($('<label class="btn">').addClass('btn-' + btnClass).html([
                     $('<input type="checkbox" autocomplete="off">')
                         .attr('value', x)
                         .prop('checked', active)
                         .attr('data-bind-value', x),
                     data[x]
-                ]).toggleClass('active', active).change(fChange);
-                items.push(label);
+                ]).toggleClass('active', active).change(fChange));
             }
             return items;
         }
@@ -356,7 +357,7 @@
             var required = ('required' in def) ? _eval_code(host, def.required) : false;
             if (def.disabled !== true) select.empty().prop('disabled', false);
             select.append($('<option>').attr('value', '').html(def.placeholder));
-            if ('value' in options || 'label' in options) {
+            if ('value' in options || 'label' in options || Array.isArray(data)) {
                 var valueKey = options.value || 'value', labelKey = options.label || 'label', newdata = {};
                 var mr = (labelKey.indexOf('{{') > -1);
                 var mro = ('other' in options) ? (options.other.indexOf('{{') > -1) : false;
