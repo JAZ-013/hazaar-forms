@@ -388,12 +388,14 @@
 
     function _input_select_populate(host, options, select, track) {
         var def = select.data('def');
+        if (typeof options !== 'object' || Array.isArray(options) || Object.keys(options).length === 0)
+            return select.prop('disabled', true).empty();
         if ('url' in options) {
             var matches = options.url.match(/\{\{\w+\}\}/g), postops = { url: null };
             for (var x in matches) {
                 var match = matches[x].substr(2, matches[x].length - 4);
-                console.log('Adding SELECT watcher on: ' + match);
-                def.watchers.push(host.data.watch(match, function (key, value, select) {
+                if (!(match in def.watchers)) def.watchers[match] = [];
+                def.watchers[match].push(host.data.watch(match, function (key, value, select) {
                     _input_select_populate_ajax(host, options, select, false);
                 }, select));
             }
@@ -404,7 +406,6 @@
         select.html($('<option value>').html(def.placeholder).prop('selected', (value.value === null)));
         for (var x in options)
             select.append($('<option>').attr('value', x).html(options[x]));
-        select.change(function (event) { _input_event_change(host, $(event.target)); });
         if (def.other === true) {
             var otherOption = $('<option>').attr('value', '_hzForm_Other').html("Other");
             select.append(otherOption);
@@ -416,15 +417,12 @@
 
     function _input_select_options(host, def) {
         var options = {};
-        console.log('Choosing options');
-        console.log(def.options);
         Object.assign(options, function (options) {
             for (var x in options) {
                 if (!('when' in options[x])) continue;
                 if (_eval(host, options[x].when)) return ('items' in options[x]) ? options[x].items : options[x];
             }
         }(def.options));
-        console.log(options);
         return options;
     };
 
@@ -442,17 +440,15 @@
             .blur(function (event) { _input_event_blur(host, $(event.target)); })
             .on('update', function (event) { _input_event_update(host, $(event.target)); })
             .appendTo(group);
-        def.watchers = [];
+        def.watchers = {};
         if (!("placeholder" in def)) def.placeholder = host.settings.placeholder;
         _check_input_disabled(host, select, def);
         if (typeof def.options === 'string') def.options = { url: def.options };
         if (Array.isArray(def.options) && 'watch' in def) {
             host.data.watch(def.watch, function () {
-                /*for (var x in def.watchers) {
-                    console.log('Removing watcher: ' + def.watchers[x]);
-                    host.data.unwatch(def.watch, def.watchers[x]);
-                    delete def.watchers[x];
-                }*/
+                for (var key in def.watchers) for (var x in def.watchers[key]) host.data.unwatch(key, def.watchers[key][x]);
+                def.watchers = {};
+                host.data[def.name] = null;
                 _input_select_populate(host, _input_select_options(host, def), select);
             });
             options = _input_select_options(host, def);
