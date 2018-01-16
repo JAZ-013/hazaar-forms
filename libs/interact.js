@@ -365,7 +365,7 @@
             host.data[def.name] = (('default' in def) ? def.default : null);
             return;
         }
-        select.html($('<option value selected>').html('Loading...'));
+        select.prop('disabled', true).html($('<option value selected>').html('Loading...'));
         postops.url = _url(host, postops.url);
         $.ajax(postops).done(function (data) {
             var item = host.data[def.name];
