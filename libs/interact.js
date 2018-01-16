@@ -286,17 +286,16 @@
         return cols.html(items);
     };
 
-    function _input_select_multi_populate(host, container, track) {
-        var def = container.data('def'), options = def.options, postops = { url: null };
-        if ((postops.url = _match_replace(host, options.url, { "site_url": hazaar.url() })) === false) {
+    function _input_select_multi_populate_ajax(host, options, container, track) {
+        var def = container.data('def'), postops = {};
+        Object.assign(postops, options);
+        if ((postops.url = _match_replace(host, postops.url, { "site_url": hazaar.url() })) === false) {
             container.hide();
             host.data[def.name] = [];
-            return;
+            return false;
         }
         if (track === true) _track(host);
         postops.url = _url(host, postops.url);
-        if ('method' in options) postops.method = options.method;
-        if ('data' in options) postops.data = options.data;
         $.ajax(postops).done(function (data) {
             var values = host.data[def.name].save(true);
             if (values) {
@@ -309,8 +308,26 @@
         return true;
     };
 
+    function _input_select_multi_populate(host, options, container, track) {
+        var def = container.data('def');
+        if ('url' in options) {
+            var matches = options.url.match(/\{\{\w+\}\}/g);
+            for (var x in matches) {
+                var match = matches[x].substr(2, matches[x].length - 4);
+                if (!(match in def.watchers)) def.watchers[match] = [];
+                def.watchers[match].push(host.data.watch(match, function (key, value, container) {
+                    console.log("Value '" + key + "' changed: " + value);
+                    _input_select_multi_populate_ajax(host, options, container, false);
+                }, container));
+            }
+            return _input_select_multi_populate_ajax(host, options, container, track);
+        }
+        container.empty().append(_input_select_multi_items(host, def, options));
+        return true;
+    };
+
     function _input_select_multi(host, def) {
-        var group = $('<div>').addClass(host.settings.styleClasses.group).data('def', def);
+        var group = $('<div>').addClass(host.settings.styleClasses.group).data('def', def), options = {};
         var label = $('<label>').addClass(host.settings.styleClasses.label)
             .attr('for', def.name)
             .html(_match_replace(host, def.label, null, true, true))
@@ -325,33 +342,31 @@
         } else {
             container.attr('data-bind', def.name).attr('data-toggle', 'checks');
         }
+        def.watchers = {};
         if (typeof def.options === 'string') def.options = { "url": def.options };
-        if ('url' in def.options) {
-            var matches = def.options.url.match(/\{\{\w+\}\}/g);
-            for (var x in matches) {
-                var match = matches[x].substr(2, matches[x].length - 4);
-                host.data.watch(match, function (key, value, container) {
-                    _input_select_multi_populate(host, container, false);
-                }, container);
-            }
-            _input_select_multi_populate(host, container, true);
-        } else {
-            container.empty().append(_input_select_multi_items(host, def, def.options));
-        }
+        if (Array.isArray(def.options) && 'watch' in def) {
+            host.data.watch(def.watch, function () {
+                for (var key in def.watchers) for (var x in def.watchers[key]) host.data.unwatch(key, def.watchers[key][x]);
+                def.watchers = {};
+                host.data[def.name] = null;
+                _input_select_multi_populate(host, _input_select_options(host, def), container);
+            });
+            options = _input_select_options(host, def);
+        } else Object.assign(options, def.options);
+        _input_select_multi_populate(host, options, container, true);
         return group;
     };
 
-    function _input_select_populate(host, select, track) {
-        var def = select.data('def'), options = def.options, postops = { url: null };
-        if ((postops.url = _match_replace(host, options.url, { "site_url": hazaar.url() })) === false) {
+    function _input_select_populate_ajax(host, options, select, track) {
+        var def = select.data('def'), postops = {};
+        Object.assign(postops, options);
+        if ((postops.url = _match_replace(host, postops.url, { "site_url": hazaar.url() })) === false) {
             select.empty().prop('disabled', true);
             host.data[def.name] = (('default' in def) ? def.default : null);
             return;
         }
         select.html($('<option value selected>').html('Loading...'));
         postops.url = _url(host, postops.url);
-        if ('method' in options) postops.method = options.method;
-        if ('data' in options) postops.data = options.data;
         $.ajax(postops).done(function (data) {
             var item = host.data[def.name];
             var required = ('required' in def) ? _eval_code(host, def.required) : false;
@@ -383,13 +398,52 @@
             }
             if (item && (item.value in data)) select.val(item.value);
             else host.data[def.name] = null;
-            if (Object.keys(data).length === 1 && def.options.single === true) host.data[def.name] = Object.keys(data)[0];
+            if (Object.keys(data).length === 1 && options.single === true) host.data[def.name] = Object.keys(data)[0];
         }).fail(_error);
+    }
+
+    function _input_select_populate(host, options, select, track) {
+        var def = select.data('def');
+        if (typeof options !== 'object' || Array.isArray(options) || Object.keys(options).length === 0)
+            return select.prop('disabled', true).empty();
+        if ('url' in options) {
+            var matches = options.url.match(/\{\{\w+\}\}/g);
+            for (var x in matches) {
+                var match = matches[x].substr(2, matches[x].length - 4);
+                if (!(match in def.watchers)) def.watchers[match] = [];
+                def.watchers[match].push(host.data.watch(match, function (key, value, select) {
+                    _input_select_populate_ajax(host, options, select, false);
+                }, select));
+            }
+            return _input_select_populate_ajax(host, options, select, track);
+        }
+        var required = ('required' in def) ? _eval_code(host, def.required) : false;
+        var value = host.data[def.name];
+        select.html($('<option value>').html(def.placeholder).prop('selected', (value.value === null)));
+        for (var x in options)
+            select.append($('<option>').attr('value', x).html(options[x]));
+        if (def.other === true) {
+            var otherOption = $('<option>').attr('value', '_hzForm_Other').html("Other");
+            select.append(otherOption);
+            if (value.value === null & value.other !== null)
+                select.val('_hzForm_Other').change();
+        }
         return true;
     };
 
+    function _input_select_options(host, def) {
+        var options = {};
+        Object.assign(options, function (options) {
+            for (var x in options) {
+                if (!('when' in options[x])) continue;
+                if (_eval(host, options[x].when)) return ('items' in options[x]) ? options[x].items : options[x];
+            }
+        }(def.options));
+        return options;
+    };
+
     function _input_select(host, def) {
-        var group = $('<div>').addClass(host.settings.styleClasses.group).data('def', def);
+        var group = $('<div>').addClass(host.settings.styleClasses.group).data('def', def), options = {};
         var label = $('<label>').addClass(host.settings.styleClasses.label)
             .attr('for', def.name)
             .html(_match_replace(host, def.label, null, true, true))
@@ -402,38 +456,22 @@
             .blur(function (event) { _input_event_blur(host, $(event.target)); })
             .on('update', function (event) { _input_event_update(host, $(event.target)); })
             .appendTo(group);
+        def.watchers = {};
         if (!("placeholder" in def)) def.placeholder = host.settings.placeholder;
         _check_input_disabled(host, select, def);
         if (typeof def.options === 'string') def.options = { url: def.options };
-        if ('url' in def.options) {
-            var matches = def.options.url.match(/\{\{\w+\}\}/g);
-            for (var x in matches) {
-                var match = matches[x].substr(2, matches[x].length - 4);
-                host.data.watch(match, function (key, value, select) {
-                    _input_select_populate(host, select, false);
-                }, select);
-            }
-            _input_select_populate(host, select.change(function (event) {
-                _input_event_change(host, $(event.target));
-            }));
-        } else {
-            var required = ('required' in def) ? _eval_code(host, def.required) : false;
-            var value = host.data[def.name];
-            var placeholder = $('<option>')
-                .attr('value', '')
-                .html(def.placeholder)
-                .prop('selected', (value.value === null))
-                .appendTo(select);
-            for (var x in def.options)
-                select.append($('<option>').attr('value', x).html(def.options[x]));
-            select.change(function (event) { _input_event_change(host, $(event.target)); });
-            if (def.other === true) {
-                var otherOption = $('<option>').attr('value', '_hzForm_Other').html("Other");
-                select.append(otherOption);
-                if (value.value === null & value.other !== null)
-                    select.val('_hzForm_Other').change();
-            }
-        }
+        if (Array.isArray(def.options) && 'watch' in def) {
+            host.data.watch(def.watch, function () {
+                for (var key in def.watchers) for (var x in def.watchers[key]) host.data.unwatch(key, def.watchers[key][x]);
+                def.watchers = {};
+                host.data[def.name] = null;
+                _input_select_populate(host, _input_select_options(host, def), select);
+            });
+            options = _input_select_options(host, def);
+        } else Object.assign(options, def.options);
+        _input_select_populate(host, options, select.change(function (event) {
+            _input_event_change(host, $(event.target));
+        }));
         return group;
     };
 
