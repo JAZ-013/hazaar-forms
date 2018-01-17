@@ -398,7 +398,10 @@
             }
             if (item && (item.value in data)) select.val(item.value);
             else host.data[def.name] = null;
-            if (Object.keys(data).length === 1 && options.single === true) host.data[def.name] = Object.keys(data)[0];
+            if (Object.keys(data).length === 1 && options.single === true) {
+                var key = Object.keys(data)[0];
+                host.data[def.name].set(key, data[key]);
+            }
         }).fail(_error);
     }
 
