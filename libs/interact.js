@@ -400,7 +400,10 @@
             else host.data[def.name] = null;
             if (Object.keys(data).length === 1 && options.single === true) {
                 var key = Object.keys(data)[0];
-                host.data[def.name].set(key, data[key]);
+                if (host.data[def.name].value !== key) {
+                    host.data[def.name].set(key, (typeof data[key] === 'object' ? data[key].label : data[key]));
+                    if ('other' in data[key]) host.data[def.name].other = data[key].other;
+                }
             }
         }).fail(_error);
     }
