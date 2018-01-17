@@ -402,7 +402,7 @@
                 var key = Object.keys(data)[0];
                 if (host.data[def.name].value !== key) {
                     host.data[def.name].set(key, (typeof data[key] === 'object' ? data[key].label : data[key]));
-                    if ('other' in data[key]) host.data[def.name].other = data[key].other;
+                    if (typeof data[key] === 'object' && 'other' in data[key]) host.data[def.name].other = data[key].other;
                 }
             }
         }).fail(_error);
