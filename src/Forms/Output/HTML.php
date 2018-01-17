@@ -108,10 +108,15 @@ class HTML extends \Hazaar\Forms\Output {
 
         $html = (new \Hazaar\Html\Div())->class('form-section');
 
-        if(property_exists($section, 'label'))
-            $html->add(new \Hazaar\Html\H3($this->model->matchReplace($section->label, true)));
+        if(is_object($section)){
 
-        $html->add($this->__group($section->fields));
+            if(property_exists($section, 'label'))
+                $html->add(new \Hazaar\Html\H3($this->model->matchReplace($section->label, true)));
+
+            if(property_exists($section, 'fields'))
+                $html->add($this->__group($section->fields));
+
+        }
 
         return $html;
 

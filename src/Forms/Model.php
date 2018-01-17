@@ -295,7 +295,7 @@ class Model extends \Hazaar\Model\Strict {
         if(!is_object($section) || (property_exists($section, 'show') && !$this->evaluate($section->show)))
             return null;
 
-        if(is_array($section->fields)){
+        if(property_exists($section, 'fields') && is_array($section->fields)){
 
             $fields = array();
 
