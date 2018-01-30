@@ -88,10 +88,9 @@ class Model extends \Hazaar\Model\Strict {
             settype($this->__form->fields, 'array');
 
             array_walk_recursive($this->__form->fields, function(&$array){
-                $array = (array)$array;
+                if(is_string($array)) $array = array('type' => $array);
+                else settype($array, 'array');
             });
-
-            ksort($this->__form->fields);
 
         }
 
