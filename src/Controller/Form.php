@@ -3,12 +3,10 @@
 namespace Hazaar\Controller;
 
 /**
- * Form short summary.
- *
- * Form description.
+ * The Hazaar "smart forms" application controller.
  *
  * @version 1.0
- * @author jamiec
+ * @author Jamie Carl
  */
 abstract class Form extends Action {
 
@@ -38,7 +36,7 @@ abstract class Form extends Action {
         if(is_array($tags))
             $this->__tags = array_merge($this->__tags, $tags);
 
-        if(!($model = $this->get($name)) instanceof \Hazaar\Forms\Model)
+        if(!($model = $this->form_get($name)) instanceof \Hazaar\Forms\Model)
             throw new \Exception(__CLASS__ . '::get() MUST return a form a Hazaar\Forms\Model object!');
 
         $model->setTags($this->__tags);
@@ -47,7 +45,7 @@ abstract class Form extends Action {
 
         $this->model = $model;
 
-        $this->model->populate($this->load($params));
+        $this->model->populate($this->form_load($params));
 
         $this->view->addHelper('gui');
 
@@ -75,7 +73,7 @@ abstract class Form extends Action {
         switch($method){
             case 'init':
 
-                $out->form = $this->model->getForm();
+                $out->form = $this->model->getFormDefinition();
 
                 $out->ok = true;
 
@@ -85,13 +83,13 @@ abstract class Form extends Action {
 
                 $postdata = $this->request->getParams();
 
-                $this->model->populate($this->load($this->request->get('params', array())));
+                $this->model->populate($this->form_load($this->request->get('params', array())));
 
                 $this->model->populate(ake($postdata, 'form', array()));
 
                 $params = ake($postdata, 'params');
 
-                $result = $this->save($this->model, $params);
+                $result = $this->form_save($this->model, $params);
 
                 $out->params = $params;
 
@@ -104,7 +102,7 @@ abstract class Form extends Action {
 
             case 'load':
 
-                $this->model->populate($this->load($this->request->get('params', array())));
+                $this->model->populate($this->form_load($this->request->get('params', array())));
 
                 $out->form = $this->model->toFormArray();
 
@@ -145,9 +143,9 @@ abstract class Form extends Action {
 
                     $updates = $this->model->api($target, $args);
 
-                }elseif(method_exists($this, 'update')){
+                }elseif(method_exists($this, 'form_update')){
 
-                    $updates = (array)$this->update($this->request->get('originator'), $this->model);
+                    $updates = (array)$this->form_update($this->request->get('originator'), $this->model);
 
                 }
 
@@ -251,7 +249,7 @@ abstract class Form extends Action {
 
             $this->form($name);
 
-            $this->model->populate($this->load(unserialize($this->request->get('params'))));
+            $this->model->populate($this->form_load(unserialize($this->request->get('params'))));
 
             if($type == 'html'){
 
@@ -360,20 +358,48 @@ abstract class Form extends Action {
 
     }
 
-    //Placeholder Methods
-    protected function load($params = array()){
+    public function preview($form, $name, $file){
 
-        throw new \Exception('To load form data you must override the form controller load() method.');
+        if(!$form)
+            throw new \Exception('Missing form name in request!');
+
+        $this->form($form, $this->request->get('params', array()));
+
+        $this->file_init($name, $this->request->getParams(), $dir, $index, $key);
+
+        $file = $dir->get($file);
+
+        if(!$file->exists())
+            throw new \Exception('File not found!', 404);
+
+        $out = new \Hazaar\Controller\Response\Image($file);
+
+        $out->resize(120, 120, true);
+
+        return $out;
 
     }
 
-    protected function save($data, &$params = array()){
+    /*
+     * Placeholder Methods
+     *
+     * The methods below this comment are placeholder methods and are intended to be overridden
+     * by the extending application controller class.
+     */
 
-        throw new \Exception('To save form data you must override the form controller save($data, $params = array()) method.');
+    protected function form_load($params = array()){
+
+        throw new \Exception('To load form data you must override the form controller form_load() method.');
 
     }
 
-    protected function get($name){
+    protected function form_save($data, &$params = array()){
+
+        throw new \Exception('To save form data you must override the form controller form_save($data, $params = array()) method.');
+
+    }
+
+    protected function form_get($name){
 
         $app = \Hazaar\Application::getInstance();
 
@@ -394,7 +420,7 @@ abstract class Form extends Action {
 
     }
 
-    protected function dir(){
+    protected function form_dir(){
 
         $list = array();
 
@@ -553,28 +579,6 @@ abstract class Form extends Action {
         $index->set($key, $fileindex);
 
         return true;
-
-    }
-
-    public function preview($form, $name, $file){
-
-        if(!$form)
-            throw new \Exception('Missing form name in request!');
-
-        $this->form($form, $this->request->get('params', array()));
-
-        $this->file_init($name, $this->request->getParams(), $dir, $index, $key);
-
-        $file = $dir->get($file);
-
-        if(!$file->exists())
-            throw new \Exception('File not found!', 404);
-
-        $out = new \Hazaar\Controller\Response\Image($file);
-
-        $out->resize(120, 120, true);
-
-        return $out;
 
     }
 

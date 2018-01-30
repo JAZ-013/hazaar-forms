@@ -185,7 +185,7 @@ class Model extends \Hazaar\Model\Strict {
 
     }
 
-    public function getForm(){
+    public function getFormDefinition(){
 
         $form = clone $this->__form;
 
@@ -253,7 +253,7 @@ class Model extends \Hazaar\Model\Strict {
 
     public function resolve(){
 
-        $form = $this->getForm();
+        $form = $this->getFormDefinition();
 
         if(is_array($form->pages)){
 
