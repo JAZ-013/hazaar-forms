@@ -232,6 +232,26 @@ class Model extends \Hazaar\Model\Strict {
 
     }
 
+    public function export($array = null){
+
+        if($array === null)
+            $array = $this->values;
+
+        foreach($array as $key => $value){
+
+            if($value instanceof \Hazaar\Model\ChildArray)
+                $value = $this->export($value->toArray());
+            elseif($value instanceof \Hazaar\Model\DataBinderValue)
+                $value = $value->value;
+
+            $array[$key] = $value;
+
+        }
+
+        return $array;
+
+    }
+
     public function resolve(){
 
         $form = $this->getForm();
