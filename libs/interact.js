@@ -757,7 +757,7 @@
             field = $('<div>');
             if ('label' in def)
                 field.append($('<label>').addClass(host.settings.styleClasses.label).html(def.label));
-            field.append($('<div>').html(host.data[def.name].value));
+            field.append($('<div>').html(host.data[def.name].toString()));
         } else if ('render' in def) {
             field = new Function('field', 'form', def.render)($.extend({}, def, { value: host.data[def.name].save(true) }), host);
             host.pageInputs.push(field);
