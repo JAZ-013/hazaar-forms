@@ -47,6 +47,8 @@ abstract class Form extends Action {
 
         $this->model->populate($this->form_load($params));
 
+        $this->model->lock();
+
         $this->view->addHelper('gui');
 
         $this->view->addHelper('forms', array('model' => $model), 'form');
@@ -85,6 +87,8 @@ abstract class Form extends Action {
 
                 $this->model->populate($this->form_load($this->request->get('params', array())));
 
+                $this->model->lock();
+
                 $this->model->populate(ake($postdata, 'form', array()));
 
                 $params = ake($postdata, 'params');
@@ -103,6 +107,8 @@ abstract class Form extends Action {
             case 'load':
 
                 $this->model->populate($this->form_load($this->request->get('params', array())));
+
+                $this->model->lock();
 
                 $out->form = $this->model->toFormArray();
 
@@ -134,6 +140,8 @@ abstract class Form extends Action {
             case 'update':
 
                 $updates = array();
+
+                $this->model->lock();
 
                 $this->model->populate($this->request->get('form'));
 
@@ -250,6 +258,8 @@ abstract class Form extends Action {
             $this->form($name);
 
             $this->model->populate($this->form_load(unserialize($this->request->get('params'))));
+
+            $this->model->lock();
 
             if($type == 'html'){
 

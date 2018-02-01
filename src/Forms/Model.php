@@ -20,6 +20,8 @@ class Model extends \Hazaar\Model\Strict {
 
     private $__tags = array();
 
+    private $__locked = false;
+
     function __construct($form_name, $form = null){
 
         $this->__form_name = $form_name;
@@ -130,6 +132,27 @@ class Model extends \Hazaar\Model\Strict {
     public function getName(){
 
         return $this->__form_name;
+
+    }
+
+    public function lock(){
+
+        $this->__locked = true;
+
+    }
+
+    public function unlock(){
+
+        $this->__locked = false;
+
+    }
+
+    public function set($key, $value, $exec_filters = true){
+
+        if($this->__locked && ake(ake($this->fields, $key), 'protected', false) === true)
+            return null;
+
+        return parent::set($key, $value, $exec_filters);
 
     }
 
