@@ -753,7 +753,12 @@
         if (!(def = _form_field_lookup(host, info))) return;
         if ('name' in def && 'default' in def && host.data[def.name].value === null)
             host.data[def.name] = def.default;
-        if ('render' in def) {
+        if (def.protected === true) {
+            field = $('<div>');
+            if ('label' in def)
+                field.append($('<label>').addClass(host.settings.styleClasses.label).html(def.label));
+            field.append($('<div>').html(host.data[def.name].value));
+        } else if ('render' in def) {
             field = new Function('field', 'form', def.render)($.extend({}, def, { value: host.data[def.name].save(true) }), host);
             host.pageInputs.push(field);
         } else if (def.fields && def.type != 'array') {
