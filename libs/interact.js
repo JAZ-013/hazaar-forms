@@ -1222,6 +1222,10 @@ if (typeof Object.assign != 'function') {
     //Register events that are used to control the form functions
     function _registerEvents(host) {
         var errors = [];
+        $(host).on('submit', function (e) {
+            e.preventDefault();
+            return false;
+        });
         $(host).on('field_validation', function (e, name, result) {
             var index = host.validation.queue.indexOf(name);
             if (index >= 0) host.validation.queue.splice(index, 1);
