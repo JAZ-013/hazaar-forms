@@ -1067,7 +1067,7 @@ if (typeof Object.assign != 'function') {
         var callbacks = [];
         setTimeout(function () {
             var item = host.data[name], def = host.def.fields[name];
-            if ('disabled' in def && _eval(host, def.disabled))
+            if (def.protected || ('disabled' in def && _eval(host, def.disabled)))
                 for (var x in callbacks) callbacks[x](name, true);
             else {
                 var result = _validate_rule(host, name, item, def);
