@@ -80,7 +80,7 @@ if (typeof Object.assign != 'function') {
     };
 
     function _nullify(host, def) {
-        if (typeof def !== 'object')
+        if (typeof def !== 'object' || def.protected)
             return;
         if (def.name) {
             host.data[def.name] = (('default' in def) ? def.default : null);
@@ -286,6 +286,7 @@ if (typeof Object.assign != 'function') {
                     $('<input type="checkbox" autocomplete="off">')
                         .attr('value', x)
                         .prop('checked', active)
+                        .prop('disabled', (def.protected === true))
                         .attr('data-bind-value', x),
                     data[x]
                 ]).toggleClass('active', active).change(fChange));
@@ -306,7 +307,8 @@ if (typeof Object.assign != 'function') {
                     .addClass(host.settings.styleClasses.chkInput)
                     .attr('id', '__field_' + name)
                     .attr('value', x)
-                    .prop('checked', active),
+                    .prop('checked', active)
+                    .prop('disabled', (def.protected === true)),
                 $('<label>').addClass(host.settings.styleClasses.chkLabel)
                     .html(data[x])
                     .attr('for', '__field_' + name)
@@ -401,8 +403,8 @@ if (typeof Object.assign != 'function') {
         $.ajax(postops).done(function (data) {
             var item = host.data[def.name];
             var required = ('required' in def) ? _eval_code(host, def.required) : false;
-            if (def.disabled !== true) select.empty().prop('disabled', false);
-            select.append($('<option>').attr('value', '').html(def.placeholder));
+            select.prop('disabled', !(def.disabled !== true && def.protected !== true));
+            select.empty().append($('<option>').attr('value', '').html(def.placeholder));
             if ('value' in options || 'label' in options || Array.isArray(data)) {
                 var valueKey = options.value || 'value', labelKey = options.label || 'label', newdata = {};
                 var mr = (labelKey.indexOf('{{') > -1);
@@ -487,12 +489,14 @@ if (typeof Object.assign != 'function') {
             .appendTo(group);
         var select = $('<select>').addClass(host.settings.styleClasses.input)
             .attr('name', def.name)
-            .attr('data-bind', def.name)
             .data('def', def)
-            .focus(function (event) { _input_event_focus(host, $(event.target)); })
+            .appendTo(group)
+            .attr('data-bind', def.name);
+        if (def.protected)
+            select.prop('disabled', true);
+        else select.focus(function (event) { _input_event_focus(host, $(event.target)); })
             .blur(function (event) { _input_event_blur(host, $(event.target)); })
-            .on('update', function (event) { _input_event_update(host, $(event.target)); })
-            .appendTo(group);
+            .on('update', function (event) { _input_event_update(host, $(event.target)); });
         def.watchers = {};
         if (!("placeholder" in def)) def.placeholder = host.settings.placeholder;
         _check_input_disabled(host, select, def);
@@ -522,11 +526,13 @@ if (typeof Object.assign != 'function') {
             .attr('data-bind', def.name)
             .attr('checked', host.data[def.name])
             .data('def', def)
-            .focus(function (event) { _input_event_focus(host, $(event.target)); })
+            .appendTo(div);
+        if (def.protected)
+            input.prop('disabled', true);
+        else input.focus(function (event) { _input_event_focus(host, $(event.target)); })
             .blur(function (event) { _input_event_blur(host, $(event.target)); })
             .change(function (event) { _input_event_change(host, $(event.target)); })
-            .on('update', function (event) { _input_event_update(host, $(event.target)); })
-            .appendTo(div);
+            .on('update', function (event) { _input_event_update(host, $(event.target)); });
         $('<label>').addClass(host.settings.styleClasses.chkLabel)
             .html(_match_replace(host, def.label, null, true, true))
             .attr('for', '__field_' + def.name)
@@ -548,8 +554,10 @@ if (typeof Object.assign != 'function') {
             .attr('data-bind', def.name)
             .data('def', def)
             .val(host.data[def.name])
-            .appendTo(input_group)
-            .focus(function (event) { _input_event_focus(host, $(event.target)); })
+            .appendTo(input_group);
+        if (def.protected)
+            input.prop('disabled', true);
+        else input.focus(function (event) { _input_event_focus(host, $(event.target)); })
             .blur(function (event) { _input_event_blur(host, $(event.target)); })
             .change(function (event) { _input_event_change(host, $(event.target)); })
             .on('update', function (event) { _input_event_update(host, $(event.target)); });
@@ -622,8 +630,10 @@ if (typeof Object.assign != 'function') {
             .attr('data-bind-label', true)
             .data('def', def)
             .attr('autocomplete', 'off')
-            .appendTo(input_group)
-            .focus(function (event) { _input_event_focus(host, $(event.target)); })
+            .appendTo(input_group);
+        if (def.protected)
+            input.prop('disabled', true);
+        else input.focus(function (event) { _input_event_focus(host, $(event.target)); })
             .on('blur', function (event) {
                 popup.css({ "opacity": "0" });
                 setTimeout(function () {
@@ -679,8 +689,9 @@ if (typeof Object.assign != 'function') {
         }
         if ('placeholder' in def)
             input.attr('placeholder', def.placeholder);
-        input_group.append($('<div>').addClass(host.settings.styleClasses.inputGroupAddon)
-            .html($('<i class="fa fa-search">')));
+        if (!def.protected)
+            input_group.append($('<div>').addClass(host.settings.styleClasses.inputGroupAddon)
+                .html($('<i class="fa fa-search">')));
         return group;
     };
 
@@ -698,8 +709,10 @@ if (typeof Object.assign != 'function') {
         input.attr('name', def.name)
             .attr('data-bind', def.name)
             .data('def', def)
-            .val(host.data[def.name])
-            .focus(function (event) { _input_event_focus(host, $(event.target)); })
+            .val(host.data[def.name]);
+        if (def.protected)
+            input.prop('disabled', true);
+        else input.focus(function (event) { _input_event_focus(host, $(event.target)); })
             .blur(function (event) { _input_event_blur(host, $(event.target)); })
             .change(function (event) { _input_event_change(host, $(event.target)); })
             .on('update', function (event) { _input_event_update(host, $(event.target)); });
@@ -762,7 +775,7 @@ if (typeof Object.assign != 'function') {
     };
 
     function _check_input_disabled(host, input, def) {
-        if (!('disabled' in def)) return false;
+        if (!('disabled' in def) || def.protected) return false;
         input.prop('disabled', _eval(host, def.disabled));
         if (typeof def.disabled === 'string')
             host.events.disabled.push(input.data('disabled', def.disabled));
@@ -784,12 +797,7 @@ if (typeof Object.assign != 'function') {
         if (!(def = _form_field_lookup(host, info))) return;
         if ('name' in def && 'default' in def && host.data[def.name].value === null)
             host.data[def.name] = def.default;
-        if (def.protected === true) {
-            field = $('<div>');
-            if ('label' in def)
-                field.append($('<label>').addClass(host.settings.styleClasses.label).html(def.label));
-            field.append($('<div>').html(host.data[def.name].toString()));
-        } else if ('render' in def) {
+        if ('render' in def) {
             field = new Function('field', 'form', def.render)($.extend({}, def, { value: host.data[def.name].save(true) }), host);
             host.pageInputs.push(field);
         } else if (def.fields && def.type != 'array') {
@@ -1166,6 +1174,7 @@ if (typeof Object.assign != 'function') {
     function _save(host, validate, extra) {
         var save_data = function (host, extra) {
             var data = host.data.save();
+            for (x in host.def.fields) if (host.def.fields[x].protected === true) delete data[x];
             var params = { params: extra, form: data };
             $(host).trigger('saving', [data]);
             _post(host, 'post', params, false).done(function (response) {

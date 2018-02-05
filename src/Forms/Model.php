@@ -84,15 +84,42 @@ class Model extends \Hazaar\Model\Strict {
 
         }
 
-        //If fields is an array, then it is importing one or more field defs from other files.
-        if(!is_array($this->__form->fields)){
+        //Convert the fields def to an array for \Hazaar\Model\Strict compatibility.
+        settype($this->__form->fields, 'array');
 
-            settype($this->__form->fields, 'array');
+        //Field defs need to be arrays.  Their contents do not however.
+        array_walk($this->__form->fields, function(&$array){
+            if(is_string($array)) $array = array('type' => $array);
+            elseif(is_object($array)) settype($array, 'array');
+        });
 
-            array_walk_recursive($this->__form->fields, function(&$array){
-                if(is_string($array)) $array = array('type' => $array);
-                else settype($array, 'array');
-            });
+        $states = array('protect' => true, 'unprotect' => false);
+
+        //Process field protection
+        foreach($states as $state => $value){
+
+            if(!array_key_exists($state, $this->__form->fields))
+                continue;
+
+            $fields = array();
+
+            if(is_bool($this->__form->fields[$state]))
+                $fields = array_keys($this->__form->fields);
+            elseif(is_array($this->__form->fields[$state]))
+                $fields = $this->__form->fields[$state];
+
+            $fields = array_diff($fields, array_keys($states));
+
+            unset($this->__form->fields[$state]);
+
+            foreach($fields as $key){
+
+                if(!array_key_exists($key, $this->__form->fields))
+                    continue;
+
+                $this->__form->fields[$key]['protected'] = $value;
+
+            }
 
         }
 
