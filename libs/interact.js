@@ -561,8 +561,10 @@ if (typeof Object.assign != 'function') {
             .blur(function (event) { _input_event_blur(host, $(event.target)); })
             .change(function (event) { _input_event_change(host, $(event.target)); })
             .on('update', function (event) { _input_event_update(host, $(event.target)); });
-        var glyph = $('<span>').addClass(host.settings.styleClasses.inputGroupAddon)
-            .html($('<i class="fa fa-calendar">'))
+        var glyph = $('<div>').addClass(host.settings.styleClasses.inputGroupAppend)
+            .html($('<span style="cursor: pointer;">').addClass(host.settings.styleClasses.inputGroupText)
+                .html($('<i class="fa fa-calendar">')
+                    .click(function () { input.focus(); })))
             .appendTo(input_group);
         if (def.format) {
             var options = {
@@ -576,7 +578,7 @@ if (typeof Object.assign != 'function') {
             if (host.data[def.name])
                 options.defaultViewDate = host.data[def.name];
             input.attr('type', 'text');
-            input_group.datepicker($.extend({}, options, def.dateOptions));
+            input.datepicker($.extend({}, options, def.dateOptions));
             if (!def.placeholder)
                 def.placeholder = def.format;
         }
@@ -691,8 +693,8 @@ if (typeof Object.assign != 'function') {
         if ('placeholder' in def)
             input.attr('placeholder', def.placeholder);
         if (!def.protected)
-            input_group.append($('<div>').addClass(host.settings.styleClasses.inputGroupAddon)
-                .html($('<i class="fa fa-search">')));
+            input_group.append($('<div>').addClass(host.settings.styleClasses.inputGroupAppend)
+                .html($('<span>').addClass(host.settings.styleClasses.inputGroupText).html($('<i class="fa fa-search">'))));
         return group;
     };
 
@@ -724,12 +726,14 @@ if (typeof Object.assign != 'function') {
         if (('prefix' in def) || ('suffix' in def)) {
             var inputDIV = $('<div>').addClass(host.settings.styleClasses.inputGroup)
                 .appendTo(group);
-            if (def.prefix) inputDIV.append($('<span>')
-                .addClass(host.settings.styleClasses.inputGroupAddon)
-                .html(_match_replace(host, def.prefix, null, true, true)));
+            if (def.prefix) inputDIV.append($('<div>')
+                .addClass(host.settings.styleClasses.inputGroupPrepend)
+                .html($('<span>').addClass(host.settings.styleClasses.inputGroupText)
+                    .html(_match_replace(host, def.prefix, null, true, true))));
             inputDIV.append(input);
-            if (def.suffix) inputDIV.append($('<span>').addClass(host.settings.styleClasses.inputGroupAddon)
-                .html(_match_replace(host, def.suffix, null, true, true)));
+            if (def.suffix) inputDIV.append($('<div>').addClass(host.settings.styleClasses.inputGroupAppend)
+                .html($('<span>').addClass(host.settings.styleClasses.inputGroupText)
+                    .html(_match_replace(host, def.suffix, null, true, true))));
         } else {
             group.append(input);
         }
@@ -1402,9 +1406,11 @@ if (typeof Object.assign != 'function') {
             "page": "form-page",
             "group": "form-group",
             "label": "control-label",
-            "inputGroup": "input-group",
             "input": "form-control",
-            "inputGroupAddon": "input-group-addon",
+            "inputGroup": "input-group",
+            "inputGroupPrepend": "input-group-prepend",
+            "inputGroupText": "input-group-text",
+            "inputGroupAppend": "input-group-append",
             "chkDiv": "custom-control custom-checkbox",
             "chkInput": "custom-control-input",
             "chkLabel": "custom-control-label"
