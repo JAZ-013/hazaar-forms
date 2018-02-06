@@ -30,7 +30,10 @@ class Forms extends \Hazaar\View\Helper {
 
     function init(\Hazaar\View\Layout $view, $args = array()){
 
-        $this->cdnjs->load('bootstrap-datepicker', null, 'css/bootstrap-datepicker.min.css');
+        $this->cdnjs->load('bootstrap-datepicker', null, array(
+            'css/bootstrap-datepicker.min.css',
+            'js/bootstrap-datepicker.min.js'
+        ));
 
         $this->cdnjs->load('jquery.inputmask');
 
@@ -54,6 +57,16 @@ class Forms extends \Hazaar\View\Helper {
 
     }
 
+    public function btnReload($label = 'Reload'){
+
+        $id = 'btn_' . uniqid();
+
+        $this->jquery->exec("$('#$id').click(function(){ hzForm.hzForm('reload'); });");
+
+        return $this->html->button($label)->id($id);
+
+    }
+    
     public function btnValidate($label = 'Validate'){
 
         $id = 'btn_' . uniqid();

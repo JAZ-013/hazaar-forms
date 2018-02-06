@@ -122,7 +122,7 @@ class HTML extends \Hazaar\Forms\Output {
 
     }
 
-    private function __group($fields){
+    private function __group($fields, $horizontal = true){
 
         if(!is_array($fields))
             return null;
@@ -133,34 +133,45 @@ class HTML extends \Hazaar\Forms\Output {
 
             if(is_array($field) && !array_key_exists('name', $field)){
 
-                $html = (new \Hazaar\Html\Div())->class('row');
+                $html = new \Hazaar\Html\Div();
 
-                $length = count($field);
+                if($horizontal === true){
 
-                foreach ($field as $field_col) {
+                    $html->class('row');
 
-                    if (!$field_col) continue;
+                    $length = count($field);
 
-                    if (!is_object($field_col))
-                        $field_col = (object)array("name" => $field_col);
+                    foreach ($field as $field_col) {
 
-                    if (!property_exists($field_col, 'weight'))
-                        $field_col->weight = 1;
+                        if (!$field_col) continue;
 
-                    $length = $length + ($field_col->weight - 1);
+                        if (!is_object($field_col))
+                            $field_col = (object)array("name" => $field_col);
 
-                }
+                        if (!property_exists($field_col, 'weight'))
+                            $field_col->weight = 1;
 
-                $col_width = (12 / $length);
+                        $length = $length + ($field_col->weight - 1);
 
-                foreach($field as $field_col){
+                    }
 
-                    $field_width = $col_width;
+                    $col_width = (12 / $length);
 
-                    if (is_object($field_col) && property_exists($field_col, 'weight'))
-                        $field_width = round($field_width * $field_col->weight);
+                    foreach($field as $field_col){
 
-                    $html->add((new \Hazaar\Html\Div($this->__group(array($field_col))))->class('col-lg-' . $field_width));
+                        $field_width = $col_width;
+
+                        if (is_object($field_col) && property_exists($field_col, 'weight'))
+                            $field_width = round($field_width * $field_col->weight);
+
+                        $html->add((new \Hazaar\Html\Div($this->__group(array($field_col), !$horizontal)))->class('col-lg-' . $field_width));
+
+                    }
+
+                }else{
+
+                    foreach($field as $field_col)
+                        $html->add(new \Hazaar\Html\Div($this->__group(array($field_col), !$horizontal)));
 
                 }
 
