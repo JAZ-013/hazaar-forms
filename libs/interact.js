@@ -647,7 +647,8 @@ if (typeof Object.assign != 'function') {
             .attr('data-bind', def.name)
             .attr('name', def.name)
             .data('def', def)
-            .appendTo(input_group);
+            .appendTo(input_group)
+            .on('update', function (event) { _input_event_update(host, $(event.target)); });
         _check_input_disabled(host, input, def);
         if (def.lookup && 'url' in def.lookup) {
             input.on('keyup', function (event) {
