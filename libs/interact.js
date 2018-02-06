@@ -805,7 +805,7 @@ if (typeof Object.assign != 'function') {
         if ('render' in def) {
             field = new Function('field', 'form', def.render)($.extend({}, def, { value: host.data[def.name].save(true) }), host);
             host.pageInputs.push(field);
-        } else if (def.fields && def.type != 'array') {
+        } else if ('fields' in def && def.type != 'array') {
             var length = def.fields.length, fields = [], col_width;
             if (typeof p === 'undefined') p = true;
             if (p) {
