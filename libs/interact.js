@@ -405,7 +405,7 @@ if (typeof Object.assign != 'function') {
             var required = ('required' in def) ? _eval_code(host, def.required) : false;
             select.prop('disabled', !(def.disabled !== true && def.protected !== true));
             select.empty().append($('<option>').attr('value', '').html(def.placeholder));
-            if ('value' in options || 'label' in options || Array.isArray(data)) {
+            if ('value' in options || 'label' in options || (Array.isArray(data) && data.length > 0 && typeof data[0] === 'object')) {
                 var valueKey = options.value || 'value', labelKey = options.label || 'label', newdata = {};
                 var mr = (labelKey.indexOf('{{') > -1);
                 var mro = ('other' in options) ? (options.other.indexOf('{{') > -1) : false;
