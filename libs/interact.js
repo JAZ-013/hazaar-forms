@@ -629,7 +629,7 @@ if (typeof Object.assign != 'function') {
             .attr('data-bind', def.name)
             .attr('data-bind-label', true)
             .data('def', def)
-            .attr('autocomplete', 'off')
+            .attr('autocomplete', 'form-lookup')
             .appendTo(input_group);
         if (def.protected)
             input.prop('disabled', true);
