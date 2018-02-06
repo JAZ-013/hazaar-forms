@@ -54,6 +54,16 @@ class Forms extends \Hazaar\View\Helper {
 
     }
 
+    public function btnReload($label = 'Reload'){
+
+        $id = 'btn_' . uniqid();
+
+        $this->jquery->exec("$('#$id').click(function(){ hzForm.hzForm('reload'); });");
+
+        return $this->html->button($label)->id($id);
+
+    }
+    
     public function btnValidate($label = 'Validate'){
 
         $id = 'btn_' . uniqid();
