@@ -401,26 +401,53 @@ if (typeof Object.assign != 'function') {
         select.prop('disabled', true).html($('<option value selected>').html('Loading...'));
         postops.url = _url(host, postops.url);
         $.ajax(postops).done(function (data) {
-            var item = host.data[def.name];
+            var item = host.data[def.name], selected = false;
             var required = ('required' in def) ? _eval_code(host, def.required) : false;
+            var valueKey = options.value || 'value', labelKey = options.label || 'label';
             select.prop('disabled', !(def.disabled !== true && def.protected !== true));
             select.empty().append($('<option>').attr('value', '').html(def.placeholder));
-            if ('value' in options || 'label' in options || (Array.isArray(data) && data.length > 0 && typeof data[0] === 'object')) {
-                var valueKey = options.value || 'value', labelKey = options.label || 'label', newdata = {};
-                var mr = (labelKey.indexOf('{{') > -1);
-                var mro = ('other' in options) ? (options.other.indexOf('{{') > -1) : false;
-                for (var x in data)
-                    newdata[data[x][valueKey]] = {
-                        label: (mr ? _match_replace(null, labelKey, data[x], true) : data[x][labelKey]),
-                        other: (('other' in options) ? (mro ? _match_replace(null, options.other, data[x], true)
-                            : data[x][options.other]) : null)
-                    };
+            if (!Array.isArray(data)) {
+                var newdata = [];
+                for (x in data) {
+                    var newitem = {};
+                    newitem[valueKey] = x;
+                    newitem[labelKey] = data[x];
+                    newdata.push(newitem);
+                };
                 data = newdata;
             }
+            if ('sort' in options) {
+                if (typeof options.sort === 'string') {
+                    data.sort(function (a, b) {
+                        return a[options.sort] - b[options.sort];
+                    });
+                } else if (Array.isArray(options.sort)) {
+                    var newdata = [], find_test = function (element, index, array) {
+                        return element[labelKey] === options.sort[x];
+                    };
+                    for (x in options.sort) {
+                        var item;
+                        if (item = data.find(find_test)) newdata.push(item);
+                    }
+                    data = newdata;
+                }
+            }
             for (var x in data) {
-                if ('filter' in options && options.filter.indexOf(data[x]) === -1) continue;
-                var option = $('<option>').attr('value', x).html((typeof data[x] == 'object' ? data[x].label : data[x]));
+                if ('filter' in options && options.filter.indexOf(data[x][labelKey]) === -1) {
+                    delete data[x];
+                    continue;
+                }
+                if (labelKey.indexOf('{{') > -1)
+                    data[x][labelKey] = _match_replace(null, labelKey, data[x], true);
+                if ('other' in options && options.other.indexOf('{{') > -1)
+                    data[x].other = _match_replace(null, options.other, data[x], true);
+                var option = $('<option>').attr('value', data[x][valueKey])
+                    .html(data[x][labelKey]);
                 if (data[x].other) option.data('other', data[x].other);
+                if (!selected && item && item.value == data[x][valueKey]) {
+                    option.prop('selected', true);
+                    selected = true;
+                }
                 select.append(option);
             }
             if (def.other === true) {
@@ -429,13 +456,12 @@ if (typeof Object.assign != 'function') {
                 if (item.value === null & item.other !== null)
                     select.val('_hzForm_Other').change();
             }
-            if (item && (item.value in data)) select.val(item.value);
-            else host.data[def.name] = null;
+            if (!selected) host.data[def.name] = null;
             if (Object.keys(data).length === 1 && options.single === true) {
-                var key = Object.keys(data)[0];
+                var key = data[0][valueKey];
                 if (host.data[def.name].value !== key) {
-                    host.data[def.name].set(key, (typeof data[key] === 'object' ? data[key].label : data[key]));
-                    if (typeof data[key] === 'object' && 'other' in data[key]) host.data[def.name].other = data[key].other;
+                    host.data[def.name].set(key, data[0][labelKey]);
+                    if ('other' in data[0]) host.data[def.name].other = data[0].other;
                 }
             }
         }).fail(_error);
