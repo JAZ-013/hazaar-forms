@@ -162,6 +162,12 @@ class Model extends \Hazaar\Model\Strict {
 
     }
 
+    public function getTitle(){
+
+        return $this->__form->name;
+
+    }
+
     public function lock(){
 
         $this->__locked = true;
@@ -704,7 +710,7 @@ class Model extends \Hazaar\Model\Strict {
 
     }
 
-    public function getTitle($params = null){
+    public function getPDFTitle($params = null){
 
         if(!(property_exists($this->__form, 'pdf')
             && property_exists($this->__form->pdf, 'title')))

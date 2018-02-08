@@ -277,7 +277,7 @@ abstract class Form extends Action {
 
                 $response->setContent($output->render());
 
-                $response->setTitle($this->model->getTitle($params));
+                $response->setTitle($this->model->getPDFTitle($params));
 
             }
 
