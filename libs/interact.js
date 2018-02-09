@@ -425,10 +425,7 @@ if (typeof Object.assign != 'function') {
                     var newdata = [], find_test = function (element, index, array) {
                         return element[labelKey] === options.sort[x];
                     };
-                    for (x in options.sort) {
-                        var item;
-                        if (item = data.find(find_test)) newdata.push(item);
-                    }
+                    for (x in options.sort) if (newitem = data.find(find_test)) newdata.push(newitem);
                     data = newdata;
                 }
             }
@@ -437,31 +434,29 @@ if (typeof Object.assign != 'function') {
                     delete data[x];
                     continue;
                 }
-                if (labelKey.indexOf('{{') > -1)
-                    data[x][labelKey] = _match_replace(null, labelKey, data[x], true);
-                if ('other' in options && options.other.indexOf('{{') > -1)
-                    data[x].other = _match_replace(null, options.other, data[x], true);
                 var option = $('<option>').attr('value', data[x][valueKey])
-                    .html(data[x][labelKey]);
-                if (data[x].other) option.data('other', data[x].other);
-                if (!selected && item && item.value == data[x][valueKey]) {
-                    option.prop('selected', true);
-                    selected = true;
-                }
+                    .html((labelKey.indexOf('{{') > -1)
+                        ? _match_replace(null, labelKey, data[x], true)
+                        : data[x][labelKey]);
+                if ('other' in options)
+                    option.data('other', (options.other.indexOf('{{') > -1)
+                        ? _match_replace(null, options.other, data[x], true)
+                        : data[x][options.other]);
                 select.append(option);
             }
             if (def.other === true) {
-                var otherOption = $('<option>').attr('value', '_hzForm_Other').html("Other");
-                select.append(otherOption);
-                if (item.value === null & item.other !== null)
-                    select.val('_hzForm_Other').change();
+                select.append($('<option>').attr('value', '_hzForm_Other').html("Other"));
+                if (item.value === null & item.other !== null) select.val('_hzForm_Other').change();
             }
-            if (!selected) host.data[def.name] = null;
+            if (item.value && data.find(function (e, index, obj) {
+                return e && e[valueKey] == item.value;
+            })) select.val(item.value);
+            else host.data[def.name] = null;
             if (Object.keys(data).length === 1 && options.single === true) {
                 var key = data[0][valueKey];
                 if (host.data[def.name].value !== key) {
-                    host.data[def.name].set(key, data[0][labelKey]);
-                    if ('other' in data[0]) host.data[def.name].other = data[0].other;
+                    host.data[def.name].set(key, _match_replace(null, labelKey, data[0], true));
+                    if ('other' in options && options.other in data[0]) host.data[def.name].other = data[0][options.other];
                 }
             }
         }).fail(_error);
