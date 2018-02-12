@@ -444,7 +444,7 @@ if (typeof Object.assign != 'function') {
                         : data[x][options.other]);
                 select.append(option);
             }
-            if (def.other === true) {
+            if ('other' in def && _eval(host, def.other) === true) {
                 select.append($('<option>').attr('value', '_hzForm_Other').html("Other"));
                 if (item.value === null & item.other !== null) select.val('_hzForm_Other').change();
             }
