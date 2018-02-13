@@ -16,6 +16,14 @@ abstract class Output implements Output_Interface {
 
         $this->model = $model;
 
+        $this->init($model);
+
+    }
+
+    public function init(\Hazaar\Forms\Model $model){
+
+        //Do nothing
+
     }
 
 }

@@ -18,6 +18,14 @@ class HTML extends \Hazaar\Forms\Output {
 
     static public $pageBodyClass = 'card-body';
 
+    private $options;
+
+    public function init(\Hazaar\Forms\Model $model){
+
+        $this->options = ake($model->getFormDefinition(), 'html');
+
+    }
+
     public function render($form = null, $ixes = null){
 
         if($form === null)
@@ -253,7 +261,10 @@ class HTML extends \Hazaar\Forms\Output {
             if($prefix = ake($field, 'prefix'))
                 $value_group->add($this->model->matchReplace((string)$prefix) . ' ');
 
-            $value_group->add($field->value);
+            if(($value = $field->value) === null && $null = (array)ake($this->options, 'null'))
+                $value = is_array($null) ? ake($null, $type, ake($null, 'default')) : $null;
+
+            $value_group->add($value);
 
             if($suffix = ake($field, 'suffix'))
                 $value_group->add(' ' . $this->model->matchReplace((string)$suffix));
