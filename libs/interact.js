@@ -7,9 +7,7 @@ if (typeof Object.assign != 'function') {
             if (target == null) { // TypeError if undefined or null
                 throw new TypeError('Cannot convert undefined or null to object');
             }
-
             var to = Object(target);
-
             for (var index = 1; index < arguments.length; index++) {
                 var nextSource = arguments[index];
 
@@ -54,6 +52,25 @@ if (typeof Object.assign != 'function') {
         target = _match_replace(host, target, null, true);
         return (target.match(/^https?:\/\//) ? target : hazaar.url(target));
     };
+
+    function _sort(data, sort) {
+        if (!Array.isArray(data)) {
+            console.warn('Attempting to sort object.  Sorting is only supported by arrays.');
+            return data;
+        }
+        var newdata = [];
+        if (typeof sort === 'string') {
+            data.sort(function (a, b) {
+                return a[sort] - b[sort];
+            });
+        } else if (Array.isArray(sort)) {
+            var find_test = function (element, index, array) {
+                return element[labelKey] === sort[x];
+            };
+            for (x in sort) if (newitem = data.find(find_test)) newdata.push(newitem);
+        }
+        return newdata;
+    }
 
     function _exec(host, type, field) {
         if (!(type in host.events && field in host.events[type]))
@@ -279,6 +296,18 @@ if (typeof Object.assign != 'function') {
                 host.data[def.name].remove(index);
         };
         var value = host.data[def.name], items = [];
+        /*var valueKey = options.value || 'value', labelKey = options.label || 'label';
+            if (!Array.isArray(data)) {
+                var newdata = [];
+                for (x in data) {
+                    var newitem = {};
+                    newitem[valueKey] = x;
+                    newitem[labelKey] = data[x];
+                    newdata.push(newitem);
+                };
+                data = newdata;
+            }*/
+        console.log(data);
         if (def.buttons === true) {
             var btnClass = def.class || 'primary';
             for (var x in data) {
@@ -303,6 +332,7 @@ if (typeof Object.assign != 'function') {
         for (var col = 0; col < def.columns; col++)
             items.push($('<div>').addClass('col-md-' + col_width)
                 .toggleClass('custom-controls-stacked', def.inline));
+        if ('sort' in def.options) data = _sort(data, def.options.sort);
         for (var x in data) {
             var active = (value instanceof dataBinderArray && value.indexOf(x) > -1), name = def.name + '_' + x;
             var label = $('<div>').addClass(host.settings.styleClasses.chkDiv).html([
@@ -419,19 +449,7 @@ if (typeof Object.assign != 'function') {
                 };
                 data = newdata;
             }
-            if ('sort' in options) {
-                if (typeof options.sort === 'string') {
-                    data.sort(function (a, b) {
-                        return a[options.sort] - b[options.sort];
-                    });
-                } else if (Array.isArray(options.sort)) {
-                    var newdata = [], find_test = function (element, index, array) {
-                        return element[labelKey] === options.sort[x];
-                    };
-                    for (x in options.sort) if (newitem = data.find(find_test)) newdata.push(newitem);
-                    data = newdata;
-                }
-            }
+            if ('sort' in options) data = _sort(data, def.options.sort);
             for (var x in data) {
                 if ('filter' in options && options.filter.indexOf(data[x][labelKey]) === -1) {
                     delete data[x];
