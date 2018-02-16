@@ -136,21 +136,35 @@ if (typeof Object.assign != 'function') {
         return str;
     };
 
+    function _get_data_item(host, name) {
+        var data = host.data;
+        if ((pos = name.lastIndexOf('.')) > 0) {
+            var parts = name.substr(0, pos).split(/[\.\[]/);
+            for (let x in parts) {
+                var key = parts[x];
+                if (parts[x].slice(-1) === ']') key = parseInt(key.slice(0, -1));
+                data = data[key];
+            }
+        }
+        return data;
+    };
+
     //Input events
     function _input_event_change(host, input) {
         var def = input.data('def');
+        var item_data = _get_data_item(host, input.attr('data-bind'));
         if (input.is('[type=checkbox]')) {
             var value = input.is(':checked');
-            host.data[def.name].set(value, (value ? 'Yes' : 'No'));
+            data[def.name].set(value, (value ? 'Yes' : 'No'));
         } else if (input.is('select')) {
             var value = input.val();
             if (value === '_hzForm_Other') {
-                host.data[def.name] = null;
+                item_data[def.name] = null;
                 var group = $('<div>').addClass(host.settings.styleClasses.inputGroup);
                 var oInput = $('<input type="text" placeholder="Enter other option...">')
                     .addClass(host.settings.styleClasses.input)
                     .data('def', def)
-                    .val(host.data[def.name].other)
+                    .val(item_data[def.name].other)
                     .attr('data-bind', def.name)
                     .attr('data-bind-other', true)
                     .change(function (event) { _input_event_change(host, $(event.target)); })
@@ -162,7 +176,7 @@ if (typeof Object.assign != 'function') {
                     .html($('<i class="fa fa-times">'))
                     .click(function (e) {
                         group.remove();
-                        host.data[def.name] = null;
+                        item_data[def.name] = null;
                         input.val('').show();
                     });
                 if ('format' in def) oInput.inputmask(def.format);
@@ -170,14 +184,14 @@ if (typeof Object.assign != 'function') {
                 input.hide().after(group);
                 oInput.focus();
             } else {
-                host.data[def.name].set(value, input.children('option:selected').text());
+                item_data[def.name].set(value, input.children('option:selected').text());
                 if (other = input.children('option[value="' + value + '"]').data('other'))
-                    host.data[def.name].other = other;
+                    data[def.name].other = other;
             }
         } else if (def.other === true) {
-            host.data[def.name].other = input.val();
+            item_data[def.name].other = input.val();
         } else {
-            host.data[def.name] = input.val();
+            item_data[def.name] = input.val();
         }
     };
 
@@ -777,12 +791,20 @@ if (typeof Object.assign != 'function') {
         var col_width = 12 / Object.keys(def.fields).length;
         template.append($('<div style="float: right;">')
             .html($('<button type="button" class="btn btn-danger btn-sm">').html($('<i class="fa fa-minus">')))).append(t_container);
-        for (var x in def.fields) {
-            fields.push($.extend(def.fields[x], { name: x }));
-            t_container.append($('<div>').addClass('col-lg-' + col_width).attr('data-bind', x));
+        if (!('allow_add' in def) || def.allow_add === true) {
+            for (var x in def.fields) fields.push($.extend(def.fields[x], { name: x }));
+            group.append($('<div style="float: right; padding-top: 25px;">').html(btn));
+            group.append(_form_field(host, { fields: fields }).addClass('itemlist-newitems').css({ 'margin-right': '100px' }));
         }
-        group.append($('<div style="float: right; padding-top: 25px;">').html(btn));
-        group.append(_form_field(host, { fields: fields }).addClass('itemlist-newitems').css({ 'margin-right': '100px' }));
+        for (var x in def.fields) {
+            var col = $('<div>').addClass('col-lg-' + col_width).appendTo(t_container);
+            if (def.allow_edit === true) {
+                if (!('name' in def.fields[x])) def.fields[x].name = x;
+                col.append(_form_field(host, def.fields[x]));
+            } else {
+                col.attr('data-bind', x);
+            }
+        }
         btn.click(function () {
             var parent = $(this).parent().parent();
             var data = {};
@@ -796,7 +818,9 @@ if (typeof Object.assign != 'function') {
             });
             host.data[def.name].push(data);
         });
-        group.append($('<div class="itemlist-items">').attr('data-bind', def.name).html($('<template>' + template[0].outerHTML + '</template>')))
+        group.append($('<div class="itemlist-items" data-bind-template="o">')
+            .attr('data-bind', def.name)
+            .data('template', template))
             .on('click', '.btn-danger', function (event) {
                 $(this).parent().parent().remove();
             });
