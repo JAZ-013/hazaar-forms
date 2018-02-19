@@ -415,7 +415,7 @@ if (typeof Object.assign != 'function') {
             host.data[def.name] = (('default' in def) ? def.default : null);
             return;
         }
-        select.prop('disabled', true).html($('<option value selected>').html('Loading...'));
+        if (track !== false) select.prop('disabled', true).html($('<option value selected>').html('Loading...'));
         postops.url = _url(host, postops.url);
         $.ajax(postops).done(function (data) {
             var item = host.data[def.name], selected = false;
@@ -463,12 +463,14 @@ if (typeof Object.assign != 'function') {
             }
             if ('other' in def && _eval(host, def.other) === true) {
                 select.append($('<option>').attr('value', '_hzForm_Other').html("Other"));
-                if (item.value === null & item.other !== null) select.val('_hzForm_Other').change();
+                if (item && item.value === null & item.other !== null) select.val('_hzForm_Other').change();
             }
-            if (item.value && data.find(function (e, index, obj) {
-                return e && e[valueKey] == item.value;
-            })) select.val(item.value);
-            else host.data[def.name] = null;
+            if (item) {
+                if (item.value && data.find(function (e, index, obj) {
+                    return e && e[valueKey] == item.value;
+                })) select.val(item.value);
+                else host.data[def.name] = null;
+            }
             if (Object.keys(data).length === 1 && options.single === true) {
                 var key = data[0][valueKey];
                 if (host.data[def.name].value !== key) {
@@ -519,7 +521,7 @@ if (typeof Object.assign != 'function') {
         return options;
     };
 
-    function _input_select(host, def) {
+    function _input_select(host, def, track) {
         var group = $('<div>').addClass(host.settings.styleClasses.group).data('def', def), options = {};
         var label = $('<label>').addClass(host.settings.styleClasses.label)
             .attr('for', def.name)
@@ -544,13 +546,13 @@ if (typeof Object.assign != 'function') {
                 for (var key in def.watchers) for (var x in def.watchers[key]) host.data.unwatch(key, def.watchers[key][x]);
                 def.watchers = {};
                 host.data[def.name] = null;
-                _input_select_populate(host, _input_select_options(host, def), select);
+                _input_select_populate(host, _input_select_options(host, def), select, track);
             });
             options = _input_select_options(host, def);
         } else Object.assign(options, def.options);
         _input_select_populate(host, options, select.change(function (event) {
             _input_event_change(host, $(event.target));
-        }));
+        }), track);
         return group;
     };
 
@@ -619,7 +621,7 @@ if (typeof Object.assign != 'function') {
             input.datepicker($.extend({}, options, def.dateOptions));
             if (!def.placeholder)
                 def.placeholder = def.format;
-        }
+        } else glyph.click(function () { $(this).prev().focus().click(); });
         if (def.placeholder) input.attr('placeholder', def.placeholder);
         _check_input_disabled(host, input, def);
         return group.append(input_group);
@@ -800,7 +802,7 @@ if (typeof Object.assign != 'function') {
             var col = $('<div>').addClass('col-lg-' + col_width).appendTo(t_container);
             if (def.allow_edit === true) {
                 if (!('name' in def.fields[x])) def.fields[x].name = x;
-                col.append(_form_field(host, def.fields[x]));
+                col.append(_form_field(host, def.fields[x], null, false));
             } else {
                 col.attr('data-bind', x);
             }
@@ -843,7 +845,7 @@ if (typeof Object.assign != 'function') {
         return def;
     };
 
-    function _form_field(host, info, p) {
+    function _form_field(host, info, p, track) {
         var def = null, field = null;
         if (info instanceof Array)
             info = { fields: info };
@@ -882,7 +884,7 @@ if (typeof Object.assign != 'function') {
             if (def.type === 'array')
                 field = _input_select_multi(host, def);
             else
-                field = _input_select(host, def);
+                field = _input_select(host, def, track);
             host.pageInputs.push(field);
         } else if ('lookup' in def && def.type === 'text') {
             if (typeof def.lookup === 'string') def.lookup = { url: def.lookup };
