@@ -183,7 +183,7 @@ if (typeof Object.assign != 'function') {
                 $('<span class="input-group-btn">').html(button).appendTo(group);
                 input.hide().after(group);
                 oInput.focus();
-            } else {
+            } else if (def.name in item_data && item_data[def.name]) {
                 item_data[def.name].set(value, input.children('option:selected').text());
                 if (other = input.children('option[value="' + value + '"]').data('other'))
                     item_data[def.name].other = other;
@@ -464,7 +464,7 @@ if (typeof Object.assign != 'function') {
                 select.append($('<option>').attr('value', '_hzForm_Other').html("Other"));
                 if (item_data[def.name].value === null & item_data[def.name].other !== null) select.val('_hzForm_Other').change();
             }
-            if (item_data && item_data[def.name].value && data.find(function (e, index, obj) {
+            if (def.name in item_data && item_data[def.name].value && data.find(function (e, index, obj) {
                 return e && e[valueKey] == item_data[def.name].value;
             })) select.val(item_data[def.name].value);
             else item_data[def.name] = null;
@@ -778,12 +778,14 @@ if (typeof Object.assign != 'function') {
     };
 
     function _input_list(host, def) {
-        var group = $('<div style="position: relative;">').addClass(host.settings.styleClasses.group).data('def', def);
+        var group = $('<div>').addClass(host.settings.styleClasses.group).data('def', def);
         var label = $('<h4>').addClass(host.settings.styleClasses.label)
             .html((def.label ? _match_replace(host, def.label, null, true, true) : null))
             .appendTo(group);
+        var uniqid = 'select_' + Math.random().toString(36).substring(2);
         var btn = $('<button type="button" class="btn btn-success btn-sm">')
-            .html($('<i class="fa fa-plus">'));
+            .html($('<i class="fa fa-plus">'))
+            .data('uniqid', uniqid);
         var fields = [], template = $('<div style="position: relative;">');
         var t_container = $('<div class="row">').css({ 'margin-right': '25px' });
         var col_width = 12 / Object.keys(def.fields).length;
@@ -791,8 +793,10 @@ if (typeof Object.assign != 'function') {
             .html($('<button type="button" class="btn btn-danger btn-sm">').html($('<i class="fa fa-minus">')))).append(t_container);
         if (!('allow_add' in def) || def.allow_add === true) {
             for (let x in def.fields) fields.push($.extend(def.fields[x], { name: x }));
-            group.append($('<div style="position: absolute; right: 0; top: 4.7rem;">').html(btn));
-            group.append(_form_field(host, { fields: fields }).addClass('itemlist-newitems').css({ 'margin-right': '25px' }));
+            group.append($('<div style="position: relative;">').html([
+                $('<div style="position: absolute; right: 0; bottom: 0; margin-bottom: 1.2rem;">').html(btn),
+                _form_field(host, { fields: fields }).css({ 'margin-right': '25px' }).attr('id', uniqid).attr('data-field', def.name)
+            ]).addClass('itemlist-newitems'));
         }
         for (let x in def.fields) {
             var col = $('<div>').addClass('col-lg-' + col_width).appendTo(t_container);
@@ -810,17 +814,15 @@ if (typeof Object.assign != 'function') {
             });
         });
         btn.click(function () {
-            var parent = $(this).parent().parent();
-            var data = {};
-            parent.children('.itemlist-newitems').children().each(function (index_0, item_0) {
-                $(item_0).find('input,select,textarea').each(function (index_1, item_1) {
-                    var input = $(item_1), value = input.val();
-                    if (input.is('select')) value = { __hz_value: value, __hz_label: input.children('option:selected').text() };
-                    data[item_1.name] = value;
-                    $(item_1).val('');
-                });
+            var parent = $('#' + $(this).data('uniqid'));
+            var data = {}, field = parent.attr('data-field');
+            parent.find('input,select,textarea').each(function (index, item) {
+                var input = $(item), value = input.val();
+                if (input.is('select')) value = { __hz_value: value, __hz_label: input.children('option:selected').text() };
+                $(item).val('');
+                data[item.name] = value;
             });
-            host.data[def.name].push(data);
+            host.data[field].push(data);
         });
         group.append($('<div class="itemlist-items" data-bind-template="o">')
             .attr('data-bind', def.name)
