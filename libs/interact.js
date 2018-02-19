@@ -10,11 +10,11 @@ if (typeof Object.assign != 'function') {
 
             var to = Object(target);
 
-            for (var index = 1; index < arguments.length; index++) {
+            for (let index = 1; index < arguments.length; index++) {
                 var nextSource = arguments[index];
 
                 if (nextSource != null) { // Skip over if undefined or null
-                    for (var nextKey in nextSource) {
+                    for (let nextKey in nextSource) {
                         // Avoid bugs when hasOwnProperty is shadowed
                         if (Object.prototype.hasOwnProperty.call(nextSource, nextKey)) {
                             to[nextKey] = nextSource[nextKey];
@@ -67,7 +67,7 @@ if (typeof Object.assign != 'function') {
         var code = '';
         if (evaluate.indexOf(';') < 0) {
             var values = host.data.save(true);
-            for (var key in values) {
+            for (let key in values) {
                 if (key === 'form') continue;
                 var value = values[key];
                 if (typeof value === 'string') value = '"' + value.replace(/"/g, '\\"').replace("\n", "\\n") + '"';
@@ -87,7 +87,7 @@ if (typeof Object.assign != 'function') {
             host.data[def.name].label = def.placeholder || '';
         }
         if (def.fields) {
-            for (var x in def.fields) {
+            for (let x in def.fields) {
                 var sdef = def.fields[x];
                 if (sdef instanceof Array)
                     _nullify(host, { fields: sdef });
@@ -104,7 +104,7 @@ if (typeof Object.assign != 'function') {
         if (script.indexOf(';') != -1)
             return _eval_code(host, script);
         var parts = script.split(/(\&\&|\|\|)/);
-        for (var x = 0; x < parts.length; x += 2) {
+        for (let x = 0; x < parts.length; x += 2) {
             var matches = null;
             if (!(matches = parts[x].match(/([\w\.]+)\s*([=\!\<\>]+)\s*(.+)/))) {
                 alert('Invalid evaluation script: ' + script);
@@ -186,7 +186,7 @@ if (typeof Object.assign != 'function') {
             } else {
                 item_data[def.name].set(value, input.children('option:selected').text());
                 if (other = input.children('option[value="' + value + '"]').data('other'))
-                    data[def.name].other = other;
+                    item_data[def.name].other = other;
             }
         } else if (def.other === true) {
             item_data[def.name].other = input.val();
@@ -229,17 +229,17 @@ if (typeof Object.assign != 'function') {
             }
         }
         if (host.events.show.length > 0) {
-            for (var x in host.events.show)
+            for (let x in host.events.show)
                 _toggle_show(host, host.events.show[x]);
         }
         if (host.events.required.length > 0) {
-            for (var x in host.events.required) {
+            for (let x in host.events.required) {
                 var group = host.events.required[x];
                 group.toggleClass('required', _eval_code(host, group.data('required')));
             }
         }
         if (host.events.disabled.length > 0) {
-            for (var x in host.events.disabled) {
+            for (let x in host.events.disabled) {
                 var i = host.events.disabled[x];
                 var disabled = _eval(host, i.data('disabled'));
                 i.prop('disabled', disabled);
@@ -295,7 +295,7 @@ if (typeof Object.assign != 'function') {
         var value = host.data[def.name], items = [];
         if (def.buttons === true) {
             var btnClass = def.class || 'primary';
-            for (var x in data) {
+            for (let x in data) {
                 var value = (typeof data[x] === 'object') ? data[x].value : x;
                 var label = (typeof data[x] === 'object') ? data[x].label : data[x];
                 var active = (value instanceof dataBinderArray && value.indexOf(x) > -1), name = def.name + '_' + x;
@@ -314,10 +314,10 @@ if (typeof Object.assign != 'function') {
         if (def.columns > 6) def.columns = 6;
         var col_width = Math.floor(12 / def.columns), per_col = (Math.ceil(Object.keys(data).length / def.columns));
         var cols = $('<div class="row">'), column = 0;
-        for (var col = 0; col < def.columns; col++)
+        for (let col = 0; col < def.columns; col++)
             items.push($('<div>').addClass('col-md-' + col_width)
                 .toggleClass('custom-controls-stacked', def.inline));
-        for (var x in data) {
+        for (let x in data) {
             var active = (value instanceof dataBinderArray && value.indexOf(x) > -1), name = def.name + '_' + x;
             var label = $('<div>').addClass(host.settings.styleClasses.chkDiv).html([
                 $('<input type="checkbox">')
@@ -350,7 +350,7 @@ if (typeof Object.assign != 'function') {
             var values = host.data[def.name].save(true);
             if (values) {
                 var remove = host.data[def.name].save(true).filter(function (i) { return !(i in data); });
-                for (var x in remove) host.data[def.name].remove(remove[x]);
+                for (let x in remove) host.data[def.name].remove(remove[x]);
             }
             container.html(_input_select_multi_items(host, def, data)).show();
             _ready(host);
@@ -362,7 +362,7 @@ if (typeof Object.assign != 'function') {
         var def = container.data('def');
         if ('url' in options) {
             var matches = options.url.match(/\{\{\w+\}\}/g);
-            for (var x in matches) {
+            for (let x in matches) {
                 var match = matches[x].substr(2, matches[x].length - 4);
                 if (!(match in def.watchers)) def.watchers[match] = [];
                 def.watchers[match].push(host.data.watch(match, function (key, value, container) {
@@ -396,7 +396,7 @@ if (typeof Object.assign != 'function') {
         if (typeof def.options === 'string') def.options = { "url": def.options };
         if (Array.isArray(def.options) && 'watch' in def) {
             host.data.watch(def.watch, function () {
-                for (var key in def.watchers) for (var x in def.watchers[key]) host.data.unwatch(key, def.watchers[key][x]);
+                for (let key in def.watchers) for (let x in def.watchers[key]) host.data.unwatch(key, def.watchers[key][x]);
                 def.watchers = {};
                 host.data[def.name] = null;
                 _input_select_multi_populate(host, _input_select_options(host, def), container);
@@ -408,7 +408,7 @@ if (typeof Object.assign != 'function') {
     };
 
     function _input_select_populate_ajax(host, options, select, track) {
-        var def = select.data('def'), postops = {};
+        var def = select.data('def'), postops = {}, item_data = _get_data_item(host, select.attr('data-bind'));
         Object.assign(postops, options);
         if ((postops.url = _match_replace(host, postops.url, { "site_url": hazaar.url() })) === false) {
             select.empty().prop('disabled', true);
@@ -418,14 +418,13 @@ if (typeof Object.assign != 'function') {
         if (track !== false) select.prop('disabled', true).html($('<option value selected>').html('Loading...'));
         postops.url = _url(host, postops.url);
         $.ajax(postops).done(function (data) {
-            var item = host.data[def.name], selected = false;
             var required = ('required' in def) ? _eval_code(host, def.required) : false;
             var valueKey = options.value || 'value', labelKey = options.label || 'label';
             select.prop('disabled', !(def.disabled !== true && def.protected !== true));
             select.empty().append($('<option>').attr('value', '').html(def.placeholder));
             if (!Array.isArray(data)) {
                 var newdata = [];
-                for (x in data) {
+                for (let x in data) {
                     var newitem = {};
                     newitem[valueKey] = x;
                     newitem[labelKey] = data[x];
@@ -442,11 +441,11 @@ if (typeof Object.assign != 'function') {
                     var newdata = [], find_test = function (element, index, array) {
                         return element[labelKey] === options.sort[x];
                     };
-                    for (x in options.sort) if (newitem = data.find(find_test)) newdata.push(newitem);
+                    for (let x in options.sort) if (newitem = data.find(find_test)) newdata.push(newitem);
                     data = newdata;
                 }
             }
-            for (var x in data) {
+            for (let x in data) {
                 if ('filter' in options && options.filter.indexOf(data[x][labelKey]) === -1) {
                     delete data[x];
                     continue;
@@ -463,19 +462,17 @@ if (typeof Object.assign != 'function') {
             }
             if ('other' in def && _eval(host, def.other) === true) {
                 select.append($('<option>').attr('value', '_hzForm_Other').html("Other"));
-                if (item && item.value === null & item.other !== null) select.val('_hzForm_Other').change();
+                if (item_data[def.name].value === null & item_data[def.name].other !== null) select.val('_hzForm_Other').change();
             }
-            if (item) {
-                if (item.value && data.find(function (e, index, obj) {
-                    return e && e[valueKey] == item.value;
-                })) select.val(item.value);
-                else host.data[def.name] = null;
-            }
+            if (item_data && item_data[def.name].value && data.find(function (e, index, obj) {
+                return e && e[valueKey] == item_data[def.name].value;
+            })) select.val(item_data[def.name].value);
+            else item_data[def.name] = null;
             if (Object.keys(data).length === 1 && options.single === true) {
                 var key = data[0][valueKey];
-                if (host.data[def.name].value !== key) {
-                    host.data[def.name].set(key, _match_replace(null, labelKey, data[0], true));
-                    if ('other' in options && options.other in data[0]) host.data[def.name].other = data[0][options.other];
+                if (item_data[def.name].value !== key) {
+                    item_data[def.name].set(key, _match_replace(null, labelKey, data[0], true));
+                    if ('other' in options && options.other in data[0]) item_data[def.name].other = data[0][options.other];
                 }
             }
         }).fail(_error);
@@ -487,7 +484,7 @@ if (typeof Object.assign != 'function') {
             return select.prop('disabled', true).empty();
         if ('url' in options) {
             var matches = options.url.match(/\{\{\w+\}\}/g);
-            for (var x in matches) {
+            for (let x in matches) {
                 var match = matches[x].substr(2, matches[x].length - 4);
                 if (!(match in def.watchers)) def.watchers[match] = [];
                 def.watchers[match].push(host.data.watch(match, function (key, value, select) {
@@ -497,9 +494,9 @@ if (typeof Object.assign != 'function') {
             return _input_select_populate_ajax(host, options, select, track);
         }
         var required = ('required' in def) ? _eval_code(host, def.required) : false;
-        var value = host.data[def.name];
+        var value = _get_data_item(host, select.attr('name'));
         select.html($('<option value>').html(def.placeholder).prop('selected', (value.value === null)));
-        for (var x in options)
+        for (let x in options)
             select.append($('<option>').attr('value', x).html(options[x]));
         if ('other' in def && _eval(host, def.other) === true) {
             var otherOption = $('<option>').attr('value', '_hzForm_Other').html("Other");
@@ -513,7 +510,7 @@ if (typeof Object.assign != 'function') {
     function _input_select_options(host, def) {
         var options = {};
         Object.assign(options, function (options) {
-            for (var x in options) {
+            for (let x in options) {
                 if (!('when' in options[x])) continue;
                 if (_eval(host, options[x].when)) return ('items' in options[x]) ? options[x].items : options[x];
             }
@@ -521,7 +518,7 @@ if (typeof Object.assign != 'function') {
         return options;
     };
 
-    function _input_select(host, def, track) {
+    function _input_select(host, def, populate) {
         var group = $('<div>').addClass(host.settings.styleClasses.group).data('def', def), options = {};
         var label = $('<label>').addClass(host.settings.styleClasses.label)
             .attr('for', def.name)
@@ -536,6 +533,7 @@ if (typeof Object.assign != 'function') {
             select.prop('disabled', true);
         else select.focus(function (event) { _input_event_focus(host, $(event.target)); })
             .blur(function (event) { _input_event_blur(host, $(event.target)); })
+            .change(function (event) { _input_event_change(host, $(event.target)); })
             .on('update', function (event) { _input_event_update(host, $(event.target)); });
         def.watchers = {};
         if (!("placeholder" in def)) def.placeholder = host.settings.placeholder;
@@ -543,16 +541,14 @@ if (typeof Object.assign != 'function') {
         if (typeof def.options === 'string') def.options = { url: def.options };
         if (Array.isArray(def.options) && 'watch' in def) {
             host.data.watch(def.watch, function () {
-                for (var key in def.watchers) for (var x in def.watchers[key]) host.data.unwatch(key, def.watchers[key][x]);
+                for (let key in def.watchers) for (let x in def.watchers[key]) host.data.unwatch(key, def.watchers[key][x]);
                 def.watchers = {};
                 host.data[def.name] = null;
-                _input_select_populate(host, _input_select_options(host, def), select, track);
+                _input_select_populate(host, _input_select_options(host, def), select);
             });
             options = _input_select_options(host, def);
         } else Object.assign(options, def.options);
-        _input_select_populate(host, options, select.change(function (event) {
-            _input_event_change(host, $(event.target));
-        }), track);
+        if (populate !== false) _input_select_populate(host, options, select);
         return group;
     };
 
@@ -640,7 +636,7 @@ if (typeof Object.assign != 'function') {
             height: def.height || null,
             maxSize: def.maxSize || host.settings.maxUploadSize || null,
             select: function (files) {
-                for (var x in files)
+                for (let x in files)
                     host.uploads.push({ "field": def.name, "file": files[x] });
             },
             remove: function (file) {
@@ -654,7 +650,7 @@ if (typeof Object.assign != 'function') {
         }).appendTo(group);
         _post(host, 'fileinfo', { 'field': def.name }, true).done(function (response) {
             if (!response.ok) return;
-            for (var x in response.files) input.fileUpload('add', response.files[x]);
+            for (let x in response.files) input.fileUpload('add', response.files[x]);
         });
         return group;
     };
@@ -713,7 +709,7 @@ if (typeof Object.assign != 'function') {
                 }).done(function (items) {
                     var list = $('<div class="list-group">').appendTo(popup.empty());
                     if (items.length > 0) {
-                        for (var x in items)
+                        for (let x in items)
                             list.append($('<li class="list-group-item">')
                                 .html(items[x][labelKey]).attr('data-value', items[x][valueKey]));
                     } else list.append($('<li class="list-group-item">').html('No results...'));
@@ -782,31 +778,37 @@ if (typeof Object.assign != 'function') {
     };
 
     function _input_list(host, def) {
-        var group = $('<div>').addClass(host.settings.styleClasses.group).data('def', def);
+        var group = $('<div style="position: relative;">').addClass(host.settings.styleClasses.group).data('def', def);
         var label = $('<h4>').addClass(host.settings.styleClasses.label)
-            .html(_match_replace(host, def.label, null, true, true))
+            .html((def.label ? _match_replace(host, def.label, null, true, true) : null))
             .appendTo(group);
         var btn = $('<button type="button" class="btn btn-success btn-sm">')
             .html($('<i class="fa fa-plus">'));
-        var fields = [], template = $('<div>');
-        var t_container = $('<div class="row">').css({ 'margin-right': '100px' });
+        var fields = [], template = $('<div style="position: relative;">');
+        var t_container = $('<div class="row">').css({ 'margin-right': '25px' });
         var col_width = 12 / Object.keys(def.fields).length;
-        template.append($('<div style="float: right;">')
+        template.append($('<div style="position: absolute; right: 0; bottom: 0; margin-bottom: 1.2rem;">')
             .html($('<button type="button" class="btn btn-danger btn-sm">').html($('<i class="fa fa-minus">')))).append(t_container);
         if (!('allow_add' in def) || def.allow_add === true) {
-            for (var x in def.fields) fields.push($.extend(def.fields[x], { name: x }));
-            group.append($('<div style="float: right; padding-top: 25px;">').html(btn));
-            group.append(_form_field(host, { fields: fields }).addClass('itemlist-newitems').css({ 'margin-right': '100px' }));
+            for (let x in def.fields) fields.push($.extend(def.fields[x], { name: x }));
+            group.append($('<div style="position: absolute; right: 0; top: 4.7rem;">').html(btn));
+            group.append(_form_field(host, { fields: fields }).addClass('itemlist-newitems').css({ 'margin-right': '25px' }));
         }
-        for (var x in def.fields) {
+        for (let x in def.fields) {
             var col = $('<div>').addClass('col-lg-' + col_width).appendTo(t_container);
             if (def.allow_edit === true) {
                 if (!('name' in def.fields[x])) def.fields[x].name = x;
-                col.append(_form_field(host, def.fields[x], null, false));
+                _form_field(host, def.fields[x], null, false).appendTo(col);
             } else {
                 col.attr('data-bind', x);
             }
         }
+        host.data[def.name].watch(function (item) {
+            item.find('select').each(function (index, item) {
+                var def = $(item).data('def');
+                if ('options' in def) _input_select_populate(host, def.options, $(item));
+            });
+        });
         btn.click(function () {
             var parent = $(this).parent().parent();
             var data = {};
@@ -845,7 +847,7 @@ if (typeof Object.assign != 'function') {
         return def;
     };
 
-    function _form_field(host, info, p, track) {
+    function _form_field(host, info, p, populate) {
         var def = null, field = null;
         if (info instanceof Array)
             info = { fields: info };
@@ -859,7 +861,7 @@ if (typeof Object.assign != 'function') {
             var length = def.fields.length, fields = [], col_width;
             if (typeof p === 'undefined') p = true;
             if (p) {
-                for (var x in def.fields) {
+                for (let x in def.fields) {
                     var item;
                     if (Array.isArray(def.fields[x])) {
                         item = def.fields[x];
@@ -874,7 +876,7 @@ if (typeof Object.assign != 'function') {
                 col_width = (12 / length);
             } else fields = def.fields;
             field = $('<div>').toggleClass('row', p).data('def', def);
-            for (var x in fields) {
+            for (let x in fields) {
                 var field_width = col_width;
                 if (fields[x] instanceof Object && ('weight' in fields[x]))
                     field_width = Math.round(field_width * fields[x].weight);
@@ -884,7 +886,7 @@ if (typeof Object.assign != 'function') {
             if (def.type === 'array')
                 field = _input_select_multi(host, def);
             else
-                field = _input_select(host, def, track);
+                field = _input_select(host, def, populate);
             host.pageInputs.push(field);
         } else if ('lookup' in def && def.type === 'text') {
             if (typeof def.lookup === 'string') def.lookup = { url: def.lookup };
@@ -964,14 +966,14 @@ if (typeof Object.assign != 'function') {
             if (p) {
                 group.addClass('row');
                 var length = section.length;
-                for (var x in section) {
+                for (let x in section) {
                     if (typeof section[x] !== 'object' || Array.isArray(section[x])) continue;
                     if (!('weight' in section[x])) section[x].weight = 1;
                     length = length + (section[x].weight - 1);
                 }
                 col_width = (12 / length);
             }
-            for (var x in section)
+            for (let x in section)
                 group.append($('<div>').toggleClass('col-lg-' + Math.round((section[x].weight || 1) * col_width), p).html(_section(host, section[x], !p)));
             return group;
         }
@@ -979,7 +981,7 @@ if (typeof Object.assign != 'function') {
         var fieldset = $('<fieldset>').data('def', section);
         if (section.label)
             fieldset.append($('<legend>').html(_match_replace(host, section.label, null, true, true)));
-        for (var x in section.fields)
+        for (let x in section.fields)
             fieldset.append(_form_field(host, section.fields[x]));
         if ('show' in section) {
             if (typeof section.show === 'boolean')
@@ -1003,10 +1005,10 @@ if (typeof Object.assign != 'function') {
         host.pageInputs = [];
         host.data.unwatch();
         if (page.label) form.append($('<h1>').html(_match_replace(host, page.label, null, true, true)));
-        for (var x in page.sections)
+        for (let x in page.sections)
             sections.push(_section(host, page.sections[x]));
         if (host.events.show.length > 0) {
-            for (var x in host.events.show)
+            for (let x in host.events.show)
                 _toggle_show(host, host.events.show[x]);
         }
         return form.append(sections);
@@ -1028,7 +1030,7 @@ if (typeof Object.assign != 'function') {
             host.objects.container.empty();
             if (host.settings.singlePage) {
                 host.page = 0;
-                for (var x in host.def.pages)
+                for (let x in host.def.pages)
                     host.objects.container.append(_page(host, host.def.pages[x]));
             } else {
                 host.page = pageno;
@@ -1078,7 +1080,7 @@ if (typeof Object.assign != 'function') {
                 return _validation_error(name, def, "bad_format");
         }
         if ('validate' in def) {
-            for (var type in def.validate) {
+            for (let type in def.validate) {
                 var data = def.validate[type];
                 switch (type) {
                     case 'min':
@@ -1123,7 +1125,7 @@ if (typeof Object.assign != 'function') {
         setTimeout(function () {
             var item = host.data[name], def = host.def.fields[name];
             if (def.protected || ('disabled' in def && _eval(host, def.disabled)))
-                for (var x in callbacks) callbacks[x](name, true);
+                for (let x in callbacks) callbacks[x](name, true);
             else {
                 var result = _validate_rule(host, name, item, def);
                 if (result === true && 'validate' in def && 'api' in def.validate) {
@@ -1131,9 +1133,9 @@ if (typeof Object.assign != 'function') {
                         target: [def.validate.url, { "name": name, "value": item.value }],
                     }, false).done(function (response) {
                         var result = (response.ok === true) ? true : _validation_error(name, def, response.reason || "api_failed(" + def.validate.url + ")");
-                        if (callbacks.length > 0) for (var x in callbacks) callbacks[x](name, result);
+                        if (callbacks.length > 0) for (let x in callbacks) callbacks[x](name, result);
                     });
-                } else if (callbacks.length > 0) for (var x in callbacks) callbacks[x](name, result);
+                } else if (callbacks.length > 0) for (let x in callbacks) callbacks[x](name, result);
             }
         });
         return { done: function (callback) { if (typeof callback === 'function') callbacks.push(callback); } };
@@ -1141,7 +1143,7 @@ if (typeof Object.assign != 'function') {
 
     function _validate_nav_field(field, error) {
         if (Array.isArray(field)) {
-            for (var x in field)
+            for (let x in field)
                 if (_validate_nav_field(field[x], error)) return true;
         } else {
             var name = (typeof field == 'string' ? field : field.name);
@@ -1156,10 +1158,10 @@ if (typeof Object.assign != 'function') {
      * @param {any} errors
      */
     function _validate_nav(host, errors) {
-        for (var p in host.def.pages) {
-            for (var s in host.def.pages[p].sections) {
-                for (var f in host.def.pages[p].sections[s].fields) {
-                    for (var x in errors) {
+        for (let p in host.def.pages) {
+            for (let s in host.def.pages[p].sections) {
+                for (let f in host.def.pages[p].sections[s].fields) {
+                    for (let x in errors) {
                         if (_validate_nav_field(host.def.pages[p].sections[s].fields[f], errors[x])) {
                             var page = parseInt(p);
                             if (host.page !== page)
@@ -1182,7 +1184,7 @@ if (typeof Object.assign != 'function') {
                     return;
                 fields = Object.keys(host.def.fields);
             }
-            for (var key in fields) {
+            for (let key in fields) {
                 queue.push(fields[key]);
                 _validate_field(host, fields[key]).done(function (name, result) {
                     var index = queue.indexOf(name);
@@ -1190,7 +1192,7 @@ if (typeof Object.assign != 'function') {
                     if (result !== true) errors.push(result);
                     $('[data-bind="' + name + '"]').toggleClass('is-invalid', (result !== true));
                     if (queue.length === 0)
-                        for (var x in callbacks) callbacks[x]((errors.length === 0), errors);
+                        for (let x in callbacks) callbacks[x]((errors.length === 0), errors);
                 });
             }
         });
@@ -1199,7 +1201,7 @@ if (typeof Object.assign != 'function') {
 
     function _validate_page(host) {
         var fields = [];
-        for (var x in host.pageInputs) {
+        for (let x in host.pageInputs) {
             var def = host.pageInputs[x].data('def');
             if (!def) continue;
             fields.push(def.name);
@@ -1229,7 +1231,7 @@ if (typeof Object.assign != 'function') {
     function _save(host, validate, extra) {
         var save_data = function (host, extra) {
             var data = host.data.save();
-            for (x in host.def.fields) if (host.def.fields[x].protected === true) delete data[x];
+            for (let x in host.def.fields) if (host.def.fields[x].protected === true) delete data[x];
             var params = { params: extra, form: data };
             $(host).trigger('saving', [data]);
             _post(host, 'post', params, false).done(function (response) {
@@ -1237,7 +1239,7 @@ if (typeof Object.assign != 'function') {
                     if (response.params)
                         $.extend(host.settings.params, response.params);
                     if (response.form) {
-                        for (var x in response.form)
+                        for (let x in response.form)
                             host.data[x] = response.form[x];
                     }
                     host.posts = {}; //Reset the post cache so we get clean data after 
@@ -1296,7 +1298,7 @@ if (typeof Object.assign != 'function') {
             if (result !== true) errors.push(result);
             $('[data-bind="' + name + '"]').toggleClass('is-invalid', (result !== true));
             if (host.validation.queue.length === 0) {
-                for (var x in host.validation.callbacks)
+                for (let x in host.validation.callbacks)
                     host.validation.callbacks[x](reulst);
 
                 errors = [];
@@ -1310,7 +1312,7 @@ if (typeof Object.assign != 'function') {
         fd.append('params', JSON.stringify(host.settings.params));
         if (host.deloads.length > 0)
             fd.append('remove', JSON.stringify(host.deloads));
-        for (var x in host.uploads)
+        for (let x in host.uploads)
             fd.append(host.uploads[x].field + '[' + x + ']', host.uploads[x].file);
         return $.ajax({
             type: 'POST',
@@ -1341,7 +1343,7 @@ if (typeof Object.assign != 'function') {
     function _define(values) {
         if (!values) return;
         var data = {};
-        for (var x in values) {
+        for (let x in values) {
             if (values[x].type === 'array' && !values[x].default) values[x].default = [];
             data[x] = values[x].default ? values[x].default : null;
         }
@@ -1363,7 +1365,7 @@ if (typeof Object.assign != 'function') {
             _post(host, 'load').done(function (response) {
                 if (!response.ok)
                     return;
-                for (var x in response.form)
+                for (let x in response.form)
                     host.data[x] = response.form[x];
                 $(host).trigger('data', [host.data.save()]);
                 _nav(host, 0);
@@ -1394,7 +1396,7 @@ if (typeof Object.assign != 'function') {
         switch (args[0]) {
             case 'info':
                 var data = host.data.save(), info = {};
-                for (var x in data)
+                for (let x in data)
                     info[x] = { label: host.def.fields[x].label, value: data[x] };
                 return info;
             case 'data':
@@ -1408,7 +1410,7 @@ if (typeof Object.assign != 'function') {
                     case 'reload':
                         var values = host.data.save();
                         _load_definition(host).done(function () {
-                            for (var x in values)
+                            for (let x in values)
                                 host.data[x] = values[x];
                             _nav(host, host.page);
                         });
@@ -1483,7 +1485,7 @@ $.fn.fileUpload = function () {
     host.options = $.extend({ name: 'file', multiple: false, btnClass: 'btn-default', maxSize: 0 }, arguments[0]);
     host._add = function (file) {
         if (Array.isArray(file)) {
-            if (host.options.multiple === true) for (var x in file) this._add(file[x]);
+            if (host.options.multiple === true) for (let x in file) this._add(file[x]);
             return;
         }
         if (!('lastModifiedDate' in file)) file.lastModifiedDate = new Date(file.lastModified * 1000);
@@ -1546,7 +1548,7 @@ $.fn.fileUpload = function () {
 
         if (failed.length > 0) {
             var filesP = $('<p>');
-            for (var x in failed)
+            for (let x in failed)
                 filesP.append($('<strong>').html(failed[x].name));
             $('<div>').html([
                 $('<p>').html('Failed to attach the following files:'),
