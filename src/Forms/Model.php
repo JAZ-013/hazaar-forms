@@ -466,7 +466,7 @@ class Model extends \Hazaar\Model\Strict {
 
         }elseif(ake($field, 'type') == 'array'){
 
-            if(property_exists($field, 'fields') && is_array($field->fields)){
+            if(property_exists($field, 'fields') && $field->fields instanceof \stdClass){
 
                 $items = array();
 
