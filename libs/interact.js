@@ -156,7 +156,7 @@ if (typeof Object.assign != 'function') {
         var item_data = _get_data_item(host, input.attr('data-bind'));
         if (input.is('[type=checkbox]')) {
             var value = input.is(':checked');
-            data[def.name].set(value, (value ? 'Yes' : 'No'));
+            item_data[def.name].set(value, (value ? 'Yes' : 'No'));
         } else if (input.is('select')) {
             var value = input.val();
             if (value === '_hzForm_Other') {
