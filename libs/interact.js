@@ -786,48 +786,44 @@ if (typeof Object.assign != 'function') {
         var label = $('<h4>').addClass(host.settings.styleClasses.label)
             .html(_match_replace(host, def.label, null, true, true))
             .appendTo(group);
-        var uniqid = 'select_' + Math.random().toString(36).substring(2);
-        var btn = $('<button type="button" class="btn btn-success btn-sm">')
-            .html($('<i class="fa fa-plus">'))
-            .data('uniqid', uniqid);
         var fields = [], template = $('<div class="itemlist-item">');
         if (def.allow_remove !== false) {
             template.append($('<div class="itemlist-item-rm">')
-                .html($('<button type="button" class="btn btn-danger btn-sm">')
-                    .html($('<i class="fa fa-minus">'))
-                ));
+                .html($('<button type="button" class="btn btn-danger btn-sm">').html($('<i class="fa fa-minus">'))));
         }
         for (let x in def.fields) {
             if (def.fields[x].hidden === true) continue;
             fields.push($.extend(def.fields[x], { name: x }));
         }
         if (def.allow_add !== false) {
+            var uniqid = 'select_' + Math.random().toString(36).substring(2);
+            var btn = $('<button type="button" class="btn btn-success btn-sm">')
+                .html($('<i class="fa fa-plus">'))
+                .data('uniqid', uniqid);
             group.append($('<div class="itemlist-newitems">').html([
                 $('<div class="itemlist-newitem-add">').html(btn),
                 _form_field(host, { fields: fields }).addClass('itemlist-newitem').attr('id', uniqid).attr('data-field', def.name)
             ]));
+            btn.click(function () {
+                var parent = $('#' + $(this).data('uniqid'));
+                var data = {}, field = parent.attr('data-field');
+                parent.find('input,select,textarea').each(function (index, item) {
+                    var input = $(item), value = input.val();
+                    if (input.is('select')) value = { __hz_value: value, __hz_label: input.children('option:selected').text() };
+                    $(item).val('');
+                    data[item.name] = value;
+                });
+                host.data[field].push(data);
+            });
         }
-        if (def.allow_edit !== true) {
-            for (let x in fields)
-                fields[x] = { html: '<div data-bind="' + fields[x].name + '">', weight: fields[x].weight || 1 };
-        }
+        if (def.allow_edit !== true)
+            for (let x in fields) fields[x] = { html: '<div data-bind="' + fields[x].name + '">', weight: fields[x].weight || 1 };
         template.append(_form_field(host, { fields: fields }));
         host.data[def.name].watch(function (item) {
             item.find('select').each(function (index, item) {
                 var def = $(item).data('def');
                 if ('options' in def) _input_select_populate(host, def.options, $(item));
             });
-        });
-        btn.click(function () {
-            var parent = $('#' + $(this).data('uniqid'));
-            var data = {}, field = parent.attr('data-field');
-            parent.find('input,select,textarea').each(function (index, item) {
-                var input = $(item), value = input.val();
-                if (input.is('select')) value = { __hz_value: value, __hz_label: input.children('option:selected').text() };
-                $(item).val('');
-                data[item.name] = value;
-            });
-            host.data[field].push(data);
         });
         group.append($('<div class="itemlist-items" data-bind-template="o">')
             .attr('data-bind', def.name)
