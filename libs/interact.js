@@ -122,6 +122,7 @@ if (typeof Object.assign != 'function') {
     };
 
     function _match_replace(host, str, extra, force, use_html) {
+        if (!str) return null;
         var values = (host ? $.extend({}, host.data.save(true), extra) : extra);
         while (match = str.match(/\{\{([\W]*)(\w+)\}\}/)) {
             var modifiers = match[1].split('');
@@ -462,12 +463,15 @@ if (typeof Object.assign != 'function') {
             }
             if ('other' in def && _eval(host, def.other) === true) {
                 select.append($('<option>').attr('value', '_hzForm_Other').html("Other"));
-                if (item_data[def.name].value === null & item_data[def.name].other !== null) select.val('_hzForm_Other').change();
+                if (def.name in item_data && item_data[def.name].value === null && item_data[def.name].other !== null)
+                    select.val('_hzForm_Other').change();
             }
-            if (def.name in item_data && item_data[def.name].value && data.find(function (e, index, obj) {
-                return e && e[valueKey] == item_data[def.name].value;
-            })) select.val(item_data[def.name].value);
-            else item_data[def.name] = null;
+            if (def.name in item_data) {
+                if (item_data[def.name].value && data.find(function (e, index, obj) {
+                    return e && e[valueKey] == item_data[def.name].value;
+                })) select.val(item_data[def.name].value);
+                else item_data[def.name] = null;
+            }
             if (Object.keys(data).length === 1 && options.single === true) {
                 var key = data[0][valueKey];
                 if (item_data[def.name].value !== key) {
@@ -778,35 +782,34 @@ if (typeof Object.assign != 'function') {
     };
 
     function _input_list(host, def) {
-        var group = $('<div>').addClass(host.settings.styleClasses.group).data('def', def);
+        var group = $('<div class="itemlist">').addClass(host.settings.styleClasses.group).data('def', def);
         var label = $('<h4>').addClass(host.settings.styleClasses.label)
-            .html((def.label ? _match_replace(host, def.label, null, true, true) : null))
+            .html(_match_replace(host, def.label, null, true, true))
             .appendTo(group);
         var uniqid = 'select_' + Math.random().toString(36).substring(2);
         var btn = $('<button type="button" class="btn btn-success btn-sm">')
             .html($('<i class="fa fa-plus">'))
             .data('uniqid', uniqid);
-        var fields = [], template = $('<div style="position: relative;">');
-        var t_container = $('<div class="row">').css({ 'margin-right': '25px' });
-        var col_width = 12 / Object.keys(def.fields).length;
-        template.append($('<div style="position: absolute; right: 0; bottom: 0; margin-bottom: 1.2rem;">')
-            .html($('<button type="button" class="btn btn-danger btn-sm">').html($('<i class="fa fa-minus">')))).append(t_container);
-        if (!('allow_add' in def) || def.allow_add === true) {
-            for (let x in def.fields) fields.push($.extend(def.fields[x], { name: x }));
-            group.append($('<div style="position: relative;">').html([
-                $('<div style="position: absolute; right: 0; bottom: 0; margin-bottom: 1.2rem;">').html(btn),
-                _form_field(host, { fields: fields }).css({ 'margin-right': '25px' }).attr('id', uniqid).attr('data-field', def.name)
-            ]).addClass('itemlist-newitems'));
-        }
+        var fields = [], template = $('<div class="itemlist-item">');
+        template.append($('<div class="itemlist-item-rm">')
+            .html($('<button type="button" class="btn btn-danger btn-sm">')
+                .html($('<i class="fa fa-minus">'))
+            ));
         for (let x in def.fields) {
-            var col = $('<div>').addClass('col-lg-' + col_width).appendTo(t_container);
-            if (def.allow_edit === true) {
-                if (!('name' in def.fields[x])) def.fields[x].name = x;
-                _form_field(host, def.fields[x], null, false).appendTo(col);
-            } else {
-                col.attr('data-bind', x);
-            }
+            if (def.fields[x].hidden === true) continue;
+            fields.push($.extend(def.fields[x], { name: x }));
         }
+        if (!('allow_add' in def) || def.allow_add === true) {
+            group.append($('<div class="itemlist-newitems">').html([
+                $('<div class="itemlist-newitem-add">').html(btn),
+                _form_field(host, { fields: fields }).addClass('itemlist-newitem').attr('id', uniqid).attr('data-field', def.name)
+            ]));
+        }
+        if (def.allow_edit !== true) {
+            for (let x in fields)
+                fields[x] = { html: '<div data-bind="' + fields[x].name + '">', weight: fields[x].weight || 1 };
+        }
+        template.append(_form_field(host, { fields: fields }));
         host.data[def.name].watch(function (item) {
             item.find('select').each(function (index, item) {
                 var def = $(item).data('def');
