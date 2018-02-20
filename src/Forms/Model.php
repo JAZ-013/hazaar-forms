@@ -137,8 +137,28 @@ class Model extends \Hazaar\Model\Strict {
         //Make any changes to the field defs for use in strict models.
         foreach($fields as $name => &$def){
 
-            if(ake($def, 'type') == 'date')
-                $def['type'] = 'Hazaar\Date';
+            switch(ake($def, 'type')){
+                case 'date':
+
+                    $def['type'] = 'Hazaar\Date';
+
+                    break;
+
+                case 'array':
+
+                    settype($def['fields'], 'array');
+
+                    akr($def, 'fields', 'arrayOf');
+
+                    //Field defs need to be arrays.  Their contents do not however.
+                    array_walk($def['arrayOf'], function(&$array){
+                        if(is_string($array)) $array = array('type' => $array);
+                        elseif(is_object($array)) settype($array, 'array');
+                    });
+
+                    break;
+
+            }
 
         }
 
