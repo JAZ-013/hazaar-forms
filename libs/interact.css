@@ -149,3 +149,33 @@
                 .form-dropzone .dz-items .dz-item .dz-remove:hover {
                     color: #b20000
                 }
+
+.itemlist-template,
+.itemlist-newitems,
+.itemlist-newitem {
+    position: relative;
+}
+
+.itemlist-newitem,
+.itemlist-item.row {
+    margin-right: 70px;
+}
+
+.itemlist-newitems,
+.itemlist-item {
+    padding: 15px;
+    box-sizing: border-box;
+}
+
+.itemlist-newitem-add,
+.itemlist-item-rm {
+    float: right;
+    width: 60px;
+    padding: 0;
+}
+
+    .itemlist-newitem-add button,
+    .itemlist-item-rm button {
+        width: 60px;
+        margin: 0;
+    }
