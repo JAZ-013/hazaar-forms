@@ -791,15 +791,17 @@ if (typeof Object.assign != 'function') {
             .html($('<i class="fa fa-plus">'))
             .data('uniqid', uniqid);
         var fields = [], template = $('<div class="itemlist-item">');
-        template.append($('<div class="itemlist-item-rm">')
-            .html($('<button type="button" class="btn btn-danger btn-sm">')
-                .html($('<i class="fa fa-minus">'))
-            ));
+        if (def.allow_remove !== false) {
+            template.append($('<div class="itemlist-item-rm">')
+                .html($('<button type="button" class="btn btn-danger btn-sm">')
+                    .html($('<i class="fa fa-minus">'))
+                ));
+        }
         for (let x in def.fields) {
             if (def.fields[x].hidden === true) continue;
             fields.push($.extend(def.fields[x], { name: x }));
         }
-        if (!('allow_add' in def) || def.allow_add === true) {
+        if (def.allow_add !== false) {
             group.append($('<div class="itemlist-newitems">').html([
                 $('<div class="itemlist-newitem-add">').html(btn),
                 _form_field(host, { fields: fields }).addClass('itemlist-newitem').attr('id', uniqid).attr('data-field', def.name)
