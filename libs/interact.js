@@ -439,10 +439,11 @@ if (typeof Object.assign != 'function') {
                         return a[options.sort] - b[options.sort];
                     });
                 } else if (Array.isArray(options.sort)) {
+                    let x;
                     var newdata = [], find_test = function (element, index, array) {
                         return element[labelKey] === options.sort[x];
                     };
-                    for (let x in options.sort) if (newitem = data.find(find_test)) newdata.push(newitem);
+                    for (x in options.sort) if (newitem = data.find(find_test)) newdata.push(newitem);
                     data = newdata;
                 }
             }
