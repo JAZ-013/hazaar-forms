@@ -146,6 +146,9 @@ class Model extends \Hazaar\Model\Strict {
 
                 case 'array':
 
+                    if(array_key_exists('arrayOf', $def)) 
+                        continue;
+
                     settype($def['fields'], 'array');
 
                     akr($def, 'fields', 'arrayOf');
@@ -316,6 +319,8 @@ class Model extends \Hazaar\Model\Strict {
 
             if($value instanceof \Hazaar\Model\ChildArray)
                 $value = $this->export($value->toArray());
+            elseif($value instanceof \Hazaar\Model\ChildModel)
+                $value = $this->export($value->toArray(false, 0));
             elseif($value instanceof \Hazaar\Model\DataBinderValue)
                 $value = $value->value;
 
@@ -580,6 +585,7 @@ class Model extends \Hazaar\Model\Strict {
                     $value = strbool($value);
                 elseif(is_null($value))
                     $value = 'null';
+
                 elseif (is_array($value) || $value instanceof \Hazaar\Model\ChildArray){
 
                     $values = array();
