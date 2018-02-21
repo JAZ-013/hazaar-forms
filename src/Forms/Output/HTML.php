@@ -220,15 +220,33 @@ class HTML extends \Hazaar\Forms\Output {
 
                 $rows = new \Hazaar\Html\Tbody();
 
-                foreach(ake($field, 'fields', array()) as $key => $def)
+                $count = 0;
+
+                foreach(ake($field, 'fields', array()) as $key => $def){
+
+                    if(ake($def, 'hidden')) continue;
+
                     $hdrs->add(new \Hazaar\Html\Th(ake($def, 'label', $key)));
+
+                    $count += ake($def, 'weight', 1);
+
+                }
 
                 foreach(ake($field, 'value', array()) as $items){
 
                     $row = new \Hazaar\Html\Tr();
 
-                    foreach($items as $key => $item)
-                        $row->add(new \Hazaar\Html\Td(ake($item, 'value')));
+                    foreach($items as $key => $item){
+
+                        if(ake($item, 'hidden')) continue;
+
+                        $td = new \Hazaar\Html\Td(ake($item, 'value'));
+
+                        $td->style('width', (100 / $count ) * ake($item, 'weight', 1) . '%');
+
+                        $row->add($td);
+
+                    }
 
                     $rows->add($row);
 
