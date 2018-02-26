@@ -416,7 +416,7 @@ abstract class Form extends Action {
         $file = $name . '.json';
 
         if(!($source = $app->filePath('forms', $file, true)))
-            throw new \Exception('Form model source not found: ' . $file, 404);
+            throw new \Exception('Form model source not found: ' . $file);
 
         $source_file = new \Hazaar\File($source);
 
