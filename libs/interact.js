@@ -1132,7 +1132,7 @@ if (typeof Object.assign != 'function') {
                 for (let x in callbacks) callbacks[x](name, true);
             else {
                 var result = _validate_rule(host, name, item, def);
-                if (result === true && 'validate' in def && 'api' in def.validate) {
+                if (result === true && 'validate' in def && 'url' in def.validate) {
                     _post(host, 'api', {
                         target: [def.validate.url, { "name": name, "value": item.value }],
                     }, false).done(function (response) {
