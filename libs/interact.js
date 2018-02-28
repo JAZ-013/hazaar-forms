@@ -1528,7 +1528,7 @@ $.fn.fileUpload = function () {
             };
             reader.readAsDataURL(file);
         } else
-            o.addClass('fileicon').attr('data-type', file.type.replace('/', '-'));
+            o.addClass('fileicon').attr('data-type', file.type.replace(/\./g, '_').replace(/\//g, '-'));
         return o;
     };
     host._checksize = function (file) {
