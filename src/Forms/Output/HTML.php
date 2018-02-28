@@ -240,7 +240,9 @@ class HTML extends \Hazaar\Forms\Output {
 
                         if(ake($item, 'hidden')) continue;
 
-                        $td = new \Hazaar\Html\Td(ake($item, 'value'));
+                        $value = (property_exists('html', $item) ? $item->html : $item->value);
+
+                        $td = new \Hazaar\Html\Td($value);
 
                         $td->style('width', (100 / $count ) * ake($item, 'weight', 1) . '%');
 
