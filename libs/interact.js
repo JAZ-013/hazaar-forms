@@ -197,7 +197,7 @@ if (typeof Object.assign != 'function') {
     };
 
     function _input_event_update(host, input) {
-        var def = input.data('def'), update = def.update;
+        var def = input.data('def'), update = def.update, cb_done = null;
         if (def.change)
             _eval_code(host, def.change);
         if (typeof update === 'string') update = { "url": update };
@@ -222,10 +222,12 @@ if (typeof Object.assign != 'function') {
                 }
                 return false;
             };
-            if (check_api(host, update)) {
+            if (check_api(host, update)) cb_done = function () {
                 _post(host, 'update', options, false).done(function (response) {
-                    if (response.ok)
+                    if (response.ok) {
                         host.data.extend(response.updates);
+                        _validate_input(host, input);
+                    }
                 }).fail(_error);
             }
         }
@@ -246,7 +248,8 @@ if (typeof Object.assign != 'function') {
                 i.prop('disabled', disabled);
             }
         }
-        _validate_input(host, input);
+        if (def.save === true) _save(host, false).done(cb_done);
+        else if (typeof cb_done === 'function') cb_done();
     };
 
     function _input_event_focus(host, input) {
@@ -634,15 +637,19 @@ if (typeof Object.assign != 'function') {
             .attr('for', def.name)
             .html(_match_replace(host, def.label, null, true, true))
             .appendTo(group);
-        var input = $('<div>').fileUpload({
+        var input = $('<div>').data('def', def).fileUpload({
             name: def.name,
             multiple: def.multiple || false,
             btnClass: def.btnClass || null,
             height: def.height || null,
+            accept: def.accept || null,
             maxSize: def.maxSize || host.settings.maxUploadSize || null,
             select: function (files) {
-                for (let x in files)
+                for (let x in files) {
                     host.uploads.push({ "field": def.name, "file": files[x] });
+                    host.data[def.name].push(files[x].name);
+                }
+                _input_event_update(host, input);
             },
             remove: function (file) {
                 host.uploads = host.uploads.filter(function (item, index) {
@@ -650,6 +657,8 @@ if (typeof Object.assign != 'function') {
                         return item;
                 });
                 host.deloads.push({ "field": def.name, "file": file });
+                host.data[def.name].remove(file.name);
+                _input_event_update(host, input);
                 return true;
             }
         }).appendTo(group);
@@ -1076,7 +1085,7 @@ if (typeof Object.assign != 'function') {
         if (!def) return true;
         if ('show' in def) if (!_eval(host, def.show)) return true;
         var required = ('required' in def) ? _eval_code(host, def.required) : false;
-        var value = (def.other && !item.value) ? item.other : item.value;
+        var value = ((item instanceof dataBinderArray && item.length > 0) ? item : (def.other && !item.value) ? item.other : item.value);
         if (required && !value) return _validation_error(name, def, "required");
         if (!value) return true; //Return now if there is no value and the field is not required!
         if ('format' in def && value) {
@@ -1233,6 +1242,7 @@ if (typeof Object.assign != 'function') {
     //Save form data back to the controller
     //By default calls validation and will only save data if the validation is successful
     function _save(host, validate, extra) {
+        var callbacks = { done: null };
         var save_data = function (host, extra) {
             var data = host.data.save();
             for (let x in host.def.fields) if (host.def.fields[x].protected === true) delete data[x];
@@ -1252,6 +1262,7 @@ if (typeof Object.assign != 'function') {
                             if (upload_response.ok) {
                                 host.uploads = [];
                                 $(host).trigger('save', [host.settings.params]);
+                                if (callbacks.done) callbacks.done(response);
                             } else {
                                 $('<div>').html(upload_response.reason).popup({
                                     title: 'Upload error',
@@ -1265,6 +1276,7 @@ if (typeof Object.assign != 'function') {
                         });
                     } else {
                         $(host).trigger('save', [host.settings.params]);
+                        if (callbacks.done) callbacks.done(response);
                     }
                 } else {
                     $('<div>').html(response.reason).popup({
@@ -1287,6 +1299,7 @@ if (typeof Object.assign != 'function') {
                 }
             });
         else save_data(host, extra);
+        return { done: function (callback) { if (typeof callback === 'function') callbacks.done = callback; } };
     };
 
     //Register events that are used to control the form functions
@@ -1348,7 +1361,10 @@ if (typeof Object.assign != 'function') {
         if (!values) return;
         var data = {};
         for (let x in values) {
-            if (values[x].type === 'array' && !values[x].default) values[x].default = [];
+            if (!values[x].default) {
+                if (values[x].type === 'array' || values[x].type === 'file')
+                    values[x].default = [];
+            }
             data[x] = values[x].default ? values[x].default : null;
         }
         return data;
@@ -1592,6 +1608,7 @@ $.fn.fileUpload = function () {
         this.o = {};
         this.o.input = $('<input type="file" class="form-control">').hide().appendTo(host);
         if (host.options.multiple) this.o.input.prop('multiple', true);
+        if (host.options.accept) this.o.input.attr('accept', host.options.accept);
         host.o.dzwords = $('<div class="form-dropzone-words">').html('Drop files here or click to upload.');
         this.o.dropzone = $('<div class="form-dropzone">').html(this.o.dzwords).appendTo(host);
         if (host.options.height) this.o.dropzone.height(host.options.height);

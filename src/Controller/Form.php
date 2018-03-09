@@ -143,7 +143,14 @@ abstract class Form extends Action {
 
                 $this->model->lock();
 
-                $this->model->populate($this->request->get('form'));
+                $this->model->populate($this->request->get('form', array()));
+
+                $params = $this->request->get('params');
+
+                if($this->request->get('save') === true)
+                    $this->form_save($this->model, $params);
+
+                $out->params = $params;
 
                 if($target = $this->request->get('api')){
 
@@ -153,11 +160,17 @@ abstract class Form extends Action {
 
                 }elseif(method_exists($this, 'form_update')){
 
-                    $updates = (array)$this->form_update($this->request->get('originator'), $this->model);
+                    $updates = (array)$this->form_update($this->request->get('originator'), $this->model, $params);
 
                 }
 
-                if(is_array($updates)) $out->updates = $updates;
+                if(is_array($updates)){
+
+                    $this->model->populate($updates);
+
+                    $out->updates = array_intersect_key($this->model->toArray(), $updates);
+
+                }
 
                 $out->ok = true;
 
