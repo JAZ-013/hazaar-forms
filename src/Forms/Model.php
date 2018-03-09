@@ -146,7 +146,7 @@ class Model extends \Hazaar\Model\Strict {
 
                 case 'array':
 
-                    if(array_key_exists('arrayOf', $def)) 
+                    if(array_key_exists('arrayOf', $def))
                         continue;
 
                     settype($def['fields'], 'array');
@@ -585,7 +585,8 @@ class Model extends \Hazaar\Model\Strict {
                     $value = strbool($value);
                 elseif(is_null($value))
                     $value = 'null';
-
+                elseif($value instanceof \Hazaar\Model\ChildModel)
+                    $value = $value->toArray();
                 elseif (is_array($value) || $value instanceof \Hazaar\Model\ChildArray){
 
                     $values = array();
