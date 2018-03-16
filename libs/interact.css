@@ -70,6 +70,106 @@
     right: 15px;
 }
 
+.form-fileupload .dz-items {
+    overflow-y: auto;
+    overflow-x: hidden;
+    color: #000;
+}
+
+    .form-fileupload .dz-items .dz-item:hover {
+        background-color: #eee rgba(0,0,0,0.1);
+        border-color: #eee rgba(0,0,0,0.1);
+    }
+
+    .form-fileupload .dz-items .dz-item .dz-remove {
+        color: red;
+        cursor: pointer;
+        font-size: 16px;
+    }
+
+.form-fileupload input {
+    display: none;
+}
+
+/* SINGLE MODE */
+
+.form-fileupload.single .dz-items {
+    padding: 0;
+    height: 32px;
+}
+
+.form-fileupload.single button:not([style*="display: none"]) + .dz-items {
+    display: none;
+}
+
+.form-fileupload.single .dz-items .dz-item .dz-preview {
+    float: left;
+    width: 32px;
+    height: 32px;
+}
+
+.form-fileupload.single .dz-items .dz-item .dz-detail,
+.form-fileupload.single .dz-items .dz-item .dz-remove {
+    float: left;
+    line-height: 32px;
+}
+
+.form-fileupload.single .dz-items .dz-item .dz-preview,
+.form-fileupload.single .dz-items .dz-item .dz-detail {
+    margin-right: 16px;
+}
+
+.form-fileupload.single .dz-items .dz-item .dz-size {
+    display: none;
+}
+
+/* MULTIPLE MODE */
+
+.form-fileupload.multiple .dz-items {
+    padding: 15px;
+}
+
+    .form-fileupload.multiple .dz-items .dz-item {
+        position: relative;
+        float: left;
+        cursor: default;
+        user-select: none;
+        overflow: hidden;
+        padding: 15px 15px 5px 15px;
+        border: 1px solid transparent;
+        font-size: .8em;
+    }
+
+        .form-fileupload.multiple .dz-items .dz-item .dz-preview {
+            box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+            width: 120px;
+            height: 120px;
+        }
+
+            .form-fileupload.multiple .dz-items .dz-item .dz-preview > img {
+                object-fit: cover;
+                width: 120px;
+                height: 120px;
+            }
+
+        .form-fileupload.multiple .dz-items .dz-item .dz-size {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            background: #999 rgba(255,255,255,0.6);
+            padding: 2px 5px;
+        }
+
+        .form-fileupload.multiple .dz-items .dz-item .dz-detail {
+            float: left;
+            width: 100px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            line-height: 22px;
+            vertical-align: middle;
+        }
+
 .form-dropzone {
     display: flex;
     border: 2px dashed #ddd;
@@ -79,6 +179,11 @@
     transition: all .5s;
 }
 
+    .form-dropzone.drag {
+        background-color: rgba(255,0,0,0.3);
+        color: #000;
+    }
+
     .form-dropzone .form-dropzone-words {
         align-self: center;
         width: 100%;
@@ -86,69 +191,16 @@
         margin: 15px;
     }
 
-    .form-dropzone .dz-items {
-        overflow-y: auto;
-        overflow-x: hidden;
-        color: #000;
-        padding: 15px;
-    }
+.form-fileupload.single .dz-items .dz-item .dz-remove {
+}
 
-        .form-dropzone .dz-items .dz-item {
-            position: relative;
-            float: left;
-            cursor: default;
-            user-select: none;
-            overflow: hidden;
-            padding: 15px 15px 5px 15px;
-            border: 1px solid transparent;
-            font-size: .8em;
-        }
+.form-fileupload.multiple .dz-items .dz-item .dz-remove {
+    float: right;
+}
 
-            .form-dropzone .dz-items .dz-item:hover {
-                background-color: #eee rgba(0,0,0,0.1);
-                border-color: #eee rgba(0,0,0,0.1);
-            }
-
-            .form-dropzone .dz-items .dz-item .dz-preview {
-                box-shadow: 0 2px 4px rgba(0,0,0,0.3);
-                width: 120px;
-                height: 120px;
-            }
-
-                .form-dropzone .dz-items .dz-item .dz-preview > img {
-                    object-fit: cover;
-                    width: 120px;
-                    height: 120px;
-                }
-
-            .form-dropzone .dz-items .dz-item .dz-size {
-                position: absolute;
-                top: 15px;
-                right: 15px;
-                background: #999 rgba(255,255,255,0.6);
-                padding: 2px 5px;
-            }
-
-            .form-dropzone .dz-items .dz-item .dz-detail {
-                float: left;
-                width: 100px;
-                white-space: nowrap;
-                overflow: hidden;
-                text-overflow: ellipsis;
-                line-height: 22px;
-                vertical-align: middle;
-            }
-
-            .form-dropzone .dz-items .dz-item .dz-remove {
-                float: right;
-                color: red;
-                cursor: pointer;
-                font-size: 16px;
-            }
-
-                .form-dropzone .dz-items .dz-item .dz-remove:hover {
-                    color: #b20000
-                }
+.form-fileupload .dz-items .dz-item .dz-remove:hover {
+    color: #b20000
+}
 
 .itemlist-template,
 .itemlist-newitems,

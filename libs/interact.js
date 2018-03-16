@@ -29,6 +29,8 @@ if (typeof Object.assign != 'function') {
     });
 }
 
+var form;
+
 (function ($) {
 
     //Error capture method
@@ -254,14 +256,12 @@ if (typeof Object.assign != 'function') {
 
     function _input_event_focus(host, input) {
         var def = input.data('def');
-        if (def.focus)
-            _eval_code(host, def.focus);
+        if (def.focus) _eval_code(host, def.focus);
     };
 
     function _input_event_blur(host, input) {
         var def = input.data('def');
-        if (def.blur)
-            _eval_code(host, def.blur);
+        if (def.blur) _eval_code(host, def.blur);
     };
 
     function _input_button(host, def) {
@@ -370,7 +370,6 @@ if (typeof Object.assign != 'function') {
                 var match = matches[x].substr(2, matches[x].length - 4);
                 if (!(match in def.watchers)) def.watchers[match] = [];
                 def.watchers[match].push(host.data.watch(match, function (key, value, container) {
-                    console.log("Value '" + key + "' changed: " + value);
                     _input_select_multi_populate_ajax(host, options, container, false);
                 }, container));
             }
@@ -652,6 +651,7 @@ if (typeof Object.assign != 'function') {
                 _input_event_update(host, input);
             },
             remove: function (file) {
+                file = _objectify_file(file);
                 host.uploads = host.uploads.filter(function (item, index) {
                     if (!(item.field === def.name && item.file.name === file.name))
                         return item;
@@ -1261,6 +1261,7 @@ if (typeof Object.assign != 'function') {
                         _upload_files(host).done(function (upload_response) {
                             if (upload_response.ok) {
                                 host.uploads = [];
+                                host.deloads = [];
                                 $(host).trigger('save', [host.settings.params]);
                                 if (callbacks.done) callbacks.done(response);
                             } else {
@@ -1321,6 +1322,19 @@ if (typeof Object.assign != 'function') {
                 errors = [];
             }
         });
+    };
+
+    function _objectify_file(file) {
+        if (file instanceof File) {
+            file = {
+                lastModified: file.lastModified,
+                lastModifiedDate: file.lastModifiedDate,
+                name: file.name,
+                size: file.size,
+                type: file.type
+            };
+        }
+        return file;
     };
 
     function _upload_files(host) {
@@ -1408,6 +1422,7 @@ if (typeof Object.assign != 'function') {
         _registerEvents(host);
         _render(host);
         _load(host);
+        form = host;
     };
 
     $.fn.hzForm = function () {
@@ -1510,7 +1525,7 @@ $.fn.fileUpload = function () {
         }
         if (!('lastModifiedDate' in file)) file.lastModifiedDate = new Date(file.lastModified * 1000);
         host.files.push(file);
-        host.o.dzwords.hide();
+        if (host.o.dzwords) host.o.dzwords.hide();
         host.o.list.append($('<div class="dz-item">').html([
             host._preview(file),
             $('<div class="dz-size">').html(humanFileSize(file.size)),
@@ -1530,7 +1545,7 @@ $.fn.fileUpload = function () {
         this.files = this.files.filter(function (item) {
             return (item.name !== file.name);
         });
-        if (this.files.length === 0) this.o.dzwords.show();
+        if (this.files.length === 0 && this.o.dzwords) this.o.dzwords.show();
         return true;
     };
     host._preview = function (file) {
@@ -1547,6 +1562,10 @@ $.fn.fileUpload = function () {
             o.addClass('fileicon').attr('data-type', file.type.replace(/\./g, '_').replace(/\//g, '-'));
         return o;
     };
+    host._checkexists = function (file) {
+        for (let x in host.files) if (host.files[x].name === file.name) return true;
+        return false;
+    };
     host._checksize = function (file) {
         if (host.options.maxSize === 0 || file.size < host.options.maxSize)
             return true;
@@ -1554,7 +1573,9 @@ $.fn.fileUpload = function () {
     };
     host._add_files = function (array) {
         var fileArray = Array.from(array), added = [], failed = [];
+        if (!host.options.multiple && host.files.length > 0) return;
         fileArray.forEach(function (file) {
+            if (host._checkexists(file)) return;
             if (host._checksize(file)) {
                 host._add(file);
                 added.push(file);
@@ -1563,9 +1584,8 @@ $.fn.fileUpload = function () {
             }
         });
         host.o.input.val(null);
-        if (typeof host.options.select === 'function')
+        if (added.length > 0 && typeof host.options.select === 'function')
             host.options.select(added);
-
         if (failed.length > 0) {
             var filesP = $('<p>');
             for (let x in failed)
@@ -1580,39 +1600,63 @@ $.fn.fileUpload = function () {
                 buttons: [{ label: "OK", "class": "btn btn-danger" }]
             });
         }
-
     };
     host._registerEvents = function () {
-        this.o.dropzone.click(function (e) {
-            host.o.input.click();
-        });
-        this.o.dropzone.on('dragenter', function (e) {
-            e.preventDefault();
-            e.stopPropagation();
-        });
-        this.o.dropzone.on('dragover', function (e) {
-            e.preventDefault();
-            e.stopPropagation();
-        });
-        this.o.dropzone.on('drop', function (e) {
-            host._add_files(e.originalEvent.dataTransfer.files);
-            e.preventDefault();
-            e.stopPropagation();
-        });
+        if (this.o.dropzone) {
+            this.o.dropzone.click(function (e) {
+                if (!host.options.multiple && host.files.length > 0) return;
+                host.o.input.click();
+            });
+            this.o.dropzone.on('dragenter', function (e) {
+                e.preventDefault();
+                e.stopPropagation();
+            });
+            this.o.dropzone.on('dragover', function (e) {
+                host.o.dropzone.addClass('drag');
+                e.preventDefault();
+                e.stopPropagation();
+            });
+            this.o.dropzone.on('dragleave', function (e) {
+                e.preventDefault();
+                e.stopPropagation();
+                host.o.dropzone.removeClass('drag');
+            });
+            this.o.dropzone.on('drop', function (e) {
+                e.preventDefault();
+                e.stopPropagation();
+                host.o.dropzone.removeClass('drag');
+                if (!host.options.multiple && host.files.length > 0) return;
+                host._add_files(e.originalEvent.dataTransfer.files);
+            });
+        }
         this.o.input.change(function (e) {
+            if (!host.options.multiple && host.files.length > 0) return;
             host._add_files(e.target.files);
         });
+        if (!this.options.multiple) {
+            this.o.dzwords.click(function () {
+                host.o.input.click();
+            });
+        }
     };
     host._render = function (host) {
         $(this).addClass('form-fileupload');
         this.o = {};
-        this.o.input = $('<input type="file" class="form-control">').hide().appendTo(host);
-        if (host.options.multiple) this.o.input.prop('multiple', true);
+        this.o.input = $('<input type="file" class="form-control">').appendTo(host);//.hide();
         if (host.options.accept) this.o.input.attr('accept', host.options.accept);
-        host.o.dzwords = $('<div class="form-dropzone-words">').html('Drop files here or click to upload.');
-        this.o.dropzone = $('<div class="form-dropzone">').html(this.o.dzwords).appendTo(host);
-        if (host.options.height) this.o.dropzone.height(host.options.height);
-        this.o.list = $('<div class="dz-items">').appendTo(this.o.dropzone);
+        this.o.list = $('<div class="dz-items">');
+        if (host.options.multiple) {
+            this.o.input.prop('multiple', true);
+            host.o.dzwords = $('<div class="form-dropzone-words">').html('Drop files here or click to upload.');
+            this.o.dropzone = $('<div class="form-dropzone">')
+                .html([this.o.dzwords, this.o.list])
+                .appendTo($(host).addClass('multiple'))
+                .toggleClass('single', !host.options.multiple);
+            if (host.options.height) this.o.dropzone.height(host.options.height);
+        } else {
+            host.o.dzwords = $('<button class="btn btn-primary">').html('Select').appendTo($(host));
+            this.o.list.appendTo($(host).addClass('single'));
+        }
     };
     host._render(host);
     host._registerEvents();
