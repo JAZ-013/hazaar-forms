@@ -636,7 +636,7 @@ var form;
             .attr('for', def.name)
             .html(_match_replace(host, def.label, null, true, true))
             .appendTo(group);
-        var input = $('<div>').data('def', def).fileUpload({
+        var input = $('<div>').data('def', def).attr('name', def.name).fileUpload({
             name: def.name,
             multiple: def.multiple || false,
             btnClass: def.btnClass || null,
@@ -1069,9 +1069,9 @@ var form;
 
 
     function _validate_input(host, input) {
-        var name = input.attr('name'), def = host.def.fields[name];
-        if (!def) return true;
-        _validate_field(host, name).done(function (name, result) {
+        var def = input.data('def');
+        if (!def) return false;
+        return _validate_field(host, def.name).done(function (name, result) {
             input.toggleClass('is-invalid', result !== true);
         });
     };
