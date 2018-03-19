@@ -639,7 +639,8 @@ var form;
         var input = $('<div>').data('def', def).attr('name', def.name).fileUpload({
             name: def.name,
             multiple: def.multiple || false,
-            btnClass: def.btnClass || null,
+            btnClass: def.btnClass || "btn btn-default",
+            btnLabel: def.btnLabel || "Select",
             height: def.height || null,
             accept: def.accept || null,
             maxSize: def.maxSize || host.settings.maxUploadSize || null,
@@ -1513,7 +1514,7 @@ $.fn.fileUpload = function () {
         return this;
     }
     host.files = [];
-    host.options = $.extend({ name: 'file', multiple: false, btnClass: 'btn-default', maxSize: 0 }, arguments[0]);
+    host.options = $.extend({ name: 'file', multiple: false, btnClass: 'btn btn-default', maxSize: 0 }, arguments[0]);
     host._add = function (file) {
         if (Array.isArray(file)) {
             if (host.options.multiple === true) for (let x in file) this._add(file[x]);
@@ -1650,7 +1651,7 @@ $.fn.fileUpload = function () {
                 .toggleClass('single', !host.options.multiple);
             if (host.options.height) this.o.dropzone.height(host.options.height);
         } else {
-            host.o.dzwords = $('<button class="btn btn-primary">').html('Select').appendTo($(host));
+            host.o.dzwords = $('<button>').addClass(host.options.btnClass).html(host.options.btnLabel).appendTo($(host));
             this.o.list.appendTo($(host).addClass('single'));
         }
     };
