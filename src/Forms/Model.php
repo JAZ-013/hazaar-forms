@@ -657,7 +657,7 @@ class Model extends \Hazaar\Model\Strict {
         if(strpos($item, '.') !== false)
             $item = str_replace('.', '->', $item);
 
-        if(!($item[0] == "'" && $item[-1] == "'") && !in_array(strtolower($item), $keywords) && !is_numeric($item))
+        if(!(substr($item, 0, 1) == "'" && substr($item, -1, 1) == "'") && !in_array(strtolower($item), $keywords) && !is_numeric($item))
             $item = '$' . $item;
 
         return $item;
