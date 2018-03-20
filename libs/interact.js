@@ -874,10 +874,13 @@ var form;
         if (info instanceof Array)
             info = { fields: info };
         if (!(def = _form_field_lookup(host.def, info))) return;
-        if ('name' in def && 'default' in def && host.data[def.name].value === null)
-            host.data[def.name] = def.default;
+        if ('name' in def && 'default' in def) {
+            var item_data = _get_data_item(host.data, def.name);
+            if (item_data.value === null) item_data.value = def.default;
+        }
         if ('render' in def) {
-            field = new Function('field', 'form', def.render)($.extend({}, def, { value: host.data[def.name].save(true) }), host);
+            var item_data = _get_data_item(host.data, def.name);
+            field = new Function('field', 'form', def.render)($.extend({}, def, { value: item_data.save(true) }), host);
             host.pageInputs.push(field);
         } else if ('fields' in def && def.type != 'array') {
             var length = (def.fields instanceof Array) ? def.fields.length : Object.keys(def.fields).length, fields = [], col_width;
@@ -894,7 +897,7 @@ var form;
                         length = length + (item.weight - 1);
                     }
                 }
-                if (!("name" in item) && typeof info === 'string') item.name = info + '.' + x;
+                if (typeof item === 'object' && !("name" in item) && 'name' in def) item.name = def.name + '.' + x;
                 fields.push(item);
             }
             col_width = (12 / length);
