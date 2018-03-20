@@ -139,35 +139,34 @@ var form;
         return str;
     };
 
-    function _get_data_item(host, name) {
-        var data = host.data;
-        if ((pos = name.lastIndexOf('.')) > 0) {
-            var parts = name.substr(0, pos).split(/[\.\[]/);
-            for (let x in parts) {
-                var key = parts[x];
-                if (parts[x].slice(-1) === ']') key = parseInt(key.slice(0, -1));
-                data = data[key];
-            }
+    function _get_data_item(data, name) {
+        var parts = name.split(/[\.\[]/), item = data;
+        for (let x in parts) {
+            var key = parts[x];
+            if (parts[x].slice(-1) === ']') key = parseInt(key.slice(0, -1));
+            if (!(key in item)) return null;
+            item = item[key];
         }
-        return data;
+        return item;
     };
 
     //Input events
     function _input_event_change(host, input) {
         var def = input.data('def');
-        var item_data = _get_data_item(host, input.attr('data-bind'));
+        var item_data = _get_data_item(host.data, input.attr('data-bind'));
+        if (!item_data) return;
         if (input.is('[type=checkbox]')) {
             var value = input.is(':checked');
-            item_data[def.name].set(value, (value ? 'Yes' : 'No'));
+            item_data.set(value, (value ? 'Yes' : 'No'));
         } else if (input.is('select')) {
             var value = input.val();
             if (value === '_hzForm_Other') {
-                item_data[def.name] = null;
+                item_data.value = null;
                 var group = $('<div>').addClass(host.settings.styleClasses.inputGroup);
                 var oInput = $('<input type="text" placeholder="Enter other option...">')
                     .addClass(host.settings.styleClasses.input)
                     .data('def', def)
-                    .val(item_data[def.name].other)
+                    .val(item_data.other)
                     .attr('data-bind', def.name)
                     .attr('data-bind-other', true)
                     .change(function (event) { _input_event_change(host, $(event.target)); })
@@ -179,22 +178,22 @@ var form;
                     .html($('<i class="fa fa-times">'))
                     .click(function (e) {
                         group.remove();
-                        item_data[def.name] = null;
+                        item_data.value = null;
                         input.val('').show();
                     });
                 if ('format' in def) oInput.inputmask(def.format);
                 $('<span class="input-group-btn">').html(button).appendTo(group);
                 input.hide().after(group);
                 oInput.focus();
-            } else if (def.name in item_data && item_data[def.name]) {
-                item_data[def.name].set(value, input.children('option:selected').text());
+            } else if (item_data) {
+                item_data.set(value, input.children('option:selected').text());
                 if (other = input.children('option[value="' + value + '"]').data('other'))
-                    item_data[def.name].other = other;
+                    item_data.other = other;
             }
         } else if (def.other === true) {
-            item_data[def.name].other = input.val();
+            item_data.other = input.val();
         } else {
-            item_data[def.name] = input.val();
+            item_data.value = input.val();
         }
     };
 
@@ -411,7 +410,7 @@ var form;
     };
 
     function _input_select_populate_ajax(host, options, select, track) {
-        var def = select.data('def'), postops = {}, item_data = _get_data_item(host, select.attr('data-bind'));
+        var def = select.data('def'), postops = {}, item_data = _get_data_item(host.data, select.attr('data-bind'));
         Object.assign(postops, options);
         if ((postops.url = _match_replace(host, postops.url, { "site_url": hazaar.url() })) === false) {
             select.empty().prop('disabled', true);
@@ -501,7 +500,7 @@ var form;
             return _input_select_populate_ajax(host, options, select, track);
         }
         var required = ('required' in def) ? _eval_code(host, def.required) : false;
-        var value = _get_data_item(host, select.attr('name'));
+        var value = _get_data_item(host.data, select.attr('name'));
         select.html($('<option value>').html(def.placeholder).prop('selected', (value.value === null)));
         for (let x in options)
             select.append($('<option>').attr('value', x).html(options[x]));
@@ -811,9 +810,11 @@ var form;
             var btn = $('<button type="button" class="btn btn-success btn-sm">')
                 .html($('<i class="fa fa-plus">'))
                 .data('uniqid', uniqid);
+            var fieldDIV = _form_field(host, { fields: fields }).addClass('itemlist-newitem').attr('id', uniqid).attr('data-field', def.name);
+            fieldDIV.find('input').removeAttr('data-bind');
             group.append($('<div class="itemlist-newitems">').html([
                 $('<div class="itemlist-newitem-add">').html(btn),
-                _form_field(host, { fields: fields }).addClass('itemlist-newitem').attr('id', uniqid).attr('data-field', def.name)
+                fieldDIV
             ]));
             btn.click(function () {
                 var parent = $('#' + $(this).data('uniqid'));
@@ -852,12 +853,19 @@ var form;
             host.events.disabled.push(input.data('disabled', def.disabled));
     };
 
-    function _form_field_lookup(host, info) {
-        var def = null;
+    function _form_field_lookup(def, info) {
         if (info instanceof Object)
-            def = $.extend({}, host.def.fields[info.name], info);
-        else
-            def = $.extend({}, host.def.fields[info], { name: info });
+            def = $.extend({}, def[info.name], info);
+        else {
+            var parts = info.split(/[\.\[]/);
+            for (let x in parts) {
+                var key = parts[x];
+                if (parts[x].slice(-1) === ']') key = parseInt(key.slice(0, -1));
+                if (!("fields" in def && key in def.fields)) return null;
+                def = def.fields[key];
+            }
+            def = $.extend({}, def, { name: info });
+        }
         return def;
     };
 
@@ -865,30 +873,31 @@ var form;
         var def = null, field = null;
         if (info instanceof Array)
             info = { fields: info };
-        if (!(def = _form_field_lookup(host, info))) return;
+        if (!(def = _form_field_lookup(host.def, info))) return;
         if ('name' in def && 'default' in def && host.data[def.name].value === null)
             host.data[def.name] = def.default;
         if ('render' in def) {
             field = new Function('field', 'form', def.render)($.extend({}, def, { value: host.data[def.name].save(true) }), host);
             host.pageInputs.push(field);
         } else if ('fields' in def && def.type != 'array') {
-            var length = def.fields.length, fields = [], col_width;
+            var length = (def.fields instanceof Array) ? def.fields.length : Object.keys(def.fields).length, fields = [], col_width;
             if (typeof p === 'undefined') p = true;
-            if (p) {
-                for (let x in def.fields) {
-                    var item;
+            for (let x in def.fields) {
+                var item = def.fields[x];
+                if (p) {
                     if (Array.isArray(def.fields[x])) {
                         item = def.fields[x];
                     } else {
-                        item = _form_field_lookup(host, def.fields[x]);
+                        item = _form_field_lookup(host.def, def.fields[x]);
                         if (!item) continue;
                         if (!('weight' in item)) item.weight = 1;
                         length = length + (item.weight - 1);
                     }
-                    fields.push(item);
                 }
-                col_width = (12 / length);
-            } else fields = def.fields;
+                if (!("name" in item) && typeof info === 'string') item.name = info + '.' + x;
+                fields.push(item);
+            }
+            col_width = (12 / length);
             field = $('<div>').toggleClass('row', p).data('def', def);
             for (let x in fields) {
                 var field_width = col_width;
@@ -1365,11 +1374,15 @@ var form;
         if (!values) return;
         var data = {};
         for (let x in values) {
-            if (!values[x].default) {
-                if (values[x].type === 'array' || values[x].type === 'file')
-                    values[x].default = [];
+            if ("fields" in values[x] && values[x].type != 'array') {
+                data[x] = _define(values[x].fields);
+            } else {
+                if (!values[x].default) {
+                    if (values[x].type === 'array' || values[x].type === 'file')
+                        values[x].default = [];
+                }
+                data[x] = values[x].default ? values[x].default : null;
             }
-            data[x] = values[x].default ? values[x].default : null;
         }
         return data;
     };
