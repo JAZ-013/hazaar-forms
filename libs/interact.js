@@ -468,7 +468,7 @@ var form;
                 if (def.name in item_data && item_data[def.name].value === null && item_data[def.name].other !== null)
                     select.val('_hzForm_Other').change();
             }
-            if (def.name in item_data) {
+            if (item_data && def.name in item_data) {
                 if (item_data[def.name].value && data.find(function (e, index, obj) {
                     return e && e[valueKey] == item_data[def.name].value;
                 })) select.val(item_data[def.name].value);
