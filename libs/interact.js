@@ -852,7 +852,7 @@ var form;
     };
 
     function _form_field_lookup(def, info) {
-        if (info instanceof Object) def = $.extend({}, _form_field_lookup(def, info.name), info);
+        if (info instanceof Object) def = ('name' in info ? $.extend({}, _form_field_lookup(def, info.name), info) : info);
         else {
             var parts = info.split(/[\.\[]/);
             for (let x in parts) {
