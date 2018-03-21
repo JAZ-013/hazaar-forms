@@ -902,6 +902,7 @@ var form;
             }
             col_width = (12 / length);
             field = $('<div>').toggleClass('row', p).data('def', def);
+            if ('label' in def) field.append($('<div class="col-md-12">').html($('<h5>').html(def.label)));
             for (let x in fields) {
                 var field_width = col_width;
                 if (fields[x] instanceof Object && ('weight' in fields[x]))
