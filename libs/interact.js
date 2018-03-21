@@ -231,7 +231,7 @@ var form;
                     }
                 }).fail(_error);
             }
-        }
+        } else _validate_input(host, input);
         if (host.events.show.length > 0) {
             for (let x in host.events.show)
                 _toggle_show(host, host.events.show[x]);
@@ -754,7 +754,7 @@ var form;
             .attr('for', def.name)
             .html(_match_replace(host, def.label, null, true, true))
             .appendTo(group);
-        var input = null;
+        var input = null, item_data = _get_data_item(host.data, def.name);
         if (def.multiline) {
             input = $('<textarea>').addClass(host.settings.styleClasses.input);
             if ('height' in def) input.css('height', def.height);
@@ -784,10 +784,8 @@ var form;
             if (def.suffix) inputDIV.append($('<div>').addClass(host.settings.styleClasses.inputGroupAppend)
                 .html($('<span>').addClass(host.settings.styleClasses.inputGroupText)
                     .html(_match_replace(host, def.suffix, null, true, true))));
-        } else {
-            group.append(input);
-        }
-        if (host.data[def.name] && host.data[def.name].value) _validate_input(host, input);
+        } else group.append(input);
+        if (item_data && item_data.value) _validate_input(host, input);
         return group;
     };
 
@@ -1085,7 +1083,7 @@ var form;
     function _validate_input(host, input) {
         var def = input.data('def');
         if (!def) return false;
-        return _validate_field(host, def.name).done(function (name, result) {
+        return _validate_field(host, def).done(function (name, result) {
             input.toggleClass('is-invalid', result !== true);
         });
     };
@@ -1150,7 +1148,8 @@ var form;
     function _validate_field(host, name) {
         var callbacks = [];
         setTimeout(function () {
-            var item = host.data[name], def = host.def.fields[name];
+            var def = (typeof name === 'object') ? name : _form_field_lookup(host.def, name);
+            var item = _get_data_item(host.data, def.name);
             if (def.protected || ('disabled' in def && _eval(host, def.disabled)))
                 for (let x in callbacks) callbacks[x](name, true);
             else {
@@ -1208,9 +1207,19 @@ var form;
         setTimeout(function () {
             var queue = [], errors = [];
             if (typeof fields === 'undefined') {
-                if (!('def' in host && 'fields' in host.def))
-                    return;
-                fields = Object.keys(host.def.fields);
+                if (!('def' in host && 'fields' in host.def)) return;
+                var _resolve_fields = function (def) {
+                    if (!('fields' in def)) return;
+                    var fields = [];
+                    for (let x in def.fields) {
+                        if ('fields' in def.fields[x] && def.fields[x].type !== 'array') {
+                            var child_fields = _resolve_fields(def.fields[x]);
+                            for (let y in child_fields) fields.push(x + '.' + child_fields[y]);
+                        } else fields.push(x);
+                    }
+                    return fields;
+                }
+                fields = _resolve_fields(host.def);
             }
             for (let key in fields) {
                 queue.push(fields[key]);
