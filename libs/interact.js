@@ -29,6 +29,13 @@ if (typeof Object.assign != 'function') {
     });
 }
 
+Array.fromObject = function (object) {
+    if (typeof object !== 'object') return null;
+    var array = [];
+    for (x in object) array.push(object[x]);
+    return array;
+};
+
 var form;
 
 (function ($) {
@@ -50,6 +57,13 @@ var form;
                 { label: "OK", "class": "btn btn-default" }
             ]
         });
+    };
+
+    function _is_int(def) {
+        if (!('type' in def)) return false;
+        if (def.type.toLowerCase() === 'array')
+            return (('arrayOf' in def) && (def.arrayOf.toLowerCase() === 'int' || def.arrayOf.toLowerCase() === 'integer'));
+        return (def.type.toLowerCase() === 'int' || def.type.toLowerCase() === 'integer');
     };
 
     function _url(host, target) {
@@ -161,6 +175,7 @@ var form;
             item_data.set(value, (value ? 'Yes' : 'No'));
         } else if (input.is('select')) {
             var value = input.val();
+            if (_is_int(def)) value = parseInt(value);
             if (value === '_hzForm_Other') {
                 item_data.value = null;
                 var group = $('<div>').addClass(host.settings.styleClasses.inputGroup);
@@ -194,7 +209,9 @@ var form;
         } else if (def.other === true) {
             item_data.other = input.val();
         } else {
-            item_data.value = input.val();
+            var value = input.val();
+            if (_is_int(def)) value = parseInt(value);
+            item_data.value = value;
         }
     };
 
@@ -303,7 +320,7 @@ var form;
             for (let x in data) {
                 var value = (typeof data[x] === 'object') ? data[x].value : x;
                 var label = (typeof data[x] === 'object') ? data[x].label : data[x];
-                var active = (value instanceof dataBinderArray && value.indexOf(x) > -1), name = def.name + '_' + x;
+                var active = (value instanceof dataBinderArray && value.indexOf((int ? parseInt(x) : x)) > -1), name = def.name + '_' + x;
                 items.push($('<label class="btn">').addClass('btn-' + btnClass).html([
                     $('<input type="checkbox" autocomplete="off">')
                         .attr('value', x)
@@ -318,12 +335,12 @@ var form;
         if (!('columns' in def)) def.columns = 1;
         if (def.columns > 6) def.columns = 6;
         var col_width = Math.floor(12 / def.columns), per_col = (Math.ceil(Object.keys(data).length / def.columns));
-        var cols = $('<div class="row">'), column = 0;
+        var cols = $('<div class="row">'), column = 0, int = _is_int(def);
         for (let col = 0; col < def.columns; col++)
             items.push($('<div>').addClass('col-md-' + col_width)
                 .toggleClass('custom-controls-stacked', def.inline));
         for (let x in data) {
-            var active = (value instanceof dataBinderArray && value.indexOf(x) > -1), name = def.name + '_' + x;
+            var active = (value instanceof dataBinderArray && value.indexOf((int ? parseInt(x) : x)) > -1), name = def.name + '_' + x;
             var label = $('<div>').addClass(host.settings.styleClasses.chkDiv).html([
                 $('<input type="checkbox">')
                     .addClass(host.settings.styleClasses.chkInput)
@@ -426,6 +443,7 @@ var form;
             var valueKey = options.value || 'value', labelKey = options.label || 'label';
             select.prop('disabled', !(def.disabled !== true && def.protected !== true));
             select.empty().append($('<option>').attr('value', '').html(def.placeholder));
+            if (!Array.isArray(data)) data = Array.fromObject(data);
             for (let x in data) {
                 if (typeof data[x] !== 'object') {
                     let newitem = {};
