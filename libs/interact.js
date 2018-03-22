@@ -340,20 +340,20 @@ var form;
     };
 
     function _input_select_multi_populate_ajax(host, options, container, track) {
-        var def = container.data('def'), postops = {};
+        var def = container.data('def'), postops = {}, item_data = _get_data_item(host.data, def.name);
         Object.assign(postops, options);
         if ((postops.url = _match_replace(host, postops.url, { "site_url": hazaar.url() })) === false) {
             container.hide();
-            host.data[def.name] = [];
+            item_data.value = [];
             return false;
         }
         if (track === true) _track(host);
         postops.url = _url(host, postops.url);
         $.ajax(postops).done(function (data) {
-            var values = host.data[def.name].save(true);
+            var values = item_data.save(true);
             if (values) {
-                var remove = host.data[def.name].save(true).filter(function (i) { return !(i in data); });
-                for (let x in remove) host.data[def.name].remove(remove[x]);
+                var remove = values.filter(function (i) { return !(i in data); });
+                for (let x in remove) item_data.remove(remove[x]);
             }
             container.html(_input_select_multi_items(host, def, data)).show();
             _ready(host);
@@ -400,7 +400,7 @@ var form;
             host.data.watch(def.watch, function () {
                 for (let key in def.watchers) for (let x in def.watchers[key]) host.data.unwatch(key, def.watchers[key][x]);
                 def.watchers = {};
-                host.data[def.name] = null;
+                _get_data_item(host.data, def.name).value = null;
                 _input_select_multi_populate(host, _input_select_options(host, def), container);
             });
             options = _input_select_options(host, def);
@@ -414,7 +414,7 @@ var form;
         Object.assign(postops, options);
         if ((postops.url = _match_replace(host, postops.url, { "site_url": hazaar.url() })) === false) {
             select.empty().prop('disabled', true);
-            host.data[def.name] = (('default' in def) ? def.default : null);
+            item_data.value = (('default' in def) ? def.default : null);
             return;
         }
         if (track !== false) select.prop('disabled', true).html($('<option value selected>').html('Loading...'));
@@ -424,21 +424,17 @@ var form;
             var valueKey = options.value || 'value', labelKey = options.label || 'label';
             select.prop('disabled', !(def.disabled !== true && def.protected !== true));
             select.empty().append($('<option>').attr('value', '').html(def.placeholder));
-            if (!Array.isArray(data)) {
-                var newdata = [];
-                for (let x in data) {
-                    var newitem = {};
+            for (let x in data) {
+                if (typeof data[x] !== 'object') {
+                    let newitem = {};
                     newitem[valueKey] = x;
                     newitem[labelKey] = data[x];
-                    newdata.push(newitem);
-                };
-                data = newdata;
-            }
+                    data[x] = newitem;
+                }
+            };
             if ('sort' in options) {
                 if (typeof options.sort === 'string') {
-                    data.sort(function (a, b) {
-                        return a[options.sort] - b[options.sort];
-                    });
+                    data.sort(function (a, b) { return a[options.sort] - b[options.sort]; });
                 } else if (Array.isArray(options.sort)) {
                     let x;
                     var newdata = [], find_test = function (element, index, array) {
@@ -468,12 +464,10 @@ var form;
                 if (def.name in item_data && item_data[def.name].value === null && item_data[def.name].other !== null)
                     select.val('_hzForm_Other').change();
             }
-            if (item_data && def.name in item_data) {
-                if (item_data[def.name].value && data.find(function (e, index, obj) {
-                    return e && e[valueKey] == item_data[def.name].value;
-                })) select.val(item_data[def.name].value);
-                else item_data[def.name] = null;
-            }
+            if (item_data.value && data.find(function (e, index, obj) {
+                return e && e[valueKey] == item_data.value;
+            })) select.val(item_data.value);
+            else item_data.value = null;
             if (Object.keys(data).length === 1 && options.single === true) {
                 var key = data[0][valueKey];
                 if (item_data[def.name].value !== key) {
@@ -485,7 +479,7 @@ var form;
     }
 
     function _input_select_populate(host, options, select, track) {
-        var def = select.data('def');
+        var def = select.data('def'), item_data = _get_data_item(host.data, def.name);
         if (typeof options !== 'object' || Array.isArray(options) || Object.keys(options).length === 0)
             return select.prop('disabled', true).empty();
         if ('url' in options) {
@@ -500,14 +494,13 @@ var form;
             return _input_select_populate_ajax(host, options, select, track);
         }
         var required = ('required' in def) ? _eval_code(host, def.required) : false;
-        var value = _get_data_item(host.data, select.attr('name'));
-        select.html($('<option value>').html(def.placeholder).prop('selected', (value.value === null)));
+        select.html($('<option value>').html(def.placeholder).prop('selected', (item_data.value === null)));
         for (let x in options)
             select.append($('<option>').attr('value', x).html(options[x]));
         if ('other' in def && _eval(host, def.other) === true) {
             var otherOption = $('<option>').attr('value', '_hzForm_Other').html("Other");
             select.append(otherOption);
-            if (value.value === null & value.other !== null)
+            if (item_data.value === null & item_data.other !== null)
                 select.val('_hzForm_Other').change();
         }
         return true;
@@ -549,7 +542,7 @@ var form;
             host.data.watch(def.watch, function () {
                 for (let key in def.watchers) for (let x in def.watchers[key]) host.data.unwatch(key, def.watchers[key][x]);
                 def.watchers = {};
-                host.data[def.name] = null;
+                _get_data_item(host.data, def.name).value = null;
                 _input_select_populate(host, _input_select_options(host, def), select);
             });
             options = _input_select_options(host, def);
@@ -566,7 +559,7 @@ var form;
             .attr('name', def.name)
             .attr('id', '__field_' + def.name)
             .attr('data-bind', def.name)
-            .attr('checked', host.data[def.name])
+            .attr('checked', _get_data_item(host.data, def.name).value)
             .data('def', def)
             .appendTo(div);
         if (def.protected)
@@ -584,6 +577,7 @@ var form;
     };
 
     function _input_date(host, def) {
+        var item_data = _get_data_item(host.data, def.name);
         var group = $('<div>').addClass(host.settings.styleClasses.group).data('def', def);
         var label = $('<label>').addClass(host.settings.styleClasses.label)
             .attr('for', def.name)
@@ -595,7 +589,7 @@ var form;
             .attr('name', def.name)
             .attr('data-bind', def.name)
             .data('def', def)
-            .val(host.data[def.name])
+            .val(item_data)
             .appendTo(input_group);
         if (def.protected)
             input.prop('disabled', true);
@@ -617,8 +611,7 @@ var form;
                 clearBtn: ((('required' in def) ? _eval_code(host, def.required) : false) !== true),
                 todayHighlight: true
             };
-            if (host.data[def.name])
-                options.defaultViewDate = host.data[def.name];
+            if (item_data) options.defaultViewDate = item_data;
             input.attr('type', 'text');
             input.datepicker($.extend({}, options, def.dateOptions));
             if (!def.placeholder)
@@ -630,6 +623,7 @@ var form;
     };
 
     function _input_file(host, def) {
+        var item_data = _get_data_item(host.data, def.name);
         var group = $('<div>').addClass(host.settings.styleClasses.group).data('def', def);
         var label = $('<label>').addClass(host.settings.styleClasses.label)
             .attr('for', def.name)
@@ -646,7 +640,7 @@ var form;
             select: function (files) {
                 for (let x in files) {
                     host.uploads.push({ "field": def.name, "file": files[x] });
-                    host.data[def.name].push(files[x].name);
+                    item_data.push(files[x].name);
                 }
                 _input_event_update(host, input);
             },
@@ -657,7 +651,7 @@ var form;
                         return item;
                 });
                 host.deloads.push({ "field": def.name, "file": file });
-                host.data[def.name].remove(file.name);
+                item_data.remove(file.name);
                 _input_event_update(host, input);
                 return true;
             }
@@ -670,6 +664,7 @@ var form;
     };
 
     function _input_lookup(host, def) {
+        var item_data = _get_data_item(host.data, def.name);
         var group = $('<div>').addClass(host.settings.styleClasses.group).data('def', def);
         var label = $('<label>').addClass(host.settings.styleClasses.label)
             .attr('for', def.name)
@@ -691,7 +686,7 @@ var form;
                 setTimeout(function () {
                     if (popup.is(':visible')) {
                         popup.hide().empty();
-                        input.val(host.data[def.name].label);
+                        input.val(item_data.label);
                     }
                 }, 500);
             });
@@ -707,7 +702,7 @@ var form;
                 var query = '', popup = input.parent().parent().children('.form-lookup-popup');
                 var valueKey = def.lookup.value || 'value', labelKey = def.lookup.label || 'label';
                 if (event.target.value === '')
-                    return host.data[def.name].set(null);
+                    return item_data.set(null);
                 if ('startlen' in def.lookup && event.target.value.length < def.lookup.startlen)
                     return popup.hide();
                 var values = { '__input__': event.target.value };
@@ -735,7 +730,7 @@ var form;
                     var target = $(event.target);
                     if (!(target.is('.list-group-item') && typeof target.attr('data-value') === 'string'))
                         return false;
-                    host.data[def.name].set(target.attr('data-value'), target.text());
+                    item_data.set(target.attr('data-value'), target.text());
                     value_input.trigger('update');
                     popup.hide();
                 });
@@ -762,7 +757,7 @@ var form;
         input.attr('name', def.name)
             .attr('data-bind', def.name)
             .data('def', def)
-            .val(host.data[def.name]);
+            .val(item_data);
         if (def.protected)
             input.prop('disabled', true);
         else input.focus(function (event) { _input_event_focus(host, $(event.target)); })
@@ -790,6 +785,7 @@ var form;
     };
 
     function _input_list(host, def) {
+        var item_data = _get_data_item(host.data, def.name);
         var group = $('<div class="itemlist">').addClass(host.settings.styleClasses.group).data('def', def);
         var label = $('<h4>').addClass(host.settings.styleClasses.label)
             .html(_match_replace(host, def.label, null, true, true))
@@ -823,13 +819,13 @@ var form;
                     $(item).val('');
                     data[item.name] = value;
                 });
-                host.data[field].push(data);
+                item_data.push(data);
             });
         }
         if (def.allow_edit !== true)
             for (let x in fields) fields[x] = { html: '<div data-bind="' + fields[x].name + '">', weight: fields[x].weight || 1 };
         template.append(_form_field(host, { fields: fields }));
-        host.data[def.name].watch(function (item) {
+        item_data.watch(function (item) {
             item.find('select').each(function (index, item) {
                 var def = $(item).data('def');
                 if ('options' in def) _input_select_populate(host, def.options, $(item));
@@ -1411,10 +1407,8 @@ var form;
     function _load(host) {
         _load_definition(host).done(function (response) {
             _post(host, 'load').done(function (response) {
-                if (!response.ok)
-                    return;
-                for (let x in response.form)
-                    host.data[x] = response.form[x];
+                if (!response.ok) return;
+                for (let x in response.form) host.data[x] = response.form[x];
                 $(host).trigger('data', [host.data.save()]);
                 _nav(host, 0);
             });
