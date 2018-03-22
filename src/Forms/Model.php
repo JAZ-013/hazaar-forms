@@ -149,15 +149,19 @@ class Model extends \Hazaar\Model\Strict {
                     if(array_key_exists('arrayOf', $def))
                         continue;
 
-                    settype($def['fields'], 'array');
+                    if(array_key_exists('fields', $def)){
 
-                    akr($def, 'fields', 'arrayOf');
+                        settype($def['fields'], 'array');
 
-                    //Field defs need to be arrays.  Their contents do not however.
-                    array_walk($def['arrayOf'], function(&$array){
-                        if(is_string($array)) $array = array('type' => $array);
-                        elseif(is_object($array)) settype($array, 'array');
-                    });
+                        akr($def, 'fields', 'arrayOf');
+
+                        //Field defs need to be arrays.  Their contents do not however.
+                        array_walk($def['arrayOf'], function(&$array){
+                            if(is_string($array)) $array = array('type' => $array);
+                            elseif(is_object($array)) settype($array, 'array');
+                        });
+
+                    }
 
                     break;
 

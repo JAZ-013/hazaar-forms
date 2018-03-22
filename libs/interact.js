@@ -139,12 +139,13 @@ var form;
         return str;
     };
 
-    function _get_data_item(data, name) {
+    function _get_data_item(data, name, isArray) {
         var parts = name.split(/[\.\[]/), item = data;
         for (let x in parts) {
             var key = parts[x];
             if (parts[x].slice(-1) === ']') key = parseInt(key.slice(0, -1));
             if (!(key in item)) return null;
+            if (isArray === true && item[key] instanceof dataBinderValue) item[key] = [];
             item = item[key];
         }
         return item;
@@ -289,13 +290,14 @@ var form;
     function _input_select_multi_items(host, def, data) {
         var fChange = function () {
             var value = this.childNodes[0].value;
-            var index = host.data[def.name].indexOf(value);
+            var item_data = _get_data_item(host.data, def.name);
+            var index = item_data.indexOf(value);
             if (this.childNodes[0].checked && index === -1)
-                host.data[def.name].push({ '__hz_value': value, '__hz_label': this.childNodes[1].innerText });
+                item_data.push({ '__hz_value': value, '__hz_label': this.childNodes[1].innerText });
             else
-                host.data[def.name].remove(index);
+                item_data.remove(index);
         };
-        var value = host.data[def.name], items = [];
+        var value = _get_data_item(host.data, def.name, true), items = [];
         if (def.buttons === true) {
             var btnClass = def.class || 'primary';
             for (let x in data) {
