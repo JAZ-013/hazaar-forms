@@ -229,7 +229,7 @@ var form;
                         host.data.extend(response.updates);
                         _validate_input(host, input);
                     }
-                }).fail(_error);
+                });
             }
         } else _validate_input(host, input);
         if (host.events.show.length > 0) {
@@ -1311,7 +1311,6 @@ var form;
                 }
             }).fail(function (error) {
                 $(host).trigger('saverror', [error.responseJSON.error.str, params]);
-                _error(error);
             });
         };
         if (validate === true || typeof validate === 'undefined')
