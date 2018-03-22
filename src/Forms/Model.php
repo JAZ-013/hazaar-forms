@@ -727,7 +727,7 @@ class Model extends \Hazaar\Model\Strict {
                 throw new \Exception('Only JSON API responses are currently supported!');
 
             if($response->getStatus()!= 200)
-                throw new \Exception('API endpoint returned status code ' . $response->getStatus() . '. ' . $response->getContent());
+                throw new \Exception('API endpoint returned status code ' . $response->getStatus() . ' - ' . $response->getStatusMessage());
 
             $result = $response->toArray();
 
