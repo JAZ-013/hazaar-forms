@@ -517,7 +517,7 @@ var form;
             return _input_select_populate_ajax(host, options, select, track);
         }
         var required = ('required' in def) ? _eval_code(host, def.required) : false;
-        select.html($('<option value>').html(def.placeholder).prop('selected', (item_data.value === null)));
+        select.html($('<option value>').html(def.placeholder).prop('selected', (!item_data || item_data.value === null)));
         for (let x in options)
             select.append($('<option>').attr('value', x).html(options[x]));
         if ('other' in def && _eval(host, def.other) === true) {
@@ -858,7 +858,8 @@ var form;
             .attr('data-bind', def.name)
             .data('template', template))
             .on('click', '.btn-danger', function (event) {
-                $(this).parent().parent().remove();
+                var index = Array.from(this.parentNode.parentNode.parentNode.children).indexOf(this.parentNode.parentNode);
+                item_data.remove(index);
             });
         return group;
     };
@@ -1236,7 +1237,7 @@ var form;
                         } else fields.push(x);
                     }
                     return fields;
-                }
+                };
                 fields = _resolve_fields(host.def);
             }
             for (let key in fields) {
