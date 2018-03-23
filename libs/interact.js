@@ -154,6 +154,7 @@ var form;
     };
 
     function _get_data_item(data, name, isArray) {
+        if (!name) return null;
         var parts = name.split(/[\.\[]/), item = data;
         for (let x in parts) {
             var key = parts[x];
@@ -217,8 +218,7 @@ var form;
 
     function _input_event_update(host, input) {
         var def = input.data('def'), update = def.update, cb_done = null;
-        if (def.change)
-            _eval_code(host, def.change);
+        if (def.change) _eval_code(host, def.change);
         if (typeof update === 'string') update = { "url": update };
         if (typeof update === 'boolean' || (update && ('url' in update || host.settings.update === true))) {
             var options = {
