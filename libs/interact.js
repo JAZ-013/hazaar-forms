@@ -308,7 +308,7 @@ var form;
         var fChange = function () {
             var value = this.childNodes[0].value;
             var item_data = _get_data_item(host.data, def.name);
-            var index = item_data.indexOf(value);
+            var index = item_data.indexOf((_is_int(def) ? parseInt(value) : value));
             if (this.childNodes[0].checked && index === -1)
                 item_data.push({ '__hz_value': value, '__hz_label': this.childNodes[1].innerText });
             else
@@ -439,19 +439,19 @@ var form;
         if (track !== false) select.prop('disabled', true).html($('<option value selected>').html('Loading...'));
         postops.url = _url(host, postops.url);
         $.ajax(postops).done(function (data) {
-            var required = ('required' in def) ? _eval_code(host, def.required) : false;
+            var required = ('required' in def) ? _eval_code(host, def.required) : false, int = _is_int(def);
             var valueKey = options.value || 'value', labelKey = options.label || 'label';
             select.prop('disabled', !(def.disabled !== true && def.protected !== true));
             select.empty().append($('<option>').attr('value', '').html(def.placeholder));
-            if (!Array.isArray(data)) data = Array.fromObject(data);
             for (let x in data) {
                 if (typeof data[x] !== 'object') {
                     let newitem = {};
-                    newitem[valueKey] = x;
+                    newitem[valueKey] = (int ? parseInt(x) : x);
                     newitem[labelKey] = data[x];
                     data[x] = newitem;
                 }
             };
+            if (!Array.isArray(data)) data = Array.fromObject(data);
             if ('sort' in options) {
                 if (typeof options.sort === 'string') {
                     data.sort(function (a, b) { return a[options.sort] - b[options.sort]; });
@@ -484,14 +484,17 @@ var form;
                 if (def.name in item_data && item_data[def.name].value === null && item_data[def.name].other !== null)
                     select.val('_hzForm_Other').change();
             }
-            if (item_data.value && data.find(function (e, index, obj) {
-                return e && e[valueKey] == item_data.value;
-            })) select.val(item_data.value);
-            else item_data.value = null;
+            if (item_data) {
+                if (item_data.value && data.find(function (e, index, obj) {
+                    return e && e[valueKey] == item_data.value;
+                })) select.val(item_data.value);
+                else item_data.value = null;
+            }
             if (Object.keys(data).length === 1 && options.single === true) {
                 var key = data[0][valueKey];
-                if (item_data[def.name].value !== key) {
-                    item_data[def.name].set(key, _match_replace(null, labelKey, data[0], true));
+                if (int) key = parseInt(key);
+                if (item_data.value !== key) {
+                    item_data.set(key, _match_replace(null, labelKey, data[0], true));
                     if ('other' in options && options.other in data[0]) item_data[def.name].other = data[0][options.other];
                 }
             }
