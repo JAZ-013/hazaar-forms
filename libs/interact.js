@@ -494,7 +494,7 @@ var form;
                 var key = data[0][valueKey];
                 if (int) key = parseInt(key);
                 if (item_data.value !== key) {
-                    item_data.set(key, _match_replace(null, labelKey, data[0], true));
+                    item_data.set(key, (labelKey.indexOf('{{') > -1) ? _match_replace(null, labelKey, data[0], true) : data[0][labelKey]);
                     if ('other' in options && options.other in data[0]) item_data[def.name].other = data[0][options.other];
                 }
             }
