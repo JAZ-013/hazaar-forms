@@ -297,21 +297,37 @@ class Model extends \Hazaar\Model\Strict {
 
         foreach($this->__form->fields as $name => $field){
 
-            if(array_key_exists('type', $field) && $field['type'] == 'date' && $array[$name] instanceof \Hazaar\Date)
-                $array[$name] = $array[$name]->format('Y-m-d');
+            if($tags = ake($field, 'tag')){
 
-            if(!($tags = ake($field, 'tag')))
-                continue;
+                if(!is_array($tags))
+                    $tags = array($tags);
 
-            if(!is_array($tags))
-                $tags = array($tags);
+                if(count(array_intersect($tags, $this->__tags)) === 0)
+                    continue;
 
-            if(count(array_intersect($tags, $this->__tags)) === 0)
-                unset($array[$name]);
+            }
+
+            $this->exportField($name, $field, $array);
 
         }
 
         return $array;
+
+    }
+
+    private function exportField($name, $field, &$array){
+
+        if(is_array($field) && array_key_exists('type', $field) && $field['type'] == 'date' && $array[$name] instanceof \Hazaar\Date)
+            $array[$name] = $array[$name]->format('Y-m-d');
+
+        if(array_key_exists('fields', $field)){
+
+            settype($field['fields'], 'array');
+
+            foreach($field['fields'] as $sub_name => $sub_field)
+                $this->exportField($sub_name, (array)$sub_field, $array[$name]);
+
+        }
 
     }
 
