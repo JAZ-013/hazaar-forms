@@ -185,6 +185,17 @@ class HTML extends \Hazaar\Forms\Output {
 
                 $items[] = $html;
 
+            }elseif(is_object($field) && property_exists($field, 'fields')){
+
+                $group = new \Hazaar\Html\Div();
+
+                if(property_exists($field, 'label'))
+                    $group->add(new \Hazaar\Html\H4($field->label));
+
+                $group->add($this->__group(array((array)$field->fields), $horizontal));
+
+                $items[] = $group;
+
             }else{
 
                 $items[] = $this->__field($name, $field);
@@ -202,7 +213,7 @@ class HTML extends \Hazaar\Forms\Output {
         $group = (new \Hazaar\Html\Div())->class('form-group');
 
         if($label = ake($field, 'label'))
-            $group->add(new \Hazaar\Html\H4($this->model->matchReplace($label, true)));
+            $group->add(new \Hazaar\Html\H5($this->model->matchReplace($label, true)));
 
         $type = ake($field, 'type');
 

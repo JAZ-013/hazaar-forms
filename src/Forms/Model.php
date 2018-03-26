@@ -135,41 +135,42 @@ class Model extends \Hazaar\Model\Strict {
         $fields = $this->__form->fields;
 
         //Make any changes to the field defs for use in strict models.
-        foreach($fields as $name => &$def){
+        foreach($fields as &$def)
+            $this->convert_definition($def);
 
-            switch(ake($def, 'type')){
-                case 'date':
+        return $fields;
 
-                    $def['type'] = 'Hazaar\Date';
+    }
 
-                    break;
+    private function convert_definition(&$def){
 
-                case 'array':
+        if(array_key_exists('fields', $def) && !array_key_exists('arrayOf', $def)){
 
-                    if(array_key_exists('arrayOf', $def))
-                        continue;
+            $def['type'] = 'model';
 
-                    if(array_key_exists('fields', $def)){
+            settype($def['fields'], 'array');
 
-                        settype($def['fields'], 'array');
+            akr($def, 'fields', 'items');
 
-                        akr($def, 'fields', 'arrayOf');
+            //Field defs need to be arrays.  Their contents do not however.
+            array_walk($def['items'], function(&$array){
+                if(is_string($array)) $array = array('type' => $array);
+                elseif(is_object($array)) settype($array, 'array');
+            });
 
-                        //Field defs need to be arrays.  Their contents do not however.
-                        array_walk($def['arrayOf'], function(&$array){
-                            if(is_string($array)) $array = array('type' => $array);
-                            elseif(is_object($array)) settype($array, 'array');
-                        });
-
-                    }
-
-                    break;
-
-            }
+            foreach($def['items'] as &$field)
+                $this->convert_definition($field);
 
         }
 
-        return $fields;
+        switch(ake($def, 'type')){
+            case 'date':
+
+                $def['type'] = 'Hazaar\Date';
+
+                break;
+
+        }
 
     }
 
@@ -554,7 +555,41 @@ class Model extends \Hazaar\Model\Strict {
 
         $field->value = $value;
 
+        //Look for subfields
+        if(property_exists($field, 'fields')){
+
+            foreach($field->fields as $key => &$sub_field){
+
+                $sub_field->name = $field->name . '.' . $key;
+
+                $sub_field->value = ake($value, $key);
+
+                $sub_field = $this->__field($sub_field, $form);
+
+            }
+
+        }
+
         return $field;
+
+    }
+
+    public function &get($key, $exec_filters = true){
+
+        if(strpos($key, '.') !== false){
+
+            $parts = explode('.', $key);
+
+            $value = parent::get(array_shift($parts));
+
+            foreach($parts as $part)
+                $value =& $value[$part];
+
+            return $value;
+
+        }
+
+        return parent::get($key, $exec_filters);
 
     }
 
