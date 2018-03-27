@@ -135,7 +135,7 @@ class Model extends \Hazaar\Model\Strict {
         $fields = $this->__form->fields;
 
         //Make any changes to the field defs for use in strict models.
-        foreach($fields as &$def)
+        foreach($fields as $key => &$def)
             $this->convert_definition($def);
 
         return $fields;
@@ -146,20 +146,34 @@ class Model extends \Hazaar\Model\Strict {
 
         if(array_key_exists('fields', $def) && !array_key_exists('arrayOf', $def)){
 
-            $def['type'] = 'model';
+            if(ake($def, 'type') === 'array'){
+
+                $target = 'arrayOf';
+
+            }else{
+
+                $def['type'] = 'model';
+
+                $target = 'items';
+
+            }
 
             settype($def['fields'], 'array');
 
-            akr($def, 'fields', 'items');
+            akr($def, 'fields', $target);
 
             //Field defs need to be arrays.  Their contents do not however.
-            array_walk($def['items'], function(&$array){
+            array_walk($def[$target], function(&$array){
                 if(is_string($array)) $array = array('type' => $array);
                 elseif(is_object($array)) settype($array, 'array');
             });
 
-            foreach($def['items'] as &$field)
-                $this->convert_definition($field);
+            if(ake($def, 'type') !== 'array'){
+
+                foreach($def[$target] as &$field)
+                    $this->convert_definition($field);
+
+            }
 
         }
 
@@ -317,6 +331,8 @@ class Model extends \Hazaar\Model\Strict {
 
     private function exportField($name, $field, &$array){
 
+        if(!array_key_exists($name, $array)) return;
+
         if(is_array($field) && array_key_exists('type', $field) && $field['type'] == 'date' && $array[$name] instanceof \Hazaar\Date)
             $array[$name] = $array[$name]->format('Y-m-d');
 
@@ -363,7 +379,7 @@ class Model extends \Hazaar\Model\Strict {
 
             foreach($form->pages as $page){
 
-                if($page = $this->__page($page, $form))
+                if($page = @$this->__page($page, $form))
                     $pages[] = $page;
 
             }
@@ -629,10 +645,22 @@ class Model extends \Hazaar\Model\Strict {
 
         $func = function($values, $evaluate){
 
-            $export = function($export, &$value, $quote = true){
+            $export = function(&$export, &$value, $quote = true){
 
                 if($value instanceof \Hazaar\Model\dataBinderValue)
                     $value = $value->value;
+                elseif($value instanceof \Hazaar\Model\ChildModel)
+                    $value = $value->toArray();
+                elseif($value instanceof \Hazaar\Model\ChildArray){
+
+                    $values = array();
+
+                    foreach($value as $key => $subValue)
+                        $values[$key] = $export($export, $subValue, false);
+
+                    $value = $values;
+
+                }
 
                 if($value instanceof \Hazaar\Date)
                     $value = $value->sec();
@@ -640,21 +668,13 @@ class Model extends \Hazaar\Model\Strict {
                     $value = strbool($value);
                 elseif(is_null($value))
                     $value = 'null';
-                elseif($value instanceof \Hazaar\Model\ChildModel)
-                    $value = $value->toArray();
-                elseif (is_array($value) || $value instanceof \Hazaar\Model\ChildArray){
-
-                    $values = array();
-
-                    foreach($value as $key => $subValue)
-                        $values[$key] = $export($export, $subValue, false);
-
-                    $value = var_export($values, true);
-
-                }elseif ((is_string($value) || is_object($value)) && $quote)
+                elseif (is_array($value) && $quote)
+                    $value = var_export($value, true);
+                elseif ((is_string($value) || is_object($value)) && $quote)
                     $value = "'" . addslashes((string)$value) . "'";
 
                 return $value;
+
             };
 
             $code = '';
