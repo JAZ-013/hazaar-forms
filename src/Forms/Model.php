@@ -377,9 +377,9 @@ class Model extends \Hazaar\Model\Strict {
 
             $pages = array();
 
-            foreach($form->pages as $page){
+            foreach($form->pages as $num => $page){
 
-                if($page = @$this->__page($page, $form))
+                if($page = $this->__page($page, $form))
                     $pages[] = $page;
 
             }
@@ -588,7 +588,7 @@ class Model extends \Hazaar\Model\Strict {
         $field->value = $value;
 
         //Look for subfields
-        if(property_exists($field, 'fields')){
+        if(property_exists($field, 'fields') && ake($field, 'type') !== 'array'){
 
             foreach($field->fields as $key => &$sub_field){
 
