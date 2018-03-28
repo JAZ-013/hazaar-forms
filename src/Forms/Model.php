@@ -184,6 +184,14 @@ class Model extends \Hazaar\Model\Strict {
 
                 break;
 
+            case 'file':
+
+                $def['type'] = 'array';
+
+                $def['arrayOf'] = 'string';
+
+                break;
+
         }
 
     }
