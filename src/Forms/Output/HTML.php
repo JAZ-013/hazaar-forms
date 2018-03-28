@@ -221,7 +221,7 @@ class HTML extends \Hazaar\Forms\Output {
 
             return null;
 
-        }elseif($type == 'array'){
+        }elseif($type == 'array' || $type == 'file'){
 
             if(property_exists($field, 'fields')){
 
@@ -267,14 +267,16 @@ class HTML extends \Hazaar\Forms\Output {
 
                 $group->add($table->add($rows));
 
-            }else{
+            }elseif(\Hazaar\Map::is_array($field->value)){
 
                 $list = (new \Hazaar\Html\Ul())->class('form-value-group');
 
-                if(property_exists($field, 'options') && is_array($field->value)){
+                foreach($field->value as $item){
 
-                    foreach($field->value as $item)
-                        $list->add((new \Hazaar\Html\Li(ake($field->options, $item, $item)))->class('form-value'));
+                    if(property_exists($field, 'options'))
+                        $item = ake($field->options, $item, $item);
+
+                    $list->add((new \Hazaar\Html\Li($item))->class('form-value'));
 
                 }
 
