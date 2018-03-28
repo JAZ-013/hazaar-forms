@@ -737,6 +737,9 @@ class Model extends \Hazaar\Model\Strict {
 
         $keywords = array('true', 'false', 'null');
 
+        if(preg_match('/(\w*)\.length/', $item, $matches))
+            return 'count($' . $matches[1] . ')';
+
         if(strpos($item, '.') !== false)
             $item = str_replace('.', '->', $item);
 
