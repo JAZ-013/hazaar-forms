@@ -66,7 +66,7 @@ class Forms extends \Hazaar\View\Helper {
         return $this->html->button($label)->id($id);
 
     }
-    
+
     public function btnValidate($label = 'Validate'){
 
         $id = 'btn_' . uniqid();
@@ -109,17 +109,15 @@ class Forms extends \Hazaar\View\Helper {
 
     }
 
-    public function render($controller, $form, $params = array(), $tags = null){
+    public function controller($controller, $form, $params = array(), $tags = null){
 
         $controller = \Hazaar\Loader::getInstance()->loadController($controller);
 
         $controller->__initialize($this->application->request);
 
-        $model = $controller->form($form, $params, $tags);
+        $controller->form($form, $params, $tags);
 
-        $html = new \Hazaar\Forms\Output\HTML($model);
-
-        return $html->render();
+        return $controller;
 
     }
 
