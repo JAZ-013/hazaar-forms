@@ -1040,14 +1040,6 @@ var form;
     function _page(host, page) {
         if (typeof page !== 'object') return null;
         var form = $('<div>').addClass(host.settings.styleClasses.page).data('def', page), sections = [];
-        host.events = {
-            show: [],
-            required: [],
-            disabled: [],
-            change: {}
-        };
-        host.pageInputs = [];
-        host.data.unwatch();
         if (page.label) form.append($('<h1>').html(_match_replace(host, page.label, null, true, true)));
         for (let x in page.sections)
             sections.push(_section(host, page.sections[x]));
@@ -1056,6 +1048,18 @@ var form;
                 _toggle_show(host, host.events.show[x]);
         }
         return form.append(sections);
+    };
+
+    function _page_init(host, pageno) {
+        host.page = pageno;
+        host.events = {
+            show: [],
+            required: [],
+            disabled: [],
+            change: {}
+        };
+        host.pageInputs = [];
+        host.data.unwatch();
     };
 
     //Render the whole form
@@ -1073,11 +1077,11 @@ var form;
             _track(host);
             host.objects.container.empty();
             if (host.settings.singlePage) {
-                host.page = 0;
+                _page_init(host, 0);
                 for (let x in host.def.pages)
                     host.objects.container.append(_page(host, host.def.pages[x]));
             } else {
-                host.page = pageno;
+                _page_init(host, pageno);
                 host.objects.container.append(_page(host, host.def.pages[pageno]));
                 $(host).trigger('nav', [host.page + 1, host.def.pages.length]);
             }
