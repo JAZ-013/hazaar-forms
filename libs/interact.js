@@ -1106,7 +1106,8 @@ var form;
     function _validate_input(host, input) {
         var def = input.data('def');
         if (!def) return false;
-        return _validate_field(host, def).done(function (name, result) {
+        return _validate_field(host, def).done(function (event, result) {
+            $(host).trigger('validate_field', [def.name, result === true, result]);
             input.toggleClass('is-invalid', result !== true);
         });
     };
