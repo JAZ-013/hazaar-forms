@@ -1480,12 +1480,15 @@ var form;
             if (host.settings) {
                 switch (args[0]) {
                     case 'reload':
-                        var values = host.data.save();
-                        _load_definition(host).done(function () {
-                            for (let x in values)
-                                host.data[x] = values[x];
-                            _nav(host, host.page);
-                        });
+                        if (args[1] === true) _load(host);
+                        else {
+                            var values = host.data.save();
+                            _load_definition(host).done(function () {
+                                for (let x in values)
+                                    host.data[x] = values[x];
+                                _nav(host, host.page);
+                            });
+                        }
                         break;
                     case 'page':
                         _nav(host, args[1]);
