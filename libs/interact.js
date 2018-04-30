@@ -1428,7 +1428,7 @@ var form;
             if (!response.ok) return;
             host.def = response.form;
             host.data = new dataBinder(_define(host.def.fields));
-            $(host).trigger('load', [host.data.save()]);
+            $(host).trigger('load', [host.def]);
         });
     };
 
@@ -1491,6 +1491,8 @@ var form;
                             });
                         }
                         break;
+                    case 'nav':
+                    case 'navigate':
                     case 'page':
                         _nav(host, args[1]);
                         break;
