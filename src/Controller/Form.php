@@ -443,7 +443,7 @@ abstract class Form extends Action {
 
     }
 
-    protected function form_dir(){
+    protected function form_dir($include_hidden = false){
 
         $list = array();
 
@@ -466,7 +466,7 @@ abstract class Form extends Action {
                 && property_exists($info, 'fields')))
                 continue;
 
-            if(property_exists($info, 'hide')
+            if($include_hidden !== true && property_exists($info, 'hide')
                 && $info->hide === true)
                 continue;
 
