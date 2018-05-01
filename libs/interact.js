@@ -1514,7 +1514,7 @@ var form;
                     case 'validate':
                         _validate(host).done(function (result, errors) {
                             $(host).trigger('validate', [result, errors]);
-                            if (!result) _validate_nav(host, errors);
+                            if (args[1] !== false && !result) _validate_nav(host, errors);
                         });
                         break;
                     case 'monitor':
