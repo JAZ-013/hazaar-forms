@@ -1330,6 +1330,7 @@ var form;
                 } else {
                     $('<div>').html(response.reason).popup({
                         title: 'Save error',
+                        icon: 'danger',
                         buttons: [{ label: 'OK', "class": "btn btn-default" }]
                     });
                     $(host).trigger('saverror', [response.reason, params]);

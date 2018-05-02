@@ -93,14 +93,22 @@ abstract class Form extends Action {
 
                 $params = ake($postdata, 'params');
 
-                $result = $this->form_save($this->model, $params);
-
                 $out->params = $params;
 
-                if(is_array($result) && count($result) > 0)
-                    $out->form = $result;
+                if(!($result = $this->form_save($this->model, $params))){
 
-                $out->ok = true;
+                    $out->ok = false;
+
+                    $out->reason = 'An error ocurred saving the form.';
+
+                }else{
+
+                    if(is_array($result) && count($result) > 0)
+                        $out->form = $result;
+
+                    $out->ok = true;
+
+                }
 
                 break;
 
