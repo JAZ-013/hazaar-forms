@@ -272,13 +272,29 @@ class Model extends \Hazaar\Model\Strict {
 
             }
 
-            if(!is_object($item))
-                continue;
+            if(is_object($item)){
 
-            if($subs = array_intersect(array_keys(get_object_vars($item)), $sub)){
+                if($subs = array_intersect(array_keys(get_object_vars($item)), $sub)){
 
-                foreach($subs as $key)
-                    $items[$name]->$key = $this->filterItems($item->$key, $no_reindex, $sub);
+                    foreach($subs as $key)
+                        $items[$name]->$key = $this->filterItems($item->$key, $no_reindex, $sub);
+
+                }
+
+            }elseif($tagParams = ake($item, 'tagParams')){
+
+                if(is_object($tagParams))
+                    $tagParams = get_object_vars($tagParams);
+
+                unset($item['tagParams']);
+
+                $tags = array_intersect(array_keys($tagParams), $this->__tags);
+
+                if(count($tags) === 0 && array_key_exists('default', $tagParams))
+                    $tags = array('default');
+
+                foreach($tags as $tag)
+                    $items[$name] = array_merge($item, get_object_vars($tagParams[$tag]));
 
             }
 
