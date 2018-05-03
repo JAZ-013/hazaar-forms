@@ -45,7 +45,7 @@ var form;
         if (typeof error === 'string') error = { str: error };
         else if (error instanceof Error) error = { status: 'JavaScript Error', str: error.message, line: error.lineNumber, file: error.fileName };
         else if ('done' in error) error = error.responseJSON.error;
-        $('<div>').html([
+        $('<div>').css('text-align', 'left').html([
             $('<h4>').html(error.status),
             $('<div>').html(error.str).css({ 'font-weight': 'bold', 'margin-bottom': '15px' }),
             (error.line ? $('<div>').html('Line: ' + error.line) : null),
@@ -1300,7 +1300,8 @@ var form;
         var save_data = function (host, extra) {
             var data = host.data.save();
             for (let x in host.def.fields) if (host.def.fields[x].protected === true) delete data[x];
-            var params = { params: extra, form: data };
+            var params = { params: extra || {}, form: data };
+            if ('saveURL' in host.settings) params.url = host.settings.saveURL;
             $(host).trigger('saving', [data]);
             _post(host, 'post', params, false).done(function (response) {
                 if (response.ok) {

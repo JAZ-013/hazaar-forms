@@ -35,10 +35,10 @@ class Model extends \Hazaar\Model\Strict {
         $this->__form = $form;
 
         if(!array_key_exists('name', $this->__form))
-            throw new \Exception('Form definition does have a name!');
+            throw new \Exception('Form definition does not have a name!');
 
         if(!array_key_exists('pages', $this->__form))
-            throw new \Exception('Form definition does have any pages defined!');
+            throw new \Exception('Form definition does not have any pages defined!');
 
         if(!array_key_exists('fields', $this->__form))
             throw new \Exception('Form definition does not contain any fields!');
@@ -793,6 +793,10 @@ class Model extends \Hazaar\Model\Strict {
             $args = array();
 
         $args['form'] = $this->toArray();
+
+        $args['def'] = $this->getFormDefinition();
+
+        $args['name'] = $this->getName();
 
         if(strpos($target, ':') !== false){
 

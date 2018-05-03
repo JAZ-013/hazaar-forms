@@ -95,20 +95,42 @@ abstract class Form extends Action {
 
                 $out->params = $params;
 
-                if(!($result = $this->form_save($this->model, $params))){
+                $result = null;
 
-                    $out->ok = false;
+                if($url = ake($postdata, 'url')){
 
-                    $out->reason = 'An error ocurred saving the form.';
+                    $args = array('params' => $params);
+
+                    if($result = $this->model->api($url, $args)){
+
+                        $out->ok = true;
+
+                    }else{
+
+                        $out->ok = false;
+
+                        $out->reason = 'There was an unknown error saving to the custom save URL';
+
+                    }
 
                 }else{
 
-                    if(is_array($result) && count($result) > 0)
-                        $out->form = $result;
+                    if($result = $this->form_save($this->model, $params)){
 
-                    $out->ok = true;
+                        $out->ok = true;
+
+                    }else{
+
+                        $out->ok = false;
+
+                        $out->reason = 'An error ocurred saving the form.';
+
+                    }
 
                 }
+
+                if(is_array($result) && count($result) > 0)
+                    $out->form = $result;
 
                 break;
 
