@@ -1350,8 +1350,9 @@ var form;
             _validate(host).done(function (result, errors) {
                 if (result) save_data(host, extra);
                 else {
+                    $(host).trigger('saverror', ["Validation failed!"]);
                     $(host).trigger('validate', [result, errors]);
-                    _validate_nav(host, errors);
+                    if (host.settings.validateNav) _validate_nav(host, errors);
                 }
             });
         else save_data(host, extra);
@@ -1522,7 +1523,9 @@ var form;
                     case 'validate':
                         _validate(host).done(function (result, errors) {
                             $(host).trigger('validate', [result, errors]);
-                            if (args[1] !== false && !result) _validate_nav(host, errors);
+                            if (((typeof args[1] == 'undefined' && host.settings.validateNav === true)
+                                || args[1] !== false)
+                                && !result) _validate_nav(host, errors);
                         });
                         break;
                     case 'monitor':
@@ -1545,6 +1548,7 @@ var form;
         "singlePage": false,
         "placeholder": "Please select...",
         "loaderClass": "forms-loader",
+        "validateNav": true,
         "styleClasses": {
             "container": "forms-container",
             "page": "form-page",
