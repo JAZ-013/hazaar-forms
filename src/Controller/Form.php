@@ -95,8 +95,6 @@ abstract class Form extends Action {
 
                 $out->params = $params;
 
-                $result = null;
-
                 if($url = ake($postdata, 'url')){
 
                     $args = array('params' => $params);
@@ -104,6 +102,8 @@ abstract class Form extends Action {
                     if($result = $this->model->api($url, $args)){
 
                         $out->ok = true;
+
+                        $out->result = $result;
 
                     }else{
 
@@ -119,6 +119,8 @@ abstract class Form extends Action {
 
                         $out->ok = true;
 
+                        $out->result = $result;
+
                     }else{
 
                         $out->ok = false;
@@ -128,9 +130,6 @@ abstract class Form extends Action {
                     }
 
                 }
-
-                if(is_array($result) && count($result) > 0)
-                    $out->form = $result;
 
                 break;
 

@@ -1307,17 +1307,13 @@ var form;
                 if (response.ok) {
                     if (response.params)
                         $.extend(host.settings.params, response.params);
-                    if (response.form) {
-                        for (let x in response.form)
-                            host.data[x] = response.form[x];
-                    }
                     host.posts = {}; //Reset the post cache so we get clean data after 
                     if (host.uploads.length > 0 || host.deloads.length > 0) {
                         _upload_files(host).done(function (upload_response) {
                             if (upload_response.ok) {
                                 host.uploads = [];
                                 host.deloads = [];
-                                $(host).trigger('save', [host.settings.params]);
+                                $(host).trigger('save', [response.result, host.settings.params]);
                                 if (callbacks.done) callbacks.done(response);
                             } else {
                                 $('<div>').html(upload_response.reason).popup({
@@ -1331,7 +1327,7 @@ var form;
                             _error(error);
                         });
                     } else {
-                        $(host).trigger('save', [host.settings.params]);
+                        $(host).trigger('save', [response.result, host.settings.params]);
                         if (callbacks.done) callbacks.done(response);
                     }
                 } else {
