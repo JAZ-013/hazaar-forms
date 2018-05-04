@@ -495,11 +495,11 @@ var form;
                 else item_data.value = null;
             }
             if (Object.keys(data).length === 1 && options.single === true) {
-                var key = data[0][valueKey];
+                var item = data[Object.keys(data)[0]], key = item[valueKey];
                 if (int) key = parseInt(key);
                 if (item_data.value !== key) {
-                    item_data.set(key, (labelKey.indexOf('{{') > -1) ? _match_replace(null, labelKey, data[0], true) : data[0][labelKey]);
-                    if ('other' in options && options.other in data[0]) item_data[def.name].other = data[0][options.other];
+                    item_data.set(key, (labelKey.indexOf('{{') > -1) ? _match_replace(null, labelKey, item, true) : item[labelKey]);
+                    if ('other' in options && options.other in item) item_data[def.name].other = item[options.other];
                 }
             }
         }).fail(_error);
