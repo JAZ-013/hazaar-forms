@@ -251,7 +251,7 @@ var form;
                         host.data.extend(response.updates);
                         _validate_input(host, input);
                     }
-                });
+                }).fail(_error);
             }
         } else _validate_input(host, input);
         if (host.events.show.length > 0) {
@@ -686,7 +686,7 @@ var form;
         _post(host, 'fileinfo', { 'field': def.name }, true).done(function (response) {
             if (!response.ok) return;
             for (let x in response.files) input.fileUpload('add', response.files[x]);
-        });
+        }).fail(_error);
         return group;
     };
 
@@ -1190,7 +1190,7 @@ var form;
                     }, false).done(function (response) {
                         var result = (response.ok === true) ? true : _validation_error(name, def, response.reason || "api_failed(" + def.validate.url + ")");
                         if (callbacks.length > 0) for (let x in callbacks) callbacks[x](name, result);
-                    });
+                    }).fail(_error);
                 } else if (callbacks.length > 0) for (let x in callbacks) callbacks[x](name, result);
                 if (name in host.monitor) for (x in host.monitor[name]) host.monitor[name][x](result);
             }
@@ -1411,7 +1411,7 @@ var form;
             data: JSON.stringify(params)
         }).always(function (response) {
             if (track === true) _ready(host);
-        }).fail(_error);
+        });
     };
 
     function _define(values) {
@@ -1437,7 +1437,7 @@ var form;
             host.def = response.form;
             host.data = new dataBinder(_define(host.def.fields));
             $(host).trigger('load', [host.def]);
-        });
+        }).fail(_error);
     };
 
     //Load all the dynamic bits
@@ -1448,7 +1448,7 @@ var form;
                 for (let x in response.form) host.data[x] = response.form[x];
                 $(host).trigger('data', [host.data.save()]);
                 _nav(host, 0);
-            });
+            }).fail(_error);
         }).fail(_error);
     };
 
