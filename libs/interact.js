@@ -1302,7 +1302,7 @@ var form;
             for (let x in host.def.fields) if (host.def.fields[x].protected === true) delete data[x];
             var params = { params: extra || {}, form: data };
             if ('saveURL' in host.settings) params.url = host.settings.saveURL;
-            $(host).trigger('saving', [data]);
+            $(host).trigger('saving', [data, params]);
             _post(host, 'post', params, false).done(function (response) {
                 if (response.ok) {
                     if (response.params)
@@ -1346,7 +1346,7 @@ var form;
             _validate(host).done(function (result, errors) {
                 if (result) save_data(host, extra);
                 else {
-                    $(host).trigger('saverror', ["Validation failed!"]);
+                    $(host).trigger('saverror', ["Validation failed!", errors]);
                     $(host).trigger('validate', [result, errors]);
                     if (host.settings.validateNav) _validate_nav(host, errors);
                 }
