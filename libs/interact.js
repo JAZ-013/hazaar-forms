@@ -1112,7 +1112,7 @@ var form;
     function _validate_input(host, input) {
         var def = input.data('def');
         if (!def) return false;
-        return _validate_field(host, def).done(function (event, result) {
+        return _validate_field(host, def.name).done(function (event, result) {
             $(host).trigger('validate_field', [def.name, result === true, result]);
             input.toggleClass('is-invalid', result !== true);
         });
@@ -1185,8 +1185,9 @@ var form;
             else {
                 var result = _validate_rule(host, name, item, def);
                 if (result === true && 'validate' in def && 'url' in def.validate) {
+                    var url = _match_replace(host, def.validate.url, { "__input__": item.value });
                     _post(host, 'api', {
-                        target: [def.validate.url, { "name": name, "value": item.value }],
+                        target: [url, { "name": name, "value": item.value }],
                     }, false).done(function (response) {
                         var result = (response.ok === true) ? true : _validation_error(name, def, response.reason || "api_failed(" + def.validate.url + ")");
                         if (callbacks.length > 0) for (let x in callbacks) callbacks[x](name, result);
