@@ -457,8 +457,11 @@ var form;
             };
             if (!Array.isArray(data)) data = Array.fromObject(data);
             if ('sort' in options) {
+                if (typeof options.sort === 'boolean') options.sort = labelKey;
                 if (typeof options.sort === 'string') {
-                    data.sort(function (a, b) { return a[options.sort] - b[options.sort]; });
+                    data.sort(function (a, b) {
+                        return (a[options.sort] < b[options.sort]) ? -1 : ((a[options.sort] > b[options.sort]) ? 1 : 0);
+                    });
                 } else if (Array.isArray(options.sort)) {
                     let x;
                     var newdata = [], find_test = function (element, index, array) {
