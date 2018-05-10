@@ -73,24 +73,38 @@ var form;
         return (target.match(/^https?:\/\//) ? target : hazaar.url(target));
     };
 
-    function _sort(data, sort) {
+    function _sort_data(data, field) {
         if (!Array.isArray(data)) {
             console.warn('Attempting to sort object.  Sorting is only supported by arrays.');
             return data;
         }
-        var newdata = [];
-        if (typeof sort === 'string') {
+        if (typeof field === 'string') {
             data.sort(function (a, b) {
-                return a[sort] - b[sort];
+                return (a[field] < b[field]) ? -1 : ((a[field] > b[field]) ? 1 : 0);
             });
-        } else if (Array.isArray(sort)) {
-            var find_test = function (element, index, array) {
-                return element[labelKey] === sort[x];
+        } else if (Array.isArray(field)) {
+            let x;
+            var newdata = [], find_test = function (element, index, array) {
+                return element[labelKey] === options.sort[x];
             };
-            for (x in sort) if (newitem = data.find(find_test)) newdata.push(newitem);
+            for (x in field) if (newitem = data.find(find_test)) newdata.push(newitem);
+            data = newdata;
         }
-        return newdata;
-    }
+        return data;
+    };
+
+    function _convert_data(data, valueKey, labelKey, int) {
+        for (let x in data) {
+            if (typeof data[x] !== 'object') {
+                let newitem = {};
+                newitem[valueKey] = (int ? parseInt(x) : x);
+                newitem[labelKey] = data[x];
+                data[x] = newitem;
+            }
+        };
+        if (!Array.isArray(data)) data = Array.fromObject(data);
+        return data;
+    };
 
     function _exec(host, type, field) {
         if (!(type in host.events && field in host.events[type]))
@@ -336,6 +350,8 @@ var form;
                 item_data.remove(index);
         };
         var value = _get_data_item(host.data, def.name, true), items = [];
+        //data = _convert_data(data, 'value', 'label', false);
+        if ('sort' in def.options) data = _sort_data(data, def.options.sort);
         if (def.buttons === true) {
             var btnClass = def.class || 'primary';
             for (let x in data) {
@@ -360,7 +376,6 @@ var form;
         for (let col = 0; col < def.columns; col++)
             items.push($('<div>').addClass('col-md-' + col_width)
                 .toggleClass('custom-controls-stacked', def.inline));
-        if ('sort' in def.options) data = _sort(data, def.options.sort);
         for (let x in data) {
             var active = (value instanceof dataBinderArray && value.indexOf((int ? parseInt(x) : x)) > -1), name = def.name + '_' + x;
             var label = $('<div>').addClass(host.settings.styleClasses.chkDiv).html([
@@ -465,29 +480,10 @@ var form;
             var valueKey = options.value || 'value', labelKey = options.label || 'label';
             select.prop('disabled', !(def.disabled !== true && def.protected !== true));
             select.empty().append($('<option>').attr('value', '').html(def.placeholder));
-            for (let x in data) {
-                if (typeof data[x] !== 'object') {
-                    let newitem = {};
-                    newitem[valueKey] = (int ? parseInt(x) : x);
-                    newitem[labelKey] = data[x];
-                    data[x] = newitem;
-                }
-            };
-            if (!Array.isArray(data)) data = Array.fromObject(data);
+            data = _convert_data(data, valueKey, labelKey, int);
             if ('sort' in options) {
                 if (typeof options.sort === 'boolean') options.sort = labelKey;
-                if (typeof options.sort === 'string') {
-                    data.sort(function (a, b) {
-                        return (a[options.sort] < b[options.sort]) ? -1 : ((a[options.sort] > b[options.sort]) ? 1 : 0);
-                    });
-                } else if (Array.isArray(options.sort)) {
-                    let x;
-                    var newdata = [], find_test = function (element, index, array) {
-                        return element[labelKey] === options.sort[x];
-                    };
-                    for (x in options.sort) if (newitem = data.find(find_test)) newdata.push(newitem);
-                    data = newdata;
-                }
+                data = _sort_data(data, options.sort);
             }
             for (let x in data) {
                 if ('filter' in options && options.filter.indexOf(data[x][labelKey]) === -1) {
