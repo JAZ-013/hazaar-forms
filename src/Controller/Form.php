@@ -93,14 +93,43 @@ abstract class Form extends Action {
 
                 $params = ake($postdata, 'params');
 
-                $result = $this->form_save($this->model, $params);
-
                 $out->params = $params;
 
-                if(is_array($result) && count($result) > 0)
-                    $out->form = $result;
+                if($url = ake($postdata, 'url')){
 
-                $out->ok = true;
+                    $args = array('params' => $params);
+
+                    if($result = $this->model->api($url, $args)){
+
+                        $out->ok = true;
+
+                        $out->result = $result;
+
+                    }else{
+
+                        $out->ok = false;
+
+                        $out->reason = 'There was an unknown error saving to the custom save URL';
+
+                    }
+
+                }else{
+
+                    if($result = $this->form_save($this->model, $params)){
+
+                        $out->ok = true;
+
+                        $out->result = $result;
+
+                    }else{
+
+                        $out->ok = false;
+
+                        $out->reason = 'An error ocurred saving the form.';
+
+                    }
+
+                }
 
                 break;
 
@@ -143,7 +172,14 @@ abstract class Form extends Action {
 
                 $this->model->lock();
 
-                $this->model->populate($this->request->get('form'));
+                $this->model->populate($this->request->get('form', array()));
+
+                $params = $this->request->get('params');
+
+                if($this->request->get('save') === true)
+                    $this->form_save($this->model, $params);
+
+                $out->params = $params;
 
                 if($target = $this->request->get('api')){
 
@@ -153,11 +189,17 @@ abstract class Form extends Action {
 
                 }elseif(method_exists($this, 'form_update')){
 
-                    $updates = (array)$this->form_update($this->request->get('originator'), $this->model);
+                    $updates = (array)$this->form_update($this->request->get('originator'), $this->model, $params);
 
                 }
 
-                if(is_array($updates)) $out->updates = $updates;
+                if(is_array($updates)){
+
+                    $this->model->populate($updates);
+
+                    $out->updates = array_intersect_key($this->model->toArray(), $updates);
+
+                }
 
                 $out->ok = true;
 
@@ -416,7 +458,7 @@ abstract class Form extends Action {
         $file = $name . '.json';
 
         if(!($source = $app->filePath('forms', $file, true)))
-            throw new \Exception('Form model source not found: ' . $file, 404);
+            throw new \Exception('Form model source not found: ' . $file);
 
         $source_file = new \Hazaar\File($source);
 
@@ -430,7 +472,7 @@ abstract class Form extends Action {
 
     }
 
-    protected function form_dir(){
+    protected function form_dir($include_hidden = false){
 
         $list = array();
 
@@ -453,7 +495,7 @@ abstract class Form extends Action {
                 && property_exists($info, 'fields')))
                 continue;
 
-            if(property_exists($info, 'hide')
+            if($include_hidden !== true && property_exists($info, 'hide')
                 && $info->hide === true)
                 continue;
 

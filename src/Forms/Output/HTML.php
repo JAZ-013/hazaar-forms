@@ -185,6 +185,17 @@ class HTML extends \Hazaar\Forms\Output {
 
                 $items[] = $html;
 
+            }elseif(is_object($field) && property_exists($field, 'fields')){
+
+                $group = new \Hazaar\Html\Div();
+
+                if(property_exists($field, 'label'))
+                    $group->add(new \Hazaar\Html\H4($field->label));
+
+                $group->add($this->__group(array((array)$field->fields), $horizontal));
+
+                $items[] = $group;
+
             }else{
 
                 $items[] = $this->__field($name, $field);
@@ -202,7 +213,7 @@ class HTML extends \Hazaar\Forms\Output {
         $group = (new \Hazaar\Html\Div())->class('form-group');
 
         if($label = ake($field, 'label'))
-            $group->add(new \Hazaar\Html\H4($this->model->matchReplace($label, true)));
+            $group->add(new \Hazaar\Html\H5($this->model->matchReplace($label, true)));
 
         $type = ake($field, 'type');
 
@@ -210,7 +221,7 @@ class HTML extends \Hazaar\Forms\Output {
 
             return null;
 
-        }elseif($type == 'array'){
+        }elseif($type == 'array' || $type == 'file'){
 
             if(property_exists($field, 'fields')){
 
@@ -220,15 +231,35 @@ class HTML extends \Hazaar\Forms\Output {
 
                 $rows = new \Hazaar\Html\Tbody();
 
-                foreach(ake($field, 'fields', array()) as $key => $def)
+                $count = 0;
+
+                foreach(ake($field, 'fields', array()) as $key => $def){
+
+                    if(ake($def, 'hidden')) continue;
+
                     $hdrs->add(new \Hazaar\Html\Th(ake($def, 'label', $key)));
+
+                    $count += ake($def, 'weight', 1);
+
+                }
 
                 foreach(ake($field, 'value', array()) as $items){
 
                     $row = new \Hazaar\Html\Tr();
 
-                    foreach($items as $key => $item)
-                        $row->add(new \Hazaar\Html\Td(ake($item, 'value')));
+                    foreach($items as $key => $item){
+
+                        if(ake($item, 'hidden')) continue;
+
+                        $value = (property_exists($item, 'html') ? $item->html : $item->value);
+
+                        $td = new \Hazaar\Html\Td($value);
+
+                        $td->style('width', (100 / $count ) * ake($item, 'weight', 1) . '%');
+
+                        $row->add($td);
+
+                    }
 
                     $rows->add($row);
 
@@ -236,14 +267,16 @@ class HTML extends \Hazaar\Forms\Output {
 
                 $group->add($table->add($rows));
 
-            }else{
+            }elseif(\Hazaar\Map::is_array($field->value)){
 
                 $list = (new \Hazaar\Html\Ul())->class('form-value-group');
 
-                if(property_exists($field, 'options') && is_array($field->value)){
+                foreach($field->value as $item){
 
-                    foreach($field->value as $item)
-                        $list->add((new \Hazaar\Html\Li(ake($field->options, $item, $item)))->class('form-value'));
+                    if(property_exists($field, 'options'))
+                        $item = ake($field->options, $item, $item);
+
+                    $list->add((new \Hazaar\Html\Li($item))->class('form-value'));
 
                 }
 

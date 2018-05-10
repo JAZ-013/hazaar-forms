@@ -35,10 +35,10 @@ class Model extends \Hazaar\Model\Strict {
         $this->__form = $form;
 
         if(!array_key_exists('name', $this->__form))
-            throw new \Exception('Form definition does have a name!');
+            throw new \Exception('Form definition does not have a name!');
 
         if(!array_key_exists('pages', $this->__form))
-            throw new \Exception('Form definition does have any pages defined!');
+            throw new \Exception('Form definition does not have any pages defined!');
 
         if(!array_key_exists('fields', $this->__form))
             throw new \Exception('Form definition does not contain any fields!');
@@ -135,14 +135,64 @@ class Model extends \Hazaar\Model\Strict {
         $fields = $this->__form->fields;
 
         //Make any changes to the field defs for use in strict models.
-        foreach($fields as $name => &$def){
+        foreach($fields as $key => &$def)
+            $this->convert_definition($def);
 
-            if(ake($def, 'type') == 'date')
-                $def['type'] = 'Hazaar\Date';
+        return $fields;
+
+    }
+
+    private function convert_definition(&$def){
+
+        if(array_key_exists('fields', $def) && !array_key_exists('arrayOf', $def)){
+
+            if(ake($def, 'type') === 'array'){
+
+                $target = 'arrayOf';
+
+            }else{
+
+                $def['type'] = 'model';
+
+                $target = 'items';
+
+            }
+
+            settype($def['fields'], 'array');
+
+            akr($def, 'fields', $target);
+
+            //Field defs need to be arrays.  Their contents do not however.
+            array_walk($def[$target], function(&$array){
+                if(is_string($array)) $array = array('type' => $array);
+                elseif(is_object($array)) settype($array, 'array');
+            });
+
+            if(ake($def, 'type') !== 'array'){
+
+                foreach($def[$target] as &$field)
+                    $this->convert_definition($field);
+
+            }
 
         }
 
-        return $fields;
+        switch(ake($def, 'type')){
+            case 'date':
+
+                $def['type'] = 'Hazaar\Date';
+
+                break;
+
+            case 'file':
+
+                $def['type'] = 'array';
+
+                $def['arrayOf'] = 'string';
+
+                break;
+
+        }
 
     }
 
@@ -222,13 +272,29 @@ class Model extends \Hazaar\Model\Strict {
 
             }
 
-            if(!is_object($item))
-                continue;
+            if(is_object($item)){
 
-            if($subs = array_intersect(array_keys(get_object_vars($item)), $sub)){
+                if($subs = array_intersect(array_keys(get_object_vars($item)), $sub)){
 
-                foreach($subs as $key)
-                    $items[$name]->$key = $this->filterItems($item->$key, $no_reindex, $sub);
+                    foreach($subs as $key)
+                        $items[$name]->$key = $this->filterItems($item->$key, $no_reindex, $sub);
+
+                }
+
+            }elseif($tagParams = ake($item, 'tagParams')){
+
+                if(is_object($tagParams))
+                    $tagParams = get_object_vars($tagParams);
+
+                unset($item['tagParams']);
+
+                $tags = array_intersect(array_keys($tagParams), $this->__tags);
+
+                if(count($tags) === 0 && array_key_exists('default', $tagParams))
+                    $tags = array('default');
+
+                foreach($tags as $tag)
+                    $items[$name] = array_merge($item, get_object_vars($tagParams[$tag]));
 
             }
 
@@ -269,21 +335,39 @@ class Model extends \Hazaar\Model\Strict {
 
         foreach($this->__form->fields as $name => $field){
 
-            if(array_key_exists('type', $field) && $field['type'] == 'date' && $array[$name] instanceof \Hazaar\Date)
-                $array[$name] = $array[$name]->format('Y-m-d');
+            if($tags = ake($field, 'tag')){
 
-            if(!($tags = ake($field, 'tag')))
-                continue;
+                if(!is_array($tags))
+                    $tags = array($tags);
 
-            if(!is_array($tags))
-                $tags = array($tags);
+                if(count(array_intersect($tags, $this->__tags)) === 0)
+                    continue;
 
-            if(count(array_intersect($tags, $this->__tags)) === 0)
-                unset($array[$name]);
+            }
+
+            $this->exportField($name, $field, $array);
 
         }
 
         return $array;
+
+    }
+
+    private function exportField($name, $field, &$array){
+
+        if(!array_key_exists($name, $array)) return;
+
+        if(is_array($field) && array_key_exists('type', $field) && $field['type'] == 'date' && $array[$name] instanceof \Hazaar\Date)
+            $array[$name] = $array[$name]->format('Y-m-d');
+
+        if(array_key_exists('fields', $field)){
+
+            settype($field['fields'], 'array');
+
+            foreach($field['fields'] as $sub_name => $sub_field)
+                $this->exportField($sub_name, (array)$sub_field, $array[$name]);
+
+        }
 
     }
 
@@ -296,6 +380,8 @@ class Model extends \Hazaar\Model\Strict {
 
             if($value instanceof \Hazaar\Model\ChildArray)
                 $value = $this->export($value->toArray());
+            elseif($value instanceof \Hazaar\Model\ChildModel)
+                $value = $this->export($value->toArray(false, 0));
             elseif($value instanceof \Hazaar\Model\DataBinderValue)
                 $value = $value->value;
 
@@ -315,7 +401,7 @@ class Model extends \Hazaar\Model\Strict {
 
             $pages = array();
 
-            foreach($form->pages as $page){
+            foreach($form->pages as $num => $page){
 
                 if($page = $this->__page($page, $form))
                     $pages[] = $page;
@@ -466,7 +552,7 @@ class Model extends \Hazaar\Model\Strict {
 
         }elseif(ake($field, 'type') == 'array'){
 
-            if(property_exists($field, 'fields') && is_array($field->fields)){
+            if(property_exists($field, 'fields') && $field->fields instanceof \stdClass){
 
                 $items = array();
 
@@ -525,7 +611,41 @@ class Model extends \Hazaar\Model\Strict {
 
         $field->value = $value;
 
+        //Look for subfields
+        if(property_exists($field, 'fields') && ake($field, 'type') !== 'array'){
+
+            foreach($field->fields as $key => &$sub_field){
+
+                $sub_field->name = $field->name . '.' . $key;
+
+                $sub_field->value = ake($value, $key);
+
+                $sub_field = $this->__field($sub_field, $form);
+
+            }
+
+        }
+
         return $field;
+
+    }
+
+    public function &get($key, $exec_filters = true){
+
+        if(strpos($key, '.') !== false){
+
+            $parts = explode('.', $key);
+
+            $value = parent::get(array_shift($parts));
+
+            foreach($parts as $part)
+                $value =& $value[$part];
+
+            return $value;
+
+        }
+
+        return parent::get($key, $exec_filters);
 
     }
 
@@ -549,10 +669,22 @@ class Model extends \Hazaar\Model\Strict {
 
         $func = function($values, $evaluate){
 
-            $export = function($export, &$value, $quote = true){
+            $export = function(&$export, &$value, $quote = true){
 
                 if($value instanceof \Hazaar\Model\dataBinderValue)
                     $value = $value->value;
+                elseif($value instanceof \Hazaar\Model\ChildModel)
+                    $value = $value->toArray();
+                elseif($value instanceof \Hazaar\Model\ChildArray){
+
+                    $values = array();
+
+                    foreach($value as $key => $subValue)
+                        $values[$key] = $export($export, $subValue, false);
+
+                    $value = $values;
+
+                }
 
                 if($value instanceof \Hazaar\Date)
                     $value = $value->sec();
@@ -560,19 +692,13 @@ class Model extends \Hazaar\Model\Strict {
                     $value = strbool($value);
                 elseif(is_null($value))
                     $value = 'null';
-                elseif (is_array($value) || $value instanceof \Hazaar\Model\ChildArray){
-
-                    $values = array();
-
-                    foreach($value as $key => $subValue)
-                        $values[$key] = $export($export, $subValue, false);
-
-                    $value = var_export($values, true);
-
-                }elseif ((is_string($value) || is_object($value)) && $quote)
+                elseif (is_array($value) && $quote)
+                    $value = var_export($value, true);
+                elseif ((is_string($value) || is_object($value)) && $quote)
                     $value = "'" . addslashes((string)$value) . "'";
 
                 return $value;
+
             };
 
             $code = '';
@@ -627,10 +753,13 @@ class Model extends \Hazaar\Model\Strict {
 
         $keywords = array('true', 'false', 'null');
 
+        if(preg_match('/(\w*)\.length/', $item, $matches))
+            return 'count($' . $matches[1] . ')';
+
         if(strpos($item, '.') !== false)
             $item = str_replace('.', '->', $item);
 
-        if(!($item[0] == "'" && $item[-1] == "'") && !in_array(strtolower($item), $keywords) && !is_numeric($item))
+        if(!(substr($item, 0, 1) == "'" && substr($item, -1, 1) == "'") && !in_array(strtolower($item), $keywords) && !is_numeric($item))
             $item = '$' . $item;
 
         return $item;
@@ -664,6 +793,10 @@ class Model extends \Hazaar\Model\Strict {
             $args = array();
 
         $args['form'] = $this->toArray();
+
+        $args['def'] = $this->getFormDefinition();
+
+        $args['name'] = $this->getName();
 
         if(strpos($target, ':') !== false){
 
@@ -700,7 +833,7 @@ class Model extends \Hazaar\Model\Strict {
                 throw new \Exception('Only JSON API responses are currently supported!');
 
             if($response->getStatus()!= 200)
-                throw new \Exception('API endpoint returned status code ' . $response->getStatus() . '. ' . $response->getContent());
+                throw new \Exception('API endpoint returned status code ' . $response->getStatus() . ' - ' . $response->getStatusMessage());
 
             $result = $response->toArray();
 
