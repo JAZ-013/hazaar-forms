@@ -73,7 +73,7 @@ var form;
         return (target.match(/^https?:\/\//) ? target : hazaar.url(target));
     };
 
-    function _sort_data(data, field) {
+    function _sort_data(data, field, labelKey, spacerKey) {
         if (!Array.isArray(data)) {
             console.warn('Attempting to sort object.  Sorting is only supported by arrays.');
             return data;
@@ -83,12 +83,23 @@ var form;
                 return (a[field] < b[field]) ? -1 : ((a[field] > b[field]) ? 1 : 0);
             });
         } else if (Array.isArray(field)) {
-            let x;
-            var newdata = [], find_test = function (element, index, array) {
-                return element[labelKey] === options.sort[x];
-            };
-            for (x in field) if (newitem = data.find(find_test)) newdata.push(newitem);
-            data = newdata;
+            var newdata = [];
+            for (let x in field) {
+                let newIndex = data.findIndex(function (element, index, array) {
+                    return element[labelKey] === field[x];
+                });
+                if (newIndex != -1) {
+                    newdata.push(data[newIndex]);
+                    data.splice(newIndex, 1);
+                }
+            }
+            if (spacerKey) {
+                let spacer = {};
+                spacer[spacerKey] = '__spacer__';
+                spacer[labelKey] = Array(10).join('&#x2500;');
+                newdata.push(spacer);
+            }
+            data = newdata.concat(_sort_data(data, labelKey));
         }
         return data;
     };
@@ -354,7 +365,7 @@ var form;
         data = _convert_data(data, valueKey, labelKey, int);
         if ('sort' in def.options) {
             if (typeof def.options.sort === 'boolean') def.options.sort = labelKey;
-            data = _sort_data(data, def.options.sort);
+            data = _sort_data(data, def.options.sort, labelKey);
         }
         if (def.buttons === true) {
             var btnClass = def.class || 'primary';
@@ -486,7 +497,7 @@ var form;
             data = _convert_data(data, valueKey, labelKey, int);
             if ('sort' in options) {
                 if (typeof options.sort === 'boolean') options.sort = labelKey;
-                data = _sort_data(data, options.sort);
+                data = _sort_data(data, options.sort, labelKey, valueKey);
             }
             for (let x in data) {
                 if ('filter' in options && options.filter.indexOf(data[x][labelKey]) === -1) {
@@ -497,6 +508,7 @@ var form;
                     .html((labelKey.indexOf('{{') > -1)
                         ? _match_replace(null, labelKey, data[x], true)
                         : data[x][labelKey]);
+                if (data[x][valueKey] === '__spacer__') option.prop('disabled', true).addClass('form-select-spacer');
                 if ('other' in options)
                     option.data('other', (options.other.indexOf('{{') > -1)
                         ? _match_replace(null, options.other, data[x], true)
