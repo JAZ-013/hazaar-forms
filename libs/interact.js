@@ -547,7 +547,7 @@ var form;
                 var match = matches[x].substr(2, matches[x].length - 4);
                 if (!(match in def.watchers)) def.watchers[match] = [];
                 def.watchers[match].push(host.data.watch(match, function (key, value, select) {
-                    _input_select_populate_ajax(host, options, select, false);
+                    _input_select_populate_ajax(host, options, select, true);
                 }, select));
             }
             return _input_select_populate_ajax(host, options, select, track);
