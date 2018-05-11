@@ -97,7 +97,7 @@ var form;
         for (let x in data) {
             if (typeof data[x] !== 'object') {
                 let newitem = {};
-                newitem[valueKey] = (int ? parseInt(x) : x);
+                newitem[valueKey] = ((int === true) ? parseInt(x) : x);
                 newitem[labelKey] = data[x];
                 data[x] = newitem;
             }
@@ -349,22 +349,24 @@ var form;
             else
                 item_data.remove(index);
         };
-        var value = _get_data_item(host.data, def.name, true), items = [];
-        //data = _convert_data(data, 'value', 'label', false);
-        if ('sort' in def.options) data = _sort_data(data, def.options.sort);
+        var value = _get_data_item(host.data, def.name, true), items = [], int = _is_int(def);
+        var valueKey = def.options.value || 'value', labelKey = def.options.label || 'label';
+        data = _convert_data(data, valueKey, labelKey, int);
+        if ('sort' in def.options) {
+            if (typeof def.options.sort === 'boolean') def.options.sort = labelKey;
+            data = _sort_data(data, def.options.sort);
+        }
         if (def.buttons === true) {
             var btnClass = def.class || 'primary';
             for (let x in data) {
-                var value = (typeof data[x] === 'object') ? data[x].value : x;
-                var label = (typeof data[x] === 'object') ? data[x].label : data[x];
-                var active = (value instanceof dataBinderArray && value.indexOf((int ? parseInt(x) : x)) > -1), name = def.name + '_' + x;
+                var value = data[x][valueKey], label = data[x][labelKey];
+                var active = (value instanceof dataBinderArray && value.indexOf(value) > -1), name = def.name + '_' + value;
                 items.push($('<label class="btn">').addClass('btn-' + btnClass).html([
                     $('<input type="checkbox" autocomplete="off">')
-                        .attr('value', x)
+                        .attr('value', value)
                         .prop('checked', active)
                         .prop('disabled', (def.protected === true))
-                        .attr('data-bind-value', x),
-                    data[x]
+                        .attr('data-bind-value', value), label
                 ]).toggleClass('active', active).change(fChange));
             }
             return items;
@@ -372,23 +374,24 @@ var form;
         if (!('columns' in def)) def.columns = 1;
         if (def.columns > 6) def.columns = 6;
         var col_width = Math.floor(12 / def.columns), per_col = (Math.ceil(Object.keys(data).length / def.columns));
-        var cols = $('<div class="row">'), column = 0, int = _is_int(def);
+        var cols = $('<div class="row">'), column = 0;
         for (let col = 0; col < def.columns; col++)
             items.push($('<div>').addClass('col-md-' + col_width)
                 .toggleClass('custom-controls-stacked', def.inline));
         for (let x in data) {
-            var active = (value instanceof dataBinderArray && value.indexOf((int ? parseInt(x) : x)) > -1), name = def.name + '_' + x;
+            var value = data[x][valueKey], label = data[x][labelKey];
+            var active = (value instanceof dataBinderArray && value.indexOf(value) > -1), name = def.name + '_' + value;
             var label = $('<div>').addClass(host.settings.styleClasses.chkDiv).html([
                 $('<input type="checkbox">')
                     .addClass(host.settings.styleClasses.chkInput)
                     .attr('id', '__field_' + name)
-                    .attr('value', x)
+                    .attr('value', value)
                     .prop('checked', active)
                     .prop('disabled', (def.protected === true)),
                 $('<label>').addClass(host.settings.styleClasses.chkLabel)
-                    .html(data[x])
+                    .html(label)
                     .attr('for', '__field_' + name)
-            ]).attr('data-bind-value', x).change(fChange);
+            ]).attr('data-bind-value', value).change(fChange);
             items[column].append(label);
             if (items[column].children().length >= per_col) column++;
         }
