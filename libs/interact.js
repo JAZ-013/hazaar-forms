@@ -942,15 +942,12 @@ var form;
             if (typeof p === 'undefined') p = true;
             for (let x in def.fields) {
                 var item = def.fields[x];
-                if (p) {
-                    if (Array.isArray(def.fields[x])) {
-                        item = def.fields[x];
-                    } else {
-                        item = _form_field_lookup(host.def, def.fields[x]);
-                        if (!item) continue;
-                        if (!('weight' in item)) item.weight = 1;
-                        length = length + (item.weight - 1);
-                    }
+                if (!item) continue;
+                if (p && !Array.isArray(item)) {
+                    item = _form_field_lookup(host.def, item);
+                    if (!item) continue;
+                    if (!('weight' in item)) item.weight = 1;
+                    length = length + (item.weight - 1);
                 }
                 if (typeof item === 'object' && !("name" in item) && 'name' in def) item.name = def.name + '.' + x;
                 fields.push(item);
