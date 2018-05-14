@@ -10,9 +10,9 @@ namespace Hazaar\Controller;
  */
 abstract class Form extends Action {
 
-    private $model;
+    protected $form_model;
 
-    private $params;
+    protected $form_params;
 
     private $__tags = array();
 
@@ -41,19 +41,19 @@ abstract class Form extends Action {
 
         $model->setTags($this->__tags);
 
-        $this->params = $params;
+        $this->form_params = $params;
 
-        $this->model = $model;
+        $this->form_model = $model;
 
-        $this->model->populate($this->form_load($params));
+        $this->form_model->populate($this->form_load($params));
 
-        $this->model->lock();
+        $this->form_model->lock();
 
         $this->view->addHelper('gui');
 
         $this->view->addHelper('forms', array('model' => $model), 'form');
 
-        return $this->model;
+        return $this->form_model;
 
     }
 
@@ -65,17 +65,17 @@ abstract class Form extends Action {
         if(!$this->request->has('name'))
             throw new \Exception('Missing form name in request!');
 
-        $this->form($this->request->name, $this->request->get('params', array()));
+        if(!($this->form_model = $this->form_get($this->request->name)) instanceof \Hazaar\Forms\Model)
+            throw new \Exception(__CLASS__ . '::get() MUST return a form a Hazaar\Forms\Model object!');
 
-        if(!$this->model instanceof \Hazaar\Forms\Model)
-            throw new \Exception('No form type has been set for this form controller');
+        $this->form_model->setTags($this->__tags);
 
         $out = new \Hazaar\Controller\Response\Json(array( 'ok' => false, 'name' => $this->request->name));
 
         switch($method){
             case 'init':
 
-                $out->form = $this->model->getFormDefinition();
+                $out->form = $this->form_model->getFormDefinition();
 
                 $out->ok = true;
 
@@ -85,11 +85,11 @@ abstract class Form extends Action {
 
                 $postdata = $this->request->getParams();
 
-                $this->model->populate($this->form_load($this->request->get('params', array())));
+                $this->form_model->populate($this->form_load($this->request->get('params', array())));
 
-                $this->model->lock();
+                $this->form_model->lock();
 
-                $this->model->populate(ake($postdata, 'form', array()));
+                $this->form_model->populate(ake($postdata, 'form', array()));
 
                 $params = ake($postdata, 'params');
 
@@ -99,7 +99,7 @@ abstract class Form extends Action {
 
                     $args = array('params' => $params);
 
-                    if($result = $this->model->api($url, $args)){
+                    if($result = $this->form_model->api($url, $args)){
 
                         $out->ok = true;
 
@@ -115,7 +115,7 @@ abstract class Form extends Action {
 
                 }else{
 
-                    if($result = $this->form_save($this->model, $params)){
+                    if($result = $this->form_save($this->form_model, $params)){
 
                         $out->ok = true;
 
@@ -135,11 +135,11 @@ abstract class Form extends Action {
 
             case 'load':
 
-                $this->model->populate($this->form_load($this->request->get('params', array())));
+                $this->form_model->populate($this->form_load($this->request->get('params', array())));
 
-                $this->model->lock();
+                $this->form_model->lock();
 
-                $out->form = $this->model->toFormArray();
+                $out->form = $this->form_model->toFormArray();
 
                 $out->ok = true;
 
@@ -156,13 +156,13 @@ abstract class Form extends Action {
 
                     $name = ake($info, 'name');
 
-                    $this->model->set($name, ake($info, 'value'));
+                    $this->form_model->set($name, ake($info, 'value'));
 
-                    $args[$name] = $this->model->get($name);
+                    $args[$name] = $this->form_model->get($name);
 
                 }
 
-                $out->populate($this->model->api($target[0], $args));
+                $out->populate($this->form_model->api($target[0], $args));
 
                 return $out;
 
@@ -170,14 +170,14 @@ abstract class Form extends Action {
 
                 $updates = array();
 
-                $this->model->lock();
+                $this->form_model->lock();
 
-                $this->model->populate($this->request->get('form', array()));
+                $this->form_model->populate($this->request->get('form', array()));
 
                 $params = $this->request->get('params');
 
                 if($this->request->get('save') === true)
-                    $this->form_save($this->model, $params);
+                    $this->form_save($this->form_model, $params);
 
                 $out->params = $params;
 
@@ -185,19 +185,19 @@ abstract class Form extends Action {
 
                     $args = array('originator' => $this->request->get('originator'));
 
-                    $updates = $this->model->api($target, $args);
+                    $updates = $this->form_model->api($target, $args);
 
                 }elseif(method_exists($this, 'form_update')){
 
-                    $updates = (array)$this->form_update($this->request->get('originator'), $this->model, $params);
+                    $updates = (array)$this->form_update($this->request->get('originator'), $this->form_model, $params);
 
                 }
 
                 if(is_array($updates)){
 
-                    $this->model->populate($updates);
+                    $this->form_model->populate($updates);
 
-                    $out->updates = array_intersect_key($this->model->toArray(), $updates);
+                    $out->updates = array_intersect_key($this->form_model->toArray(), $updates);
 
                 }
 
@@ -230,7 +230,7 @@ abstract class Form extends Action {
                         );
 
                         if(substr($info['type'], 0, 5) == 'image')
-                            $info['preview'] = (string)$this->url('preview/' . $this->model->getName() . '/' . $name . '/' . $file->basename(), $params);
+                            $info['preview'] = (string)$this->url('preview/' . $this->form_model->getName() . '/' . $name . '/' . $file->basename(), $params);
 
                         $out->files[] = $info;
 
@@ -256,18 +256,18 @@ abstract class Form extends Action {
 
     final public function layout($name, $settings = array()){
 
-        if(!$this->model instanceof \Hazaar\Forms\Model)
+        if(!$this->form_model instanceof \Hazaar\Forms\Model)
             throw new \Exception('No form type has been set for this form controller');
 
         $settings = new \Hazaar\Map($settings, array(
-            'form' => $this->model->getName(),
+            'form' => $this->form_model->getName(),
             'controller' => strtolower($this->getName()),
             'update' => method_exists($this, 'update'),
             'maxUploadSize' => \Hazaar\File\Upload::getMaxUploadSize()
         ));
 
-        if($this->params)
-            $settings->params = $this->params;
+        if($this->form_params)
+            $settings->params = $this->form_params;
 
         $form = new \Hazaar\Html\Form();
 
@@ -279,10 +279,10 @@ abstract class Form extends Action {
 
     final public function render(){
 
-        if(!$this->model instanceof \Hazaar\Forms\Model)
+        if(!$this->form_model instanceof \Hazaar\Forms\Model)
             throw new \Exception('No form type has been set for this form controller');
 
-        $output = new \Hazaar\Forms\Output\HTML($this->model);
+        $output = new \Hazaar\Forms\Output\HTML($this->form_model);
 
         return $output->render();
 
@@ -299,13 +299,13 @@ abstract class Form extends Action {
 
             $this->form($name);
 
-            $this->model->populate($this->form_load(unserialize($this->request->get('params'))));
+            $this->form_model->populate($this->form_load(unserialize($this->request->get('params'))));
 
-            $this->model->lock();
+            $this->form_model->lock();
 
             if($type == 'html'){
 
-                $output = new \Hazaar\Forms\Output\HTML($this->model);
+                $output = new \Hazaar\Forms\Output\HTML($this->form_model);
 
                 $response = new \Hazaar\Controller\Response\HTML();
 
@@ -313,13 +313,13 @@ abstract class Form extends Action {
 
             }else if($type == 'pdf'){
 
-                $output = new \Hazaar\Forms\Output\PDF($this->model);
+                $output = new \Hazaar\Forms\Output\PDF($this->form_model);
 
                 $response = new \Hazaar\Controller\Response\PDF();
 
                 $response->setContent($output->render());
 
-                $response->setTitle($this->model->getPDFTitle($params));
+                $response->setTitle($this->form_model->getPDFTitle($params));
 
             }
 
@@ -330,10 +330,10 @@ abstract class Form extends Action {
 
         }
 
-        if(!$this->model instanceof \Hazaar\Forms\Model)
+        if(!$this->form_model instanceof \Hazaar\Forms\Model)
             throw new \Exception('No form type has been set for this form controller');
 
-        $params = array('name' => $this->model->getName(), 'params' => serialize($this->params));
+        $params = array('name' => $this->form_model->getName(), 'params' => serialize($this->form_params));
 
         return $this->url('output/' . $type, $params)->encode();
 
@@ -547,7 +547,7 @@ abstract class Form extends Action {
 
         $index = new \Hazaar\Btree($manager->get('/fileindex.db'));
 
-        $key = md5($this->model->getName() . $name . serialize($params));
+        $key = md5($this->form_model->getName() . $name . serialize($params));
 
     }
 
