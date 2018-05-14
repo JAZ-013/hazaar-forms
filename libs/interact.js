@@ -93,7 +93,7 @@ var form;
                     data.splice(newIndex, 1);
                 }
             }
-            if (spacerKey) {
+            if (data.length > 0 && spacerKey) {
                 let spacer = {};
                 spacer[spacerKey] = '__spacer__';
                 spacer[labelKey] = Array(10).join('&#x2500;');
