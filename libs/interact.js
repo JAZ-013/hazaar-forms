@@ -1144,9 +1144,10 @@ var form;
     function _validate_input(host, input) {
         var def = input.data('def');
         if (!def) return false;
-        return _validate_field(host, def.name).done(function (event, result) {
+        return _validate_field(host, def.name).done(function (event, result, response) {
             $(host).trigger('validate_field', [def.name, result === true, result]);
-            input.toggleClass('is-invalid', result !== true);
+            input.toggleClass('is-invalid', result !== true)
+                .toggleClass('border-warning', (result === true && response.warning === true));
         });
     };
 
@@ -1213,7 +1214,7 @@ var form;
             var def = (typeof name === 'object') ? name : _form_field_lookup(host.def, name);
             var item = _get_data_item(host.data, def.name);
             if (def.protected || ('disabled' in def && _eval(host, def.disabled)))
-                for (let x in callbacks) callbacks[x](name, true);
+                for (let x in callbacks) callbacks[x](name, true, {});
             else {
                 var result = _validate_rule(host, name, item, def);
                 if (result === true && 'validate' in def && 'url' in def.validate) {
@@ -1222,9 +1223,9 @@ var form;
                         target: [url, { "name": name, "value": item.value }],
                     }, false).done(function (response) {
                         var result = (response.ok === true) ? true : _validation_error(name, def, response.reason || "api_failed(" + def.validate.url + ")");
-                        if (callbacks.length > 0) for (let x in callbacks) callbacks[x](name, result);
+                        if (callbacks.length > 0) for (let x in callbacks) callbacks[x](name, result, response);
                     }).fail(_error);
-                } else if (callbacks.length > 0) for (let x in callbacks) callbacks[x](name, result);
+                } else if (callbacks.length > 0) for (let x in callbacks) callbacks[x](name, result, {});
                 if (name in host.monitor) for (x in host.monitor[name]) host.monitor[name][x](result);
             }
         });
@@ -1286,11 +1287,13 @@ var form;
             }
             for (let key in fields) {
                 queue.push(fields[key]);
-                _validate_field(host, fields[key]).done(function (name, result) {
+                _validate_field(host, fields[key]).done(function (name, result, response) {
                     var index = queue.indexOf(name);
                     if (index >= 0) queue.splice(index, 1);
                     if (result !== true) errors.push(result);
-                    $('[data-bind="' + name + '"]').toggleClass('is-invalid', (result !== true));
+                    $('[data-bind="' + name + '"]')
+                        .toggleClass('is-invalid', (result !== true))
+                        .toggleClass('border-warning', (result === true && response.warning === true));
                     if (queue.length === 0)
                         for (let x in callbacks) callbacks[x]((errors.length === 0), errors);
                 });
