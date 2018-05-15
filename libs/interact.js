@@ -1224,8 +1224,8 @@ var form;
                 for (let x in callbacks) callbacks[x](name, true, {});
             else {
                 var result = _validate_rule(host, name, item, def);
-                if (result === true && 'validate' in def && 'url' in def.validate) {
-                    var url = _match_replace(host, def.validate.url, { "__input__": item.value });
+                if (item.value && result === true && 'validate' in def && 'url' in def.validate) {
+                    var url = _match_replace(host, def.validate.url, { "__input__": item.value }, true);
                     _post(host, 'api', {
                         target: [url, { "name": name, "value": item.value }],
                     }, false).done(function (response) {
