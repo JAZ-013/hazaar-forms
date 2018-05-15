@@ -403,6 +403,7 @@ var form;
                     .html(label)
                     .attr('for', '__field_' + name)
             ]).attr('data-bind-value', value).change(fChange);
+            if ('css' in def) label.css(def.css);
             items[column].append(label);
             if (items[column].children().length >= per_col) column++;
         }
@@ -595,6 +596,7 @@ var form;
             .on('update', function (event) { _input_event_update(host, $(event.target)); });
         def.watchers = {};
         if (!("placeholder" in def)) def.placeholder = host.settings.placeholder;
+        if ('css' in def) select.css(def.css);
         _check_input_disabled(host, select, def);
         if (typeof def.options === 'string') def.options = { url: def.options };
         if (Array.isArray(def.options) && 'watch' in def) {
@@ -631,6 +633,7 @@ var form;
             .html(_match_replace(host, def.label, null, true, true))
             .attr('for', '__field_' + def.name)
             .appendTo(div);
+        if ('css' in def) input.css(def.css);
         _check_input_disabled(host, input, def);
         return group;
     };
@@ -650,8 +653,7 @@ var form;
             .data('def', def)
             .val(item_data)
             .appendTo(input_group);
-        if (def.protected)
-            input.prop('disabled', true);
+        if (def.protected) input.prop('disabled', true);
         else input.focus(function (event) { _input_event_focus(host, $(event.target)); })
             .blur(function (event) { _input_event_blur(host, $(event.target)); })
             .change(function (event) { _input_event_change(host, $(event.target)); })
@@ -678,6 +680,7 @@ var form;
         } else glyph.click(function () { $(this).prev().focus().click(); });
         if (def.placeholder) input.attr('placeholder', def.placeholder);
         _check_input_disabled(host, input, def);
+        if ('css' in def) input.css(def.css);
         return group.append(input_group);
     };
 
@@ -755,6 +758,7 @@ var form;
             .data('def', def)
             .appendTo(input_group)
             .on('update', function (event) { _input_event_update(host, $(event.target)); });
+        if ('css' in def) input.css(def.css);
         _check_input_disabled(host, input, def);
         if (def.lookup && 'url' in def.lookup) {
             input.on('keyup', function (event) {
@@ -819,8 +823,7 @@ var form;
             .attr('data-bind', def.name)
             .data('def', def)
             .val(item_data);
-        if (def.protected)
-            input.prop('disabled', true);
+        if (def.protected) input.prop('disabled', true);
         else input.focus(function (event) { _input_event_focus(host, $(event.target)); })
             .blur(function (event) { _input_event_blur(host, $(event.target)); })
             .change(function (event) { _input_event_change(host, $(event.target)); })
@@ -828,6 +831,7 @@ var form;
         if (type === 'text' && 'validate' in def && 'maxlen' in def.validate) input.attr('maxlength', def.validate.maxlen);
         if ('format' in def) input.attr('type', 'text').inputmask(def.format);
         if ('placeholder' in def) input.attr('placeholder', def.placeholder);
+        if ('css' in def) input.css(def.css);
         _check_input_disabled(host, input, def);
         if (('prefix' in def) || ('suffix' in def)) {
             var inputDIV = $('<div>').addClass(host.settings.styleClasses.inputGroup)
