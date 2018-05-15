@@ -1350,11 +1350,9 @@ var form;
                                     title: 'Upload error',
                                     buttons: [{ label: 'OK', "class": "btn btn-default" }]
                                 });
-                                $(host).trigger('saverror', [upload_response.reason, params]);
                             }
                         }).fail(function (error) {
-                            $(host).trigger('saverror', [error.responseJSON.error.str, params]);
-                            _error(error);
+                            $(host).trigger('saverror', [error, params]);
                         });
                     } else {
                         $(host).trigger('save', [response.result, host.settings.params]);
@@ -1366,10 +1364,9 @@ var form;
                         icon: 'danger',
                         buttons: [{ label: 'OK', "class": "btn btn-default" }]
                     });
-                    $(host).trigger('saverror', [response.reason, params]);
                 }
             }).fail(function (error) {
-                $(host).trigger('saverror', [error.responseJSON.error.str, params]);
+                $(host).trigger('saverror', [error, params]);
             });
         };
         if (validate === true || typeof validate === 'undefined')
