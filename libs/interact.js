@@ -407,6 +407,7 @@ var form;
             items[column].append(label);
             if (items[column].children().length >= per_col) column++;
         }
+        if ('cssClass' in def) cols.addClass(def.cssClass);
         return cols.html(items);
     };
 
@@ -597,6 +598,7 @@ var form;
         def.watchers = {};
         if (!("placeholder" in def)) def.placeholder = host.settings.placeholder;
         if ('css' in def) select.css(def.css);
+        if ('cssClass' in def) select.addClass(def.cssClass);
         _check_input_disabled(host, select, def);
         if (typeof def.options === 'string') def.options = { url: def.options };
         if (Array.isArray(def.options) && 'watch' in def) {
@@ -634,6 +636,7 @@ var form;
             .attr('for', '__field_' + def.name)
             .appendTo(div);
         if ('css' in def) input.css(def.css);
+        if ('cssClass' in def) input.addClass(def.cssClass);
         _check_input_disabled(host, input, def);
         return group;
     };
@@ -681,6 +684,7 @@ var form;
         if (def.placeholder) input.attr('placeholder', def.placeholder);
         _check_input_disabled(host, input, def);
         if ('css' in def) input.css(def.css);
+        if ('cssClass' in def) input.addClass(def.cssClass);
         return group.append(input_group);
     };
 
@@ -759,6 +763,7 @@ var form;
             .appendTo(input_group)
             .on('update', function (event) { _input_event_update(host, $(event.target)); });
         if ('css' in def) input.css(def.css);
+        if ('cssClass' in def) input.addClass(def.cssClass);
         _check_input_disabled(host, input, def);
         if (def.lookup && 'url' in def.lookup) {
             input.on('keyup', function (event) {
@@ -832,6 +837,7 @@ var form;
         if ('format' in def) input.attr('type', 'text').inputmask(def.format);
         if ('placeholder' in def) input.attr('placeholder', def.placeholder);
         if ('css' in def) input.css(def.css);
+        if ('cssClass' in def) input.addClass(def.cssClass);
         _check_input_disabled(host, input, def);
         if (('prefix' in def) || ('suffix' in def)) {
             var inputDIV = $('<div>').addClass(host.settings.styleClasses.inputGroup)
