@@ -890,10 +890,9 @@ var form;
                     data[item.name] = value;
                 });
                 for (x in data) {
-                    if (def.fields[x].required && !data[x]) {
-                        parent.find('[name="' + x + '"]').addClass('is-invalid');
-                        valid = false;
-                    }
+                    var field_invalid = (def.fields[x].required && !(typeof data[x] === 'object' ? data[x].__hz_value : data[x]));
+                    parent.find('[name="' + x + '"]').toggleClass('is-invalid', field_invalid);
+                    if (field_invalid) valid = false;
                 }
                 if (!valid) return;
                 item_data.push(data);
