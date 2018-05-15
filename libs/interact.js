@@ -883,14 +883,21 @@ var form;
             ]));
             btn.click(function () {
                 var parent = $('#' + $(this).data('uniqid'));
-                var data = {}, field = parent.attr('data-field');
+                var data = {}, field = parent.attr('data-field'), def = _form_field_lookup(host.def, field), valid = true;
                 parent.find('input,select,textarea').each(function (index, item) {
                     var input = $(item), value = input.val();
                     if (input.is('select')) value = { __hz_value: value, __hz_label: input.children('option:selected').text() };
-                    $(item).val('');
                     data[item.name] = value;
                 });
+                for (x in data) {
+                    if (def.fields[x].required && !data[x]) {
+                        parent.find('[name="' + x + '"]').addClass('is-invalid');
+                        valid = false;
+                    }
+                }
+                if (!valid) return;
                 item_data.push(data);
+                parent.find('input,select,textarea').each(function (index, item) { $(item).val('').removeClass('is-invalid'); });
             });
         }
         if (def.allow_edit !== true)
