@@ -355,7 +355,7 @@ class Model extends \Hazaar\Model\Strict {
 
     private function exportField($name, $field, &$array){
 
-        if(!array_key_exists($name, $array)) return;
+        if(!(is_array($array) && array_key_exists($name, $array))) return;
 
         if(is_array($field) && array_key_exists('type', $field) && $field['type'] == 'date' && $array[$name] instanceof \Hazaar\Date)
             $array[$name] = $array[$name]->format('Y-m-d');
@@ -364,8 +364,14 @@ class Model extends \Hazaar\Model\Strict {
 
             settype($field['fields'], 'array');
 
-            foreach($field['fields'] as $sub_name => $sub_field)
-                $this->exportField($sub_name, (array)$sub_field, $array[$name]);
+            foreach($field['fields'] as $sub_name => $sub_field){
+
+                if(is_array($array[$name]))
+                    $this->exportField($sub_name, (array)$sub_field, $array[$name]);
+                else
+                    $array[$name] = array(); //Ensure list fields are always an array
+
+            }
 
         }
 

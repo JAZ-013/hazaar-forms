@@ -858,6 +858,7 @@ var form;
     function _input_list(host, def) {
         var item_data = _get_data_item(host.data, def.name);
         var group = $('<div class="itemlist">').addClass(host.settings.styleClasses.group).data('def', def);
+        if (!(item_data instanceof dataBinderArray)) return group;
         var label = $('<h4>').addClass(host.settings.styleClasses.label)
             .html(_match_replace(host, def.label, null, true, true))
             .appendTo(group);
