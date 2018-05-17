@@ -1354,36 +1354,33 @@ var form;
             if ('saveURL' in host.settings) params.url = host.settings.saveURL;
             $(host).trigger('saving', [data, params]);
             _post(host, 'post', params, false).done(function (response) {
-                if (response.ok) {
-                    if (response.params)
-                        $.extend(host.settings.params, response.params);
-                    host.posts = {}; //Reset the post cache so we get clean data after 
-                    if (host.uploads.length > 0 || host.deloads.length > 0) {
-                        _upload_files(host).done(function (upload_response) {
-                            if (upload_response.ok) {
-                                host.uploads = [];
-                                host.deloads = [];
-                                $(host).trigger('save', [response.result, host.settings.params]);
-                                if (callbacks.done) callbacks.done(response);
-                            } else {
-                                $('<div>').html(upload_response.reason).popup({
-                                    title: 'Upload error',
-                                    buttons: [{ label: 'OK', "class": "btn btn-default" }]
-                                });
-                            }
-                        }).fail(function (error) {
-                            $(host).trigger('saverror', [error, params]);
-                        });
-                    } else {
-                        $(host).trigger('save', [response.result, host.settings.params]);
-                        if (callbacks.done) callbacks.done(response);
-                    }
-                } else {
-                    $('<div>').html(response.reason).popup({
-                        title: 'Save error',
-                        icon: 'danger',
-                        buttons: [{ label: 'OK', "class": "btn btn-default" }]
+                if (!response.ok) {
+                    return $(host).trigger('saverror', [{
+                        responseJSON: { error: { str: response.reason || "An unknown error occurred while saving the form!" } }
+                    }, params]);
+                }
+                if (response.params)
+                    $.extend(host.settings.params, response.params);
+                host.posts = {}; //Reset the post cache so we get clean data after 
+                if (host.uploads.length > 0 || host.deloads.length > 0) {
+                    _upload_files(host).done(function (upload_response) {
+                        if (upload_response.ok) {
+                            host.uploads = [];
+                            host.deloads = [];
+                            $(host).trigger('save', [response.result, host.settings.params]);
+                            if (callbacks.done) callbacks.done(response);
+                        } else {
+                            $('<div>').html(upload_response.reason).popup({
+                                title: 'Upload error',
+                                buttons: [{ label: 'OK', "class": "btn btn-default" }]
+                            });
+                        }
+                    }).fail(function (error) {
+                        $(host).trigger('saverror', [error, params]);
                     });
+                } else {
+                    $(host).trigger('save', [response.result, host.settings.params]);
+                    if (callbacks.done) callbacks.done(response);
                 }
             }).fail(function (error) {
                 $(host).trigger('saverror', [error, params]);
@@ -1455,6 +1452,7 @@ var form;
             data: JSON.stringify(params)
         }).always(function (response) {
             if (track === true) _ready(host);
+            if ('data' in response) console.log(response.data);
         });
     };
 
