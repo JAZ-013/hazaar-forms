@@ -156,13 +156,13 @@ abstract class Form extends Action {
 
                     $name = ake($info, 'name');
 
-                    $this->form_model->set($name, ake($info, 'value'));
+                    $this->form_model->extend(array_from_dot_notation(array($name => ake($info, 'value'))));
 
                     $args[$name] = $this->form_model->get($name);
 
                 }
 
-                $out->populate($this->form_model->api($target[0], $args));
+                $out->populate($this->form_model->api($target[0], array_from_dot_notation($args)));
 
                 return $out;
 
