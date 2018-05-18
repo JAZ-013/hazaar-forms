@@ -984,7 +984,7 @@ var form;
             else
                 field = _input_select(host, def, populate);
             host.pageInputs.push(field);
-        } else if ('lookup' in def && def.type === 'text') {
+        } else if ('lookup' in def && def.type !== 'array') {
             if (typeof def.lookup === 'string') def.lookup = { url: def.lookup };
             field = _input_lookup(host, def);
             host.pageInputs.push(field);
