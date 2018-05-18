@@ -390,19 +390,19 @@ var form;
             items.push($('<div>').addClass('col-md-' + col_width)
                 .toggleClass('custom-controls-stacked', def.inline));
         for (let x in data) {
-            var value = data[x][valueKey], label = data[x][labelKey];
-            var active = (value instanceof dataBinderArray && value.indexOf(value) > -1), name = def.name + '_' + value;
+            var iv = data[x][valueKey], il = data[x][labelKey];
+            var active = (value instanceof dataBinderArray && value.indexOf(iv) > -1), name = def.name + '_' + iv;
             var label = $('<div>').addClass(host.settings.styleClasses.chkDiv).html([
                 $('<input type="checkbox">')
                     .addClass(host.settings.styleClasses.chkInput)
                     .attr('id', '__field_' + name)
-                    .attr('value', value)
+                    .attr('value', iv)
                     .prop('checked', active)
                     .prop('disabled', (def.protected === true)),
                 $('<label>').addClass(host.settings.styleClasses.chkLabel)
-                    .html(label)
+                    .html(il)
                     .attr('for', '__field_' + name)
-            ]).attr('data-bind-value', value).change(fChange);
+            ]).attr('data-bind-value', iv).change(fChange);
             if ('css' in def) label.css(def.css);
             items[column].append(label);
             if (items[column].children().length >= per_col) column++;
