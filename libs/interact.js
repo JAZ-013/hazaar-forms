@@ -561,7 +561,7 @@ var form;
         if ('other' in def && _eval(host, def.other) === true) {
             var otherOption = $('<option>').attr('value', '_hzForm_Other').html("Other");
             select.append(otherOption);
-            if (item_data.value === null & item_data.other !== null)
+            if (item_data && item_data.value === null && item_data.other !== null)
                 select.val('_hzForm_Other').change();
         }
         return true;
