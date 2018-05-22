@@ -872,32 +872,32 @@ var form;
             fields.push($.extend(def.fields[x], { name: x }));
         }
         if (def.allow_add !== false) {
-            var uniqid = 'select_' + Math.random().toString(36).substring(2);
             var btn = $('<button type="button" class="btn btn-success btn-sm">')
-                .html($('<i class="fa fa-plus">'))
-                .data('uniqid', uniqid);
-            var fieldDIV = _form_field(host, { fields: fields }).addClass('itemlist-newitem').attr('id', uniqid).attr('data-field', def.name);
+                .html($('<i class="fa fa-plus">'));
+            var fieldDIV = _form_field(host, { fields: fields })
+                .addClass('itemlist-newitem')
+                .attr('data-field', def.name);
             fieldDIV.find('input').removeAttr('data-bind');
             group.append($('<div class="itemlist-newitems">').html([
                 $('<div class="itemlist-newitem-add">').html(btn),
                 fieldDIV
             ]));
             btn.click(function () {
-                var parent = $('#' + $(this).data('uniqid'));
-                var data = {}, field = parent.attr('data-field'), def = _form_field_lookup(host.def, field), valid = true;
-                parent.find('input,select,textarea').each(function (index, item) {
+                var data = {}, field = fieldDIV.attr('data-field'), def = _form_field_lookup(host.def, field), valid = true;
+                fieldDIV.find('input,select,textarea').each(function (index, item) {
                     var input = $(item), value = input.val();
                     if (input.is('select')) value = { __hz_value: value, __hz_label: input.children('option:selected').text() };
                     data[item.name] = value;
                 });
                 for (x in data) {
                     var field_invalid = (def.fields[x].required && !(typeof data[x] === 'object' ? data[x].__hz_value : data[x]));
-                    parent.find('[name="' + x + '"]').toggleClass('is-invalid', field_invalid);
+                    fieldDIV.find('[name="' + x + '"]').toggleClass('is-invalid', field_invalid);
                     if (field_invalid) valid = false;
                 }
                 if (!valid) return;
                 item_data.push(data);
-                parent.find('input,select,textarea').each(function (index, item) { $(item).val('').removeClass('is-invalid'); });
+                fieldDIV.find('input,select,textarea').each(function (index, item) { $(item).val('').removeClass('is-invalid'); });
+                _validate_input(host, group);
             });
         }
         if (def.allow_edit !== true)
