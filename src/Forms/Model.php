@@ -22,9 +22,11 @@ class Model extends \Hazaar\Model\Strict {
 
     private $__locked = false;
 
-    function __construct($form_name, $form = null){
+    function __construct($form_name, $form = null, $tags = null){
 
         $this->__form_name = $form_name;
+
+        $this->setTags($tags);
 
         if($form) $this->load($form);
 
@@ -198,7 +200,9 @@ class Model extends \Hazaar\Model\Strict {
 
     public function setTags($tags){
 
-        if(!is_array($tags))
+        if($tags === null)
+            return;
+        elseif(!is_array($tags))
             $tags = array($tags);
 
         $this->__tags = $tags;

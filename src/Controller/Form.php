@@ -39,8 +39,6 @@ abstract class Form extends Action {
         if(!($model = $this->form_get($name)) instanceof \Hazaar\Forms\Model)
             throw new \Exception(__CLASS__ . '::get() MUST return a form a Hazaar\Forms\Model object!');
 
-        $model->setTags($this->__tags);
-
         $this->form_params = $params;
 
         $this->form_model = $model;
@@ -67,8 +65,6 @@ abstract class Form extends Action {
 
         if(!($this->form_model = $this->form_get($this->request->name)) instanceof \Hazaar\Forms\Model)
             throw new \Exception(__CLASS__ . '::get() MUST return a form a Hazaar\Forms\Model object!');
-
-        $this->form_model->setTags($this->__tags);
 
         $out = new \Hazaar\Controller\Response\Json(array( 'ok' => false, 'name' => $this->request->name));
 
@@ -468,7 +464,7 @@ abstract class Form extends Action {
         if(!($form = $source_file->parseJSON()))
             throw new \Exception('An error ocurred parsing the form definition \'' . $source_file->name() . '\'');
 
-        return new \Hazaar\Forms\Model($name, $form);
+        return new \Hazaar\Forms\Model($name, $form, $this->__tags);
 
     }
 
