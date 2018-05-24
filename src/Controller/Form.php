@@ -222,7 +222,8 @@ abstract class Form extends Action {
                             'lastModified' => $file->mtime(),
                             'name' => $file->basename(),
                             'size' => $file->size(),
-                            'type' => $file->mime_content_type()
+                            'type' => $file->mime_content_type(),
+                            'url'  => (string) $file->media_uri()
                         );
 
                         if(substr($info['type'], 0, 5) == 'image')

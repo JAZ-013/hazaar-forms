@@ -1631,7 +1631,7 @@ $.fn.fileUpload = function () {
         host.o.list.append($('<div class="dz-item">').html([
             host._preview(file),
             $('<div class="dz-size">').html(humanFileSize(file.size)),
-            $('<div class="dz-detail">').html(file.name),
+            $('<div class="dz-detail">').html($('<a>').attr('href', file.url).attr('target', '_blank').html(file.name)),
             $('<div class="dz-remove">').html($('<i class="fa fa-times">')).click(function (e) {
                 var item = $(this).parent();
                 if (host._remove(item.data('file')))
