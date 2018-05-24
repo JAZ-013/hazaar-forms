@@ -1390,7 +1390,7 @@ var form;
             _validate(host).done(function (result, errors) {
                 if (result) save_data(host, extra);
                 else {
-                    $(host).trigger('saverror', ["Validation failed!", errors]);
+                    $(host).trigger('saverror', [{ responseJSON: { error: { str: "Validation failed!" } } }, errors]);
                     $(host).trigger('validate', [result, errors]);
                     if (host.settings.validateNav) _validate_nav(host, errors);
                 }
