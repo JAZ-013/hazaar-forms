@@ -193,7 +193,7 @@ abstract class Form extends Action {
 
                     $this->form_model->populate($updates);
 
-                    $out->updates = array_intersect_key($this->form_model->toArray(), $updates);
+                    $out->updates = array_intersect_key($this->form_model->toFormArray(), $updates);
 
                 }
 
