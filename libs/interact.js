@@ -185,11 +185,12 @@ var form;
 
     function _match_replace(host, str, extra, force, use_html) {
         if (!str) return null;
-        var values = (host ? $.extend({}, host.data.save(true), extra) : extra);
         while (match = str.match(/\{\{([\W]*)(\w+)\}\}/)) {
             var modifiers = match[1].split(''), value = (host ? _get_data_item(host.data, match[2]) : null);
             if (value === null) value = _get_data_item(extra, match[2]);
-            if (modifiers.indexOf('!') === -1 && value === null && force !== true) return false;
+            if (modifiers.indexOf('!') === -1
+                && (value instanceof dataBinderValue ? value.value : value) === null
+                && force !== true) return false;
             var text = (value instanceof dataBinderValue ? (modifiers.indexOf(':') === -1 ? value.value : value) : value);
             var out = (use_html ? '<span data-bind="' + match[2] + '">' + text + '</span>' : text || '');
             str = str.replace(match[0], out);
