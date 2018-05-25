@@ -490,6 +490,12 @@ var form;
             var required = ('required' in def) ? _eval_code(host, def.required) : false;
             var valueKey = options.value || 'value', labelKey = options.label || 'label';
             select.prop('disabled', !(def.disabled !== true && def.protected !== true));
+            if ((data === null || typeof data !== 'object')
+                || (Array.isArray(data) && data.length === 0)
+                || Object.keys(data).length === 0) {
+                select.empty().append($('<option>').attr('value', '').html('No data!'));
+                return;
+            }
             select.empty().append($('<option>').attr('value', '').html(def.placeholder));
             data = _convert_data(data, valueKey, labelKey, def);
             if ('sort' in options) {
