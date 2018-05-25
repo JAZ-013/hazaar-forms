@@ -61,11 +61,11 @@ var form;
         return key.split('.').reduce(function (o, i) { return o[i] }, obj);
     }
 
-    function _is_int(def) {
+    function _is_int(def, value) {
         if (!('type' in def)) return false;
         if (def.type.toLowerCase() === 'array')
             return (('arrayOf' in def) && (def.arrayOf.toLowerCase() === 'int' || def.arrayOf.toLowerCase() === 'integer'));
-        return (def.type.toLowerCase() === 'int' || def.type.toLowerCase() === 'integer');
+        return (def.type.toLowerCase() === 'int' || def.type.toLowerCase() === 'integer') ? (value === '' ? null : parseInt(value)) : value;
     };
 
     function _url(host, target) {
@@ -104,11 +104,11 @@ var form;
         return data;
     };
 
-    function _convert_data(data, valueKey, labelKey, int) {
+    function _convert_data(data, valueKey, labelKey, def) {
         for (let x in data) {
             if (typeof data[x] !== 'object') {
                 let newitem = {};
-                newitem[valueKey] = ((int === true) ? parseInt(x) : x);
+                newitem[valueKey] = _is_int(def, x);
                 newitem[labelKey] = data[x];
                 data[x] = newitem;
             }
@@ -222,9 +222,8 @@ var form;
             item_data.set(value, (value ? 'Yes' : 'No'));
         } else if (input.is('select')) {
             var value = input.val();
-            if (_is_int(def)) value = parseInt(value);
             if (value === '_hzForm_Other') {
-                item_data.value = null;
+                item_data.set(null, null, (item_data.value ? null : undefined));
                 var group = $('<div>').addClass(host.settings.styleClasses.inputGroup);
                 var oInput = $('<input type="text" placeholder="Enter other option...">')
                     .addClass(host.settings.styleClasses.input)
@@ -249,16 +248,14 @@ var form;
                 input.hide().after(group);
                 oInput.focus();
             } else if (item_data) {
-                item_data.set(value, input.children('option:selected').text());
-                if (other = input.children('option[value="' + value + '"]').data('other'))
-                    item_data.other = other;
+                var other = input.children('option[value="' + value + '"]').data('other') || null;
+                value = _is_int(def, value);
+                item_data.set(value, input.children('option:selected').text(), other);
             }
         } else if (def.other === true) {
             item_data.other = input.val();
         } else {
-            var value = input.val();
-            if (_is_int(def)) value = parseInt(value);
-            item_data.value = value;
+            item_data.value = _is_int(def, input.val());
         }
     };
 
@@ -354,15 +351,15 @@ var form;
         var fChange = function () {
             var value = this.childNodes[0].value;
             var item_data = _get_data_item(host.data, def.name);
-            var index = item_data.indexOf((_is_int(def) ? parseInt(value) : value));
+            var index = item_data.indexOf(_is_int(def, value));
             if (this.childNodes[0].checked && index === -1)
                 item_data.push({ '__hz_value': value, '__hz_label': this.childNodes[1].innerText });
             else
                 item_data.remove(index);
         };
-        var value = _get_data_item(host.data, def.name, true), items = [], int = _is_int(def);
+        var value = _get_data_item(host.data, def.name, true), items = [];
         var valueKey = def.options.value || 'value', labelKey = def.options.label || 'label';
-        data = _convert_data(data, valueKey, labelKey, int);
+        data = _convert_data(data, valueKey, labelKey, def);
         if ('sort' in def.options) {
             if (typeof def.options.sort === 'boolean') def.options.sort = labelKey;
             data = _sort_data(data, def.options.sort, labelKey);
@@ -492,11 +489,11 @@ var form;
         if (track !== false) select.prop('disabled', true).html($('<option value selected>').html('Loading...'));
         postops.url = _url(host, postops.url);
         $.ajax(postops).done(function (data) {
-            var required = ('required' in def) ? _eval_code(host, def.required) : false, int = _is_int(def);
+            var required = ('required' in def) ? _eval_code(host, def.required) : false;
             var valueKey = options.value || 'value', labelKey = options.label || 'label';
             select.prop('disabled', !(def.disabled !== true && def.protected !== true));
             select.empty().append($('<option>').attr('value', '').html(def.placeholder));
-            data = _convert_data(data, valueKey, labelKey, int);
+            data = _convert_data(data, valueKey, labelKey, def);
             if ('sort' in options) {
                 if (typeof options.sort === 'boolean') options.sort = labelKey;
                 data = _sort_data(data, options.sort, labelKey, valueKey);
@@ -511,7 +508,7 @@ var form;
                         ? _match_replace(null, labelKey, data[x], true)
                         : data[x][labelKey]);
                 if (data[x][valueKey] === '__spacer__') option.prop('disabled', true).addClass('form-select-spacer');
-                if ('other' in options)
+                if ('other' in options && typeof options.other === 'string')
                     option.data('other', (options.other.indexOf('{{') > -1)
                         ? _match_replace(null, options.other, data[x], true)
                         : data[x][options.other]);
@@ -526,14 +523,17 @@ var form;
                 if (item_data.value && data.find(function (e, index, obj) {
                     return e && e[valueKey] == item_data.value;
                 })) select.val(item_data.value);
-                else item_data.value = null;
-            }
-            if (Object.keys(data).length === 1 && options.single === true) {
-                var item = data[Object.keys(data)[0]], key = item[valueKey];
-                if (int) key = parseInt(key);
-                if (item_data.value !== key) {
-                    item_data.set(key, (labelKey.indexOf('{{') > -1) ? _match_replace(null, labelKey, item, true) : item[labelKey]);
-                    if ('other' in options && options.other in item) item_data[def.name].other = item[options.other];
+                else if (item_data.value === null && item_data.other !== null)
+                    select.val('_hzForm_Other').change();
+                else {
+                    item_data.value = null;
+                    if (Object.keys(data).length === 1 && options.single === true) {
+                        var item = data[Object.keys(data)[0]], key = _is_int(def, item[valueKey]);
+                        if (item_data.value !== key) {
+                            item_data.set(key, (labelKey.indexOf('{{') > -1) ? _match_replace(null, labelKey, item, true) : item[labelKey]);
+                            if ('other' in options && options.other in item) item_data.other = item[options.other];
+                        }
+                    }
                 }
             }
         }).fail(_error);
