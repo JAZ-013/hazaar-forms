@@ -1025,8 +1025,7 @@ var form;
                 .tooltip({ placement: 'auto', html: true }))
                 .on('show.bs.tooltip', function (e) {
                     var o = $(this).children('.form-tip');
-                    var func = ($.fn.tooltip.prototype.constructor.Constructor.VERSION ? '' : '_') + 'fixTitle';
-                    o.attr('data-original-title', _match_replace(host, o.attr('data-title'), null, true)).tooltip(func);
+                    o.attr('data-original-title', _match_replace(host, o.attr('data-title'), null, true)).tooltip('_fixTitle');
                 });
         }
         if ('required' in def) {
