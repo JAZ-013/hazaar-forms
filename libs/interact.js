@@ -63,9 +63,9 @@ var form;
 
     function _is_int(def, value) {
         if (!('type' in def)) return false;
-        if (def.type.toLowerCase() === 'array')
-            return (('arrayOf' in def) && (def.arrayOf.toLowerCase() === 'int' || def.arrayOf.toLowerCase() === 'integer'));
-        return (def.type.toLowerCase() === 'int' || def.type.toLowerCase() === 'integer') ? (value === '' ? null : parseInt(value)) : value;
+        var is_int = false, type = def.type.toLowerCase();
+        if (type.toLowerCase() === 'array' && 'arrayOf' in def) type = def.arrayOf.toLowerCase();
+        return (def.type === 'int' || def.type === 'integer' ? (value === '' ? null : parseInt(value)) : value;
     };
 
     function _url(host, target) {
