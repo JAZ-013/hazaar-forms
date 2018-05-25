@@ -187,13 +187,11 @@ var form;
         if (!str) return null;
         var values = (host ? $.extend({}, host.data.save(true), extra) : extra);
         while (match = str.match(/\{\{([\W]*)(\w+)\}\}/)) {
-            var modifiers = match[1].split('');
-            if (modifiers.indexOf('!') === -1
-                && (!(match[2] in values) || values[match[2]] === null)
-                && force !== true)
-                return false;
-            var out = (use_html ? '<span data-bind="' + match[2] + '">' + values[match[2]] + '</span>'
-                : (modifiers.indexOf(':') === -1 ? values[match[2]] : host.data[match[2]]) || '');
+            var modifiers = match[1].split(''), value = _get_data_item(host.data, match[2]);
+            if (value === null) value = _get_data_item(extra, match[2]);
+            if (modifiers.indexOf('!') === -1 && value === null && force !== true) return false;
+            var text = (modifiers.indexOf(':') === -1 ? value : value.value);
+            var out = (use_html ? '<span data-bind="' + match[2] + '">' + text + '</span>' : text || '');
             str = str.replace(match[0], out);
         }
         return str;
@@ -1025,7 +1023,7 @@ var form;
                 .tooltip({ placement: 'auto', html: true }))
                 .on('show.bs.tooltip', function (e) {
                     var o = $(this).children('.form-tip');
-                    o.attr('data-original-title', _match_replace(host, o.attr('data-title'), null, true)).tooltip('_fixTitle');
+                    o.attr('data-original-title', _match_replace(host, o.attr('data-title'), null, true, false)).tooltip('_fixTitle');
                 });
         }
         if ('required' in def) {
