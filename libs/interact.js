@@ -65,7 +65,7 @@ var form;
         if (!('type' in def)) return false;
         var is_int = false, type = def.type.toLowerCase();
         if (type.toLowerCase() === 'array' && 'arrayOf' in def) type = def.arrayOf.toLowerCase();
-        return (def.type === 'int' || def.type === 'integer' ? (value === '' ? null : parseInt(value)) : value;
+        return (def.type === 'int' || def.type === 'integer') ? (value === '' ? null : parseInt(value)) : value;
     };
 
     function _url(host, target) {
