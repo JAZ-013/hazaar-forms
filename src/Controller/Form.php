@@ -274,14 +274,14 @@ abstract class Form extends Action {
 
     }
 
-    final public function render(){
+    final public function render($settings = array()){
 
         if(!$this->form_model instanceof \Hazaar\Forms\Model)
             throw new \Exception('No form type has been set for this form controller');
 
         $output = new \Hazaar\Forms\Output\HTML($this->form_model);
 
-        return $output->render();
+        return $output->render($settings);
 
     }
 

@@ -26,32 +26,35 @@ class HTML extends \Hazaar\Forms\Output {
 
     }
 
-    public function render($form = null, $ixes = null){
+    public function render($settings = array(), $form = null, $ixes = null){
 
-        if($form === null)
-            $form = $this->model->resolve();
+        $form = $this->model->resolve();
 
-        $div = (new \Hazaar\Html\Div())->class('form-output');
+        $div = (new \Hazaar\Html\Div())->class(ake($settings, 'formClass', 'form-output'));
 
-        $div->add((new \Hazaar\Html\Div(new \Hazaar\Html\H1(ake($form, 'name', 'Unnamed Form'))))->class('form-header'));
+        if(ake($settings, 'showTitle', true) === true)
+            $div->add((new \Hazaar\Html\Div(new \Hazaar\Html\H1(ake($form, 'name', 'Unnamed Form'))))
+                ->class(ake($settings, 'titleClass', 'form-header')));
 
         if(!$ixes && property_exists($form, 'html'))
             $ixes = $form->html;
 
-        if(is_object($ixes) && property_exists($ixes, 'prefix'))
-            $div->add((new \Hazaar\Html\Div($this->model->matchReplace((string)$ixes->prefix, true)))->class('form-prefix'));
+        if(ake($settings, 'showPrefix', true) === true && is_object($ixes) && property_exists($ixes, 'prefix'))
+            $div->add((new \Hazaar\Html\Div($this->model->matchReplace((string)$ixes->prefix, true)))
+                ->class(ake($settings, 'prefixClass', 'form-prefix')));
 
         foreach($form->pages as $page_num => $page)
-            $div->add($this->__page($page, $page_num + 1));
+            $div->add($this->__page($page, $page_num + 1, $settings));
 
-        if(is_object($ixes) && property_exists($ixes,  'suffix'))
-            $div->add((new \Hazaar\Html\Div($this->model->matchReplace((string)$ixes->suffix, true)))->class('form-suffix'));
+        if(ake($settings, 'showSuffix', true) === true && is_object($ixes) && property_exists($ixes,  'suffix'))
+            $div->add((new \Hazaar\Html\Div($this->model->matchReplace((string)$ixes->suffix, true)))
+                ->class(ake($settings, 'suffixClass', 'form-suffix')));
 
         return $div;
 
     }
 
-    private function __page($page, $page_num){
+    private function __page($page, $page_num, $settings = null){
 
         $html = (new \Hazaar\Html\Div())->class(HTML::$pageClass . ' form-page page-' . $page_num);
 
