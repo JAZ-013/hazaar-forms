@@ -199,7 +199,7 @@ var form;
     };
 
     function _get_data_item(data, name, isArray) {
-        if (!name) return null;
+        if (!(name && data)) return null;
         var parts = name.split(/[\.\[]/), item = data;
         for (let x in parts) {
             var key = parts[x];
