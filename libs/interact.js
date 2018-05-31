@@ -490,6 +490,7 @@ var form;
         $.ajax(postops).done(function (data) {
             var required = ('required' in def) ? _eval_code(host, def.required) : false;
             var valueKey = options.value || 'value', labelKey = options.label || 'label';
+            var default_item = (item_data.value === null && 'default' in options) ? options.default : null;
             select.prop('disabled', !(def.disabled !== true && def.protected !== true));
             if ((data === null || typeof data !== 'object')
                 || (Array.isArray(data) && data.length === 0)
@@ -511,13 +512,14 @@ var form;
                 var option = $('<option>').attr('value', data[x][valueKey])
                     .html((labelKey.indexOf('{{') > -1)
                         ? _match_replace(null, labelKey, data[x], true)
-                        : data[x][labelKey]);
+                        : data[x][labelKey]).appendTo(select);
                 if (data[x][valueKey] === '__spacer__') option.prop('disabled', true).addClass('form-select-spacer');
                 if ('other' in options && typeof options.other === 'string')
                     option.data('other', (options.other.indexOf('{{') > -1)
                         ? _match_replace(null, options.other, data[x], true)
                         : data[x][options.other]);
-                select.append(option);
+                if (default_item !== null && data[x][labelKey] === default_item)
+                    item_data.set(data[x][valueKey], data[x][labelKey], data[x][options.other]);
             }
             if ('other' in def && _eval(host, def.other) === true) {
                 select.append($('<option>').attr('value', '_hzForm_Other').html("Other"));
