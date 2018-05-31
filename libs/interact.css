@@ -44,6 +44,10 @@
         cursor: pointer;
     }
 
+        .form-lookup-popup .list-group-item.bg-primary {
+            color: white;
+        }
+
 .form-group {
     position: relative;
 }

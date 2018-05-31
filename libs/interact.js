@@ -772,32 +772,66 @@ var form;
         _check_input_disabled(host, input, def);
         if (def.lookup && 'url' in def.lookup) {
             input.on('keyup', function (event) {
-                delay(function () {
-                    var query = '', popup = input.parent().parent().children('.form-lookup-popup');
-                    var valueKey = def.lookup.value || 'value', labelKey = def.lookup.label || 'label';
-                    if (event.target.value === '')
-                        return item_data.set(null);
-                    if ('startlen' in def.lookup && event.target.value.length < def.lookup.startlen)
-                        return popup.hide();
-                    var values = { '__input__': event.target.value };
-                    if ((url = _match_replace(host, def.lookup.url, values)) === false) return;
-                    if ('query' in def.lookup && (query = _match_replace(host, def.lookup.query, values)) === false) return;
-                    popup.css({ "min-width": input.parent().outerWidth(), "opacity": "1" })
-                        .html($('<ul class="list-group">').html($('<li class="list-group-item">').html('Loading results...')))
-                        .show();
-                    $.ajax({
-                        method: def.lookup.method || 'GET',
-                        url: _url(host, url),
-                        data: query
-                    }).done(function (items) {
-                        var list = $('<div class="list-group">').appendTo(popup.empty());
-                        if ((Array.isArray(items) ? items.length : Object.keys(items).length) > 0) {
-                            for (let x in items)
-                                list.append($('<li class="list-group-item">')
-                                    .html(_kv(items[x], labelKey)).attr('data-value', _kv(items[x], valueKey)));
-                        } else list.append($('<li class="list-group-item">').html('No results...'));
-                    });
-                }, 300);
+                if (event.keyCode > 47) {
+                    delay(function () {
+                        var query = '', popup = input.parent().parent().children('.form-lookup-popup');
+                        var valueKey = def.lookup.value || 'value', labelKey = def.lookup.label || 'label';
+                        if (event.target.value === '')
+                            return item_data.set(null);
+                        if ('startlen' in def.lookup && event.target.value.length < def.lookup.startlen)
+                            return popup.hide();
+                        var values = { '__input__': event.target.value };
+                        var listDIV = $('<ul class="list-group">').html($('<li class="list-group-item">').html('Loading results...'));
+                        if ((url = _match_replace(host, def.lookup.url, values)) === false) return;
+                        if ('query' in def.lookup && (query = _match_replace(host, def.lookup.query, values)) === false) return;
+                        popup.css({ "min-width": input.parent().outerWidth(), "opacity": "1" })
+                            .html(listDIV)
+                            .show();
+                        $.ajax({
+                            method: def.lookup.method || 'GET',
+                            url: _url(host, url),
+                            data: query
+                        }).always(function () {
+                            listDIV.empty();
+                        }).done(function (items) {
+                            if ((Array.isArray(items) ? items.length : Object.keys(items).length) > 0) {
+                                for (let x in items)
+                                    listDIV.append($('<li class="list-group-item">')
+                                        .html(_kv(items[x], labelKey)).attr('data-value', _kv(items[x], valueKey)));
+                            } else listDIV.html($('<li class="list-group-item">').html('No results...'));
+                        }).fail(function (r) {
+                            listDIV.html($('<li class="list-group-item">').html('Error ' + r.status + ': ' + r.statusText));
+                        });
+                    }, 300);
+                } else {
+                    var sClass = 'bg-primary';
+                    var list = input.parent().parent().children('.form-lookup-popup').children('.list-group');
+                    var selected = list.children('.' + sClass);
+                    switch (event.key) {
+                        case 'ArrowDown':
+                            if (selected.length > 0) {
+                                if (selected.next().length > 0) selected.removeClass(sClass).next().addClass(sClass);
+                            } else list.children().first().addClass(sClass);
+                            break;
+                        case 'ArrowUp':
+                            if (selected.prev().length > 0) selected.removeClass(sClass).prev().addClass(sClass);
+                            else selected.addClass(sClass);
+                            break;
+                        case 'Home':
+                            selected.removeClass(sClass);
+                            list.children().first().addClass(sClass);
+                            break;
+                        case 'End':
+                            selected.removeClass(sClass);
+                            list.children().last().addClass(sClass)
+                            break;
+                        case 'Enter':
+                            selected.click();
+                            break;
+                    }
+                    event.preventDefault();
+                    event.stopPropagation();
+                }
             });
             var popup = $('<div class="form-lookup-popup card">')
                 .hide()
