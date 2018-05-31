@@ -138,7 +138,7 @@ var form;
             }
             return new Function('form', code + "\nreturn ( " + evaluate + " );")(host.data);
         }
-        return new Function('form', evaluate)(host.data);
+        return new Function('form', "return " + evaluate)(host.data);
     };
 
     function _nullify(host, def) {
