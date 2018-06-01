@@ -1061,7 +1061,7 @@ var form;
             field = $('<div>');
         }
         if ('tip' in def) {
-            field.children('label').last().append($('<i class="fa fa-question-circle form-tip">')
+            field.children().first().append($('<i class="fa fa-question-circle form-tip">')
                 .attr('data-title', def.tip)
                 .tooltip({ placement: 'auto', html: true }))
                 .on('show.bs.tooltip', function (e) {
