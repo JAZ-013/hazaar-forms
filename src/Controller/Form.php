@@ -438,13 +438,27 @@ abstract class Form extends Action {
 
     protected function form_load($params = array()){
 
-        throw new \Exception('To load form data you must override the form controller form_load() method.');
+        if(!class_exists('Hazaar\Cache'))
+            throw new \Exception('To load form data you must override the form controller form_load() method or install the Hazaar\Cache library.');
+
+        $cache = new \Hazaar\Cache('file');
+
+        $key = md5($this->form_model->getName() . serialize($params));
+
+        return $cache->get($key);
 
     }
 
     protected function form_save($data, &$params = array()){
 
-        throw new \Exception('To save form data you must override the form controller form_save($data, $params = array()) method.');
+        if(!class_exists('Hazaar\Cache'))
+            throw new \Exception('To save form data you must override the form controller form_save($data, $params = array()) method.');
+
+        $cache = new \Hazaar\Cache('file');
+
+        $key = md5($this->form_model->getName() . serialize($params));
+
+        return $cache->set($key, $data->toArray());
 
     }
 
