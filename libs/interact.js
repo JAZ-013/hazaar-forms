@@ -1199,9 +1199,9 @@ var form;
         var def = input.data('def');
         if (!def) return false;
         return _validate_field(host, def.name).done(function (event, result, response) {
-            $(host).trigger('validate_field', [def.name, result === true, result]);
             input.toggleClass('is-invalid', result !== true)
                 .toggleClass('border-warning', (result === true && response.warning === true));
+            $(host).trigger('validate_field', [def.name, result === true, result]);
         });
     };
 
