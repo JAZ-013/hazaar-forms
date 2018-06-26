@@ -33,10 +33,16 @@ abstract class Form extends Action {
      */
     final public function form($name, $params = array(), $tags = null){
 
-        if(is_array($tags))
+        if($tags !== null){
+
+            if(!is_array($tags))
+                $tags = array($tags);
+
             $this->__tags = array_merge($this->__tags, $tags);
 
-        if(!($model = $this->form_get($name)) instanceof \Hazaar\Forms\Model)
+        }
+
+        if(!($model = $this->form_get($name, $tags)) instanceof \Hazaar\Forms\Model)
             throw new \Exception(__CLASS__ . '::get() MUST return a form a Hazaar\Forms\Model object!');
 
         $this->form_params = $params;
@@ -63,7 +69,9 @@ abstract class Form extends Action {
         if(!$this->request->has('name'))
             throw new \Exception('Missing form name in request!');
 
-        if(!($this->form_model = $this->form_get($this->request->name)) instanceof \Hazaar\Forms\Model)
+        $this->__tags[] = 'interact';
+
+        if(!($this->form_model = $this->form_get($this->request->name, $this->__tags)) instanceof \Hazaar\Forms\Model)
             throw new \Exception(__CLASS__ . '::get() MUST return a form a Hazaar\Forms\Model object!');
 
         $out = new \Hazaar\Controller\Response\Json(array( 'ok' => false, 'name' => $this->request->name));
@@ -294,9 +302,7 @@ abstract class Form extends Action {
 
             $params = ($this->request->has('params') ? unserialize($this->request->params) : array());
 
-            $this->form($name);
-
-            $this->form_model->populate($this->form_load(unserialize($this->request->get('params'))));
+            $this->form($name, $params, $type);
 
             $this->form_model->lock();
 
@@ -462,7 +468,7 @@ abstract class Form extends Action {
 
     }
 
-    protected function form_get($name){
+    protected function form_get($name, $tags){
 
         $app = \Hazaar\Application::getInstance();
 
@@ -479,7 +485,7 @@ abstract class Form extends Action {
         if(!($form = $source_file->parseJSON()))
             throw new \Exception('An error ocurred parsing the form definition \'' . $source_file->name() . '\'');
 
-        return new \Hazaar\Forms\Model($name, $form, $this->__tags);
+        return new \Hazaar\Forms\Model($name, $form, $tags);
 
     }
 

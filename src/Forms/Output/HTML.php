@@ -28,7 +28,8 @@ class HTML extends \Hazaar\Forms\Output {
 
     public function render($settings = array(), $form = null, $ixes = null){
 
-        $form = $this->model->resolve();
+        if(!$form instanceof \stdClass)
+            $form = $this->model->resolve();
 
         $div = (new \Hazaar\Html\Div())->class(ake($settings, 'formClass', 'form-output'));
 
@@ -219,6 +220,9 @@ class HTML extends \Hazaar\Forms\Output {
             $group->add(new \Hazaar\Html\H5($this->model->matchReplace($label, true)));
 
         $type = ake($field, 'type');
+
+        if($field->value instanceof \Hazaar\Date)
+            $field->value = $field->value->date();
 
         if($type == 'button'){
 

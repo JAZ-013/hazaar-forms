@@ -78,7 +78,7 @@ class PDF extends HTML {
 
         $html->add($head, $body);
 
-        $body->add(parent::render($form, (property_exists($form, 'pdf')? $form->pdf : null)));
+        $body->add(parent::render((property_exists($form, 'pdf')? $form->pdf : null), $form));
 
         if(property_exists($form, 'pdf')){
 
@@ -96,6 +96,9 @@ class PDF extends HTML {
                 $header->prepend((new \Hazaar\Html\Img($form->pdf->logo))->class('form-logo'));
 
             }
+
+            if(property_exists($form->pdf, 'style'))
+                $head->add(new \Hazaar\Html\Block('style', $form->pdf->style));
 
         }
 

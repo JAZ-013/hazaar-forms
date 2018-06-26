@@ -140,6 +140,8 @@ class Model extends \Hazaar\Model\Strict {
         foreach($fields as $key => &$def)
             $this->convert_definition($def);
 
+        $this->__initialised = true;
+
         return $fields;
 
     }
@@ -196,13 +198,22 @@ class Model extends \Hazaar\Model\Strict {
 
         }
 
+        if(!($def['type'] === 'array' || $def['type'] === 'object')
+            && array_key_exists('value', $def)
+            && is_array($def['value'])){
+
+            $def['value'] = new \Hazaar\Model\DataBinderValue(ake($def['value'], 0), ake($def['value'], 1), ake($def['value'], 2));
+
+        }
+
     }
 
     public function setTags($tags){
 
         if($tags === null)
             return;
-        elseif(!is_array($tags))
+
+        if(!is_array($tags))
             $tags = array($tags);
 
         $this->__tags = $tags;
@@ -406,6 +417,9 @@ class Model extends \Hazaar\Model\Strict {
     public function resolve(){
 
         $form = $this->getFormDefinition();
+
+        foreach($form->fields as $key => &$def)
+            $this->convert_definition($def);
 
         if(is_array($form->pages)){
 
@@ -637,25 +651,6 @@ class Model extends \Hazaar\Model\Strict {
         }
 
         return $field;
-
-    }
-
-    public function &get($key, $exec_filters = true){
-
-        if(strpos($key, '.') !== false){
-
-            $parts = explode('.', $key);
-
-            $value = parent::get(array_shift($parts));
-
-            foreach($parts as $part)
-                $value =& $value[$part];
-
-            return $value;
-
-        }
-
-        return parent::get($key, $exec_filters);
 
     }
 
