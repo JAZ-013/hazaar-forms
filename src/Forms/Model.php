@@ -198,7 +198,9 @@ class Model extends \Hazaar\Model\Strict {
 
         }
 
-        if(!($def['type'] === 'array' || $def['type'] === 'object')
+        $type = ake($def, 'type');
+
+        if(array_key_exists('value', $def) && !($type === 'array' || $type === 'object')
             && array_key_exists('value', $def)
             && is_array($def['value'])){
 
