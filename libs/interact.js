@@ -960,6 +960,14 @@ var form;
         return group;
     };
 
+    function _input_custom(host, type, def) {
+        if (!('types' in host.def && type in host.def.types))
+            return $('<span>').html(["Unknown data type: ", $('<strong>').html(def.type)]).addClass('alert alert-danger');
+        var type = host.def.types[type];
+        var layout = ('layout' in type) ? type.layout : Object.keys(type.fields);
+        return _form_field({ def: type }, layout);
+    };
+
     function _check_input_disabled(host, input, def) {
         if (!('disabled' in def) || def.protected) return false;
         input.prop('disabled', _eval(host, def.disabled));
@@ -991,6 +999,9 @@ var form;
             var item_data = _get_data_item(host.data, def.name);
             if (item_data.value === null) item_data.value = def.default;
         }
+        if ('types' in host.def && def.type in host.def.types) {
+            def.fields = jQuery.extend(true, {}, host.def.types[def.type].fields);
+        }
         if ('render' in def) {
             var item_data = _get_data_item(host.data, def.name);
             field = new Function('field', 'form', def.render)($.extend({}, def, { value: item_data.save(true) }), host);
@@ -1000,10 +1011,9 @@ var form;
             if (typeof p === 'undefined') p = true;
             for (let x in def.fields) {
                 var item = def.fields[x];
+                if (typeof item === 'string') item = _form_field_lookup(host.def, item);
                 if (!item) continue;
                 if (p && !Array.isArray(item)) {
-                    item = _form_field_lookup(host.def, item);
-                    if (!item) continue;
                     if (!('weight' in item)) item.weight = 1;
                     length = length + (item.weight - 1);
                 }
@@ -1052,8 +1062,11 @@ var form;
                     field = _input_file(host, def);
                     break;
                 case 'text':
-                default:
+                case 'string':
                     field = _input_std(host, def.type, def);
+                    break;
+                default:
+                    field = _input_custom(host, def.type, def);
                     break;
             }
             host.pageInputs.push(field);
