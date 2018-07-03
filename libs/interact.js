@@ -999,9 +999,6 @@ var form;
             var item_data = _get_data_item(host.data, def.name);
             if (item_data.value === null) item_data.value = def.default;
         }
-        if ('types' in host.def && def.type in host.def.types) {
-            def.fields = jQuery.extend(true, {}, host.def.types[def.type].fields);
-        }
         if ('render' in def) {
             var item_data = _get_data_item(host.data, def.name);
             field = new Function('field', 'form', def.render)($.extend({}, def, { value: item_data.save(true) }), host);
@@ -1526,10 +1523,23 @@ var form;
         return data;
     };
 
+    function _prepare_field_definitions(host, fields) {
+        if (!('types' in host.def)) return;
+        for (x in fields) {
+            if ('fields' in fields[x]) _prepare_field_definitions(host, fields[x].fields);
+            if ('type' in fields[x]) {
+                if (fields[x].type in host.def.types)
+                    fields[x].fields = jQuery.extend(true, {}, host.def.types[fields[x].type].fields);
+            }
+        }
+    };
+
     function _load_definition(host) {
         return _post(host, 'init').done(function (response) {
             if (!response.ok) return;
             host.def = response.form;
+            _prepare_field_definitions(host, host.def.fields);
+            console.log(host.def);
             host.data = new dataBinder(_define(host.def.fields));
             $(host).trigger('load', [host.def]);
         }).fail(_error);
