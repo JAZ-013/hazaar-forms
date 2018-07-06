@@ -268,4 +268,5 @@ input[type="date"]::-webkit-inner-spin-button {
 /* adjust clear button */
 input[type="date"]::-webkit-clear-button {
     z-index: 1;
+    cursor: pointer;
 }
