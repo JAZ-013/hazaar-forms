@@ -1064,7 +1064,7 @@ var form;
             field = $('<div>');
         }
         if ('tip' in def) {
-            field.children().first().append($('<i class="fa fa-question-circle form-tip">')
+            field.children('label.control-label').append($('<i class="fa fa-question-circle form-tip">')
                 .attr('data-title', def.tip)
                 .tooltip({ placement: 'auto', html: true }))
                 .on('show.bs.tooltip', function (e) {
@@ -1073,7 +1073,7 @@ var form;
                 });
         }
         if ('required' in def) {
-            field.children('label').append($('<i class="fa fa-exclamation-circle form-required" title="Required">'));
+            field.children('label.control-label').append($('<i class="fa fa-exclamation-circle form-required" title="Required">'));
             if (_eval_code(host, def.required)) field.addClass('required');
             if (typeof def.required !== 'boolean') host.events.required.push(field.data('required', def.required));
         }
