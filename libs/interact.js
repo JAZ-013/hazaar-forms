@@ -627,7 +627,7 @@ var form;
         var div = $('<div>').addClass(host.settings.styleClasses.chkDiv).appendTo(group);
         var input = $('<input type="checkbox">').addClass(host.settings.styleClasses.chkInput)
             .attr('name', def.name)
-            .attr('id', '__field_' + def.name)
+            .attr('id', '__hz_field_' + def.name)
             .attr('data-bind', def.name)
             .attr('checked', _get_data_item(host.data, def.name).value)
             .data('def', def)
@@ -640,7 +640,7 @@ var form;
             .on('update', function (event) { _input_event_update(host, $(event.target)); });
         $('<label>').addClass(host.settings.styleClasses.chkLabel)
             .html(_match_replace(host, def.label, null, true, true))
-            .attr('for', '__field_' + def.name)
+            .attr('for', '__hz_field_' + def.name)
             .appendTo(div);
         if ('css' in def) input.css(def.css);
         if ('cssClass' in def) input.addClass(def.cssClass);
@@ -652,13 +652,14 @@ var form;
         var item_data = _get_data_item(host.data, def.name);
         var group = $('<div>').addClass(host.settings.styleClasses.group).data('def', def);
         var label = $('<label>').addClass(host.settings.styleClasses.label)
-            .attr('for', def.name)
+            .attr('for', '__hz_field_' + def.name)
             .html(_match_replace(host, def.label, null, true, true))
             .appendTo(group);
-        var input_group = $('<div class="date">').addClass(host.settings.styleClasses.inputGroup);
+        var input_group = $('<label class="date">').addClass(host.settings.styleClasses.inputGroup);
         var input = $('<input>').addClass(host.settings.styleClasses.input)
             .attr('type', 'date')
             .attr('name', def.name)
+            .attr('id', '__hz_field_' + def.name)
             .attr('data-bind', def.name)
             .data('def', def)
             .val(item_data)
@@ -699,7 +700,7 @@ var form;
         var item_data = _get_data_item(host.data, def.name);
         var group = $('<div>').addClass(host.settings.styleClasses.group).data('def', def);
         var label = $('<label>').addClass(host.settings.styleClasses.label)
-            .attr('for', def.name)
+            .attr('for', '__hz_field_' + def.name)
             .html(_match_replace(host, def.label, null, true, true))
             .appendTo(group);
         var input = $('<div>').data('def', def).attr('name', def.name).fileUpload({
@@ -740,7 +741,7 @@ var form;
         var item_data = _get_data_item(host.data, def.name);
         var group = $('<div>').addClass(host.settings.styleClasses.group).data('def', def);
         var label = $('<label>').addClass(host.settings.styleClasses.label)
-            .attr('for', def.name)
+            .attr('for', '__hz_field_' + def.name)
             .html(_match_replace(host, def.label, null, true, true))
             .appendTo(group);
         var input_group = $('<div>').addClass(host.settings.styleClasses.inputGroup)
@@ -749,6 +750,7 @@ var form;
             .attr('data-bind', def.name)
             .attr('data-bind-label', true)
             .data('def', def)
+            .attr('id', '__hz_field_' + def.name)
             .attr('autocomplete', 'form-lookup')
             .appendTo(input_group);
         if (def.protected)
@@ -857,7 +859,7 @@ var form;
     function _input_std(host, type, def) {
         var group = $('<div>').addClass(host.settings.styleClasses.group).data('def', def);
         var label = $('<label>').addClass(host.settings.styleClasses.label)
-            .attr('for', def.name)
+            .attr('for', '__hz_field_' + def.name)
             .html(_match_replace(host, def.label, null, true, true))
             .appendTo(group);
         var input = null, item_data = _get_data_item(host.data, def.name);
@@ -866,6 +868,7 @@ var form;
             if ('height' in def) input.css('height', def.height);
         } else input = $('<input>').addClass(host.settings.styleClasses.input).attr('type', type);
         input.attr('name', def.name)
+            .attr('id', '__hz_field_' + def.name)
             .attr('data-bind', def.name)
             .data('def', def)
             .val(item_data);
