@@ -985,6 +985,18 @@ var form;
         return def;
     };
 
+    function _resolve_field_layout(name, layout, fields) {
+        for (x in layout) {
+            if (Array.isArray(layout[x])) {
+                layout[x] = _resolve_field_layout(name, layout[x], fields);
+            } else if (layout[x] in fields) {
+                if (!('name' in fields[layout[x]])) fields[layout[x]].name = name + '.' + layout[x];
+                layout[x] = fields[layout[x]];
+            }
+        }
+        return layout;
+    };
+
     function _form_field(host, info, p, populate) {
         var def = null, field = null;
         if (info instanceof Array)
@@ -999,14 +1011,14 @@ var form;
             field = new Function('field', 'form', def.render)($.extend({}, def, { value: item_data.save(true) }), host);
             host.pageInputs.push(field);
         } else if ('fields' in def && def.type != 'array') {
-            var length = (def.fields instanceof Array) ? def.fields.length : Object.keys(def.fields).length, fields = [], col_width;
-            if (typeof p === 'undefined') p = true;
-            for (let x in def.fields) {
-                var item = def.fields[x];
+            var layout = _resolve_field_layout(def.name, (('layout' in def) ? def.layout : def.fields), def.fields);
+            var length = (layout instanceof Array) ? layout.length : Object.keys(layout).length, fields = [], col_width;
+            if (typeof p === 'undefined') p = !('layout' in def);
+            for (let x in layout) {
+                var item = layout[x];
+                if (typeof item === 'string') item = _form_field_lookup(host.def, item);
                 if (!item) continue;
                 if (p && !Array.isArray(item)) {
-                    item = _form_field_lookup(host.def, item);
-                    if (!item) continue;
                     if (!('weight' in item)) item.weight = 1;
                     length = length + (item.weight - 1);
                 }
@@ -1055,6 +1067,7 @@ var form;
                     field = _input_file(host, def);
                     break;
                 case 'text':
+                case 'string':
                 default:
                     field = _input_std(host, def.type, def);
                     break;
@@ -1516,10 +1529,20 @@ var form;
         return data;
     };
 
+    function _prepare_field_definitions(host, fields) {
+        if (!('types' in host.def)) return;
+        for (x in fields) {
+            if ('type' in fields[x] && fields[x].type in host.def.types)
+                jQuery.extend(true, fields[x], host.def.types[fields[x].type]);
+            if ('fields' in fields[x]) _prepare_field_definitions(host, fields[x].fields);
+        }
+    };
+
     function _load_definition(host) {
         return _post(host, 'init').done(function (response) {
             if (!response.ok) return;
             host.def = response.form;
+            _prepare_field_definitions(host, host.def.fields);
             host.data = new dataBinder(_define(host.def.fields));
             $(host).trigger('load', [host.def]);
         }).fail(_error);
