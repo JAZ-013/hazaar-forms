@@ -490,7 +490,7 @@ var form;
         $.ajax(postops).done(function (data) {
             var required = ('required' in def) ? _eval_code(host, def.required) : false;
             var valueKey = options.value || 'value', labelKey = options.label || 'label';
-            var default_item = (item_data.value === null && 'default' in options) ? options.default : null;
+            var default_item = (item_data && item_data.value === null && 'default' in options) ? options.default : null;
             select.prop('disabled', !(def.disabled !== true && def.protected !== true));
             if ((data === null || typeof data !== 'object')
                 || (Array.isArray(data) && data.length === 0)
