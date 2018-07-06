@@ -960,14 +960,6 @@ var form;
         return group;
     };
 
-    function _input_custom(host, type, def) {
-        if (!('types' in host.def && type in host.def.types))
-            return $('<span>').html(["Unknown data type: ", $('<strong>').html(def.type)]).addClass('alert alert-danger');
-        var type = host.def.types[type];
-        var layout = ('layout' in type) ? type.layout : Object.keys(type.fields);
-        return _form_field({ def: type }, layout);
-    };
-
     function _check_input_disabled(host, input, def) {
         if (!('disabled' in def) || def.protected) return false;
         input.prop('disabled', _eval(host, def.disabled));
@@ -1073,11 +1065,8 @@ var form;
                     break;
                 case 'text':
                 case 'string':
-                    field = _input_std(host, def.type, def);
-                    break;
                 default:
-                    throw DOMException('Ha!');
-                    field = _input_custom(host, def.type, def);
+                    field = _input_std(host, def.type, def);
                     break;
             }
             host.pageInputs.push(field);
