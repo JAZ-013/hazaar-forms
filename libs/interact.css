@@ -235,3 +235,37 @@
         width: 60px;
         margin: 0;
     }
+
+/* HTML5 Datepicker Fix */
+.input-group.date > .input-group-append {
+}
+
+    .input-group.date > .input-group-append > span > i.fa {
+        margin-left: 0;
+    }
+
+.input-group > input[type="date"].form-control {
+    position: initial;
+}
+
+/* make the native arrow invisible and stretch it over the whole field so you can click anywhere in the input field to trigger the native datepicker*/
+input[type="date"]::-webkit-calendar-picker-indicator {
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 32px;
+    height: 36px;
+    color: transparent;
+    background: transparent;
+    cursor: pointer;
+}
+
+/* adjust increase/decrease button */
+input[type="date"]::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+}
+
+/* adjust clear button */
+input[type="date"]::-webkit-clear-button {
+    z-index: 1;
+}

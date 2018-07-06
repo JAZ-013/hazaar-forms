@@ -688,7 +688,7 @@ var form;
             input.datepicker($.extend({}, options, def.dateOptions));
             if (!def.placeholder)
                 def.placeholder = def.format;
-        } else glyph.click(function () { $(this).prev().focus().click(); });
+        }
         if (def.placeholder) input.attr('placeholder', def.placeholder);
         _check_input_disabled(host, input, def);
         if ('css' in def) input.css(def.css);
