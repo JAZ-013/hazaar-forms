@@ -806,7 +806,7 @@ var form;
                         }).fail(function (r) {
                             listDIV.html($('<li class="list-group-item">').html('Error ' + r.status + ': ' + r.statusText));
                         });
-                    }, 300);
+                    }, host.settings.lookup.delay);
                 } else {
                     var sClass = 'bg-primary';
                     var list = input.parent().parent().children('.form-lookup-popup').children('.list-group');
@@ -1633,6 +1633,7 @@ var form;
         "placeholder": "Please select...",
         "loaderClass": "forms-loader",
         "validateNav": true,
+        "lookup": { "delay": 300 },
         "styleClasses": {
             "container": "forms-container",
             "page": "form-page",
