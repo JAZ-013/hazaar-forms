@@ -249,7 +249,7 @@
 }
 
 /* make the native arrow invisible and stretch it over the whole field so you can click anywhere in the input field to trigger the native datepicker*/
-input[type="date"]::-webkit-calendar-picker-indicator {
+.forms-container .form-page input[type="date"]::-webkit-calendar-picker-indicator {
     position: absolute;
     top: 0;
     right: 0;
@@ -261,12 +261,12 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 }
 
 /* adjust increase/decrease button */
-input[type="date"]::-webkit-inner-spin-button {
+.forms-container .form-page input[type="date"]::-webkit-inner-spin-button {
     -webkit-appearance: none;
 }
 
 /* adjust clear button */
-input[type="date"]::-webkit-clear-button {
+.forms-container .form-page input[type="date"]::-webkit-clear-button {
     z-index: 1;
     cursor: pointer;
 }
