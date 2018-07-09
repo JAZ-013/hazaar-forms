@@ -547,12 +547,12 @@ class Model extends \Hazaar\Model\Strict {
 
             $field = (object)array_replace($form->fields[$field], array('name' => $field));
 
-        }elseif(is_object($field)){
+        }elseif(is_object($field) || is_array($field)){
 
-            if(!property_exists($field, 'name'))
+            if(ake($field, 'name') === null)
                 return $field;
 
-            $field = (object)array_replace(ake($form->fields, $field->name, array()), (array)$field);
+            $field = (object)array_replace(ake($form->fields, ake($field, 'name'), array()), $field);
 
         }else{
 
@@ -578,17 +578,17 @@ class Model extends \Hazaar\Model\Strict {
 
         }elseif(ake($field, 'type') == 'array'){
 
-            if(property_exists($field, 'fields') && $field->fields instanceof \stdClass){
+            if(property_exists($field, 'arrayOf')){
 
                 $items = array();
 
                 foreach($value as $id => $item){
 
-                    foreach(ake($field, 'fields', array()) as $key => $def){
+                    foreach(ake($field, 'arrayOf', array()) as $key => $def){
 
-                        $def->name = $key;
+                        $def['name'] = $key;
 
-                        $def->value = ake($item, $key);
+                        $def['value'] = ake($item, $key);
 
                         $items[$id][$key] = $this->__field($def, $form);
 

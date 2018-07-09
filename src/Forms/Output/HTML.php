@@ -230,7 +230,7 @@ class HTML extends \Hazaar\Forms\Output {
 
         }elseif($type == 'array' || $type == 'file'){
 
-            if(property_exists($field, 'fields')){
+            if(property_exists($field, 'arrayOf')){
 
                 $table = (new \Hazaar\Html\Table())->class('table');
 
@@ -240,7 +240,7 @@ class HTML extends \Hazaar\Forms\Output {
 
                 $count = 0;
 
-                foreach(ake($field, 'fields', array()) as $key => $def){
+                foreach(ake($field, 'arrayOf', array()) as $key => $def){
 
                     if(ake($def, 'hidden')) continue;
 
