@@ -227,7 +227,7 @@ class HTML extends \Hazaar\Forms\Output {
 
         }elseif($type == 'array' || $type == 'file'){
 
-            if(property_exists($field, 'arrayOf')){
+            if(property_exists($field, 'arrayOf') && is_array($field->arrayOf)){
 
                 $table = (new \Hazaar\Html\Table())->class('table');
 

@@ -552,7 +552,7 @@ class Model extends \Hazaar\Model\Strict {
             if(ake($field, 'name') === null)
                 return $field;
 
-            $field = (object)array_replace(ake($form->fields, ake($field, 'name'), array()), $field);
+            $field = (object)array_replace(ake($form->fields, ake($field, 'name'), array()), (array)$field);
 
         }else{
 
@@ -578,7 +578,7 @@ class Model extends \Hazaar\Model\Strict {
 
         }elseif(ake($field, 'type') == 'array'){
 
-            if(property_exists($field, 'arrayOf')){
+            if(property_exists($field, 'arrayOf') && is_array($field->arrayOf)){
 
                 $items = array();
 
