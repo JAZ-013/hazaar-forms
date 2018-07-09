@@ -221,9 +221,6 @@ class HTML extends \Hazaar\Forms\Output {
 
         $type = ake($field, 'type');
 
-        if($field->value instanceof \Hazaar\Date)
-            $field->value = $field->value->date();
-
         if($type == 'button'){
 
             return null;
@@ -295,6 +292,8 @@ class HTML extends \Hazaar\Forms\Output {
 
             if($type == 'boolean')
                 $field->value = yn($field->value);
+            elseif($field->value instanceof \Hazaar\Date)
+                $field->value = $field->value->date();
 
             $value_group = (new \Hazaar\Html\Div())->class('form-value');
 
