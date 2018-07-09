@@ -447,7 +447,7 @@ abstract class Form extends Action {
         if(!class_exists('Hazaar\Cache'))
             throw new \Exception('To load form data you must override the form controller form_load() method or install the Hazaar\Cache library.');
 
-        $cache = new \Hazaar\Cache('file');
+        $cache = new \Hazaar\Cache('file', array('use_pragma' => false));
 
         $key = md5($this->form_model->getName() . serialize($params));
 
