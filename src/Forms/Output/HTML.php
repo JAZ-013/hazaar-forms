@@ -196,7 +196,7 @@ class HTML extends \Hazaar\Forms\Output {
                 if(property_exists($field, 'label'))
                     $group->add(new \Hazaar\Html\H4($field->label));
 
-                $group->add($this->__group(array((array)$field->fields), $horizontal));
+                $group->add($this->__group(array((array)$field->fields), (property_exists($field, 'layout') ? !$horizontal : $horizontal)));
 
                 $items[] = $group;
 

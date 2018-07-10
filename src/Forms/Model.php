@@ -538,11 +538,34 @@ class Model extends \Hazaar\Model\Strict {
 
     }
 
+    private function __resolve_field_layout($name, $layout, $fields) {
+
+        foreach($layout as &$field) {
+
+            if (is_array($field)) {
+
+                $field = $this->__resolve_field_layout($name, $field, $fields);
+
+            }elseif(array_key_exists($field, $fields)){
+
+                if (!property_exists($fields[$field], 'name'))
+                    $fields[$field]->name = $name . '.' . $field;
+
+                $field = $fields[$field];
+
+            }
+
+        }
+
+        return $layout;
+
+    }
+
     private function __field($field, &$form){
 
         if(is_string($field)){
 
-            if(!array_key_exists($field, $form->fields))
+            if(!(property_exists($form, 'fields') && array_key_exists($field, $form->fields)))
                 return null;
 
             $field = (object)array_replace($form->fields[$field], array('name' => $field));
@@ -621,6 +644,19 @@ class Model extends \Hazaar\Model\Strict {
                 $value = $values;
 
             }
+
+        }elseif(property_exists($field, 'items')){
+
+            $field->fields = array();
+
+            foreach($field->items as $key => $item)
+                $field->fields[$key] = (object)$item;
+
+            $layout = $this->__resolve_field_layout($field->name, (property_exists($field, 'layout') ? $field->layout : $field->fields), $field->fields);
+
+            $field->fields = $this->__group($layout, $field);
+
+            return $field;
 
         }elseif ($value instanceof \Hazaar\Model\dataBinderValue && $value->label){
 
