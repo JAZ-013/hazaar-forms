@@ -402,9 +402,9 @@ class Model extends \Hazaar\Model\Strict {
         foreach($array as $key => $value){
 
             if($value instanceof \Hazaar\Model\ChildArray)
-                $value = $this->export($value->toArray());
+                $value = $this->export($value)->toArray();
             elseif($value instanceof \Hazaar\Model\ChildModel)
-                $value = $this->export($value->toArray(false, 0));
+                $value = $this->export($value)->toArray(false, 0);
             elseif($value instanceof \Hazaar\Model\DataBinderValue)
                 $value = $value->value;
 
