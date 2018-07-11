@@ -64,8 +64,8 @@ var form;
     function _is_int(def, value) {
         if (!('type' in def)) return false;
         var is_int = false, type = def.type.toLowerCase();
-        if (type.toLowerCase() === 'array' && 'arrayOf' in def) type = def.arrayOf.toLowerCase();
-        return (def.type === 'int' || def.type === 'integer') ? (value === '' ? null : parseInt(value)) : value;
+        if (type === 'array' && 'arrayOf' in def) type = def.arrayOf.toLowerCase();
+        return (type === 'int' || type === 'integer') ? (value === '' ? null : parseInt(value)) : value;
     };
 
     function _url(host, target) {
@@ -366,7 +366,7 @@ var form;
         if (def.buttons === true) {
             var btnClass = def.class || 'primary';
             for (let x in data) {
-                var value = data[x][valueKey], label = data[x][labelKey];
+                var value = _is_int(def, data[x][valueKey]), label = data[x][labelKey];
                 var active = (value instanceof dataBinderArray && value.indexOf(value) > -1), name = def.name + '_' + value;
                 items.push($('<label class="btn">').addClass('btn-' + btnClass).html([
                     $('<input type="checkbox" autocomplete="off">')
@@ -386,7 +386,7 @@ var form;
             items.push($('<div>').addClass('col-md-' + col_width)
                 .toggleClass('custom-controls-stacked', def.inline));
         for (let x in data) {
-            var iv = data[x][valueKey], il = data[x][labelKey];
+            var iv = _is_int(def, data[x][valueKey]), il = data[x][labelKey];
             var active = (value instanceof dataBinderArray && value.indexOf(iv) > -1), name = def.name + '_' + iv;
             var label = $('<div>').addClass(host.settings.styleClasses.chkDiv).html([
                 $('<input type="checkbox">')
