@@ -540,19 +540,27 @@ class Model extends \Hazaar\Model\Strict {
 
     private function __resolve_field_layout($name, $layout, $fields) {
 
-        foreach($layout as &$field) {
+        foreach($layout as $object_key => &$field) {
 
             if (is_array($field)) {
 
                 $field = $this->__resolve_field_layout($name, $field, $fields);
 
-            }elseif(array_key_exists($field, $fields)){
+            }elseif(is_string($field) && array_key_exists($field, $fields)){
 
                 if (!property_exists($fields[$field], 'name'))
                     $fields[$field]->name = $name . '.' . $field;
 
                 $field = $fields[$field];
 
+            }elseif($field instanceof \stdClass){
+
+                if (!property_exists($field, 'name'))
+                    $field->name = $name . '.' . $object_key;
+
+            }else{
+
+                throw new \Exception('Unknown field type: ' . gettype($field));
             }
 
         }
