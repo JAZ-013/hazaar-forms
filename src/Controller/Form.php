@@ -81,6 +81,8 @@ abstract class Form extends Action {
 
                 $out->form = $this->form_model->getFormDefinition();
 
+                $out->tags = $this->__tags;
+                
                 $out->ok = true;
 
                 break;

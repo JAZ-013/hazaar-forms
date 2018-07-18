@@ -136,9 +136,9 @@ var form;
                 else if (typeof value === 'object' || typeof value === 'array') value = JSON.stringify(value);
                 code += 'var ' + key + " = " + value + ";\n";
             }
-            return new Function('form', code + "\nreturn ( " + evaluate + " );")(host.data);
+            return new Function('form', 'tags', code + "\nreturn ( " + evaluate + " );")(host.data, host.tags);
         }
-        return new Function('form', "return " + evaluate)(host.data);
+        return new Function('form', 'tags', "return " + evaluate)(host.data, host.tags);
     };
 
     function _nullify(host, def) {
@@ -907,7 +907,7 @@ var form;
             .html(_match_replace(host, def.label, null, true, true))
             .appendTo(group);
         var fields = [], template = $('<div class="itemlist-item">');
-        if (def.allow_remove !== false) {
+        if ("allow_remove" in def && _eval(host, def.allow_remove)) {
             template.append($('<div class="itemlist-item-rm">')
                 .html($('<button type="button" class="btn btn-danger btn-sm">').html($('<i class="fa fa-minus">'))));
         }
@@ -915,7 +915,7 @@ var form;
             if (def.fields[x].hidden === true) continue;
             fields.push($.extend(def.fields[x], { name: x }));
         }
-        if (def.allow_add !== false) {
+        if ("allow_add" in def && _eval(host, def.allow_add)) {
             var btn = $('<button type="button" class="btn btn-success btn-sm">')
                 .html($('<i class="fa fa-plus">'));
             var fieldDIV = _form_field(host, { fields: fields })
@@ -944,7 +944,7 @@ var form;
                 _validate_input(host, group);
             });
         }
-        if (def.allow_edit !== true)
+        if ("allow_edit" in def && _eval(host, def.allow_edit))
             for (let x in fields) fields[x] = { html: '<div data-bind="' + fields[x].name + '">', weight: fields[x].weight || 1 };
         template.append(_form_field(host, { fields: fields }));
         item_data.watch(function (item) {
@@ -1541,7 +1541,8 @@ var form;
     function _load_definition(host) {
         return _post(host, 'init').done(function (response) {
             if (!response.ok) return;
-            host.def = response.form;
+            if ('form' in response) host.def = response.form;
+            if ('tags' in response) host.tags = response.tags
             _prepare_field_definitions(host, host.def.fields);
             host.data = new dataBinder(_define(host.def.fields));
             $(host).trigger('load', [host.def]);
