@@ -675,7 +675,10 @@ class Model extends \Hazaar\Model\Strict {
             if(is_string($options))
                 $options = $this->api($this->matchReplace($options));
 
-            $value = ake((array)$options, (($value instanceof \Hazaar\Model\dataBinderValue)?$value->value:$value));
+            if($value instanceof \Hazaar\Model\dataBinderValue){
+                $value = (string)$value;
+            }else
+                $value = ake((array)$options, $value);
 
         }
 
