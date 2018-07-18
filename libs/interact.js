@@ -221,14 +221,14 @@ var form;
             item_data.set(value, (value ? 'Yes' : 'No'));
         } else if (input.is('select')) {
             var value = input.val();
-            if (value === '_hzForm_Other') {
+            if (value === '__hz_other') {
                 item_data.set(null, null, (item_data.value ? null : undefined));
                 var group = $('<div>').addClass(host.settings.styleClasses.inputGroup);
                 var oInput = $('<input type="text" placeholder="Enter other option...">')
                     .addClass(host.settings.styleClasses.input)
                     .data('def', def)
                     .val(item_data.other)
-                    .attr('data-bind', def.name)
+                    .attr('data-bind', input.attr('data-bind'))
                     .attr('data-bind-other', true)
                     .change(function (event) { _input_event_change(host, $(event.target)); })
                     .on('update', function (event, key, value) {
@@ -522,17 +522,17 @@ var form;
                     item_data.set(data[x][valueKey], data[x][labelKey], data[x][options.other]);
             }
             if ('other' in def && _eval(host, def.other) === true) {
-                select.append($('<option>').attr('value', '_hzForm_Other').html("Other"));
+                select.append($('<option>').attr('value', '__hz_other').html("Other"));
                 if (def.name in item_data && item_data[def.name].value === null && item_data[def.name].other !== null)
-                    select.val('_hzForm_Other').change();
+                    select.val('__hz_other').change();
             }
             if (item_data) {
                 if (item_data.value && data.find(function (e, index, obj) {
                     return e && e[valueKey] == item_data.value;
                 })) select.val(item_data.value);
-                else if (item_data.value === null && item_data.other !== null)
-                    select.val('_hzForm_Other').change();
-                else {
+                else if (item_data.value === null && item_data.other !== null) {
+                    select.val('__hz_other').change();
+                } else {
                     item_data.value = null;
                     if (Object.keys(data).length === 1 && options.single === true) {
                         var item = data[Object.keys(data)[0]], key = _is_int(def, item[valueKey]);
@@ -566,10 +566,10 @@ var form;
         for (let x in options)
             select.append($('<option>').attr('value', x).html(options[x]));
         if ('other' in def && _eval(host, def.other) === true) {
-            var otherOption = $('<option>').attr('value', '_hzForm_Other').html("Other");
+            var otherOption = $('<option>').attr('value', '__hz_other').html("Other");
             select.append(otherOption);
             if (item_data && item_data.value === null && item_data.other !== null)
-                select.val('_hzForm_Other').change();
+                select.val('__hz_other').change();
         }
         return true;
     };
@@ -1282,6 +1282,7 @@ var form;
         var callbacks = [];
         setTimeout(function () {
             var def = (typeof name === 'object') ? name : _form_field_lookup(host.def, name);
+            if (!def) return;
             var item = _get_data_item(host.data, def.name);
             if (def.protected || ('disabled' in def && _eval(host, def.disabled)))
                 for (let x in callbacks) callbacks[x](name, true, {});
