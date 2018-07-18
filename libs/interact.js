@@ -944,7 +944,7 @@ var form;
                 _validate_input(host, group);
             });
         }
-        if ("allow_edit" in def && _eval(host, def.allow_edit))
+        if ("allow_edit" in def && _eval(host, def.allow_edit) !== true)
             for (let x in fields) fields[x] = { html: '<div data-bind="' + fields[x].name + '">', weight: fields[x].weight || 1 };
         template.append(_form_field(host, { fields: fields }));
         item_data.watch(function (item) {
