@@ -354,7 +354,7 @@ var form;
             if (this.childNodes[0].checked && index === -1)
                 item_data.push({ '__hz_value': value, '__hz_label': this.childNodes[1].innerText });
             else
-                item_data.remove(index);
+                item_data.unset(index);
         };
         var value = _get_data_item(host.data, def.name, true), items = [];
         var valueKey = def.options.value || 'value', labelKey = def.options.label || 'label';
@@ -958,7 +958,7 @@ var form;
             .data('template', template))
             .on('click', '.btn-danger', function (event) {
                 var index = Array.from(this.parentNode.parentNode.parentNode.children).indexOf(this.parentNode.parentNode);
-                item_data.remove(index);
+                item_data.unset(index);
             });
         return group;
     };
