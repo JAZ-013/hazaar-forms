@@ -161,8 +161,9 @@ var form;
         }
     };
 
-    function _eval(host, script) {
+    function _eval(host, script, default_value) {
         if (typeof script === 'boolean') return script;
+        if (typeof script === 'undefined') return (typeof default_value === 'undefined') ? false : default_value;
         if (script.indexOf(';') != -1)
             return _eval_code(host, script);
         var parts = script.split(/(\&\&|\|\|)/);
@@ -907,7 +908,7 @@ var form;
             .html(_match_replace(host, def.label, null, true, true))
             .appendTo(group);
         var fields = [], template = $('<div class="itemlist-item">');
-        if ("allow_remove" in def && _eval(host, def.allow_remove)) {
+        if (_eval(host, def.allow_remove, true)) {
             template.append($('<div class="itemlist-item-rm">')
                 .html($('<button type="button" class="btn btn-danger btn-sm">').html($('<i class="fa fa-minus">'))));
         }
@@ -915,7 +916,7 @@ var form;
             if (def.fields[x].hidden === true) continue;
             fields.push($.extend(def.fields[x], { name: x }));
         }
-        if ("allow_add" in def && _eval(host, def.allow_add)) {
+        if (_eval(host, def.allow_add, true)) {
             var btn = $('<button type="button" class="btn btn-success btn-sm">')
                 .html($('<i class="fa fa-plus">'));
             var fieldDIV = _form_field(host, { fields: fields })
@@ -944,7 +945,7 @@ var form;
                 _validate_input(host, group);
             });
         }
-        if ("allow_edit" in def && _eval(host, def.allow_edit) !== true)
+        if (_eval(host, def.allow_edit, false) !== true)
             for (let x in fields) fields[x] = { html: '<div data-bind="' + fields[x].name + '">', weight: fields[x].weight || 1 };
         template.append(_form_field(host, { fields: fields }));
         item_data.watch(function (item) {
