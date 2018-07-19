@@ -547,7 +547,7 @@ var form;
     }
 
     function _input_select_populate(host, options, select, track) {
-        var def = select.data('def'), item_data = _get_data_item(host.data, def.name);
+        var def = select.data('def'), item_data = _get_data_item(host.data, select.attr('data-bind'));
         if (typeof options !== 'object' || Array.isArray(options) || Object.keys(options).length === 0)
             return select.prop('disabled', true).empty();
         if ('url' in options) {
@@ -951,6 +951,7 @@ var form;
             item.find('select').each(function (index, item) {
                 var def = $(item).data('def');
                 if ('options' in def) _input_select_populate(host, def.options, $(item));
+                if ($(item).val() === '__hz_other') console.log('Other!');
             });
         });
         group.append($('<div class="itemlist-items" data-bind-template="o">')
