@@ -22,6 +22,8 @@ class Model extends \Hazaar\Model\Strict {
 
     private $__locked = false;
 
+    private $__controller;
+
     function __construct($form_name, $form = null, $tags = null){
 
         $this->__form_name = $form_name;
@@ -29,6 +31,12 @@ class Model extends \Hazaar\Model\Strict {
         $this->setTags($tags);
 
         if($form) $this->load($form);
+
+    }
+
+    public function registerController(\Hazaar\Controller\Form $controller){
+
+        $this->__controller = $controller;
 
     }
 
@@ -193,6 +201,8 @@ class Model extends \Hazaar\Model\Strict {
                 $def['type'] = 'array';
 
                 $def['arrayOf'] = 'string';
+
+                $def['file'] = true;
 
                 break;
 
@@ -628,6 +638,20 @@ class Model extends \Hazaar\Model\Strict {
                 }
 
                 $value = $items;
+
+            }elseif(ake($field, 'file') === true){
+
+                $files = $this->__controller->__attachments($field->name);
+
+                $value = array();
+
+                foreach($files as $file){
+
+                    $value[] = array(
+                        'name' => $file->basename(),
+                        'url' => (string)$file->media_uri()
+                    );
+                }
 
             }elseif($options = ake($field, 'options')){
 

@@ -275,9 +275,13 @@ class HTML extends \Hazaar\Forms\Output {
 
                 $list = (new \Hazaar\Html\Ul())->class('form-value-group');
 
+                $is_file = ake($field, 'file', false);
+
                 foreach($field->value as $item){
 
-                    if(property_exists($field, 'options'))
+                    if($is_file)
+                        $item = new \Hazaar\Html\A($item['url'], $item['name']);
+                    elseif(property_exists($field, 'options'))
                         $item = ake($field->options, $item, $item);
 
                     $list->add((new \Hazaar\Html\Li($item))->class('form-value'));

@@ -45,6 +45,8 @@ abstract class Form extends Action {
         if(!($model = $this->form_get($name, $tags)) instanceof \Hazaar\Forms\Model)
             throw new \Exception(__CLASS__ . '::get() MUST return a form a Hazaar\Forms\Model object!');
 
+        $model->registerController($this);
+
         $this->form_params = $params;
 
         $this->form_model = $model;
@@ -265,6 +267,12 @@ abstract class Form extends Action {
         }
 
         return $out;
+
+    }
+
+    final public function __attachments($name){
+
+        return $this->file_list($name, $this->form_params);
 
     }
 
