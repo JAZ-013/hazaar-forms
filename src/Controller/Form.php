@@ -228,16 +228,23 @@ abstract class Form extends Action {
                         if(!$file instanceof \Hazaar\File)
                             continue;
 
+                        $url = $file->media_uri();
+
                         $info = array(
                             'lastModified' => $file->mtime(),
                             'name' => $file->basename(),
                             'size' => $file->size(),
                             'type' => $file->mime_content_type(),
-                            'url'  => (string) $file->media_uri()
+                            'url'  => (string)$url
                         );
 
-                        if(substr($info['type'], 0, 5) == 'image')
-                            $info['preview'] = (string)$this->url('preview/' . $this->form_model->getName() . '/' . $name . '/' . $file->basename(), $params);
+                        if(substr($info['type'], 0, 5) == 'image'){
+
+                            $url['thumbnail'] = 'true';
+
+                            $info['preview'] = (string)$url;
+
+                        }
 
                         $out->files[] = $info;
 
@@ -398,6 +405,24 @@ abstract class Form extends Action {
 
     }
 
+    final public function attachment($key, $field, $filename){
+
+        $file = $this->file_get($key, $field, $filename);
+
+        if(substr($file->mime_content_type(), 0, 5) == 'image'){
+
+            $response = new \Hazaar\Controller\Response\Image($file);
+
+            if($this->request->get('thumbnail', false))
+                $response->resize(120, 120, true);
+
+        }else
+            $response = new \Hazaar\Controller\Response\File($file);
+
+        return $response;
+
+    }
+
     /**
      * Set any field tags that available on the current instance of the form.
      *
@@ -412,28 +437,6 @@ abstract class Form extends Action {
             $tags = array($tags);
 
         $this->__tags = $tags;
-
-    }
-
-    public function preview($form, $name, $file){
-
-        if(!$form)
-            throw new \Exception('Missing form name in request!');
-
-        $this->form($form, $this->request->get('params', array()));
-
-        $this->file_init($name, $this->request->getParams(), $dir, $index, $key);
-
-        $file = $dir->get($file);
-
-        if(!$file->exists())
-            throw new \Exception('File not found!', 404);
-
-        $out = new \Hazaar\Controller\Response\Image($file);
-
-        $out->resize(120, 120, true);
-
-        return $out;
 
     }
 
@@ -555,38 +558,40 @@ abstract class Form extends Action {
 
     }
 
-    private function file_init($name, $params, &$dir, &$index, &$key){
+    private function file_init($name, $params, &$key = null){
 
-        $manager = new \Hazaar\File\Manager('local', array('root' => $this->application->runtimePath('forms', true)));
+        if(!$key){
 
-        $dir = $manager->dir('/attachments');
+            if(!$this->form_model)
+                throw new \Exception('Unable to automatically determine file storage path without an initialised form!');
+
+            $key = md5($this->form_model->getName() . $name . serialize($params));
+
+        }
+
+        $root = new \Hazaar\File\Dir($this->application->runtimePath('forms', true));
+
+        $dir = $root->get('attachments/' . $key . '/' . $name, true);
 
         if(!$dir->exists())
             $dir->create(true);
 
-        $index = new \Hazaar\Btree($manager->get('/fileindex.db'));
-
-        $key = md5($this->form_model->getName() . $name . serialize($params));
+        return $dir;
 
     }
 
     protected function file_list($name, $params = array()){
 
-        $this->file_init($name, $params, $dir, $index, $key);
-
-        $fileindex = $index->get($key);
-
-        if(!is_array($fileindex))
-            return false;
+        $dir = $this->file_init($name, $params, $key);
 
         $filelist = array();
 
-        foreach($fileindex as $filename){
-
-            $file = $dir->get($filename);
+        while(($file = $dir->read()) !== false){
 
             if(!$file->exists())
                 continue;
+
+            $file->media_uri($this->url("attachment/$key/$name/" . $file->basename()));
 
             $filelist[] = $file;
 
@@ -598,29 +603,19 @@ abstract class Form extends Action {
 
     protected function file_detach($name, $files, $params = array()){
 
-        $this->file_init($name, $params, $dir, $index, $key);
-
-        $fileindex = $index->get($key);
-
-        if(!is_array($fileindex))
-            return false;
+        $dir = $this->file_init($name, $params, $key);
 
         if(!is_array($files))
             $files = array($files);
 
         foreach($files as $file){
 
-            if(!in_array(ake($file, 'name'), $fileindex))
-                continue;
+            $file = $dir->get($file['name']);
 
-            $dir->get($file['name'])->unlink();
-
-            foreach(array_keys($fileindex, $file['name'], true) as $id)
-                unset($fileindex[$id]);
+            if($file->exists())
+                $file->unlink();
 
         }
-
-        $index->set($key, $fileindex);
 
         return true;
 
@@ -628,28 +623,25 @@ abstract class Form extends Action {
 
     protected function file_attach($name, $files, $params = array()){
 
-        $this->file_init($name, $params, $dir, $index, $key);
-
-        $fileindex = $index->get($key);
-
-        if(!is_array($fileindex))
-            $fileindex = array();
+        $dir = $this->file_init($name, $params, $key);
 
         foreach($files as $file){
 
-            if($file instanceof \Hazaar\File){
-
+            if($file instanceof \Hazaar\File)
                 $dir->put($file);
-
-                $fileindex[] = $file->basename();
-
-            }
 
         }
 
-        $index->set($key, $fileindex);
-
         return true;
+
+    }
+
+    public function file_get($key, $name, $filename){
+
+        $dir = $this->file_init($name, null, $key);
+
+        return $dir->get($filename);
+
 
     }
 
