@@ -629,14 +629,10 @@ class Model extends \Hazaar\Model\Strict {
 
                 $value = $items;
 
-            }else{
+            }elseif($options = ake($field, 'options')){
 
-                if($options = ake($field, 'options')){
-
-                    if(is_string($options))
-                        $options = $this->api($this->matchReplace($options));
-
-                }
+                if(is_string($options))
+                    $options = $this->api($this->matchReplace($options));
 
                 $values = array();
 

@@ -733,7 +733,12 @@ var form;
         }).appendTo(group);
         _post(host, 'fileinfo', { 'field': def.name }, true).done(function (response) {
             if (!response.ok) return;
-            for (let x in response.files) input.fileUpload('add', response.files[x]);
+            var filelist = [];
+            for (let x in response.files) {
+                filelist.push(response.files[x].name);
+                input.fileUpload('add', response.files[x]);
+            }
+            item_data.populate(filelist);
         }).fail(_error);
         return group;
     };
