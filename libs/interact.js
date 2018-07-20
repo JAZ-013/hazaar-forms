@@ -952,7 +952,6 @@ var form;
             item.find('select').each(function (index, item) {
                 var def = $(item).data('def');
                 if ('options' in def) _input_select_populate(host, def.options, $(item));
-                if ($(item).val() === '__hz_other') console.log('Other!');
             });
         });
         group.append($('<div class="itemlist-items" data-bind-template="o">')
