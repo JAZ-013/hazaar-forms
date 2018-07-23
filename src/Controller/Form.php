@@ -84,7 +84,7 @@ abstract class Form extends Action {
                 $out->form = $this->form_model->getFormDefinition();
 
                 $out->tags = $this->__tags;
-                
+
                 $out->ok = true;
 
                 break;
@@ -413,9 +413,21 @@ abstract class Form extends Action {
 
     }
 
-    final public function attachment($key, $field, $filename){
+    final public function attachment(){
 
-        $file = $this->file_get($key, $field, $filename);
+        if(method_exists($this, 'file_get')){
+
+            $file = call_user_func_array(array($this, 'file_get'), func_get_args());
+
+        }else{
+
+            $args = func_get_args();
+
+            $dir = $this->file_init($args[0], null, $args[1]);
+
+            $file = $dir->get($args[2]);
+
+        }
 
         if(substr($file->mime_content_type(), 0, 5) == 'image'){
 
@@ -641,15 +653,6 @@ abstract class Form extends Action {
         }
 
         return true;
-
-    }
-
-    public function file_get($key, $name, $filename){
-
-        $dir = $this->file_init($name, null, $key);
-
-        return $dir->get($filename);
-
 
     }
 
