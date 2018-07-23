@@ -124,7 +124,7 @@ var form;
         return _eval_code(host, obj.data(type));
     };
 
-    function _eval_code(host, evaluate) {
+    function _eval_code(host, evaluate, item_data) {
         if (typeof evaluate === 'boolean') return evaluate;
         var code = '';
         if (evaluate.indexOf(';') < 0) {
@@ -136,9 +136,15 @@ var form;
                 else if (typeof value === 'object' || typeof value === 'array') value = JSON.stringify(value);
                 code += 'var ' + key + " = " + value + ";\n";
             }
-            return new Function('form', 'tags', code + "\nreturn ( " + evaluate + " );")(host.data, host.tags);
+
         }
-        return new Function('form', 'tags', "return " + evaluate)(host.data, host.tags);
+        code += "return ( " + evaluate + " );";
+        try {
+            return new Function('form', 'tags', 'item', code)(host.data, host.tags, item_data);
+        } catch (e) {
+            console.error('Failed to evaluate condition: ' + evaluate);
+        }
+        return false;
     };
 
     function _nullify(host, def) {
@@ -161,7 +167,7 @@ var form;
         }
     };
 
-    function _eval(host, script, default_value) {
+    function _eval(host, script, default_value, item_data) {
         if (typeof script === 'boolean') return script;
         if (typeof script === 'undefined') return (typeof default_value === 'undefined') ? false : default_value;
         if (script.indexOf(';') != -1)
@@ -175,7 +181,7 @@ var form;
             }
             parts[x] = matches[1] + ' ' + matches[2] + ' ' + matches[3];
         }
-        return _eval_code(host, parts.join(''));
+        return _eval_code(host, parts.join(''), item_data);
     };
 
     function _toggle_show(host, obj) {
@@ -274,7 +280,7 @@ var form;
                     return update;
                 if (typeof update !== 'object') return false;
                 if (!('enabled' in update)) update.enabled = true;
-                if ('when' in update) update.enabled = _eval_code(host, update.when);
+                if ('when' in update) update.enabled = _eval(host, update.when);
                 if (update.enabled) {
                     if (!('url' in update)) return true;
                     if ((url = _match_replace(host, update.url)) !== false) {
@@ -300,7 +306,7 @@ var form;
         if (host.events.required.length > 0) {
             for (let x in host.events.required) {
                 var group = host.events.required[x];
-                group.toggleClass('required', _eval_code(host, group.data('required')));
+                group.toggleClass('required', _eval(host, group.data('required')));
             }
         }
         if (host.events.disabled.length > 0) {
@@ -465,16 +471,9 @@ var form;
         }
         def.watchers = {};
         if (typeof def.options === 'string') def.options = { "url": def.options };
-        if (Array.isArray(def.options) && 'watch' in def) {
-            host.data.watch(def.watch, function () {
-                for (let key in def.watchers) for (let x in def.watchers[key]) host.data.unwatch(key, def.watchers[key][x]);
-                def.watchers = {};
-                _get_data_item(host.data, def.name).value = null;
-                _input_select_multi_populate(host, _input_select_options(host, def), container);
-            });
-            options = _input_select_options(host, def);
-        } else Object.assign(options, def.options);
-        _input_select_multi_populate(host, options, container, true);
+        _input_select_options(host, def, container, null, function (select, options) {
+            _input_select_multi_populate(host, options, select, true);
+        });
         return group;
     };
 
@@ -489,7 +488,7 @@ var form;
         if (track !== false) select.prop('disabled', true).html($('<option value selected>').html('Loading...'));
         postops.url = _url(host, postops.url);
         $.ajax(postops).done(function (data) {
-            var required = ('required' in def) ? _eval_code(host, def.required) : false;
+            var required = ('required' in def) ? _eval(host, def.required) : false;
             var valueKey = options.value || 'value', labelKey = options.label || 'label';
             var default_item = (item_data && item_data.value === null && 'default' in options) ? options.default : null;
             select.prop('disabled', !(def.disabled !== true && def.protected !== true));
@@ -562,7 +561,7 @@ var form;
             }
             return _input_select_populate_ajax(host, options, select, track);
         }
-        var required = ('required' in def) ? _eval_code(host, def.required) : false;
+        var required = ('required' in def) ? _eval(host, def.required) : false;
         select.html($('<option value>').html(def.placeholder).prop('selected', (!item_data || item_data.value === null)));
         for (let x in options)
             select.append($('<option>').attr('value', x).html(options[x]));
@@ -572,22 +571,36 @@ var form;
             if (item_data && item_data.value === null && item_data.other !== null)
                 select.val('__hz_other').change();
         }
+        select.prop('disabled', false);
         return true;
     };
 
-    function _input_select_options(host, def) {
+    function _input_select_options(host, def, select, item_data, cb) {
+        if (!('options' in def)) return false;
         var options = {};
-        Object.assign(options, function (options) {
-            for (let x in options) {
-                if (!('when' in options[x])) continue;
-                if (_eval(host, options[x].when)) return ('items' in options[x]) ? options[x].items : options[x];
+        if (Array.isArray(def.options)) {
+            Object.assign(options, function (options) {
+                for (let x in options) {
+                    if (!('when' in options[x])) continue;
+                    if (_eval(host, options[x].when, null, item_data)) return ('items' in options[x]) ? options[x].items : options[x];
+                }
+            }(def.options));
+            if (select && 'watch' in def) {
+                var watch_item = item_data instanceof dataBinder ? item_data : host.data;
+                watch_item.watch(def.watch, function () {
+                    for (let key in def.watchers) for (let x in def.watchers[key]) host.data.unwatch(key, def.watchers[key][x]);
+                    def.watchers = {};
+                    _get_data_item(host.data, def.name).value = null;
+                    if (typeof cb === 'function') cb(select, _input_select_options(host, def));
+                });
             }
-        }(def.options));
+        } else Object.assign(options, def.options);
+        if (typeof cb === 'function') cb(select, options);
         return options;
     };
 
     function _input_select(host, def, populate) {
-        var group = $('<div>').addClass(host.settings.styleClasses.group).data('def', def), options = {};
+        var group = $('<div>').addClass(host.settings.styleClasses.group).data('def', def);
         var label = $('<label>').addClass(host.settings.styleClasses.label)
             .attr('for', def.name)
             .html(_match_replace(host, def.label, null, true, true))
@@ -609,16 +622,9 @@ var form;
         if ('cssClass' in def) select.addClass(def.cssClass);
         _check_input_disabled(host, select, def);
         if (typeof def.options === 'string') def.options = { url: def.options };
-        if (Array.isArray(def.options) && 'watch' in def) {
-            host.data.watch(def.watch, function () {
-                for (let key in def.watchers) for (let x in def.watchers[key]) host.data.unwatch(key, def.watchers[key][x]);
-                def.watchers = {};
-                _get_data_item(host.data, def.name).value = null;
-                _input_select_populate(host, _input_select_options(host, def), select);
-            });
-            options = _input_select_options(host, def);
-        } else Object.assign(options, def.options);
-        if (populate !== false) _input_select_populate(host, options, select);
+        if (populate !== false) _input_select_options(host, def, select, null, function (select, options) {
+            _input_select_populate(host, options, select);
+        });
         return group;
     };
 
@@ -681,7 +687,7 @@ var form;
                 autoclose: true,
                 forceParse: true,
                 language: 'en',
-                clearBtn: ((('required' in def) ? _eval_code(host, def.required) : false) !== true),
+                clearBtn: ((('required' in def) ? _eval(host, def.required) : false) !== true),
                 todayHighlight: true
             };
             if (item_data) options.defaultViewDate = item_data;
@@ -952,11 +958,14 @@ var form;
         }
         if (_eval(host, def.allow_edit, false) !== true)
             for (let x in fields) fields[x] = { html: '<div data-bind="' + fields[x].name + '">', weight: fields[x].weight || 1 };
-        template.append(_form_field(host, { fields: fields }));
+        template.append(_form_field(host, { fields: fields }, null, false));
         item_data.watch(function (item) {
+            var item_data = _get_data_item(host.data, item.attr('data-bind'));
             item.find('select').each(function (index, item) {
-                var def = $(item).data('def');
-                if ('options' in def) _input_select_populate(host, def.options, $(item));
+                var select = $(item), def = select.data('def');
+                if ('options' in def) _input_select_options(host, def, select, item_data, function (select, options) {
+                    _input_select_populate(host, options, select);
+                });
             });
         });
         group.append($('<div class="itemlist-items" data-bind-template="o">')
@@ -1038,7 +1047,7 @@ var form;
                 var field_width = col_width;
                 if (fields[x] instanceof Object && ('weight' in fields[x]))
                     field_width = Math.round(field_width * fields[x].weight);
-                field.append($('<div>').toggleClass('col-lg-' + field_width, p).html(_form_field(host, fields[x], !p)));
+                field.append($('<div>').toggleClass('col-lg-' + field_width, p).html(_form_field(host, fields[x], !p, populate)));
             }
         } else if ('options' in def) {
             if (def.type === 'array')
@@ -1093,7 +1102,7 @@ var form;
         }
         if ('required' in def) {
             field.children('label.control-label').append($('<i class="fa fa-exclamation-circle form-required" title="Required">'));
-            if (_eval_code(host, def.required)) field.addClass('required');
+            if (_eval(host, def.required)) field.addClass('required');
             if (typeof def.required !== 'boolean') host.events.required.push(field.data('required', def.required));
         }
         if ('invalid' in def) field.append($('<div class="invalid-feedback">').html(def.invalid));
@@ -1235,7 +1244,7 @@ var form;
     function _validate_rule(host, name, item, def) {
         if (!def) return true;
         if ('show' in def) if (!_eval(host, def.show)) return true;
-        var required = ('required' in def) ? _eval_code(host, def.required) : false;
+        var required = ('required' in def) ? _eval(host, def.required) : false;
         var value = ((item instanceof dataBinderArray && item.length > 0) ? item : (def.other && !item.value) ? item.other : item.value);
         if (required && !value) return _validation_error(name, def, "required");
         if (!value) return true; //Return now if there is no value and the field is not required!
