@@ -586,13 +586,17 @@ var form;
                 }
             }(def.options));
             if (select && 'watch' in def) {
-                var watch_item = item_data instanceof dataBinder ? item_data : host.data;
-                watch_item.watch(def.watch, function () {
-                    for (let key in def.watchers) for (let x in def.watchers[key]) host.data.unwatch(key, def.watchers[key][x]);
-                    def.watchers = {};
-                    _get_data_item(host.data, def.name).value = null;
-                    if (typeof cb === 'function') cb(select, _input_select_options(host, def));
-                });
+                var watch_func = function (key, value, obj) {
+                    console.log([key, value, obj]);
+                    _get_data_item(item_data, def.name).value = null;
+                    if (typeof cb === 'function') cb(select, _input_select_options(host, def, null, this));
+                };
+                if (def.watch.substr(0, 5) === 'item.' && item_data)
+                    item_data.watch(def.watch.substr(5), watch_func);
+                else {
+                    item_data = host.data;
+                    host.data.watch(def.watch, watch_func);
+                }
             }
         } else Object.assign(options, def.options);
         if (typeof cb === 'function') cb(select, options);
@@ -930,14 +934,23 @@ var form;
         if (_eval(host, def.allow_add, true)) {
             var btn = $('<button type="button" class="btn btn-success btn-sm">')
                 .html($('<i class="fa fa-plus">'));
-            var fieldDIV = _form_field(host, { fields: fields })
+            var fieldDIV = _form_field(host, { fields: fields }, null, false)
                 .addClass('itemlist-newitem')
                 .attr('data-field', def.name);
             fieldDIV.find('input').removeAttr('data-bind');
+            var new_item = {};
+            for (x in def.fields) new_item[x] = '';
+            var sub_host = { data: new_item = new dataBinder(new_item) };
             group.append($('<div class="itemlist-newitems">').html([
                 $('<div class="itemlist-newitem-add">').html(btn),
                 fieldDIV
-            ]));
+            ])).find('select').each(function (index, item) {
+                var select = $(item), def = select.data('def');
+                select.on('change', function () { debugger; _input_event_change(sub_host, $(this)); });
+                if ('options' in def) _input_select_options(host, def, select, new_item, function (select, options) {
+                    _input_select_populate(host, options, select);
+                });
+            });
             btn.click(function () {
                 var data = {}, field = fieldDIV.attr('data-field'), def = _form_field_lookup(host.def, field), valid = true;
                 fieldDIV.find('input,select,textarea').each(function (index, item) {
