@@ -1041,7 +1041,7 @@ var form;
         } else if ('fields' in def && def.type != 'array') {
             var layout = _resolve_field_layout(def.name, (('layout' in def) ? def.layout : def.fields), def.fields);
             var length = (layout instanceof Array) ? layout.length : Object.keys(layout).length, fields = [], col_width;
-            if (typeof p === 'undefined') p = !('layout' in def);
+            if (typeof p === 'undefined' || p === null) p = !('layout' in def);
             for (let x in layout) {
                 var item = layout[x];
                 if (typeof item === 'string') item = _form_field_lookup(host.def, item);
