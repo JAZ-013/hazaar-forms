@@ -136,9 +136,8 @@ var form;
                 else if (typeof value === 'object' || typeof value === 'array') value = JSON.stringify(value);
                 code += 'var ' + key + " = " + value + ";\n";
             }
-
-        }
-        code += "return ( " + evaluate + " );";
+            code += "return ( " + evaluate + " );";
+        } else code = "return " + evaluate;
         try {
             return new Function('form', 'tags', 'item', code)(host.data, host.tags, item_data);
         } catch (e) {
@@ -587,7 +586,6 @@ var form;
             }(def.options));
             if (select && 'watch' in def) {
                 var watch_func = function (key, value, obj) {
-                    console.log([key, value, obj]);
                     _get_data_item(item_data, def.name).value = null;
                     if (typeof cb === 'function') cb(select, _input_select_options(host, def, null, this));
                 };
