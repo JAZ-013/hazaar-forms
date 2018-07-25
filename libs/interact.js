@@ -150,8 +150,8 @@ var form;
         if (typeof def !== 'object' || def.protected)
             return;
         if (def.name) {
-            host.data[def.name] = (('default' in def) ? def.default : null);
-            host.data[def.name].label = def.placeholder || '';
+            if (host.data[def.name] = (('default' in def) ? def.default : null))
+                host.data[def.name].label = def.placeholder || '';
         }
         if (def.fields) {
             for (let x in def.fields) {
