@@ -29,6 +29,7 @@
     <Compile Include="src\View\Helper\Forms.php" />
   </ItemGroup>
   <ItemGroup>
+    <Folder Include="docs\" />
     <Folder Include="libs" />
     <Folder Include="src" />
     <Folder Include="src\Forms\" />
@@ -38,9 +39,13 @@
     <Folder Include="src\View\Helper\" />
   </ItemGroup>
   <ItemGroup>
+    <Content Include="docs\form-definitions.md" />
+    <Content Include="docs\getting-started.md" />
+    <Content Include="docs\index.md" />
     <Content Include="libs\pdf.css" />
     <Content Include="libs\interact.css" />
     <Content Include="libs\interact.js" />
     <Content Include="README.md" />
+    <Content Include="mkdocs.yml" />
   </ItemGroup>
 </Project>

@@ -1,0 +1,8 @@
+﻿site_name: Hazaar Forms
+docs_dir: docs
+pages:
+  - Welcome: index.md
+  - Getting Started: getting-started.md
+  - Form Definitions: form-definitions.md
+markdown_extensions:
+    - admonition
