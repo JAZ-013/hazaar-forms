@@ -150,4 +150,4 @@ Defines the form layout and how it appears visually to the user.  Pages are laid
 
 This will generate a single page form that looks like this:
 
-![image](images/example_forme.png)
+![image](images/example_form.png)
