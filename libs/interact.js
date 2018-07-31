@@ -1316,6 +1316,7 @@ var form;
                 var childItems = (def.type === 'array') ? item.save() : [item], childQueue = [], itemResult = [];
                 for (let i in childItems) {
                     for (let x in def.fields) {
+                        if (!('name' in def.fields[x])) continue;
                         childQueue.push(name + '[' + i + '].' + x);
                         _validate_field({ data: item[i], def: def.fields, monitor: {} }, def.fields[x]).done(function (childDef, result) {
                             var childName = name + '[' + i + '].' + childDef.name;
