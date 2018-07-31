@@ -944,7 +944,7 @@ var form;
                 fieldDIV
             ])).find('select').each(function (index, item) {
                 var select = $(item), def = select.data('def');
-                select.on('change', function () { debugger; _input_event_change(sub_host, $(this)); });
+                select.on('change', function () { _input_event_change(sub_host, $(this)); });
                 if ('options' in def) _input_select_options(host, def, select, new_item, function (select, options) {
                     _input_select_populate(host, options, select);
                 });
@@ -1310,9 +1310,23 @@ var form;
             var def = (typeof name === 'object') ? name : _form_field_lookup(host.def, name);
             if (!def) return;
             var item = _get_data_item(host.data, def.name);
-            if (def.protected || ('disabled' in def && _eval(host, def.disabled)))
+            if (def.protected || ('disabled' in def && _eval(host, def.disabled))) {
                 for (let x in callbacks) callbacks[x](name, true, {});
-            else {
+            } else if ('fields' in def) {
+                var childItems = (def.type === 'array') ? item.save() : [item], childQueue = [], itemResult = [];
+                for (let i in childItems) {
+                    for (let x in def.fields) {
+                        childQueue.push(name + '[' + i + '].' + x);
+                        _validate_field({ data: item[i], def: def.fields, monitor: {} }, def.fields[x]).done(function (childDef, result) {
+                            var childName = name + '[' + i + '].' + childDef.name;
+                            var index = childQueue.indexOf(childName);
+                            if (index >= 0) childQueue.splice(index, 1);
+                            if (callbacks.length > 0) for (let x in callbacks) callbacks[x](childName, result, {});
+                            if (childQueue.length === 0) for (let x in callbacks) callbacks[x](name, (itemResult.length > 0 ? itemResult : true), {});
+                        });
+                    }
+                }
+            } else {
                 var result = _validate_rule(host, name, item, def);
                 if (item.value && result === true && 'validate' in def && 'url' in def.validate) {
                     var url = _match_replace(host, def.validate.url, { "__input__": item.value }, true);
