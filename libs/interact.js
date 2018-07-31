@@ -1311,34 +1311,35 @@ var form;
             if (!def) return;
             var item = _get_data_item(host.data, def.name);
             if (def.protected || ('disabled' in def && _eval(host, def.disabled))) {
-                for (let x in callbacks) callbacks[x](name, true, {});
+                for (let x in callbacks) callbacks[x](def.name, true, {});
             } else if ('fields' in def) {
                 var childItems = (def.type === 'array') ? item.save() : [item], childQueue = [], itemResult = [];
                 for (let i in childItems) {
                     for (let x in def.fields) {
                         if (!('name' in def.fields[x])) continue;
-                        childQueue.push(name + '[' + i + '].' + x);
-                        _validate_field({ data: item[i], def: def.fields, monitor: {} }, def.fields[x]).done(function (childDef, result) {
-                            var childName = name + '[' + i + '].' + childDef.name;
-                            var index = childQueue.indexOf(childName);
-                            if (index >= 0) childQueue.splice(index, 1);
-                            if (callbacks.length > 0) for (let x in callbacks) callbacks[x](childName, result, {});
-                            if (childQueue.length === 0) for (let x in callbacks) callbacks[x](name, (itemResult.length > 0 ? itemResult : true), {});
-                        });
+                        childQueue.push(def.name + '[' + i + '].' + x);
+                        _validate_field({ data: item[i], def: def.fields, monitor: {} }, def.fields[x])
+                            .done(function (childName, result) {
+                                var childName = def.name + '[' + i + '].' + childName;
+                                var index = childQueue.indexOf(childName);
+                                if (index >= 0) childQueue.splice(index, 1);
+                                itemResult.push({ name: childName, result: result });
+                                if (childQueue.length === 0) for (let x in callbacks) callbacks[x](def.name, itemResult, {});
+                            });
                     }
                 }
             } else {
-                var result = _validate_rule(host, name, item, def);
+                var result = _validate_rule(host, def.name, item, def);
                 if (item.value && result === true && 'validate' in def && 'url' in def.validate) {
                     var url = _match_replace(host, def.validate.url, { "__input__": item.value }, true);
                     _post(host, 'api', {
-                        target: [url, { "name": name, "value": item.value }],
+                        target: [url, { "name": def.name, "value": item.value }],
                     }, false).done(function (response) {
-                        var result = (response.ok === true) ? true : _validation_error(name, def, response.reason || "api_failed(" + def.validate.url + ")");
-                        if (callbacks.length > 0) for (let x in callbacks) callbacks[x](name, result, response);
+                        var result = (response.ok === true) ? true : _validation_error(def.name, def, response.reason || "api_failed(" + def.validate.url + ")");
+                        if (callbacks.length > 0) for (let x in callbacks) callbacks[x](def.name, result, response);
                     }).fail(_error);
-                } else if (callbacks.length > 0) for (let x in callbacks) callbacks[x](name, result, {});
-                if (name in host.monitor) for (x in host.monitor[name]) host.monitor[name][x](result);
+                } else if (callbacks.length > 0) for (let x in callbacks) callbacks[x](def.name, result, {});
+                if (def.name in host.monitor) for (x in host.monitor[def.name]) host.monitor[def.name][x](result);
             }
         });
         return { done: function (callback) { if (typeof callback === 'function') callbacks.push(callback); return this; } };
@@ -1402,12 +1403,14 @@ var form;
                 _validate_field(host, fields[key]).done(function (name, result, response) {
                     var index = queue.indexOf(name);
                     if (index >= 0) queue.splice(index, 1);
-                    if (result !== true) errors.push(result);
-                    $('[data-bind="' + name + '"]')
-                        .toggleClass('is-invalid', (result !== true))
-                        .toggleClass('border-warning', (result === true && response.warning === true));
-                    if (queue.length === 0)
-                        for (let x in callbacks) callbacks[x]((errors.length === 0), errors);
+                    if (!Array.isArray(result)) result = [{ name: name, result: result }];
+                    for (x in result) {
+                        if (result[x].result !== true) errors.push(result[x].result);
+                        $('[data-bind="' + result[x].name + '"]')
+                            .toggleClass('is-invalid', (result[x].result !== true))
+                            .toggleClass('border-warning', (result[x].result === true && response.warning === true));
+                    }
+                    if (queue.length === 0) for (let x in callbacks) callbacks[x]((errors.length === 0), errors);
                 });
             }
         });
