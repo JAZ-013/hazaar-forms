@@ -302,31 +302,7 @@ class Model extends \Hazaar\Model\Strict {
 
             }
 
-            if(is_array($sub) && (is_array($item) || is_object($item))){
-
-                if(is_object($item))
-                    $vars = array_keys(get_object_vars($item));
-                else
-                    $vars = array_keys($item);
-
-                if($subs = array_intersect($vars, $sub)){
-
-                    foreach($subs as $key){
-
-                        $sub_item = ake($item, $key);
-
-                        $sub_items = $this->filterItems($sub_item, $no_reindex, $sub);
-
-                        if(is_object($item))
-                            $item->$key = $sub_items;
-                        if(is_array($item))
-                            $item[$key] = $sub_items;
-
-                    }
-
-                }
-
-            }elseif($tagParams = ake($item, 'tagParams')){
+            if($tagParams = ake($item, 'tagParams')){
 
                 if(is_object($tagParams))
                     $tagParams = get_object_vars($tagParams);
@@ -340,6 +316,32 @@ class Model extends \Hazaar\Model\Strict {
 
                 foreach($tags as $tag)
                     $items[$name] = array_merge($item, get_object_vars($tagParams[$tag]));
+
+            }
+
+            if(is_array($sub) && (is_array($item) || is_object($item))){
+
+                if(is_object($item))
+                    $vars = array_keys(get_object_vars($item));
+                else
+                    $vars = array_keys($item);
+
+                if($subs = array_intersect($vars, $sub)){
+
+                    foreach($subs as $key){
+
+                        $sub_item = ake($item, $key);
+
+                        $this->filterItems($sub_item, $no_reindex, $sub);
+
+                        if(is_object($item))
+                            $item->$key = $sub_item;
+                        if(is_array($item))
+                            $item[$key] = $sub_item;
+
+                    }
+
+                }
 
             }
 
