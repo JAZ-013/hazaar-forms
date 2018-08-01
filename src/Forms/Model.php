@@ -271,7 +271,7 @@ class Model extends \Hazaar\Model\Strict {
         if($sub && !is_array($sub)) $sub = array($sub);
 
         //Remove any tagged fields where the tag is not set
-        foreach($items as $name => $item){
+        foreach($items as $name => &$item){
 
             if(!(is_object($item) || is_array($item)))
                 continue;
@@ -291,7 +291,10 @@ class Model extends \Hazaar\Model\Strict {
 
                 if(count(array_intersect($tags, $this->__tags)) === 0){
 
-                    unset($items[$name]);
+                    if(is_object($items))
+                        unset($items->$name);
+                    if(is_array($items))
+                        unset($items[$name]);
 
                     continue;
 
@@ -299,12 +302,27 @@ class Model extends \Hazaar\Model\Strict {
 
             }
 
-            if(is_object($item)){
+            if(is_array($sub) && (is_array($item) || is_object($item))){
 
-                if($subs = array_intersect(array_keys(get_object_vars($item)), $sub)){
+                if(is_object($item))
+                    $vars = array_keys(get_object_vars($item));
+                else
+                    $vars = array_keys($item);
 
-                    foreach($subs as $key)
-                        $items[$name]->$key = $this->filterItems($item->$key, $no_reindex, $sub);
+                if($subs = array_intersect($vars, $sub)){
+
+                    foreach($subs as $key){
+
+                        $sub_item = ake($item, $key);
+
+                        $sub_items = $this->filterItems($sub_item, $no_reindex, $sub);
+
+                        if(is_object($item))
+                            $item->$key = $sub_items;
+                        if(is_array($item))
+                            $item[$key] = $sub_items;
+
+                    }
 
                 }
 
@@ -338,7 +356,7 @@ class Model extends \Hazaar\Model\Strict {
 
         $form = clone $this->__form;
 
-        $this->filterItems($form->fields, true);
+        $this->filterItems($form->fields, true, array('fields'));
 
         $this->filterItems($form->pages, false, array('sections', 'fields'));
 
@@ -366,7 +384,7 @@ class Model extends \Hazaar\Model\Strict {
 
         foreach($fields as $name => $field){
 
-            if(array_key_exists('fields', $field)){
+            if(is_array($field) && array_key_exists('fields', $field)){
 
                 if(ake($field, 'type') === 'array'){
 
@@ -375,6 +393,16 @@ class Model extends \Hazaar\Model\Strict {
 
                 }else
                     $array[$name] = $this->toFormArray($array[$name], $field['fields']);
+
+            }elseif(is_object($field) && property_exists($field, 'fields')){
+
+                if(ake($field, 'type') === 'array'){
+
+                    foreach($array[$name] as $index => $item)
+                        $array[$name][$index] = $this->toFormArray($array[$name][$index], $field->fields);
+
+                }else
+                    $array[$name] = $this->toFormArray($array[$name], $field->fields);
 
             }else{
 
