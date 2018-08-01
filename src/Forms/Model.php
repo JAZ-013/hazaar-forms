@@ -356,23 +356,46 @@ class Model extends \Hazaar\Model\Strict {
      * @param mixed $show_hidden
      * @return mixed
      */
-    public function toFormArray(){
+    public function toFormArray($array = null, $fields = null){
 
-        $array = parent::toArray();
+        if($array === null)
+            $array = parent::toArray();
 
-        foreach($this->__form->fields as $name => $field){
+        if($fields === null)
+            $fields = $this->__form->fields;
 
-            if($tags = ake($field, 'tag')){
+        foreach($fields as $name => $field){
 
-                if(!is_array($tags))
-                    $tags = array($tags);
+            if(array_key_exists('fields', $field)){
 
-                if(count(array_intersect($tags, $this->__tags)) === 0)
-                    continue;
+                if(ake($field, 'type') === 'array'){
+
+                    foreach($array[$name] as $index => $item)
+                        $array[$name][$index] = $this->toFormArray($array[$name][$index], $field['fields']);
+
+                }else
+                    $array[$name] = $this->toFormArray($array[$name], $field['fields']);
+
+            }else{
+
+                if($tags = ake($field, 'tag')){
+
+                    if(!is_array($tags))
+                        $tags = array($tags);
+
+                    if(count(array_intersect($tags, $this->__tags)) === 0){
+
+                        unset($array[$name]);
+
+                        continue;
+
+                    }
+
+                }
+
+                $this->exportField($name, $field, $array);
 
             }
-
-            $this->exportField($name, $field, $array);
 
         }
 
