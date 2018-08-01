@@ -384,19 +384,54 @@ class Model extends \Hazaar\Model\Strict {
 
         if(!(is_array($array) && array_key_exists($name, $array))) return;
 
-        if(is_array($field) && array_key_exists('type', $field) && $field['type'] == 'date' && $array[$name] instanceof \Hazaar\Date)
-            $array[$name] = $array[$name]->format('Y-m-d');
+        if(is_array($field)){
 
-        if(array_key_exists('fields', $field)){
+            //Look into sub-fields
+            if(array_key_exists('fields', $field)){
 
-            settype($field['fields'], 'array');
+                settype($field['fields'], 'array');
 
-            foreach($field['fields'] as $sub_name => $sub_field){
+                foreach($field['fields'] as $sub_name => $sub_field){
 
-                if(is_array($array[$name]))
-                    $this->exportField($sub_name, (array)$sub_field, $array[$name]);
-                else
-                    $array[$name] = array(); //Ensure list fields are always an array
+                    if(is_array($array[$name]))
+                        $this->exportField($sub_name, (array)$sub_field, $array[$name]);
+                    else
+                        $array[$name] = array(); //Ensure list fields are always an array
+
+                }
+
+            }
+
+            //Format date for output to the form
+            if(array_key_exists('type', $field)
+                && $field['type'] == 'date'
+                && $array[$name] instanceof \Hazaar\Date)
+                $array[$name] = $array[$name]->format('Y-m-d');
+
+            /*
+             * Only format the field if the format specifier is a string/number formatter (has A/9 values).
+             * This will ignore format keywords such as 'email' or 'url'
+             */
+            if(array_key_exists('format', $field)
+                && preg_match('/^[A9\s]+$/', $field['format'])
+                && $array[$name]){
+
+                $format_map = array(
+                    'A' => '%s',
+                    '9' => '%d'
+                );
+
+                $format = preg_replace_callback('/./', function($match) use($format_map){
+                    if(array_key_exists($match[0], $format_map))
+                        return $format_map[$match[0]];
+                    return $match[0];
+                }, $field['format']);
+
+                $args = str_split(str_replace(' ', '', $array[$name]));
+
+                array_unshift($args, $format);
+
+                @$array[$name] = call_user_func_array('sprintf', $args); //If the format fails let it do so silently.
 
             }
 
