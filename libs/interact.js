@@ -487,6 +487,7 @@ var form;
         if (track !== false) select.prop('disabled', true).html($('<option value selected>').html('Loading...'));
         postops.url = _url(host, postops.url);
         $.ajax(postops).done(function (data) {
+            var item_data = _get_data_item(host.data, select.attr('data-bind'));
             var required = ('required' in def) ? _eval(host, def.required) : false;
             var valueKey = options.value || 'value', labelKey = options.label || 'label';
             var default_item = (item_data && item_data.value === null && 'default' in options) ? options.default : null;
