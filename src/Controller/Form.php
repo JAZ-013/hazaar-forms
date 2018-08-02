@@ -393,7 +393,9 @@ abstract class Form extends Action {
 
         }
 
-        if(count($remove = json_decode($this->request->get('remove'), true)) > 0){
+        $remove = json_decode($this->request->get('remove'), true);
+
+        if(is_array($remove) && count($remove) > 0){
 
             foreach($remove as $rm){
 
