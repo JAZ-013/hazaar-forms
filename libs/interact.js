@@ -976,6 +976,10 @@ var form;
                     _input_select_populate(host, options, select);
                 });
             });
+            $(item).find('.form-group').each(function (index, item) {
+                var group = $(item), def = group.data('def');
+                if ('show' in def) group.toggle(_eval(host, def.show, true, item_data));
+            });
         });
         group.append($('<div class="itemlist-items" data-bind-template="o">')
             .attr('data-bind', def.name)
@@ -1127,7 +1131,7 @@ var form;
                 html = html.replace(match[0], '<span data-bind="' + [match[1]] + '"></span>');
             field.append($('<div>').html(html));
         }
-        if ('show' in def) {
+        if ('show' in def && populate) {
             if (typeof def.show === 'boolean')
                 field.toggle(def.show);
             else
