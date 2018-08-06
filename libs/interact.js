@@ -921,8 +921,8 @@ var form;
         var label = $('<h4>').addClass(host.settings.styleClasses.label)
             .html(_match_replace(host, def.label, null, true, true))
             .appendTo(group);
-        var layout = _resolve_field_layout(name, (('layout' in def) ? def.layout : def.fields), def.fields);
-            var template = $('<div class="itemlist-item">');
+        var layout = _resolve_field_layout(null, (('layout' in def) ? def.layout : def.fields), def.fields);
+        var template = $('<div class="itemlist-item">');
         if (_eval(host, def.allow_remove, true)) {
             template.append($('<div class="itemlist-item-rm">')
                 .html($('<button type="button" class="btn btn-danger btn-sm">').html($('<i class="fa fa-minus">'))));
@@ -1017,7 +1017,7 @@ var form;
             if (Array.isArray(layout[x])) {
                 layout[x] = _resolve_field_layout(name, layout[x], fields);
             } else if (layout[x] in fields) {
-                if (!('name' in fields[layout[x]])) fields[layout[x]].name = name + '.' + layout[x];
+                if (!('name' in fields[layout[x]])) fields[layout[x]].name = (name ? name + '.' : '') + layout[x];
                 layout[x] = fields[layout[x]];
             }
             newLayout.push(layout[x]);
