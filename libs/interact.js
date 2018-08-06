@@ -921,19 +921,16 @@ var form;
         var label = $('<h4>').addClass(host.settings.styleClasses.label)
             .html(_match_replace(host, def.label, null, true, true))
             .appendTo(group);
-        var fields = [], template = $('<div class="itemlist-item">');
+        var layout = _resolve_field_layout(null, (('layout' in def) ? def.layout : def.fields), def.fields);
+        var template = $('<div class="itemlist-item">');
         if (_eval(host, def.allow_remove, true)) {
             template.append($('<div class="itemlist-item-rm">')
                 .html($('<button type="button" class="btn btn-danger btn-sm">').html($('<i class="fa fa-minus">'))));
         }
-        for (let x in def.fields) {
-            if (def.fields[x].hidden === true) continue;
-            fields.push($.extend(def.fields[x], { name: x }));
-        }
         if (_eval(host, def.allow_add, true)) {
             var btn = $('<button type="button" class="btn btn-success btn-sm">')
                 .html($('<i class="fa fa-plus">'));
-            var fieldDIV = _form_field(host, { fields: fields }, null, false)
+            var fieldDIV = _form_field(host, { fields: layout }, null, false)
                 .addClass('itemlist-newitem')
                 .attr('data-field', def.name);
             fieldDIV.find('input').removeAttr('data-bind');
@@ -969,8 +966,8 @@ var form;
             });
         }
         if (_eval(host, def.allow_edit, false) !== true)
-            for (let x in fields) fields[x] = { html: '<div data-bind="' + fields[x].name + '">', weight: fields[x].weight || 1 };
-        template.append(_form_field(host, { fields: fields }, null, false));
+            for (let x in layout) layout[x] = { html: '<div data-bind="' + layout[x].name + '">', weight: layout[x].weight || 1 };
+        template.append(_form_field(host, { fields: layout }, null, false));
         item_data.watch(function (item) {
             var item_data = _get_data_item(host.data, item.attr('data-bind'));
             item.find('select').each(function (index, item) {
@@ -1013,15 +1010,19 @@ var form;
     };
 
     function _resolve_field_layout(name, layout, fields) {
-        for (x in layout) {
+        var newLayout = [];
+        for (let x in layout) {
+            if (layout[x].hidden === true) continue;
+            //var item = $.extend(def.fields[x], { name: x });
             if (Array.isArray(layout[x])) {
                 layout[x] = _resolve_field_layout(name, layout[x], fields);
             } else if (layout[x] in fields) {
-                if (!('name' in fields[layout[x]])) fields[layout[x]].name = name + '.' + layout[x];
+                if (!('name' in fields[layout[x]])) fields[layout[x]].name = (name ? name + '.' : '') + layout[x];
                 layout[x] = fields[layout[x]];
             }
+            newLayout.push(layout[x]);
         }
-        return layout;
+        return newLayout;
     };
 
     function _form_field(host, info, p, populate) {
@@ -1038,9 +1039,9 @@ var form;
             field = new Function('field', 'form', def.render)($.extend({}, def, { value: item_data.save(true) }), host);
             host.pageInputs.push(field);
         } else if ('fields' in def && def.type != 'array') {
-            var layout = _resolve_field_layout(def.name, (('layout' in def) ? def.layout : def.fields), def.fields);
+            var layout = _resolve_field_layout(def.name, (('layout' in def) && def.layout ? def.layout : def.fields), def.fields);
             var length = (layout instanceof Array) ? layout.length : Object.keys(layout).length, fields = [], col_width;
-            if (typeof p === 'undefined' || p === null) p = !('layout' in def);
+            if (typeof p === 'undefined' || p === null) p = !(('layout' in def) && def.layout);
             for (let x in layout) {
                 var item = layout[x];
                 if (typeof item === 'string') item = _form_field_lookup(host.def, item);

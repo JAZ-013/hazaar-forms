@@ -271,7 +271,7 @@ class Model extends \Hazaar\Model\Strict {
         if($sub && !is_array($sub)) $sub = array($sub);
 
         //Remove any tagged fields where the tag is not set
-        foreach($items as $name => $item){
+        foreach($items as $name => &$item){
 
             if(!(is_object($item) || is_array($item)))
                 continue;
@@ -291,7 +291,10 @@ class Model extends \Hazaar\Model\Strict {
 
                 if(count(array_intersect($tags, $this->__tags)) === 0){
 
-                    unset($items[$name]);
+                    if(is_object($items))
+                        unset($items->$name);
+                    if(is_array($items))
+                        unset($items[$name]);
 
                     continue;
 
@@ -299,16 +302,7 @@ class Model extends \Hazaar\Model\Strict {
 
             }
 
-            if(is_object($item)){
-
-                if($subs = array_intersect(array_keys(get_object_vars($item)), $sub)){
-
-                    foreach($subs as $key)
-                        $items[$name]->$key = $this->filterItems($item->$key, $no_reindex, $sub);
-
-                }
-
-            }elseif($tagParams = ake($item, 'tagParams')){
+            if($tagParams = ake($item, 'tagParams')){
 
                 if(is_object($tagParams))
                     $tagParams = get_object_vars($tagParams);
@@ -325,6 +319,32 @@ class Model extends \Hazaar\Model\Strict {
 
             }
 
+            if(is_array($sub) && (is_array($item) || is_object($item))){
+
+                if(is_object($item))
+                    $vars = array_keys(get_object_vars($item));
+                else
+                    $vars = array_keys($item);
+
+                if($subs = array_intersect($vars, $sub)){
+
+                    foreach($subs as $key){
+
+                        $sub_item = ake($item, $key);
+
+                        $this->filterItems($sub_item, $no_reindex, $sub);
+
+                        if(is_object($item))
+                            $item->$key = $sub_item;
+                        if(is_array($item))
+                            $item[$key] = $sub_item;
+
+                    }
+
+                }
+
+            }
+
         }
 
         if($no_reindex !== true)
@@ -338,7 +358,7 @@ class Model extends \Hazaar\Model\Strict {
 
         $form = clone $this->__form;
 
-        $this->filterItems($form->fields, true);
+        $this->filterItems($form->fields, true, array('fields'));
 
         $this->filterItems($form->pages, false, array('sections', 'fields'));
 
@@ -356,23 +376,56 @@ class Model extends \Hazaar\Model\Strict {
      * @param mixed $show_hidden
      * @return mixed
      */
-    public function toFormArray(){
+    public function toFormArray($array = null, $fields = null){
 
-        $array = parent::toArray();
+        if($array === null)
+            $array = parent::toArray();
 
-        foreach($this->__form->fields as $name => $field){
+        if($fields === null)
+            $fields = $this->__form->fields;
 
-            if($tags = ake($field, 'tag')){
+        foreach($fields as $name => $field){
 
-                if(!is_array($tags))
-                    $tags = array($tags);
+            if(is_array($field) && array_key_exists('fields', $field)){
 
-                if(count(array_intersect($tags, $this->__tags)) === 0)
-                    continue;
+                if(ake($field, 'type') === 'array'){
+
+                    foreach($array[$name] as $index => $item)
+                        $array[$name][$index] = $this->toFormArray($array[$name][$index], $field['fields']);
+
+                }else
+                    $array[$name] = $this->toFormArray($array[$name], $field['fields']);
+
+            }elseif(is_object($field) && property_exists($field, 'fields')){
+
+                if(ake($field, 'type') === 'array'){
+
+                    foreach($array[$name] as $index => $item)
+                        $array[$name][$index] = $this->toFormArray($array[$name][$index], $field->fields);
+
+                }else
+                    $array[$name] = $this->toFormArray($array[$name], $field->fields);
+
+            }else{
+
+                if($tags = ake($field, 'tag')){
+
+                    if(!is_array($tags))
+                        $tags = array($tags);
+
+                    if(count(array_intersect($tags, $this->__tags)) === 0){
+
+                        unset($array[$name]);
+
+                        continue;
+
+                    }
+
+                }
+
+                $this->exportField($name, $field, $array);
 
             }
-
-            $this->exportField($name, $field, $array);
 
         }
 
