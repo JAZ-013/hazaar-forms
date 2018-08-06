@@ -1013,13 +1013,13 @@ var form;
         var newLayout = [];
         for (let x in layout) {
             if (layout[x].hidden === true) continue;
-            //var item = $.extend(def.fields[x], { name: x });
-            if (Array.isArray(layout[x])) {
+            if (typeof layout[x] === 'object') {
+                if ('fields' in layout[x]) layout[x].fields = _resolve_field_layout(name, layout[x].fields, fields);
+                else if ('name' in layout[x]) layout[x] = $.extend({}, fields[layout[x].name], layout[x]);
+            } else if (Array.isArray(layout[x]))
                 layout[x] = _resolve_field_layout(name, layout[x], fields);
-            } else if (layout[x] in fields) {
-                if (!('name' in fields[layout[x]])) fields[layout[x]].name = (name ? name + '.' : '') + layout[x];
-                layout[x] = fields[layout[x]];
-            }
+            else if (typeof layout[x] === 'string' && layout[x] in fields)
+                layout[x] = $.extend({}, { name: (name ? name + '.' : '') + layout[x] }, fields[layout[x]]);
             newLayout.push(layout[x]);
         }
         return newLayout;
