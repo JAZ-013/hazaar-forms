@@ -1019,7 +1019,7 @@ var form;
             } else if (Array.isArray(layout[x]))
                 layout[x] = _resolve_field_layout(name, layout[x], fields);
             else if (typeof layout[x] === 'string' && layout[x] in fields)
-                layout[x] = $.extend({}, { name: (name ? name + '.' : '') + layout[x] }, fields[layout[x]]);
+                layout[x] = $.extend(fields[layout[x]], { name: (name ? name + '.' : '') + layout[x] });
             newLayout.push(layout[x]);
         }
         return newLayout;
