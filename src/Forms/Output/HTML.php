@@ -253,13 +253,19 @@ class HTML extends \Hazaar\Forms\Output {
 
                     foreach($items as $key => $item){
 
-                        if(ake($item, 'hidden')) continue;
+                        $td = new \Hazaar\Html\Td();
 
-                        $value = (property_exists($item, 'html') ? $item->html : $item->value);
+                        if($item){
 
-                        $td = new \Hazaar\Html\Td($value);
+                            if(ake($item, 'hidden')) continue;
 
-                        $td->style('width', (100 / $count ) * ake($item, 'weight', 1) . '%');
+                            $value = (property_exists($item, 'html') ? $item->html : $item->value);
+
+                            $td->add($value);
+
+                            $td->style('width', (100 / $count ) * ake($item, 'weight', 1) . '%');
+
+                        }
 
                         $row->add($td);
 

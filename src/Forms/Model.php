@@ -667,7 +667,7 @@ class Model extends \Hazaar\Model\Strict {
 
     }
 
-    private function __field($field, &$form){
+    private function __field($field, $form, $evaluate = true){
 
         if(is_string($field)){
 
@@ -698,7 +698,7 @@ class Model extends \Hazaar\Model\Strict {
         if(!$value && ake($output, 'empty', true) === false)
             return null;
 
-        if(!is_object($field) || (property_exists($field, 'show') && !$this->evaluate($field->show)))
+        if($evaluate === true && (!is_object($field) || (property_exists($field, 'show') && !$this->evaluate($field->show))))
             return null;
 
         if($value === null){
@@ -713,13 +713,15 @@ class Model extends \Hazaar\Model\Strict {
 
                 foreach($value as $id => $item){
 
-                    foreach(ake($field, 'arrayOf', array()) as $key => $def){
+                    $keys = ake($field, 'arrayOf', array());
+
+                    foreach($keys as $key => $def){
 
                         $def['name'] = $key;
 
                         $def['value'] = ake($item, $key);
 
-                        $items[$id][$key] = $this->__field($def, $form);
+                        $items[$id][$key] = $this->__field($def, $form, false);
 
                     }
 
