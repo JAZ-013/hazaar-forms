@@ -30,7 +30,7 @@ class Template {
 
     }
 
-    public function render(){
+    public function render($settings = array(), $form = null, $ixes = null){
 
         $this->html = new \Hazaar\View\Helper\Html();
 
