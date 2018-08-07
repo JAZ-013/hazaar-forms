@@ -217,6 +217,12 @@ var form;
         return item;
     };
 
+    function _make_required(host, def, field, item_data) {
+        field.children('label.control-label').append($('<i class="fa fa-exclamation-circle form-required" title="Required">'));
+        if (_eval(host, def.required, false, item_data)) field.addClass('required');
+        if (typeof def.required !== 'boolean') host.events.required.push(field.data('required', def.required));
+    };
+
     //Input events
     function _input_event_change(host, input) {
         var def = input.data('def');
@@ -561,7 +567,6 @@ var form;
             }
             return _input_select_populate_ajax(host, options, select, track);
         }
-        var required = ('required' in def) ? _eval(host, def.required) : false;
         select.html($('<option value>').html(def.placeholder).prop('selected', (!item_data || item_data.value === null)));
         for (let x in options)
             select.append($('<option>').attr('value', x).html(options[x]));
@@ -930,7 +935,7 @@ var form;
         if (_eval(host, def.allow_add, true)) {
             var btn = $('<button type="button" class="btn btn-success btn-sm">')
                 .html($('<i class="fa fa-plus">'));
-            var fieldDIV = _form_field(host, { fields: layout }, null, false)
+            var fieldDIV = _form_field(host, { fields: layout }, null, false, false)
                 .addClass('itemlist-newitem')
                 .attr('data-field', def.name);
             fieldDIV.find('input').removeAttr('data-bind');
@@ -967,7 +972,7 @@ var form;
         }
         if (_eval(host, def.allow_edit, false) !== true)
             for (let x in layout) layout[x] = { html: '<div data-bind="' + layout[x].name + '">', weight: layout[x].weight || 1 };
-        template.append(_form_field(host, { fields: layout }, null, false));
+        template.append(_form_field(host, { fields: layout }, null, false, false));
         item_data.watch(function (item) {
             var item_data = _get_data_item(host.data, item.attr('data-bind'));
             item.find('select').each(function (index, item) {
@@ -978,6 +983,7 @@ var form;
             });
             $(item).find('.form-group').each(function (index, item) {
                 var group = $(item), def = group.data('def');
+                if ('required' in def) _make_required(host, def, group, item_data);
                 if ('show' in def) group.toggle(_eval(host, def.show, true, item_data));
             });
         });
@@ -1029,7 +1035,7 @@ var form;
         return newLayout;
     };
 
-    function _form_field(host, info, p, populate) {
+    function _form_field(host, info, p, populate, apply_rules) {
         var def = null, field = null;
         if (info instanceof Array)
             info = { fields: info };
@@ -1064,7 +1070,8 @@ var form;
                 var field_width = col_width;
                 if (fields[x] instanceof Object && ('weight' in fields[x]))
                     field_width = Math.round(field_width * fields[x].weight);
-                field.append($('<div>').toggleClass('col-lg-' + field_width, p).html(_form_field(host, fields[x], !p, populate)));
+                field.append($('<div>').toggleClass('col-lg-' + field_width, p)
+                    .html(_form_field(host, fields[x], !p, populate, apply_rules)));
             }
         } else if ('options' in def) {
             if (def.type === 'array')
@@ -1117,11 +1124,7 @@ var form;
                     o.attr('data-original-title', _match_replace(host, o.attr('data-title'), null, true, false)).tooltip('_fixTitle');
                 });
         }
-        if ('required' in def) {
-            field.children('label.control-label').append($('<i class="fa fa-exclamation-circle form-required" title="Required">'));
-            if (_eval(host, def.required)) field.addClass('required');
-            if (typeof def.required !== 'boolean') host.events.required.push(field.data('required', def.required));
-        }
+        if ('required' in def && apply_rules !== false) _make_required(host, def, field);
         if ('invalid' in def) field.append($('<div class="invalid-feedback">').html(def.invalid));
         if ('width' in def) field.width(def.width);
         if ('html' in def) {
@@ -1131,7 +1134,7 @@ var form;
                 html = html.replace(match[0], '<span data-bind="' + [match[1]] + '"></span>');
             field.append($('<div>').html(html));
         }
-        if ('show' in def && populate) {
+        if ('show' in def && apply_rules !== false) {
             if (typeof def.show === 'boolean')
                 field.toggle(def.show);
             else
