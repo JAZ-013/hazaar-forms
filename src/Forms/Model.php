@@ -437,6 +437,9 @@ class Model extends \Hazaar\Model\Strict {
 
         if(!(is_array($array) && array_key_exists($name, $array))) return;
 
+        if($field instanceof \stdClass)
+            $field = (array)$field;
+
         if(is_array($field)){
 
             //Look into sub-fields
@@ -504,7 +507,7 @@ class Model extends \Hazaar\Model\Strict {
             elseif($value instanceof \Hazaar\Model\ChildModel)
                 $value = $this->export($value)->toArray(false, 0);
             elseif($value instanceof \Hazaar\Model\DataBinderValue)
-                $value = $value->value;
+                $value = $value->export();
 
             $array[$key] = $value;
 
