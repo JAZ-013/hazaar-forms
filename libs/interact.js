@@ -952,7 +952,7 @@ var form;
         if (_eval(host, def.allow_add, true)) {
             var btn = $('<button type="button" class="btn btn-success btn-sm">')
                 .html($('<i class="fa fa-plus">'));
-            var fieldDIV = _form_field(host, { fields: layout }, null, true, false)
+            var fieldDIV = _form_field(host, { fields: layout })
                 .addClass('itemlist-newitem')
                 .attr('data-field', def.name);
             fieldDIV.find('input').removeAttr('data-bind');
@@ -1185,7 +1185,7 @@ var form;
             fieldset.append($('<legend>').html(_match_replace(host, section.label, null, true, true)));
         for (let x in section.fields)
             fieldset.append(_form_field(host, section.fields[x]));
-        if ('show' in section) _make_showable(host, def, fieldset);
+        if ('show' in section) _make_showable(host, section, fieldset);
         return fieldset;
     };
 
