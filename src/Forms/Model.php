@@ -379,7 +379,7 @@ class Model extends \Hazaar\Model\Strict {
     public function toFormArray($array = null, $fields = null){
 
         if($array === null)
-            $array = parent::toArray();
+            $array = parent::toArray(false, null, true, true);
 
         if($fields === null)
             $fields = $this->__form->fields;

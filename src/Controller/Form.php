@@ -491,7 +491,7 @@ abstract class Form extends Action {
 
         $key = md5($this->form_model->getName() . serialize($params));
 
-        return $cache->set($key, $data->toArray());
+        return $cache->set($key, $data->toFormArray());
 
     }
 
