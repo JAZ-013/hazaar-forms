@@ -157,13 +157,15 @@ var form;
         if (def.fields) {
             for (let x in def.fields) {
                 var sdef = def.fields[x];
-                if ('name' in sdef) sdef.name = name + '.' + x;
-                if (sdef instanceof Array)
+                if (sdef instanceof Array) {
                     _nullify(host, sdef.name, { fields: sdef });
-                else if (typeof sdef === 'object')
-                    host.data[sdef.name] = null;
-                else if (typeof sdef === 'string')
-                    host.data[sdef] = null;
+                } else {
+                    if (typeof sdef === 'object') {
+                        sdef = (name ? name + '.' : null) + x;
+                    }
+                    var item_data = _get_data_item(host.data, sdef);
+                    item_data.empty();
+                }
             }
         }
     };
