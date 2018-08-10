@@ -1080,7 +1080,10 @@ var form;
                     if (!('weight' in item)) item.weight = 1;
                     length = length + (item.weight - 1);
                 }
-                if (typeof item === 'object' && !("name" in item) && 'name' in def) item.name = def.name + '.' + x;
+                if (typeof item === 'object') {
+                    if (!("name" in item) && 'name' in def) item.name = def.name + '.' + x;
+                    if (info.protected === true) item.protected = true;
+                }
                 fields.push(item);
             }
             col_width = (12 / length);
