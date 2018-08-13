@@ -164,7 +164,7 @@ var form;
                         sdef = (name ? name + '.' : null) + x;
                     }
                     var item_data = _get_data_item(host.data, sdef);
-                    item_data.empty();
+                    if (item_data) item_data.empty();
                 }
             }
         }
