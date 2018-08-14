@@ -811,8 +811,8 @@ var form;
         _check_input_disabled(host, input, def);
         if (def.lookup && 'url' in def.lookup) {
             input.on('keyup', function (event) {
+                var input = $(this);
                 if (event.keyCode > 47) {
-                    var input = $(this);
                     delay(function () {
                         var query = '', popup = input.parent().parent().children('.form-lookup-popup');
                         var item_data = _get_data_item(host.data, input.attr('data-bind'));
