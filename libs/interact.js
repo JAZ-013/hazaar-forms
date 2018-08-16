@@ -1344,7 +1344,7 @@ var form;
                 } else {
                     for (let i in childItems) {
                         for (let x in def.fields) {
-                            if (!('name' in def.fields[x])) continue;
+                            if (!('name' in def.fields[x])) def.fields[x].name = x;
                             childQueue.push(def.name + '[' + i + '].' + x);
                             _validate_field({ data: item[i], def: def.fields, monitor: {} }, def.fields[x])
                                 .done(function (childName, result) {
