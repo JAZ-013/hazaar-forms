@@ -149,8 +149,8 @@ var form;
     function _nullify(host, def, name) {
         if (typeof def !== 'object' || def.protected)
             return;
-        if (!name) name = def.name;
-        if (name) {
+        if (!name && 'name' in def) name = def.name;
+        if (typeof name === 'string') {
             var item_data = _get_data_item(host.data, name);
             if (item_data) item_data.set((('default' in def) ? def.default : null), (def.placeholder || ''));
         }
@@ -158,7 +158,7 @@ var form;
             for (let x in def.fields) {
                 var sdef = def.fields[x];
                 if (sdef instanceof Array) {
-                    _nullify(host, sdef.name, { fields: sdef });
+                    _nullify(host, { fields: sdef }, sdef.name);
                 } else {
                     if (typeof sdef === 'object') {
                         sdef = (name ? name + '.' : null) + x;
@@ -1338,18 +1338,23 @@ var form;
                 for (let x in callbacks) callbacks[x](def.name, true, {});
             } else if ('fields' in def) {
                 var childItems = (def.type === 'array') ? item.save() : [item], childQueue = [], itemResult = [];
-                for (let i in childItems) {
-                    for (let x in def.fields) {
-                        if (!('name' in def.fields[x])) continue;
-                        childQueue.push(def.name + '[' + i + '].' + x);
-                        _validate_field({ data: item[i], def: def.fields, monitor: {} }, def.fields[x])
-                            .done(function (childName, result) {
-                                var childName = def.name + '[' + i + '].' + childName;
-                                var index = childQueue.indexOf(childName);
-                                if (index >= 0) childQueue.splice(index, 1);
-                                itemResult.push({ name: childName, result: result });
-                                if (childQueue.length === 0) for (let x in callbacks) callbacks[x](def.name, itemResult, {});
-                            });
+                var result = _validate_rule(host, def.name, item, def);
+                if (result !== true) {
+                    for (let x in callbacks) callbacks[x](def.name, result, {});
+                } else {
+                    for (let i in childItems) {
+                        for (let x in def.fields) {
+                            if (!('name' in def.fields[x])) continue;
+                            childQueue.push(def.name + '[' + i + '].' + x);
+                            _validate_field({ data: item[i], def: def.fields, monitor: {} }, def.fields[x])
+                                .done(function (childName, result) {
+                                    childName = def.name + '[' + i + '].' + childName;
+                                    var index = childQueue.indexOf(childName);
+                                    if (index >= 0) childQueue.splice(index, 1);
+                                    itemResult.push({ name: childName, result: result });
+                                    if (childQueue.length === 0) for (let x in callbacks) callbacks[x](def.name, itemResult, {});
+                                });
+                        }
                     }
                 }
             } else {
