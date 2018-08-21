@@ -124,7 +124,7 @@ var form;
         return _eval_code(host, obj.data(type));
     };
 
-    function _eval_code(host, evaluate, item_data) {
+    function _eval_code(host, evaluate, item_data, no_return) {
         if (typeof evaluate === 'boolean') return evaluate;
         var code = '';
         if (evaluate.indexOf(';') < 0) {
@@ -138,8 +138,8 @@ var form;
                 else if (typeof value === 'object' || typeof value === 'array') value = JSON.stringify(value);
                 code += 'var ' + key + " = " + value + ";\n";
             }
-            code += "return ( " + evaluate + " );";
-        } else code = "return " + evaluate;
+            code += (no_return !== true ? "return " : "") + "( " + evaluate + " );";
+        } else code = (no_return !== true ? "return " : "") + evaluate;
         try {
             return new Function('form', 'tags', 'item', code)(host.data, host.tags, item_data);
         } catch (e) {
@@ -285,7 +285,7 @@ var form;
 
     function _input_event_update(host, input) {
         var def = input.data('def'), update = def.update, cb_done = null;
-        if (def.change) _eval_code(host, def.change);
+        if (def.change) _eval_code(host, def.change, null, true);
         if (typeof update === 'string') update = { "url": update };
         if (typeof update === 'boolean' || (update && ('url' in update || host.settings.update === true))) {
             var options = {
