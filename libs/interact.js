@@ -1,4 +1,4 @@
-﻿//Object.assign() Polyfill
+//Object.assign() Polyfill
 if (typeof Object.assign != 'function') {
     // Must be writable: true, enumerable: false, configurable: true
     Object.defineProperty(Object, "assign", {
@@ -129,7 +129,9 @@ var form;
         var code = '';
         if (evaluate.indexOf(';') < 0) {
             var values = host.data.save(true);
-            for (let key in values) {
+            var keys = Object.keys(values).sort();
+            for (let i in keys) {
+                let key = keys[i];
                 if (key === 'form') continue;
                 var value = values[key];
                 if (typeof value === 'string') value = '"' + value.replace(/"/g, '\\"').replace("\n", "\\n") + '"';
@@ -147,8 +149,7 @@ var form;
     };
 
     function _nullify(host, def, name) {
-        if (typeof def !== 'object' || def.protected)
-            return;
+        if (typeof def !== 'object' || def.protected || def.keep) return;
         if (!name && 'name' in def) name = def.name;
         if (typeof name === 'string') {
             var item_data = _get_data_item(host.data, name);
@@ -175,7 +176,7 @@ var form;
         if (typeof script === 'undefined') return (typeof default_value === 'undefined') ? false : default_value;
         if (script.indexOf(';') != -1)
             return _eval_code(host, script);
-        var parts = script.split(/(\&\&|\|\|)/);
+        var parts = script.split(/\s*(\&\&|\|\|)\s*/);
         for (let x = 0; x < parts.length; x += 2) {
             var matches = null;
             if (!(matches = parts[x].match(/([\w\.]+)\s*([=\!\<\>]+)\s*(.+)/))) {
@@ -184,7 +185,7 @@ var form;
             }
             parts[x] = matches[1] + ' ' + matches[2] + ' ' + matches[3];
         }
-        return _eval_code(host, parts.join(''), item_data);
+        return _eval_code(host, parts.join(' '), item_data);
     };
 
     function _toggle_show(host, obj) {
@@ -499,7 +500,7 @@ var form;
         Object.assign(postops, options);
         if ((postops.url = _match_replace(host, postops.url, { "site_url": hazaar.url() })) === false) {
             select.empty().prop('disabled', true);
-            item_data.value = (('default' in def) ? def.default : null);
+            _nullify(host, def);
             return;
         }
         if (track !== false) select.prop('disabled', true).html($('<option value selected>').html('Loading...'));
