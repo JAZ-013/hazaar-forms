@@ -1045,13 +1045,13 @@ var form;
         var newLayout = [];
         for (let x in layout) {
             if (layout[x].hidden === true) continue;
-            if (typeof layout[x] === 'object') {
+            if (Array.isArray(layout[x])) {
+                layout[x] = _resolve_field_layout(name, layout[x], fields);
+            } else if (typeof layout[x] === 'object') {
                 if ('fields' in layout[x]) layout[x].fields = _resolve_field_layout(name, layout[x].fields, fields);
                 else if ('name' in layout[x]) layout[x] = $.extend({}, fields[layout[x].name], layout[x]);
                 if (!('name' in layout[x])) layout[x].name = (name ? name + '.' : '') + x;
-            } else if (Array.isArray(layout[x]))
-                layout[x] = _resolve_field_layout(name, layout[x], fields);
-            else if (typeof layout[x] === 'string' && layout[x] in fields)
+            } else if (typeof layout[x] === 'string' && layout[x] in fields)
                 layout[x] = $.extend(fields[layout[x]], { name: (name ? name + '.' : '') + layout[x] });
             newLayout.push(layout[x]);
         }
@@ -1083,7 +1083,7 @@ var form;
                     if (!('weight' in item)) item.weight = 1;
                     length = length + (item.weight - 1);
                 }
-                if (typeof item === 'object') {
+                if (typeof item === 'object' && !Array.isArray(item)) {
                     if (!("name" in item) && 'name' in def) item.name = def.name + '.' + x;
                     if (info.protected === true) item.protected = true;
                 }
