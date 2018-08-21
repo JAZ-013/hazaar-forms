@@ -262,7 +262,7 @@ class Model extends \Hazaar\Model\Strict {
         if($this->__locked && ake(ake($this->fields, $key), 'protected', false) === true)
             return null;
 
-        return parent::set($key, $value, $exec_filters);
+        return parent::set($key, $value, false);
 
     }
 

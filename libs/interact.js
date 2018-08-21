@@ -153,7 +153,7 @@ var form;
         if (!name && 'name' in def) name = def.name;
         if (typeof name === 'string') {
             var item_data = _get_data_item(host.data, name);
-            if (item_data) item_data.set((('default' in def) ? def.default : null), (def.placeholder || ''));
+            if (item_data instanceof dataBinderValue) item_data.set((('default' in def) ? def.default : null), (def.placeholder || ''));
         }
         if (def.fields) {
             for (let x in def.fields) {
@@ -1050,7 +1050,7 @@ var form;
             } else if (typeof layout[x] === 'object') {
                 if ('fields' in layout[x]) layout[x].fields = _resolve_field_layout(name, layout[x].fields, fields);
                 else if ('name' in layout[x]) layout[x] = $.extend({}, fields[layout[x].name], layout[x]);
-                if (!('name' in layout[x])) layout[x].name = (name ? name + '.' : '') + x;
+                if (name && !('name' in layout[x])) layout[x].name = (name ? name + '.' : '') + x;
             } else if (typeof layout[x] === 'string' && layout[x] in fields)
                 layout[x] = $.extend(fields[layout[x]], { name: (name ? name + '.' : '') + layout[x] });
             newLayout.push(layout[x]);
@@ -1283,7 +1283,7 @@ var form;
         var required = ('required' in def) ? _eval(host, def.required) : false;
         var value = ((item instanceof dataBinderArray && item.length > 0) ? item : (def.other && !item.value) ? item.other : item.value);
         if (required && !value) return _validation_error(name, def, "required");
-        if (!value) return true; //Return now if there is no value and the field is not required!
+        if (typeof value === 'undefined' || value === null) return true; //Return now if there is no value and the field is not required!
         if ('format' in def && value) {
             if (!Inputmask.isValid(String(value), def.format))
                 return _validation_error(name, def, "bad_format");
