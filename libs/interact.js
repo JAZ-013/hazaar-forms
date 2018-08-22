@@ -25,7 +25,7 @@ if (typeof Object.assign != 'function') {
         writable: true,
         configurable: true
     });
-}
+};
 
 Array.fromObject = function (object) {
     if (typeof object !== 'object') return null;
@@ -1763,6 +1763,9 @@ $.fn.fileUpload = function () {
     }
     host.files = [];
     host.options = $.extend({ name: 'file', multiple: false, btnClass: 'btn btn-default', maxSize: 0 }, arguments[0]);
+    host._isIE = function () {
+        return !!navigator.userAgent.match(/Trident/g) || !!navigator.userAgent.match(/MSIE/g);
+    };
     host._add = function (file) {
         if (Array.isArray(file)) {
             if (host.options.multiple === true) for (let x in file) this._add(file[x]);
@@ -1816,10 +1819,11 @@ $.fn.fileUpload = function () {
             return true;
         return false;
     };
-    host._add_files = function (array) {
-        var fileArray = Array.from(array), added = [], failed = [];
+    host._add_files = function (fileArray) {
+        var added = [], failed = [];
         if (!host.options.multiple && host.files.length > 0) return;
-        fileArray.forEach(function (file) {
+        for (let x = 0; x < fileArray.length; x++) {
+            let file = fileArray[x];
             if (host._checkexists(file)) return;
             if (host._checksize(file)) {
                 host._add(file);
@@ -1827,7 +1831,7 @@ $.fn.fileUpload = function () {
             } else {
                 failed.push(file);
             }
-        });
+        };
         host.o.input.val(null);
         if (added.length > 0 && typeof host.options.select === 'function')
             host.options.select(added);
@@ -1872,6 +1876,14 @@ $.fn.fileUpload = function () {
                 host.o.dropzone.removeClass('drag');
                 if (!host.options.multiple && host.files.length > 0) return;
                 host._add_files(e.originalEvent.dataTransfer.files);
+            });
+        }
+        //Fuck you Internet Explorer.  Why the fuck do people still use this piece of shit?
+        if (host._isIE()) {
+            host.o.input.click(function () {
+                setTimeout(function () {
+                    if (host.o.input.val().length > 0) host.o.input.change();
+                }, 0);
             });
         }
         this.o.input.change(function (e) {
