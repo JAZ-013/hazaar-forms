@@ -1,17 +1,17 @@
 //Object.assign() Polyfill
-if (typeof Object.assign != 'function') {
+if (typeof Object.assign !== 'function') {
     // Must be writable: true, enumerable: false, configurable: true
     Object.defineProperty(Object, "assign", {
         value: function assign(target, varArgs) { // .length of function is 2
             'use strict';
-            if (target == null) { // TypeError if undefined or null
+            if (target === null) { // TypeError if undefined or null
                 throw new TypeError('Cannot convert undefined or null to object');
             }
             var to = Object(target);
             for (var index = 1; index < arguments.length; index++) {
                 var nextSource = arguments[index];
 
-                if (nextSource != null) { // Skip over if undefined or null
+                if (nextSource !== null) { // Skip over if undefined or null
                     for (let nextKey in nextSource) {
                         // Avoid bugs when hasOwnProperty is shadowed
                         if (Object.prototype.hasOwnProperty.call(nextSource, nextKey)) {
@@ -46,8 +46,8 @@ var form;
         $('<div>').css('text-align', 'left').html([
             $('<h4>').html(error.status),
             $('<div>').html(error.str).css({ 'font-weight': 'bold', 'margin-bottom': '15px' }),
-            (error.line ? $('<div>').html('Line: ' + error.line) : null),
-            (error.file ? $('<div>').html('File: ' + error.file) : null)
+            error.line ? $('<div>').html('Line: ' + error.line) : null,
+            error.file ? $('<div>').html('File: ' + error.file) : null
         ]).popup({
             title: 'An error ocurred!',
             icon: 'danger',
@@ -55,23 +55,23 @@ var form;
                 { label: "OK", "class": "btn btn-default" }
             ]
         });
-    };
+    }
 
     function _kv(obj, key) {
-        return key.split('.').reduce(function (o, i) { return o[i] }, obj);
+        return key.split('.').reduce(function (o, i) { return o[i]; }, obj);
     }
 
     function _is_int(def, value) {
         if (!('type' in def)) return false;
         var is_int = false, type = def.type.toLowerCase();
         if (type === 'array' && 'arrayOf' in def) type = def.arrayOf.toLowerCase();
-        return (type === 'int' || type === 'integer') ? (value === '' ? null : parseInt(value)) : value;
-    };
+        return type === 'int' || type === 'integer' ? value === '' ? null : parseInt(value) : value;
+    }
 
     function _url(host, target) {
         target = _match_replace(host, target, null, true);
-        return (target.match(/^https?:\/\//) ? target : hazaar.url(target));
-    };
+        return target.match(/^https?:\/\//) ? target : hazaar.url(target);
+    }
 
     function _sort_data(data, field, labelKey, spacerKey) {
         if (!Array.isArray(data)) {
@@ -80,7 +80,7 @@ var form;
         }
         if (typeof field === 'string') {
             data.sort(function (a, b) {
-                return (a[field] < b[field]) ? -1 : ((a[field] > b[field]) ? 1 : 0);
+                return a[field] < b[field] ? -1 : a[field] > b[field] ? 1 : 0;
             });
         } else if (Array.isArray(field)) {
             var newdata = [];
@@ -88,7 +88,7 @@ var form;
                 let newIndex = data.findIndex(function (element, index, array) {
                     return element[labelKey] === field[x];
                 });
-                if (newIndex != -1) {
+                if (newIndex !== -1) {
                     newdata.push(data[newIndex]);
                     data.splice(newIndex, 1);
                 }
@@ -102,7 +102,7 @@ var form;
             data = newdata.concat(_sort_data(data, labelKey));
         }
         return data;
-    };
+    }
 
     function _convert_data(data, valueKey, labelKey, def) {
         for (let x in data) {
@@ -112,17 +112,17 @@ var form;
                 newitem[labelKey] = data[x];
                 data[x] = newitem;
             }
-        };
+        }
         if (!Array.isArray(data)) data = Array.fromObject(data);
         return data;
-    };
+    }
 
     function _exec(host, type, field) {
         if (!(type in host.events && field in host.events[type]))
             return false;
         var obj = host.events[type][field];
         return _eval_code(host, obj.data(type));
-    };
+    }
 
     function _eval_code(host, evaluate, item_data, no_return) {
         if (typeof evaluate === 'boolean') return evaluate;
@@ -135,7 +135,7 @@ var form;
                 if (key === 'form') continue;
                 var value = values[key];
                 if (typeof value === 'string') value = '"' + value.replace(/"/g, '\\"').replace("\n", "\\n") + '"';
-                else if (typeof value === 'object' || typeof value === 'array') value = JSON.stringify(value);
+                else if (typeof value === 'object' || Array.isArray(value)) value = JSON.stringify(value);
                 code += 'var ' + key + " = " + value + ";\n";
             }
             code += (no_return !== true ? "return " : "") + "( " + evaluate + " );";
@@ -146,14 +146,14 @@ var form;
             console.error('Failed to evaluate condition: ' + evaluate);
         }
         return false;
-    };
+    }
 
     function _nullify(host, def, name) {
         if (typeof def !== 'object' || def.protected || def.keep) return;
         if (!name && 'name' in def) name = def.name;
         if (typeof name === 'string') {
-            var item_data = _get_data_item(host.data, name);
-            if (item_data instanceof dataBinderValue) item_data.set((('default' in def) ? def.default : null), (def.placeholder || ''));
+            let item_data = _get_data_item(host.data, name);
+            if (item_data instanceof dataBinderValue) item_data.set(('default' in def) ? def.default : null, def.placeholder || '');
         }
         if (def.fields) {
             for (let x in def.fields) {
@@ -164,17 +164,17 @@ var form;
                     if (typeof sdef === 'object') {
                         sdef = (name ? name + '.' : null) + x;
                     }
-                    var item_data = _get_data_item(host.data, sdef);
+                    let item_data = _get_data_item(host.data, sdef);
                     if (item_data) item_data.empty();
                 }
             }
         }
-    };
+    }
 
     function _eval(host, script, default_value, item_data) {
         if (typeof script === 'boolean') return script;
-        if (typeof script === 'undefined') return (typeof default_value === 'undefined') ? false : default_value;
-        if (script.indexOf(';') != -1)
+        if (typeof script === 'undefined') return typeof default_value === 'undefined' ? false : default_value;
+        if (script.indexOf(';') !== -1)
             return _eval_code(host, script);
         var parts = script.split(/\s*(\&\&|\|\|)\s*/);
         for (let x = 0; x < parts.length; x += 2) {
@@ -186,28 +186,28 @@ var form;
             parts[x] = matches[1] + ' ' + matches[2] + ' ' + matches[3];
         }
         return _eval_code(host, parts.join(' '), item_data);
-    };
+    }
 
     function _toggle_show(host, obj) {
         var toggle = _eval(host, obj.data('show'), true, obj.data('item')), def = obj.data('def');
         obj.toggle(toggle);
         if (!toggle) _nullify(host, def, obj.data('name'));
-    };
+    }
 
     function _match_replace(host, str, extra, force, use_html) {
         if (!str) return null;
-        while (match = str.match(/\{\{([\W]*)(\w+)\}\}/)) {
-            var modifiers = match[1].split(''), value = (host ? _get_data_item(host.data, match[2]) : null);
+        while ((match = str.match(/\{\{([\W]*)(\w+)\}\}/)) !== null) {
+            var modifiers = match[1].split(''), value = host ? _get_data_item(host.data, match[2]) : null;
             if (value === null) value = _get_data_item(extra, match[2]);
             if (modifiers.indexOf('!') === -1
                 && (value instanceof dataBinderValue ? value.value : value) === null
                 && force !== true) return false;
-            var text = (value instanceof dataBinderValue ? (modifiers.indexOf(':') === -1 ? value.value : value) : value);
-            var out = (use_html ? '<span data-bind="' + match[2] + '">' + text + '</span>' : text || '');
+            var text = value instanceof dataBinderValue ? modifiers.indexOf(':') === -1 ? value.value : value : value;
+            var out = use_html ? '<span data-bind="' + match[2] + '">' + text + '</span>' : text || '';
             str = str.replace(match[0], out);
         }
         return str;
-    };
+    }
 
     function _get_data_item(data, name, isArray) {
         if (!(name && data)) return null;
@@ -220,7 +220,7 @@ var form;
             item = item[key];
         }
         return item;
-    };
+    }
 
     function _make_required(host, def, field) {
         field.data('required', def.required)
@@ -228,13 +228,13 @@ var form;
             .children('label.control-label')
             .append($('<i class="fa fa-exclamation-circle form-required" title="Required">'));
         if (typeof def.required !== 'boolean') host.events.required.push(field);
-    };
+    }
 
     function _make_showable(host, def, field) {
         field.data('show', def.show);
         if (typeof def.show !== 'boolean') host.events.show.push(field);
         _toggle_show(host, field);
-    };
+    }
 
     //Input events
     function _input_event_change(host, input) {
@@ -242,10 +242,10 @@ var form;
         var item_data = _get_data_item(host.data, input.attr('data-bind'));
         if (!item_data) return;
         if (input.is('[type=checkbox]')) {
-            var value = input.is(':checked');
+            let value = input.is(':checked');
             item_data.set(value, (value ? 'Yes' : 'No'));
         } else if (input.is('select')) {
-            var value = input.val();
+            let value = input.val();
             if (value === '__hz_other') {
                 item_data.set(null, null, (item_data.value ? null : undefined));
                 var group = $('<div>').addClass(host.settings.styleClasses.inputGroup);
@@ -281,7 +281,7 @@ var form;
         } else {
             item_data.value = _is_int(def, input.val());
         }
-    };
+    }
 
     function _input_event_update(host, input) {
         var def = input.data('def'), update = def.update, cb_done = null;
@@ -336,17 +336,17 @@ var form;
         }
         if (def.save === true) _save(host, false).done(cb_done);
         else if (typeof cb_done === 'function') cb_done();
-    };
+    }
 
     function _input_event_focus(host, input) {
         var def = input.data('def');
         if (def.focus) _eval_code(host, def.focus);
-    };
+    }
 
     function _input_event_blur(host, input) {
         var def = input.data('def');
         if (def.blur) _eval_code(host, def.blur);
-    };
+    }
 
     function _input_button(host, def) {
         var group = $('<div class="form-group-nolabel">').addClass(host.settings.styleClasses.group).data('def', def);
@@ -369,7 +369,7 @@ var form;
                 break;
         }
         return group;
-    };
+    }
 
     function _input_select_multi_items(host, def, data) {
         var fChange = function () {
@@ -391,14 +391,14 @@ var form;
         if (def.buttons === true) {
             var btnClass = def.class || 'primary';
             for (let x in data) {
-                var value = _is_int(def, data[x][valueKey]), label = data[x][labelKey];
-                var active = (value instanceof dataBinderArray && value.indexOf(value) > -1), name = def.name + '_' + value;
+                let x_value = _is_int(def, data[x][valueKey]), label = data[x][labelKey];
+                let active = (x_value instanceof dataBinderArray && x_value.indexOf(x_value) > -1), name = def.name + '_' + x_value;
                 items.push($('<label class="btn">').addClass('btn-' + btnClass).html([
                     $('<input type="checkbox" autocomplete="off">')
-                        .attr('value', value)
+                        .attr('value', x_value)
                         .prop('checked', active)
                         .prop('disabled', (def.protected === true))
-                        .attr('data-bind-value', value), label
+                        .attr('data-bind-value', x_value), label
                 ]).toggleClass('active', active).change(fChange));
             }
             return items;
@@ -411,9 +411,9 @@ var form;
             items.push($('<div>').addClass('col-md-' + col_width)
                 .toggleClass('custom-controls-stacked', def.inline));
         for (let x in data) {
-            var iv = _is_int(def, data[x][valueKey]), il = data[x][labelKey];
-            var active = (value instanceof dataBinderArray && value.indexOf(iv) > -1), name = def.name + '_' + iv;
-            var label = $('<div>').addClass(host.settings.styleClasses.chkDiv).html([
+            let iv = _is_int(def, data[x][valueKey]), il = data[x][labelKey];
+            let active = (value instanceof dataBinderArray && value.indexOf(iv) > -1), name = def.name + '_' + iv;
+            let label = $('<div>').addClass(host.settings.styleClasses.chkDiv).html([
                 $('<input type="checkbox">')
                     .addClass(host.settings.styleClasses.chkInput)
                     .attr('id', '__field_' + name)
@@ -430,7 +430,7 @@ var form;
         }
         if ('cssClass' in def) cols.addClass(def.cssClass);
         return cols.html(items);
-    };
+    }
 
     function _input_select_multi_populate_ajax(host, options, container, track) {
         var def = container.data('def'), postops = {}, item_data = _get_data_item(host.data, def.name);
@@ -452,7 +452,7 @@ var form;
             _ready(host);
         }).fail(_error);
         return true;
-    };
+    }
 
     function _input_select_multi_populate(host, options, container, track) {
         var def = container.data('def');
@@ -469,7 +469,7 @@ var form;
         }
         container.empty().append(_input_select_multi_items(host, def, options));
         return true;
-    };
+    }
 
     function _input_select_multi(host, def) {
         var group = $('<div>').addClass(host.settings.styleClasses.group).data('def', def), options = {};
@@ -493,7 +493,7 @@ var form;
             _input_select_multi_populate(host, options, select, true);
         });
         return group;
-    };
+    }
 
     function _input_select_populate_ajax(host, options, select, track) {
         var def = select.data('def'), postops = {}, item_data = _get_data_item(host.data, select.attr('data-bind'));
@@ -547,7 +547,7 @@ var form;
             }
             if (item_data) {
                 if (item_data.value && data.find(function (e, index, obj) {
-                    return e && e[valueKey] == item_data.value;
+                    return e && e[valueKey] === item_data.value;
                 })) select.val(item_data.value);
                 else if (item_data.value === null && item_data.other !== null) {
                     select.val('__hz_other').change();
@@ -591,7 +591,7 @@ var form;
         }
         select.prop('disabled', false);
         return true;
-    };
+    }
 
     function _input_select_options(host, def, select, item_data, cb) {
         if (!('options' in def)) return false;
@@ -618,7 +618,7 @@ var form;
         } else Object.assign(options, def.options);
         if (typeof cb === 'function') cb(select, options);
         return options;
-    };
+    }
 
     function _input_select(host, def, populate) {
         var group = $('<div>').addClass(host.settings.styleClasses.group).data('def', def);
@@ -647,7 +647,7 @@ var form;
             _input_select_populate(host, options, select);
         });
         return group;
-    };
+    }
 
     function _input_checkbox(host, def) {
         var group = $('<div>').addClass(host.settings.styleClasses.group).data('def', def);
@@ -674,7 +674,7 @@ var form;
         if ('cssClass' in def) input.addClass(def.cssClass);
         _check_input_disabled(host, input, def);
         return group;
-    };
+    }
 
     function _input_date(host, def) {
         var item_data = _get_data_item(host.data, def.name);
@@ -722,7 +722,7 @@ var form;
         if ('css' in def) input.css(def.css);
         if ('cssClass' in def) input.addClass(def.cssClass);
         return group.append(input_group);
-    };
+    }
 
     function _input_file(host, def) {
         var item_data = _get_data_item(host.data, def.name);
@@ -768,7 +768,7 @@ var form;
             item_data.populate(filelist);
         }).fail(_error);
         return group;
-    };
+    }
 
     function _input_lookup(host, def) {
         var item_data = _get_data_item(host.data, def.name);
@@ -894,7 +894,7 @@ var form;
             input_group.append($('<div>').addClass(host.settings.styleClasses.inputGroupAppend)
                 .html($('<span>').addClass(host.settings.styleClasses.inputGroupText).html($('<i class="fa fa-search">'))));
         return group;
-    };
+    }
 
     function _input_std(host, type, def) {
         var group = $('<div>').addClass(host.settings.styleClasses.group).data('def', def);
@@ -937,7 +937,7 @@ var form;
         } else group.append(input);
         if (item_data && item_data.value) _validate_input(host, input);
         return group;
-    };
+    }
 
     function _input_list(host, def) {
         var item_data = _get_data_item(host.data, def.name);
@@ -1017,14 +1017,14 @@ var form;
                 item_data.unset(index);
             });
         return group;
-    };
+    }
 
     function _check_input_disabled(host, input, def) {
         if (!('disabled' in def) || def.protected) return false;
         input.prop('disabled', _eval(host, def.disabled));
         if (typeof def.disabled === 'string')
             host.events.disabled.push(input.data('disabled', def.disabled));
-    };
+    }
 
     function _form_field_lookup(def, info) {
         if (info instanceof Object) def = ('name' in info ? $.extend({}, _form_field_lookup(def, info.name), info) : info);
@@ -1039,7 +1039,7 @@ var form;
             def = $.extend({}, def, { name: info });
         }
         return def;
-    };
+    }
 
     function _resolve_field_layout(name, layout, fields) {
         var newLayout = [];
@@ -1056,7 +1056,7 @@ var form;
             newLayout.push(layout[x]);
         }
         return newLayout;
-    };
+    }
 
     function _form_field(host, info, p, populate, apply_rules) {
         var def = null, field = null;
@@ -1064,14 +1064,14 @@ var form;
             info = { fields: info };
         if (!(def = _form_field_lookup(host.def, info))) return;
         if ('name' in def && 'default' in def) {
-            var item_data = _get_data_item(host.data, def.name);
+            let item_data = _get_data_item(host.data, def.name);
             if (item_data.value === null) item_data.value = def.default;
         }
         if ('render' in def) {
-            var item_data = _get_data_item(host.data, def.name);
+            let item_data = _get_data_item(host.data, def.name);
             field = new Function('field', 'form', def.render)($.extend({}, def, { value: item_data.save(true) }), host);
             host.pageInputs.push(field);
-        } else if ('fields' in def && def.type != 'array') {
+        } else if ('fields' in def && def.type !== 'array') {
             var layout = _resolve_field_layout(def.name, (('layout' in def) && def.layout ? def.layout : def.fields), def.fields);
             var length = (layout instanceof Array) ? layout.length : Object.keys(layout).length, fields = [], col_width;
             if (typeof p === 'undefined' || p === null) p = !(('layout' in def) && def.layout);
@@ -1156,7 +1156,7 @@ var form;
         if ('html' in def) {
             var html = def.html;
             if ('label' in def && field.children().length === 0) field.append($('<label>').addClass(host.settings.styleClasses.label).html(def.label));
-            while (match = html.match(/\{\{(\w+)\}\}/))
+            while ((match = html.match(/\{\{(\w+)\}\}/)) !== null)
                 html = html.replace(match[0], '<span data-bind="' + [match[1]] + '"></span>');
             field.append($('<div>').html(html));
         }
@@ -1164,7 +1164,7 @@ var form;
         if ('hint' in def)
             field.append($('<small class="form-text text-muted">').html(_match_replace(host, def.hint, null, true, true)));
         return field;
-    };
+    }
 
     //Render a page section
     function _section(host, section, p) {
@@ -1193,7 +1193,7 @@ var form;
             fieldset.append(_form_field(host, section.fields[x]));
         if ('show' in section) _make_showable(host, section, fieldset);
         return fieldset;
-    };
+    }
 
     //Render a page
     function _page(host, page) {
@@ -1207,7 +1207,7 @@ var form;
                 _toggle_show(host, host.events.show[x]);
         }
         return form.append(sections);
-    };
+    }
 
     function _page_init(host, pageno) {
         host.page = pageno;
@@ -1219,7 +1219,7 @@ var form;
         };
         host.pageInputs = [];
         host.data.unwatch();
-    };
+    }
 
     //Render the whole form
     function _render(host, data) {
@@ -1228,7 +1228,7 @@ var form;
             container: $('<div>').addClass(host.settings.styleClasses.container).hide()
         };
         $(host).html([host.objects.loader, host.objects.container]);
-    };
+    }
 
     //Navigate to a page
     function _nav(host, pageno, cbComplete) {
@@ -1259,7 +1259,7 @@ var form;
             }
         }
         return _page_nav(host, pageno);
-    };
+    }
 
 
     function _validate_input(host, input) {
@@ -1270,12 +1270,12 @@ var form;
                 .toggleClass('border-warning', (result === true && response.warning === true));
             $(host).trigger('validate_field', [def.name, result === true, result]);
         });
-    };
+    }
 
     function _validation_error(name, def, status) {
         var error = { name: name, field: $.extend({}, def), status: status };
         return error;
-    };
+    }
 
     function _validate_rule(host, name, item, def) {
         if (!def) return true;
@@ -1327,70 +1327,67 @@ var form;
             }
         }
         return true;
-    };
+    }
 
-    function _validate_field(host, name) {
+    function _validate_field(host, name, extra) {
         var callbacks = [];
         setTimeout(function () {
             var def = (typeof name === 'object') ? name : _form_field_lookup(host.def, name);
-            if (!def) return;
-            var item = _get_data_item(host.data, def.name);
-            if (def.protected || ('disabled' in def && _eval(host, def.disabled))) {
-                for (let x in callbacks) callbacks[x](def.name, true, {});
-            } else if ('fields' in def) {
-                var childItems = (def.type === 'array') ? item.save() : [item], childQueue = [], itemResult = [];
-                var result = _validate_rule(host, def.name, item, def);
-                if (result !== true) {
-                    for (let x in callbacks) callbacks[x](def.name, result, {});
-                } else {
-                    for (let i in childItems) {
-                        for (let x in def.fields) {
-                            if (!('name' in def.fields[x])) def.fields[x].name = x;
-                            childQueue.push(def.name + '[' + i + '].' + x);
-                            _validate_field({ data: item[i], def: def.fields, monitor: {} }, def.fields[x])
-                                .done(function (childName, result) {
-                                    childName = def.name + '[' + i + '].' + childName;
-                                    var index = childQueue.indexOf(childName);
-                                    if (index >= 0) childQueue.splice(index, 1);
-                                    itemResult.push({ name: childName, result: result });
-                                    if (childQueue.length === 0) for (let x in callbacks) callbacks[x](def.name, itemResult, {});
-                                });
+            if (def) {
+                var item = _get_data_item(host.data, def.name);
+                if (def.protected || ('disabled' in def && _eval(host, def.disabled))) {
+                    for (let x in callbacks) callbacks[x](def.name, true, extra);
+                } else if ('fields' in def) {
+                    let childItems = (def.type === 'array') ? item.save() : [item], childQueue = [], itemResult = [];
+                    let result = _validate_rule(host, def.name, item, def);
+                    if (result !== true) {
+                        for (let x in callbacks) callbacks[x](def.name, result, extra);
+                    } else {
+                        var count = 0;
+                        for (let i in childItems) {
+                            for (let x in def.fields) {
+                                if (!('name' in def.fields[x])) def.fields[x].name = x;
+                                let fullName = def.name + '[' + i + '].' + x;
+                                childQueue.push(fullName);
+                                _validate_field({ data: item[i], def: def.fields, monitor: {} }, def.fields[x], fullName)
+                                    .done(function (childName, result, fullName) {
+                                        var index = childQueue.indexOf(fullName);
+                                        if (index >= 0) childQueue.splice(index, 1);
+                                        itemResult.push({ name: fullName, result: result });
+                                        if (childQueue.length === 0) for (let x in callbacks) callbacks[x](def.name, itemResult, extra);
+                                    });
+                            }
                         }
                     }
+                } else {
+                    let result = _validate_rule(host, def.name, item, def);
+                    if (item.value && result === true && 'validate' in def && 'url' in def.validate) {
+                        var url = _match_replace(host, def.validate.url, { "__input__": item.value }, true);
+                        _post(host, 'api', {
+                            target: [url, { "name": def.name, "value": item.value }],
+                        }, false).done(function (response) {
+                            var result = (response.ok === true) ? true : _validation_error(def.name, def, response.reason || "api_failed(" + def.validate.url + ")");
+                            if (callbacks.length > 0) for (let x in callbacks) callbacks[x](def.name, result, response);
+                        }).fail(_error);
+                    } else if (callbacks.length > 0) for (let x in callbacks) callbacks[x](def.name, result, extra);
+                    if (def.name in host.monitor) for (x in host.monitor[def.name]) host.monitor[def.name][x](result);
                 }
-            } else {
-                var result = _validate_rule(host, def.name, item, def);
-                if (item.value && result === true && 'validate' in def && 'url' in def.validate) {
-                    var url = _match_replace(host, def.validate.url, { "__input__": item.value }, true);
-                    _post(host, 'api', {
-                        target: [url, { "name": def.name, "value": item.value }],
-                    }, false).done(function (response) {
-                        var result = (response.ok === true) ? true : _validation_error(def.name, def, response.reason || "api_failed(" + def.validate.url + ")");
-                        if (callbacks.length > 0) for (let x in callbacks) callbacks[x](def.name, result, response);
-                    }).fail(_error);
-                } else if (callbacks.length > 0) for (let x in callbacks) callbacks[x](def.name, result, {});
-                if (def.name in host.monitor) for (x in host.monitor[def.name]) host.monitor[def.name][x](result);
-            }
+            } else for (let x in callbacks) callbacks[x](name, false, extra);
         });
         return { done: function (callback) { if (typeof callback === 'function') callbacks.push(callback); return this; } };
-    };
+    }
 
     function _validate_nav_field(field, error) {
         if (Array.isArray(field)) {
             for (let x in field)
                 if (_validate_nav_field(field[x], error)) return true;
         } else {
-            var name = (typeof field == 'string' ? field : field.name);
+            var name = (typeof field === 'string' ? field : field.name);
             if (error.name === name) return true;
         }
         return false;
-    };
+    }
 
-    /**
-     * Navigate to the first page that contains an invalid field and highlight all invalid inputs
-     * @param {any} host
-     * @param {any} errors
-     */
     function _validate_nav(host, errors) {
         for (let p in host.def.pages) {
             for (let s in host.def.pages[p].sections) {
@@ -1406,7 +1403,7 @@ var form;
                 }
             }
         }
-    };
+    }
 
     //Run the data validation
     function _validate(host, fields) {
@@ -1438,14 +1435,14 @@ var form;
                         if (result[x].result !== true) errors.push(result[x].result);
                         $('[data-bind="' + result[x].name + '"]')
                             .toggleClass('is-invalid', (result[x].result !== true))
-                            .toggleClass('border-warning', (result[x].result === true && response.warning === true));
+                            .toggleClass('border-warning', (result[x].result === true && response && response.warning === true));
                     }
                     if (queue.length === 0) for (let x in callbacks) callbacks[x]((errors.length === 0), errors);
                 });
             }
         });
         return { done: function (callback) { if (typeof callback === 'function') callbacks.push(callback); } };
-    };
+    }
 
     function _validate_page(host) {
         var fields = [];
@@ -1455,14 +1452,14 @@ var form;
             fields.push(def.name);
         }
         return _validate(host, fields);
-    };
+    }
 
     //Signal that we're loading something and should show the loader.  MUST call _ready() when done.
     function _track(host) {
         host.objects.container.hide();
         host.objects.loader.show();
         host.loading++;
-    };
+    }
 
     //Signal that everything is ready to go
     function _ready(host) {
@@ -1472,7 +1469,7 @@ var form;
         host.objects.loader.hide();
         host.objects.container.show();
         $(host).trigger('ready', [host.def]);
-    };
+    }
 
     //Save form data back to the controller
     //By default calls validation and will only save data if the validation is successful
@@ -1528,7 +1525,7 @@ var form;
             });
         else save_data(host, extra);
         return { done: function (callback) { if (typeof callback === 'function') callbacks.done = callback; } };
-    };
+    }
 
     //Register events that are used to control the form functions
     function _registerEvents(host) {
@@ -1537,7 +1534,7 @@ var form;
             e.preventDefault();
             return false;
         });
-    };
+    }
 
     function _objectify_file(file) {
         if (file instanceof File) {
@@ -1550,7 +1547,7 @@ var form;
             };
         }
         return file;
-    };
+    }
 
     function _upload_files(host) {
         var fd = new FormData();
@@ -1567,7 +1564,7 @@ var form;
             contentType: false,
             url: hazaar.url(host.settings.controller, 'attach')
         });
-    };
+    }
 
     function _post(host, action, postdata, track, sync) {
         if (track === true) _track(host);
@@ -1585,13 +1582,13 @@ var form;
             if (track === true) _ready(host);
             if ('data' in response) console.log(response.data);
         });
-    };
+    }
 
     function _define(values) {
         if (!values) return;
         var data = {};
         for (let x in values) {
-            if ("fields" in values[x] && values[x].type != 'array') {
+            if ("fields" in values[x] && values[x].type !== 'array') {
                 data[x] = _define(values[x].fields);
             } else {
                 if (!values[x].default) {
@@ -1602,7 +1599,7 @@ var form;
             }
         }
         return data;
-    };
+    }
 
     function _prepare_field_definitions(host, fields) {
         if (!('types' in host.def)) return;
@@ -1611,7 +1608,7 @@ var form;
                 jQuery.extend(true, fields[x], host.def.types[fields[x].type]);
             if ('fields' in fields[x]) _prepare_field_definitions(host, fields[x].fields);
         }
-    };
+    }
 
     function _load_definition(host) {
         return _post(host, 'init').done(function (response) {
@@ -1622,7 +1619,7 @@ var form;
             host.data = new dataBinder(_define(host.def.fields));
             $(host).trigger('load', [host.def]);
         }).fail(_error);
-    };
+    }
 
     //Load all the dynamic bits
     function _load(host) {
@@ -1634,7 +1631,7 @@ var form;
                 _nav(host, 0);
             }).fail(_error);
         }).fail(_error);
-    };
+    }
 
     function __initialise(host, settings) {
         //Define the default object properties
@@ -1653,7 +1650,7 @@ var form;
         _render(host);
         _load(host);
         form = host;
-    };
+    }
 
     $.fn.hzForm = function () {
         var args = arguments;
@@ -1706,7 +1703,7 @@ var form;
                     case 'validate':
                         _validate(host).done(function (result, errors) {
                             $(host).trigger('validate', [result, errors]);
-                            if (((typeof args[1] == 'undefined' && host.settings.validateNav === true)
+                            if (((typeof args[1] === 'undefined' && host.settings.validateNav === true)
                                 || args[1] !== false)
                                 && !result) _validate_nav(host, errors);
                         });
@@ -1763,6 +1760,9 @@ $.fn.fileUpload = function () {
     }
     host.files = [];
     host.options = $.extend({ name: 'file', multiple: false, btnClass: 'btn btn-default', maxSize: 0 }, arguments[0]);
+    host._isIE = function () {
+        return !!navigator.userAgent.match(/Trident/g) || !!navigator.userAgent.match(/MSIE/g);
+    };
     host._add = function (file) {
         if (Array.isArray(file)) {
             if (host.options.multiple === true) for (let x in file) this._add(file[x]);
@@ -1816,10 +1816,11 @@ $.fn.fileUpload = function () {
             return true;
         return false;
     };
-    host._add_files = function (array) {
-        var fileArray = Array.from(array), added = [], failed = [];
+    host._add_files = function (fileArray) {
+        var added = [], failed = [];
         if (!host.options.multiple && host.files.length > 0) return;
-        fileArray.forEach(function (file) {
+        for (let x = 0; x < fileArray.length; x++) {
+            let file = fileArray[x];
             if (host._checkexists(file)) return;
             if (host._checksize(file)) {
                 host._add(file);
@@ -1827,7 +1828,7 @@ $.fn.fileUpload = function () {
             } else {
                 failed.push(file);
             }
-        });
+        }
         host.o.input.val(null);
         if (added.length > 0 && typeof host.options.select === 'function')
             host.options.select(added);
@@ -1874,6 +1875,14 @@ $.fn.fileUpload = function () {
                 host._add_files(e.originalEvent.dataTransfer.files);
             });
         }
+        //Fuck you Internet Explorer.  Why the fuck do people still use this piece of shit?
+        if (host._isIE()) {
+            host.o.input.click(function () {
+                setTimeout(function () {
+                    if (host.o.input.val().length > 0) host.o.input.change();
+                }, 0);
+            });
+        }
         this.o.input.change(function (e) {
             if (!host.options.multiple && host.files.length > 0) return;
             host._add_files(e.target.files);
@@ -1907,3 +1916,23 @@ $.fn.fileUpload = function () {
     host._registerEvents();
     return this;
 };
+
+//Array.prototype.find polyfil.
+if (!Array.prototype.find) {
+    Object.defineProperty(Array.prototype, 'find', {
+        value: function (predicate) {
+            if (this === null) throw new TypeError('"this" is null or not defined');
+            var o = Object(this), len = o.length >>> 0;
+            if (typeof predicate !== 'function') throw new TypeError('predicate must be a function');
+            var thisArg = arguments[1], k = 0;
+            while (k < len) {
+                var kValue = o[k];
+                if (predicate.call(thisArg, kValue, k, o)) return kValue;
+                k++;
+            }
+            return undefined;
+        },
+        configurable: true,
+        writable: true
+    });
+}
