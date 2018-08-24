@@ -1267,7 +1267,7 @@ var form;
         if (!def) return false;
         return _validate_field(host, def.name).done(function (event, result, response) {
             input.toggleClass('is-invalid', result !== true)
-                .toggleClass('border-warning', (result === true && response.warning === true));
+                .toggleClass('border-warning', (result === true && (response && response.warning === true)));
             $(host).trigger('validate_field', [def.name, result === true, result]);
         });
     }
@@ -1435,7 +1435,7 @@ var form;
                         if (result[x].result !== true) errors.push(result[x].result);
                         $('[data-bind="' + result[x].name + '"]')
                             .toggleClass('is-invalid', (result[x].result !== true))
-                            .toggleClass('border-warning', (result[x].result === true && response && response.warning === true));
+                            .toggleClass('border-warning', (result[x].result === true && (response && response.warning === true)));
                     }
                     if (queue.length === 0) for (let x in callbacks) callbacks[x]((errors.length === 0), errors);
                 });
@@ -1917,7 +1917,6 @@ $.fn.fileUpload = function () {
     return this;
 };
 
-//Array.prototype.find polyfil.
 if (!Array.prototype.find) {
     Object.defineProperty(Array.prototype, 'find', {
         value: function (predicate) {
@@ -1931,6 +1930,25 @@ if (!Array.prototype.find) {
                 k++;
             }
             return undefined;
+        },
+        configurable: true,
+        writable: true
+    });
+}
+
+if (!Array.prototype.findIndex) {
+    Object.defineProperty(Array.prototype, 'findIndex', {
+        value: function (predicate) {
+            if (this === null) throw new TypeError('"this" is null or not defined');
+            var o = Object(this), len = o.length >>> 0;
+            if (typeof predicate !== 'function') throw new TypeError('predicate must be a function');
+            var thisArg = arguments[1], k = 0;
+            while (k < len) {
+                var kValue = o[k];
+                if (predicate.call(thisArg, kValue, k, o)) return k;
+                k++;
+            }
+            return -1;
         },
         configurable: true,
         writable: true
