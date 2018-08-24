@@ -827,7 +827,7 @@ class Model extends \Hazaar\Model\Strict {
 
         for($i = 0; $i < $count; $i+=2){
 
-            if(!preg_match('/([\w\.]+)\s*([=\!\<\>]+)\s*(.+)/', $parts[$i], $matches))
+            if(!preg_match('/([\w\.\(\)\'\"]+)\s*([=\!\<\>]+)\s*(.+)/', $parts[$i], $matches))
                 throw new \Exception('Invalid show script: ' . $parts[$i]);
 
             $parts[$i] = $this->fixCodeItem($matches[1]) . ' ' . $matches[2] . ' ' . $this->fixCodeItem($matches[3]);
@@ -880,6 +880,8 @@ class Model extends \Hazaar\Model\Strict {
                 //Form is also acessible in the evaluted code.
                 $form = $this;
 
+                $tags = $this->__tags;
+
                 return @eval($code);
 
             }
@@ -922,6 +924,8 @@ class Model extends \Hazaar\Model\Strict {
 
         if(preg_match('/(\w*)\.length/', $item, $matches))
             return 'count($' . $matches[1] . ')';
+        elseif(preg_match('/(\w*)\.indexOf\([\'\"](.*)[\'\"]\)/i', $item, $matches))
+            return "(((\$index = array_search('{$matches[2]}', " . $this->fixCodeItem($matches[1]) . ')) === false) ? -1 : $index)';
 
         if(strpos($item, '.') !== false)
             $item = str_replace('.', '->', $item);

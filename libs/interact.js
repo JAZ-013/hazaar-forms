@@ -179,7 +179,7 @@ var form;
         var parts = script.split(/\s*(\&\&|\|\|)\s*/);
         for (let x = 0; x < parts.length; x += 2) {
             var matches = null;
-            if (!(matches = parts[x].match(/([\w\.]+)\s*([=\!\<\>]+)\s*(.+)/))) {
+            if (!(matches = parts[x].match(/([\w\.\(\)\'\"]+)\s*([=\!\<\>]+)\s*(.+)/))) {
                 alert('Invalid evaluation script: ' + script);
                 return;
             }
