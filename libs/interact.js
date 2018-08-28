@@ -1050,7 +1050,7 @@ var form;
             } else if (typeof layout[x] === 'object') {
                 if ('fields' in layout[x]) layout[x].fields = _resolve_field_layout(name, layout[x].fields, fields);
                 else if ('name' in layout[x]) layout[x] = $.extend({}, fields[layout[x].name], layout[x]);
-                if (name && !('name' in layout[x])) layout[x].name = (name ? name + '.' : '') + x;
+                if (!('name' in layout[x])) layout[x].name = (name ? name + '.' : '') + x;
             } else if (typeof layout[x] === 'string' && layout[x] in fields)
                 layout[x] = $.extend(fields[layout[x]], { name: (name ? name + '.' : '') + layout[x] });
             newLayout.push(layout[x]);
