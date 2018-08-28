@@ -1267,7 +1267,7 @@ var form;
         if (!def) return false;
         return _validate_field(host, def.name).done(function (event, result, response) {
             input.toggleClass('is-invalid', result !== true)
-                .toggleClass('border-warning', (result === true && (response && response.warning === true)));
+                .toggleClass('border-warning', result === true && typeof response === 'object' && response.warning === true);
             $(host).trigger('validate_field', [def.name, result === true, result]);
         });
     }
@@ -1435,7 +1435,7 @@ var form;
                         if (result[x].result !== true) errors.push(result[x].result);
                         $('[data-bind="' + result[x].name + '"]')
                             .toggleClass('is-invalid', (result[x].result !== true))
-                            .toggleClass('border-warning', (result[x].result === true && (response && response.warning === true)));
+                            .toggleClass('border-warning', result[x].result === true && typeof response === 'object' && response.warning === true);
                     }
                     if (queue.length === 0) for (let x in callbacks) callbacks[x]((errors.length === 0), errors);
                 });
