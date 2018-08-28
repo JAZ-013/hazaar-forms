@@ -153,7 +153,7 @@ var form;
         if (!name && 'name' in def) name = def.name;
         if (typeof name === 'string') {
             let item_data = _get_data_item(host.data, name);
-            if (item_data instanceof dataBinderValue) item_data.set(('default' in def) ? def.default : null, def.placeholder || '');
+            if (item_data instanceof dataBinderValue) item_data.set(def.default || null, def.placeholder || null);
         }
         if (def.fields) {
             for (let x in def.fields) {
