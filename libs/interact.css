@@ -100,32 +100,46 @@
 .form-fileupload.single .dz-items {
     padding: 0;
     height: 32px;
+    overflow: hidden;
 }
 
 .form-fileupload.single button:not([style*="display: none"]) + .dz-items {
     display: none;
 }
 
-.form-fileupload.single .dz-items .dz-item .dz-preview {
-    float: left;
-    width: 32px;
-    height: 32px;
+.form-fileupload.single .dz-items {
+    display: table;
+    table-layout: fixed;
+    width: 100%;
 }
 
-.form-fileupload.single .dz-items .dz-item .dz-detail,
-.form-fileupload.single .dz-items .dz-item .dz-remove {
-    float: left;
-    line-height: 32px;
-}
+    .form-fileupload.single .dz-items .dz-item {
+        display: table-row;
+    }
 
-.form-fileupload.single .dz-items .dz-item .dz-preview,
-.form-fileupload.single .dz-items .dz-item .dz-detail {
-    margin-right: 16px;
-}
+        .form-fileupload.single .dz-items .dz-item .dz-preview,
+        .form-fileupload.single .dz-items .dz-item .dz-detail,
+        .form-fileupload.single .dz-items .dz-item .dz-remove {
+            display: table-cell;
+            line-height: 32px;
+        }
 
-.form-fileupload.single .dz-items .dz-item .dz-size {
-    display: none;
-}
+        .form-fileupload.single .dz-items .dz-item .dz-preview,
+        .form-fileupload.single .dz-items .dz-item .dz-remove {
+            width: 32px;
+            height: 32px;
+        }
+
+        .form-fileupload.single .dz-items .dz-item .dz-detail {
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            padding: 0 16px;
+        }
+
+        .form-fileupload.single .dz-items .dz-item .dz-size {
+            display: none;
+        }
 
 /* MULTIPLE MODE */
 
