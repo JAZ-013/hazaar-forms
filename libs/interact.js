@@ -126,20 +126,17 @@ var form;
 
     function _eval_code(host, evaluate, item_data, no_return) {
         if (typeof evaluate === 'boolean') return evaluate;
-        var code = '';
-        if (evaluate.indexOf(';') < 0) {
-            var values = host.data.save(true);
-            var keys = Object.keys(values).sort();
-            for (let i in keys) {
-                let key = keys[i];
-                if (key === 'form') continue;
-                var value = values[key];
-                if (typeof value === 'string') value = '"' + value.replace(/"/g, '\\"').replace("\n", "\\n") + '"';
-                else if (typeof value === 'object' || Array.isArray(value)) value = JSON.stringify(value);
-                code += 'var ' + key + " = " + value + ";\n";
-            }
-            code += (no_return !== true ? "return " : "") + "( " + evaluate + " );";
-        } else code = (no_return !== true ? "return " : "") + evaluate;
+        let code = '', values = host.data.save(true), keys = Object.keys(values).sort();
+        for (let i in keys) {
+            let key = keys[i];
+            if (key === 'form') continue;
+            var value = values[key];
+            if (typeof value === 'string') value = '"' + value.replace(/"/g, '\\"').replace("\n", "\\n") + '"';
+            else if (typeof value === 'object' || Array.isArray(value)) value = JSON.stringify(value);
+            code += 'var ' + key + " = " + value + ";\n";
+        }
+        if (no_return !== true) code += "return ( " + evaluate + " );";
+        else code += evaluate;
         try {
             return new Function('form', 'tags', 'item', code)(host.data, host.tags, item_data);
         } catch (e) {
@@ -599,7 +596,7 @@ var form;
         if (Array.isArray(def.options)) {
             Object.assign(options, function (options) {
                 for (let x in options) {
-                    if (!('when' in options[x])) continue;
+                    if (!(typeof options[x] === 'object' && ('when' in options[x]))) continue;
                     if (_eval(host, options[x].when, null, item_data)) return ('items' in options[x]) ? options[x].items : options[x];
                 }
             }(def.options));
