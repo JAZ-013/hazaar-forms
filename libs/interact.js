@@ -1044,9 +1044,9 @@ var form;
         };
         if (Array.isArray(field.options))
             for (x in field.options) _fix_subfield_options(name, field.options);
-        if (typeof field.options === 'object' && 'url' in field.options.url)
+        else if (typeof field.options === 'object' && 'url' in field.options)
             field.options.url = field.options.url.replace(rx, replacer);
-        else field.options = field.options.replace(rx, replacer);
+        else if (typeof field.options === 'string') field.options = field.options.replace(rx, replacer);
     }
 
     function _resolve_field_layout(name, layout, fields) {
