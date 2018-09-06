@@ -1038,6 +1038,17 @@ var form;
         return def;
     }
 
+    function _fix_subfield_options(name, field) {
+        let rx = /\{\{(\w*)\}\}/, replacer = function (match, item) {
+            return '{{' + name + '.' + item + '}}';
+        };
+        if (Array.isArray(field.options))
+            for (x in field.options) _fix_subfield_options(name, field.options);
+        if (typeof field.options === 'object' && 'url' in field.options.url)
+            field.options.url = field.options.url.replace(rx, replacer);
+        else field.options = field.options.replace(rx, replacer);
+    }
+
     function _resolve_field_layout(name, layout, fields) {
         var newLayout = [];
         for (let x in layout) {
@@ -1045,11 +1056,14 @@ var form;
             if (Array.isArray(layout[x])) {
                 layout[x] = _resolve_field_layout(name, layout[x], fields);
             } else if (typeof layout[x] === 'object') {
-                if ('fields' in layout[x]) layout[x].fields = _resolve_field_layout(name, layout[x].fields, fields);
+                if ('fields' in layout[x])
+                    layout[x].fields = _resolve_field_layout(name + '.' + x, ('layout' in layout[x] ? layout[x].layout : layout[x].fields), layout[x].fields);
                 else if ('name' in layout[x]) layout[x] = $.extend({}, fields[layout[x].name], layout[x]);
                 if (!('name' in layout[x]) && (name || !Array.isArray(layout))) layout[x].name = (name ? name + '.' : '') + x;
-            } else if (typeof layout[x] === 'string' && layout[x] in fields)
+            } else if (typeof layout[x] === 'string' && layout[x] in fields) {
                 layout[x] = $.extend(fields[layout[x]], { name: (name ? name + '.' : '') + layout[x] });
+                if ('options' in layout[x]) _fix_subfield_options(name, layout[x]);
+            }
             newLayout.push(layout[x]);
         }
         return newLayout;
