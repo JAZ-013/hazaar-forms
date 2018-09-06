@@ -1083,7 +1083,7 @@ var form;
             field = new Function('field', 'form', def.render)($.extend({}, def, { value: item_data.save(true) }), host);
             host.pageInputs.push(field);
         } else if ('fields' in def && def.type !== 'array') {
-            var layout = _resolve_field_layout(def.name, (('layout' in def) && def.layout ? def.layout : def.fields), def.fields);
+            var layout = _resolve_field_layout(def.name, (('layout' in def) && def.layout ? def.layout : $.extend(true, {}, def.fields)), def.fields);
             var length = (layout instanceof Array) ? layout.length : Object.keys(layout).length, fields = [], col_width;
             if (typeof p === 'undefined' || p === null) p = !(('layout' in def) && def.layout);
             for (let x in layout) {
@@ -1625,7 +1625,7 @@ var form;
         return _post(host, 'init').done(function (response) {
             if (!response.ok) return;
             if ('form' in response) host.def = response.form;
-            if ('tags' in response) host.tags = response.tags
+            if ('tags' in response) host.tags = response.tags;
             _prepare_field_definitions(host, host.def.fields);
             host.data = new dataBinder(_define(host.def.fields));
             $(host).trigger('load', [host.def]);
