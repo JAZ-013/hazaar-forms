@@ -193,7 +193,7 @@ var form;
 
     function _match_replace(host, str, extra, force, use_html) {
         if (!str) return null;
-        while ((match = str.match(/\{\{([\W]*)(\w+)\}\}/)) !== null) {
+        while ((match = str.match(/\{\{([\W]*)([\w\.]+)\}\}/)) !== null) {
             var modifiers = match[1].split(''), value = host ? _get_data_item(host.data, match[2]) : null;
             if (value === null) value = _get_data_item(extra, match[2]);
             if (modifiers.indexOf('!') === -1
@@ -567,7 +567,7 @@ var form;
         if (typeof options !== 'object' || Array.isArray(options) || Object.keys(options).length === 0)
             return select.prop('disabled', true).empty();
         if ('url' in options) {
-            var matches = options.url.match(/\{\{\w+\}\}/g);
+            var matches = options.url.match(/\{\{[\w\.]+\}\}/g);
             for (let x in matches) {
                 var match = matches[x].substr(2, matches[x].length - 4);
                 if (!(match in def.watchers)) def.watchers[match] = [];
@@ -1024,7 +1024,7 @@ var form;
     }
 
     function _form_field_lookup(def, info) {
-        if (info instanceof Object) def = ('name' in info ? $.extend({}, _form_field_lookup(def, info.name), info) : info);
+        if (info instanceof Object) def = 'name' in info ? $.extend({}, _form_field_lookup(def, info.name), info) : info;
         else {
             var parts = info.split(/[\.\[]/);
             for (let x in parts) {
