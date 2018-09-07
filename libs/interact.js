@@ -140,7 +140,8 @@ var form;
         try {
             return new Function('form', 'tags', 'item', code)(host.data, host.tags, item_data);
         } catch (e) {
-            console.error('Failed to evaluate condition: ' + evaluate);
+            console.error('Failed to evaluate condition: ' + e);
+            console.log(code);
         }
         return false;
     }
@@ -337,12 +338,12 @@ var form;
 
     function _input_event_focus(host, input) {
         var def = input.data('def');
-        if (def.focus) _eval_code(host, def.focus);
+        if (def.focus) _eval_code(host, def.focus, null, true);
     }
 
     function _input_event_blur(host, input) {
         var def = input.data('def');
-        if (def.blur) _eval_code(host, def.blur);
+        if (def.blur) _eval_code(host, def.blur, null, true);
     }
 
     function _input_button(host, def) {
@@ -362,7 +363,7 @@ var form;
                 btn.click(function () { document.location = _url(host, def.url); });
                 break;
             default:
-                btn.click(function () { _eval_code(host, def.action); });
+                btn.click(function () { _eval_code(host, def.action, null, true); });
                 break;
         }
         return group;
