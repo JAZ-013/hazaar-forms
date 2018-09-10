@@ -1057,9 +1057,10 @@ var form;
             if (Array.isArray(layout[x])) {
                 layout[x] = _resolve_field_layout(name, layout[x], fields);
             } else if (typeof layout[x] === 'object') {
-                if ('fields' in layout[x])
-                    layout[x].fields = _resolve_field_layout(name + '.' + x, ('layout' in layout[x] ? layout[x].layout : layout[x].fields), layout[x].fields);
-                else if ('name' in layout[x]) layout[x] = $.extend({}, fields[layout[x].name], layout[x]);
+                if ('fields' in layout[x]) {
+                    if (Array.isArray(layout[x].fields)) layout[x] = _resolve_field_layout(name, layout[x].fields, fields);
+                    else layout[x].fields = _resolve_field_layout(name + '.' + x, ('layout' in layout[x] ? layout[x].layout : layout[x].fields), layout[x].fields);
+                } else if ('name' in layout[x]) layout[x] = $.extend({}, fields[layout[x].name], layout[x]);
                 if (!('name' in layout[x]) && (name || !Array.isArray(layout))) layout[x].name = (name ? name + '.' : '') + x;
             } else if (typeof layout[x] === 'string' && layout[x] in fields) {
                 layout[x] = $.extend(fields[layout[x]], { name: (name ? name + '.' : '') + layout[x] });
