@@ -135,7 +135,7 @@ var form;
             else if (typeof value === 'object' || Array.isArray(value)) value = JSON.stringify(value);
             code += 'var ' + key + " = " + value + ";\n";
         }
-        if (no_return !== true) code += "return ( " + evaluate + " );";
+        if (no_return !== true) code += "return ( " + evaluate.replace(/[\;\s]+$/, '') + " );";
         else code += evaluate;
         try {
             return new Function('form', 'tags', 'item', code)(host.data, host.tags, item_data);
