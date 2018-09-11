@@ -941,9 +941,7 @@ var form;
         var item_data = _get_data_item(host.data, def.name);
         var group = $('<div class="itemlist">').addClass(host.settings.styleClasses.group).data('def', def);
         if (!(item_data instanceof dataBinderArray)) return group;
-        var label = $('<h4>').addClass(host.settings.styleClasses.label)
-            .html(_match_replace(host, def.label, null, true, true))
-            .appendTo(group);
+        $('<h4>').addClass(host.settings.styleClasses.label).html(_match_replace(host, def.label, null, true, true)).appendTo(group);
         var layout = _resolve_field_layout(host, def.fields, def.layout);
         var template = $('<div class="itemlist-item">');
         if (_eval(host, def.allow_remove, true)) {
@@ -1061,8 +1059,10 @@ var form;
                 var field = layout[x].name in fields ? fields[layout[x].name] : layout[x].name in host.def.fields ? host.def.fields[layout[x].name] : null;
                 if (!field || field.hidden === true) continue;
                 layout[x] = $.extend(true, {}, field, layout[x]);
-                if (name) layout[x].name = name + (a ? '[' + layout[x].name + ']' : '.' + layout[x].name);
-                if ('options' in layout[x]) _fix_subfield_options(name, layout[x]);
+                if (name) {
+                    layout[x].name = name + (a ? '[' + layout[x].name + ']' : '.' + layout[x].name);
+                    if ('options' in layout[x]) _fix_subfield_options(name, layout[x]);
+                }
             } else if ('fields' in layout[x]) {
                 if (!('layout' in layout[x])) layout[x].layout = Array.isArray(layout[x].fields) ? $.extend(true, [], layout[x].fields) : Object.keys(fields);
                 layout[x].fields = _resolve_field_layout(host, fields, layout[x].layout, name, a);
