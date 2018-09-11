@@ -1639,7 +1639,7 @@ var form;
         _load_definition(host).done(function (response) {
             _post(host, 'load').done(function (response) {
                 if (!response.ok) return;
-                for (let x in response.form) host.data[x] = response.form[x];
+                host.data.extend(response.form);
                 $(host).trigger('data', [host.data.save()]);
                 _nav(host, 0);
             }).fail(_error);
