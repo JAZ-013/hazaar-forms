@@ -1568,8 +1568,10 @@ var form;
         fd.append('params', JSON.stringify(host.settings.params));
         if (host.deloads.length > 0)
             fd.append('remove', JSON.stringify(host.deloads));
-        for (let x in host.uploads)
-            fd.append(host.uploads[x].field + '[' + x + ']', host.uploads[x].file);
+        for (let x in host.uploads) {
+            fd.append('__hz_form_file_names[' + x + ']', host.uploads[x].field);
+            fd.append('__hz_form_files[' + x + ']', host.uploads[x].file);
+        }
         return $.ajax({
             type: 'POST',
             data: fd,

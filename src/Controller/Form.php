@@ -381,12 +381,24 @@ abstract class Form extends Action {
 
         if($files->uploaded()){
 
-            foreach($files->getFile() as $key => $attachments){
+            $attachments = array();
 
-                if(!(is_array($attachments) && count($attachments) > 0))
+            $names = $this->request->get('__hz_form_file_names');
+
+            $files = $files->getFile('__hz_form_files');
+
+            foreach($files as $index => $file){
+
+                if(!($name = ake($names, $index)) && $file instanceof \Hazaar\File)
                     continue;
 
-                if(!$this->file_attach($key, $attachments, $params))
+                $attachments[$name][] = $file;
+
+            }
+
+            foreach($attachments as $name => $files){
+
+                if(!$this->file_attach($name, $files, $params))
                     throw new \Exception('Unknown error saving attachments!');
 
             }
