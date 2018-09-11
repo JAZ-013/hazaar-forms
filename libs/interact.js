@@ -944,7 +944,7 @@ var form;
         var label = $('<h4>').addClass(host.settings.styleClasses.label)
             .html(_match_replace(host, def.label, null, true, true))
             .appendTo(group);
-        var layout = _resolve_field_layout(null, (('layout' in def) ? def.layout : def.fields), def.fields);
+        var layout = _resolve_field_layout(host, def.fields, def.layout);
         var template = $('<div class="itemlist-item">');
         if (_eval(host, def.allow_remove, true)) {
             template.append($('<div class="itemlist-item-rm">')
@@ -1050,25 +1050,25 @@ var form;
         else if (typeof field.options === 'string') field.options = field.options.replace(rx, replacer);
     }
 
-    function _resolve_field_layout(name, layout, fields) {
-        var newLayout = [];
+    function _resolve_field_layout(host, fields, layout, name, a) {
+        if (!layout) layout = Array.isArray(fields) ? $.extend(true, [], fields) : Object.keys(fields);
         for (let x in layout) {
-            if (layout[x].hidden === true) continue;
+            if (typeof layout[x] === 'string') layout[x] = { name: layout[x] };
+            if (typeof layout[x] !== 'object') continue;
             if (Array.isArray(layout[x])) {
-                layout[x] = _resolve_field_layout(name, layout[x], fields);
-            } else if (typeof layout[x] === 'object') {
-                if ('fields' in layout[x]) {
-                    if (Array.isArray(layout[x].fields)) layout[x] = _resolve_field_layout(name, layout[x].fields, fields);
-                    else layout[x].fields = _resolve_field_layout(name + '.' + x, ('layout' in layout[x] ? layout[x].layout : layout[x].fields), layout[x].fields);
-                } else if ('name' in layout[x]) layout[x] = $.extend({}, fields[layout[x].name], layout[x]);
-                if (!('name' in layout[x]) && (name || !Array.isArray(layout))) layout[x].name = (name ? name + '.' : '') + x;
-            } else if (typeof layout[x] === 'string' && layout[x] in fields) {
-                layout[x] = $.extend(fields[layout[x]], { name: (name ? name + '.' : '') + layout[x] });
+                layout[x] = { fields: _resolve_field_layout(host, fields, layout[x], name, a) };
+            } else if ('name' in layout[x]) {
+                var field = layout[x].name in fields ? fields[layout[x].name] : layout[x].name in host.def.fields ? host.def.fields[layout[x].name] : null;
+                if (!field || field.hidden === true) continue;
+                layout[x] = $.extend(true, {}, field, layout[x]);
+                if (name) layout[x].name = name + (a ? '[' + layout[x].name + ']' : '.' + layout[x].name);
                 if ('options' in layout[x]) _fix_subfield_options(name, layout[x]);
+            } else if ('fields' in layout[x]) {
+                if (!('layout' in layout[x])) layout[x].layout = Array.isArray(layout[x].fields) ? $.extend(true, [], layout[x].fields) : Object.keys(fields);
+                layout[x].fields = _resolve_field_layout(host, fields, layout[x].layout, name, a);
             }
-            newLayout.push(layout[x]);
         }
-        return newLayout;
+        return layout;
     }
 
     function _form_field(host, info, p, populate, apply_rules) {
@@ -1085,8 +1085,8 @@ var form;
             field = new Function('field', 'form', def.render)($.extend({}, def, { value: item_data.save(true) }), host);
             host.pageInputs.push(field);
         } else if ('fields' in def && def.type !== 'array') {
-            var layout = _resolve_field_layout(def.name, (('layout' in def) && def.layout ? def.layout : $.extend(true, {}, def.fields)), def.fields);
-            var length = (layout instanceof Array) ? layout.length : Object.keys(layout).length, fields = [], col_width;
+            var layout = _resolve_field_layout(host, def.fields, def.layout, def.name);
+            var length = layout.length, fields = [], col_width;
             if (typeof p === 'undefined' || p === null) p = !(('layout' in def) && def.layout);
             for (let x in layout) {
                 var item = layout[x];
