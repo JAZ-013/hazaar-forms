@@ -1038,7 +1038,7 @@ var form;
     }
 
     function _fix_subfield_options(name, field) {
-        let rx = /\{\{(\w*)\}\}/, replacer = function (match, item) {
+        let rx = /\{\{(\w*)\}\}/g, replacer = function (match, item) {
             return '{{' + name + '.' + item + '}}';
         };
         if (Array.isArray(field.options))
