@@ -183,6 +183,8 @@ class Model extends \Hazaar\Model\Strict {
 
                         $def['type'] = ake($customType, 'type', 'text');
 
+                        $def['horizontal'] = false;
+
                     }
 
             }
