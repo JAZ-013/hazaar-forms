@@ -143,6 +143,8 @@ class HTML extends \Hazaar\Forms\Output {
 
         foreach($fields as $name => $field){
 
+            $horizontal = ake($field, 'horizontal', $horizontal);
+
             if(is_array($field) && !array_key_exists('name', $field)){
 
                 $html = new \Hazaar\Html\Div();
@@ -196,7 +198,9 @@ class HTML extends \Hazaar\Forms\Output {
                 if(property_exists($field, 'label'))
                     $group->add(new \Hazaar\Html\H4($field->label));
 
-                $group->add($this->__group(array((array)$field->fields), (property_exists($field, 'layout') ? !$horizontal : $horizontal)));
+                if ($horizontal === null) $p = !(property_exists($field, 'layout') && $field['layout']);
+
+                $group->add($this->__group(array((array)$field->fields), $horizontal));
 
                 $items[] = $group;
 

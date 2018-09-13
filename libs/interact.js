@@ -1080,6 +1080,7 @@ var form;
             let item_data = _get_data_item(host.data, def.name);
             if (item_data.value === null) item_data.value = def.default;
         }
+        if ('horizontal' in def) p = def.horizontal;
         if ('render' in def) {
             let item_data = _get_data_item(host.data, def.name);
             field = new Function('field', 'form', def.render)($.extend({}, def, { value: item_data.save(true) }), host);
@@ -1087,7 +1088,7 @@ var form;
         } else if ('fields' in def && def.type !== 'array') {
             var layout = _resolve_field_layout(host, def.fields, def.layout, def.name);
             var length = layout.length, fields = [], col_width;
-            if (typeof p === 'undefined' || p === null) p = !(('layout' in def) && def.layout);
+            if (typeof p === 'undefined' || p === null) p = !('layout' in def && def.layout);
             for (let x in layout) {
                 var item = layout[x];
                 if (typeof item === 'string') item = _form_field_lookup(host.def, item);
@@ -1619,8 +1620,10 @@ var form;
     function _prepare_field_definitions(host, fields) {
         if (!('types' in host.def)) return;
         for (x in fields) {
-            if ('type' in fields[x] && fields[x].type in host.def.types)
+            if ('type' in fields[x] && fields[x].type in host.def.types) {
                 jQuery.extend(true, fields[x], host.def.types[fields[x].type]);
+                fields[x].horizontal = false;
+            }
             if ('fields' in fields[x]) _prepare_field_definitions(host, fields[x].fields);
         }
     }
