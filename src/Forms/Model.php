@@ -156,6 +156,43 @@ class Model extends \Hazaar\Model\Strict {
 
     private function convert_definition(&$def){
 
+        if($type = ake($def, 'type')){
+
+            switch($type){
+                case 'date':
+
+                    $def['type'] = 'Hazaar\Date';
+
+                    break;
+
+                case 'file':
+
+                    $def['type'] = 'array';
+
+                    $def['arrayOf'] = 'string';
+
+                    $def['file'] = true;
+
+                    break;
+
+                default:
+
+                    if($customType = ake($this->__form->types, $def['type'])){
+
+                        $def = array_merge((array)$customType, $def);
+
+                        $def['type'] = ake($customType, 'type', 'text');
+
+                    }
+
+            }
+
+        }else{
+
+            $def['type'] = 'text';
+
+        }
+
         if(array_key_exists('fields', $def) && !array_key_exists('arrayOf', $def)){
 
             if(ake($def, 'type') === 'array'){
@@ -189,28 +226,7 @@ class Model extends \Hazaar\Model\Strict {
 
         }
 
-        switch(ake($def, 'type')){
-            case 'date':
-
-                $def['type'] = 'Hazaar\Date';
-
-                break;
-
-            case 'file':
-
-                $def['type'] = 'array';
-
-                $def['arrayOf'] = 'string';
-
-                $def['file'] = true;
-
-                break;
-
-        }
-
-        $type = ake($def, 'type');
-
-        if(array_key_exists('value', $def) && !($type === 'array' || $type === 'object')
+        if(array_key_exists('value', $def) && !($def['type'] === 'array' || $def['type'] === 'object')
             && array_key_exists('value', $def)
             && is_array($def['value'])){
 
@@ -928,7 +944,7 @@ class Model extends \Hazaar\Model\Strict {
             return "(((\$index = array_search('{$matches[2]}', " . $this->fixCodeItem($matches[1]) . ')) === false) ? -1 : $index)';
 
         if(strpos($item, '.') !== false)
-            $item = str_replace('.', '->', $item);
+            $item = preg_replace('/\.(\w+)/', '->$1', $item);
 
         if(!(substr($item, 0, 1) == "'" && substr($item, -1, 1) == "'") && !in_array(strtolower($item), $keywords) && !is_numeric($item))
             $item = '$' . $item;
