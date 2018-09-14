@@ -30,7 +30,7 @@ class Template {
 
     }
 
-    public function render($settings = array(), $form = null, $ixes = null){
+    public function render($params = array()){
 
         $this->html = new \Hazaar\View\Helper\Html();
 
@@ -40,7 +40,7 @@ class Template {
 
         $template = ob_get_clean();
 
-        return $this->form->matchReplace($template, true);
+        return $this->form->matchReplace($template, true, $params);
 
     }
 

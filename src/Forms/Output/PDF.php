@@ -62,7 +62,7 @@ class PDF extends HTML {
 
             $template = new Template($this->model, $template_source);
 
-            return $template->render();
+            return $template->render($this->params);
 
         }
 

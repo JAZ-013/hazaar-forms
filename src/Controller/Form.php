@@ -330,7 +330,7 @@ abstract class Form extends Action {
 
             if($type == 'html'){
 
-                $output = new \Hazaar\Forms\Output\HTML($this->form_model);
+                $output = new \Hazaar\Forms\Output\HTML($this->form_model, $params);
 
                 $response = new \Hazaar\Controller\Response\HTML();
 
@@ -338,7 +338,7 @@ abstract class Form extends Action {
 
             }else if($type == 'pdf'){
 
-                $output = new \Hazaar\Forms\Output\PDF($this->form_model);
+                $output = new \Hazaar\Forms\Output\PDF($this->form_model, $params);
 
                 $response = new \Hazaar\Controller\Response\PDF();
 
