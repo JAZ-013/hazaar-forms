@@ -13,7 +13,7 @@ $ cd formstest
 
 This will install the example application and all it's requirements.  
 
-## Importing the ```hazaar-forms``` Library
+## Importing the `hazaar-forms` Library
 
 Next we need to add the *hazaar-forms* library as a dependency, so run:
 
@@ -113,7 +113,7 @@ Pages, sections and fields all have a label and will be rendered in rows using [
 
 ## Creating a Form View
 
-A form view is exactly the same as any other [Hazaar MVC] PHTML view file *(note that we are only editing the controller view and we assume that the layout view is already working)*.  So, with whatever your view currently looks like, all you need to do is call the forms controller's ```layout()``` function where you want the form rendered.
+A form view is exactly the same as any other [Hazaar MVC] PHTML view file *(note that we are only editing the controller view and we assume that the layout view is already working)*.  So, with whatever your view currently looks like, all you need to do is call the forms controller's `layout()` function where you want the form rendered.
 
 ```php
 <div class="container p-5">
@@ -134,9 +134,9 @@ In this view, we are using the [Bootstrap] **card** class to layout the form ins
 
 ## Initialising the Form
 
-Now that our form is defined and our view updated to call the ```layout()``` method, we need to load it up in the controller.  
+Now that our form is defined and our view updated to call the `layout()` method, we need to load it up in the controller.  
 
-To do that, simple add ```$this->form('mytestform`);``` to the ```index()``` method so that it looks like this:
+To do that, simple add `$this->form('mytestform`);` to the `index()` method so that it looks like this:
 
 ```php
 public function index(){
@@ -156,7 +156,7 @@ At this point though, your form won't really do much other than render on the pa
 
 ## The Form Save Method
 
-To show how simple this is, we will add a button that saves our form data.  Before we can do this though, we need to implement the method that will receive our form data on our Index controller.  Modify the Index controller and add a method called ```form_save``` as below:
+To show how simple this is, we will add a button that saves our form data.  Before we can do this though, we need to implement the method that will receive our form data on our Index controller.  Modify the Index controller and add a method called `form_save` as below:
 
 ```php
 protected function form_save($model, &$params = array()){
@@ -172,11 +172,11 @@ protected function form_save($model, &$params = array()){
 
 This method is called by the underlying Forms controller and passed a [\Hazaar\Forms\Model].  This is basically a [\Hazaar\Model\Strict] object with some extra form stuff on top of it.  The Forms model basically loads in the form definition and enforces field data types as well as validation rules and other such things.
 
-Our ```form_save()``` method implementation simply converts the form data into an array and saves it into a cache object.
+Our `form_save()` method implementation simply converts the form data into an array and saves it into a cache object.
 
 ## The Form Load Method
 
-To get the data back out when the form loads, we need to implement a ```form_load()``` method that loads the form data and returns it to the Forms controller.  It is almost the exact reverse of the above method:
+To get the data back out when the form loads, we need to implement a `form_load()` method that loads the form data and returns it to the Forms controller.  It is almost the exact reverse of the above method:
 
 ```php
 protected function form_load(&$params = array()){
@@ -194,7 +194,7 @@ As you can see above, all we are doing here is loading the form data out of cach
 
 The last piece of the puzzle is telling the forms engine to save the form data.  To do that we will simply add a button to our view using a built-in helper function.  Because the Forms Controller is a supe'd up Action controller, we have the ability to use view helpers.  The forms library supplies it's own view helper which has a few useful functions for working with the forms engine.
 
-To add a save button to the view, we simply need to call the ```btnSave()``` method on the forms view helper.  So modify your view so that it looks like this:
+To add a save button to the view, we simply need to call the `btnSave()` method on the forms view helper.  So modify your view so that it looks like this:
 
 ```php
 <div class="container p-5">
@@ -214,7 +214,7 @@ To add a save button to the view, we simply need to call the ```btnSave()``` met
 </div>
 ```
 
-The view helper call is ```$this->form->btnSave('Save')->class('btn btn-primary');``` and what this does is outputs a HTML button element with the content *Save*.  It also generates a tiny little bit of JavaScript that links to the form we have displayed so that when the user clicks this button, the form data is sent to the server and saved using our ```form_save()``` method.
+The view helper call is `$this->form->btnSave('Save')->class('btn btn-primary');` and what this does is outputs a HTML button element with the content *Save*.  It also generates a tiny little bit of JavaScript that links to the form we have displayed so that when the user clicks this button, the form data is sent to the server and saved using our `form_save()` method.
 
 # Form Parameters
 
@@ -222,7 +222,7 @@ The final piece when creating forms is being able to attach extra data to the fo
 
 ## Setting a Parameter
 
-This is super easy to do.  In our ```index()``` method on our controller where we initialise the form, parameters are passed as an array argument to the function call.  So if we update out ```index()``` method from above to include an id, all we have to do is add an array parameter with an *id* attribute.
+This is super easy to do.  In our `index()` method on our controller where we initialise the form, parameters are passed as an array argument to the function call.  So if we update out `index()` method from above to include an id, all we have to do is add an array parameter with an *id* attribute.
 
 ```php
 public function index(){
@@ -234,15 +234,15 @@ public function index(){
 }
 ```
 
-The form parameter is now set and there is an *id* attribute with an integer value of ```1234```.
+The form parameter is now set and there is an *id* attribute with an integer value of `1234`.
 
 ## Using a Parameter
 
-As we have already covered earlier, to implement the complete functionality of a form we need to override some built-in class methods on the form controller.  We have already overridden the ```form_save()``` and ```form_load()``` methods, so let's update those to use our new *id* parameter.
+As we have already covered earlier, to implement the complete functionality of a form we need to override some built-in class methods on the form controller.  We have already overridden the `form_save()` and `form_load()` methods, so let's update those to use our new *id* parameter.
 
-### Parameters with ```form_save()```
+### Parameters with `form_save()`
 
-So the ```form_save()``` method takes two parameters.  The first is the form data model that is being saved and the second is the form parameter array.  So using the implementation of the ```form_save()``` method we created above, we will update the function to use our new *id* parameter to update a database record.
+So the `form_save()` method takes two parameters.  The first is the form data model that is being saved and the second is the form parameter array.  So using the implementation of the `form_save()` method we created above, we will update the function to use our new *id* parameter to update a database record.
 
 ```php
 protected function form_save($model, &$params = array()){
@@ -254,11 +254,11 @@ protected function form_save($model, &$params = array()){
 }
 ```
 
-For details on the default implementation of the ```form_save()``` method see the [Hazaar\Controller\Form::form_save()](http://www.hazaarmvc.com/apidoc/class/Hazaar/Controller/Form#func_form_save) documentation.
+For details on the default implementation of the `form_save()` method see the [Hazaar\Controller\Form::form_save()](http://www.hazaarmvc.com/apidoc/class/Hazaar/Controller/Form#func_form_save) documentation.
 
-### Parameters with ```form_load()```
+### Parameters with `form_load()`
 
-So the ```form_load()``` method only takes a single parameter which is the form parameter array.  So using the implementation of the ```form_load()``` method we created above, we will update the function to use our new *id* parameter to retrieve a database record and return it as the data array used to populate the forms model.
+So the `form_load()` method only takes a single parameter which is the form parameter array.  So using the implementation of the `form_load()` method we created above, we will update the function to use our new *id* parameter to retrieve a database record and return it as the data array used to populate the forms model.
 
 ```php
 protected function form_load(&$params = array()){
@@ -270,7 +270,7 @@ protected function form_load(&$params = array()){
 }
 ```
 
-For details on the default implementation of the ```form_load()``` method see the [Hazaar\Controller\Form::form_load()](http://www.hazaarmvc.com/apidoc/class/Hazaar/Controller/Form#func_form_load) documentation.
+For details on the default implementation of the `form_load()` method see the [Hazaar\Controller\Form::form_load()](http://www.hazaarmvc.com/apidoc/class/Hazaar/Controller/Form#func_form_load) documentation.
 
 # Wrap Up
 
