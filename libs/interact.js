@@ -196,10 +196,13 @@ var form;
         if (!str) return null;
         while ((match = str.match(/\{\{([\W]*)([\w\.]+)\}\}/)) !== null) {
             var modifiers = match[1].split(''), value = host ? _get_data_item(host.data, match[2]) : null;
-            if (value === null) value = _get_data_item(extra, match[2]);
+            if (value === null) value = (match[2].substr(0, 7) === 'params.'
+                ? _get_data_item(host.settings.params, match[2].substr(7))
+                : _get_data_item(extra, match[2]));
             if (modifiers.indexOf('!') === -1
                 && (value instanceof dataBinderValue ? value.value : value) === null
                 && force !== true) return false;
+            if (modifiers.indexOf('>') !== -1) use_html = false;
             var text = value instanceof dataBinderValue ? modifiers.indexOf(':') === -1 ? value.value : value : value;
             var out = use_html ? '<span data-bind="' + match[2] + '">' + text + '</span>' : text || '';
             str = str.replace(match[0], out);
@@ -1584,7 +1587,7 @@ var form;
         if (track === true) _track(host);
         var params = $.extend(true, {}, {
             name: host.settings.form,
-            params: host.settings.params,
+            params: host.settings.params
         }, postdata);
         return $.ajax({
             method: "POST",
