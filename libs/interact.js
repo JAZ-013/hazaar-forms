@@ -455,7 +455,7 @@ var form;
     function _input_select_multi_populate(host, options, container, track) {
         var def = container.data('def');
         if ('url' in options) {
-            var matches = options.url.match(/\{\{\w+\}\}/g);
+            var matches = options.url.match(/\{\{[\w\.]+\}\}/g);
             for (let x in matches) {
                 var match = matches[x].substr(2, matches[x].length - 4);
                 if (!(match in def.watchers)) def.watchers[match] = [];
@@ -1170,9 +1170,7 @@ var form;
         if ('html' in def) {
             var html = def.html;
             if ('label' in def && field.children().length === 0) field.append($('<label>').addClass(host.settings.styleClasses.label).html(def.label));
-            while ((match = html.match(/\{\{(\w+)\}\}/)) !== null)
-                html = html.replace(match[0], '<span data-bind="' + [match[1]] + '"></span>');
-            field.append($('<div>').html(html));
+            field.append($('<div>').html(_match_replace(host, html, null, true, true)));
         }
         if ('show' in def && apply_rules !== false) _make_showable(host, def, field);
         if ('hint' in def)
