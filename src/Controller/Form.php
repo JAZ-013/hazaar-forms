@@ -317,7 +317,9 @@ abstract class Form extends Action {
             if(!($name = $this->request->get('name')))
                 throw new \Exception('No form name specified!');
 
-            $params = ($this->request->has('params') ? unserialize($this->request->params) : array());
+            $params = ($this->request->has('params') ? $this->request->params : array());
+
+            if(is_string($params)) $params = unserialize($params);
 
             $this->form($name, $params, $type);
 
