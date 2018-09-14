@@ -285,7 +285,8 @@ abstract class Form extends Action {
             'form' => $this->form_model->getName(),
             'controller' => strtolower($this->getName()),
             'update' => method_exists($this, 'update'),
-            'maxUploadSize' => \Hazaar\File\Upload::getMaxUploadSize()
+            'maxUploadSize' => \Hazaar\File\Upload::getMaxUploadSize(),
+            'url' => (string)$this->application->url()
         ));
 
         if($this->form_params)

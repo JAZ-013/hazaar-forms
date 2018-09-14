@@ -196,8 +196,8 @@ var form;
         if (!str) return null;
         while ((match = str.match(/\{\{([\W]*)([\w\.]+)\}\}/)) !== null) {
             var modifiers = match[1].split(''), value = host ? _get_data_item(host.data, match[2]) : null;
-            if (value === null) value = (match[2].substr(0, 7) === 'params.'
-                ? _get_data_item(host.settings.params, match[2].substr(7))
+            if (value === null) value = (match[2].substr(0, 5) === 'this.'
+                ? _get_data_item(host.settings, match[2].substr(5))
                 : _get_data_item(extra, match[2]));
             if (modifiers.indexOf('!') === -1
                 && (value instanceof dataBinderValue ? value.value : value) === null
