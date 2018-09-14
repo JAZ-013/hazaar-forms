@@ -326,13 +326,15 @@ abstract class Form extends Action {
 
             $this->form_model->lock();
 
+            $template = $this->request->get('template');
+
             if($type == 'html'){
 
                 $output = new \Hazaar\Forms\Output\HTML($this->form_model);
 
                 $response = new \Hazaar\Controller\Response\HTML();
 
-                $response->setContent($output->render());
+                $response->setContent($output->render(array('template' => $template)));
 
             }else if($type == 'pdf'){
 
@@ -340,7 +342,7 @@ abstract class Form extends Action {
 
                 $response = new \Hazaar\Controller\Response\PDF();
 
-                $response->setContent($output->render());
+                $response->setContent($output->render(array('template' => $template)));
 
                 $response->setTitle($this->form_model->getPDFTitle($params));
 

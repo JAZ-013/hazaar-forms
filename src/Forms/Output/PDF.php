@@ -55,9 +55,12 @@ class PDF extends HTML {
         $form = $this->model->resolve();
 
         if(property_exists($form, 'pdf')
-            && property_exists($form->pdf, 'template')){
+            && property_exists($form->pdf, 'templates')){
 
-            $template = new Template($this->model, $form->pdf->template);
+            if(!($template_source = ake($form->pdf->templates, $template_name = ake($settings, 'template', 'default'))))
+                throw new \Exception('Unknown output template: ' . $template_name);
+
+            $template = new Template($this->model, $template_source);
 
             return $template->render();
 
