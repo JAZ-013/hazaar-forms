@@ -146,6 +146,23 @@ var form;
         return false;
     }
 
+    function _eval(host, script, default_value, item_data) {
+        if (typeof script === 'boolean') return script;
+        if (typeof script === 'undefined') return typeof default_value === 'undefined' ? false : default_value;
+        if (script.indexOf(';') !== -1)
+            return _eval_code(host, script);
+        var parts = script.split(/\s*(\&\&|\|\|)\s*/);
+        for (let x = 0; x < parts.length; x += 2) {
+            var matches = null;
+            if (!(matches = parts[x].match(/([\w\.\(\)\'\"]+)\s*([=\!\<\>]+)\s*(.+)/))) {
+                alert('Invalid evaluation script: ' + script);
+                return;
+            }
+            parts[x] = matches[1] + ' ' + matches[2] + ' ' + matches[3];
+        }
+        return _eval_code(host, parts.join(' '), item_data);
+    }
+
     function _nullify(host, def, name) {
         if (typeof def !== 'object' || def.protected || def.keep) return;
         if (!name && 'name' in def) name = def.name;
@@ -169,25 +186,10 @@ var form;
         }
     }
 
-    function _eval(host, script, default_value, item_data) {
-        if (typeof script === 'boolean') return script;
-        if (typeof script === 'undefined') return typeof default_value === 'undefined' ? false : default_value;
-        if (script.indexOf(';') !== -1)
-            return _eval_code(host, script);
-        var parts = script.split(/\s*(\&\&|\|\|)\s*/);
-        for (let x = 0; x < parts.length; x += 2) {
-            var matches = null;
-            if (!(matches = parts[x].match(/([\w\.\(\)\'\"]+)\s*([=\!\<\>]+)\s*(.+)/))) {
-                alert('Invalid evaluation script: ' + script);
-                return;
-            }
-            parts[x] = matches[1] + ' ' + matches[2] + ' ' + matches[3];
-        }
-        return _eval_code(host, parts.join(' '), item_data);
-    }
-
     function _toggle_show(host, obj) {
-        var toggle = _eval(host, obj.data('show'), true, obj.data('item')), def = obj.data('def');
+        var item_data = obj.data('item');
+        console.log(item_data);
+        var toggle = _eval(host, obj.data('show'), true, item_data), def = obj.data('def');
         obj.toggle(toggle);
         if (!toggle) _nullify(host, def, obj.data('name'));
     }
@@ -316,7 +318,7 @@ var form;
                         _validate_input(host, input);
                     }
                 }).fail(_error);
-            }
+            };
         } else _validate_input(host, input);
         if (host.events.show.length > 0) {
             for (let x in host.events.show)
@@ -1074,7 +1076,7 @@ var form;
         return layout;
     }
 
-    function _form_field(host, info, p, populate, apply_rules) {
+    function _form_field(host, info, p, populate, apply_rules, parent_item) {
         var def = null, field = null;
         if (info instanceof Array)
             info = { fields: info };
@@ -1089,8 +1091,9 @@ var form;
             field = new Function('field', 'form', def.render)($.extend({}, def, { value: item_data.save(true) }), host);
             host.pageInputs.push(field);
         } else if ('fields' in def && def.type !== 'array') {
-            var layout = _resolve_field_layout(host, def.fields, def.layout, def.name);
+            var layout = _resolve_field_layout(host, def.fields, ('layout' in def ? $.extend(true, [], def.layout) : null), def.name);
             var length = layout.length, fields = [], col_width;
+            var item_data = def.name ? _get_data_item(host.data, def.name) : parent_item;
             if (typeof p === 'undefined' || p === null) p = !('layout' in def && def.layout);
             for (let x in layout) {
                 var item = layout[x];
@@ -1100,21 +1103,17 @@ var form;
                     if (!('weight' in item)) item.weight = 1;
                     length = length + (item.weight - 1);
                 }
-                if (typeof item === 'object' && !Array.isArray(item)) {
-                    if (!("name" in item) && 'name' in def) item.name = def.name + '.' + x;
-                    if (info.protected === true) item.protected = true;
-                }
+                if (info.protected === true && typeof item === 'object' && !Array.isArray(item)) item.protected = true;
                 fields.push(item);
             }
             col_width = (12 / length);
             field = $('<div>').toggleClass('row', p).data('def', def);
             if ('label' in def) field.append($('<div class="col-md-12">').html($('<h5>').html(def.label)));
             for (let x in fields) {
-                var field_width = col_width;
+                var field_width = col_width, child_field = _form_field(host, fields[x], !p, populate, apply_rules, item_data);
                 if (fields[x] instanceof Object && ('weight' in fields[x]))
                     field_width = Math.round(field_width * fields[x].weight);
-                field.append($('<div>').toggleClass('col-lg-' + field_width, p)
-                    .html(_form_field(host, fields[x], !p, populate, apply_rules)));
+                field.append($('<div>').toggleClass('col-lg-' + field_width, p).html(child_field));
             }
         } else if ('options' in def) {
             if (def.type === 'array')
@@ -1158,6 +1157,7 @@ var form;
         } else {
             field = $('<div>');
         }
+        if (parent_item) field.data('item', parent_item);
         if ('tip' in def) {
             field.children('label.control-label').append($('<i class="fa fa-question-circle form-tip">')
                 .attr('data-title', def.tip)
