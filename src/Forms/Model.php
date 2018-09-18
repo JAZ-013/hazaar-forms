@@ -177,7 +177,7 @@ class Model extends \Hazaar\Model\Strict {
 
                 default:
 
-                    if($customType = ake($this->__form->types, $def['type'])){
+                    if(property_exists($this->__form, 'types') && ($customType = ake($this->__form->types, $def['type']))){
 
                         $def = array_merge((array)$customType, $def);
 
