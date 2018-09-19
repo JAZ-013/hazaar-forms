@@ -188,7 +188,6 @@ var form;
 
     function _toggle_show(host, obj) {
         var item_data = obj.data('item');
-        console.log(item_data);
         var toggle = _eval(host, obj.data('show'), true, item_data), def = obj.data('def');
         obj.toggle(toggle);
         if (!toggle) _nullify(host, def, obj.data('name'));
@@ -1618,14 +1617,22 @@ var form;
         return data;
     }
 
-    function _prepare_field_definitions(host, fields) {
+    function _prepare_field_definitions(host, fields, extra) {
         if (!('types' in host.def)) return;
         for (x in fields) {
+            let itemExtra = extra ? $.extend(true, {}, extra) : null;
             if ('type' in fields[x] && fields[x].type in host.def.types) {
-                jQuery.extend(true, fields[x], host.def.types[fields[x].type]);
+                let source_type = host.def.types[fields[x].type];
+                fields[x] = jQuery.extend(true, {}, fields[x], source_type, extra);
                 fields[x].horizontal = false;
-            }
-            if ('fields' in fields[x]) _prepare_field_definitions(host, fields[x].fields);
+                //Propagate some field options
+                itemExtra = {
+                    disabled: fields[x].disabled,
+                    protected: fields[x].protected,
+                    required: fields[x].required
+                };
+            } else if (itemExtra) jQuery.extend(true, fields[x], itemExtra);
+            if ('fields' in fields[x]) _prepare_field_definitions(host, fields[x].fields, itemExtra);
         }
     }
 
