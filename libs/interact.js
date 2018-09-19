@@ -117,13 +117,6 @@ var form;
         return data;
     }
 
-    function _exec(host, type, field) {
-        if (!(type in host.events && field in host.events[type]))
-            return false;
-        var obj = host.events[type][field];
-        return _eval_code(host, obj.data(type));
-    }
-
     function _eval_code(host, evaluate, item_data, no_return) {
         if (typeof evaluate === 'boolean') return evaluate;
         let code = '', values = host.data.save(true), keys = Object.keys(values).sort();
@@ -150,7 +143,7 @@ var form;
         if (typeof script === 'boolean') return script;
         if (typeof script === 'undefined') return typeof default_value === 'undefined' ? false : default_value;
         if (script.indexOf(';') !== -1)
-            return _eval_code(host, script);
+            return _eval_code(host, script, item_data);
         var parts = script.split(/\s*(\&\&|\|\|)\s*/);
         for (let x = 0; x < parts.length; x += 2) {
             var matches = null;
@@ -286,8 +279,8 @@ var form;
     }
 
     function _input_event_update(host, input) {
-        var def = input.data('def'), update = def.update, cb_done = null;
-        if (def.change) _eval_code(host, def.change, null, true);
+        var def = input.data('def'), update = def.update, cb_done = null, parent_item = _get_data_item(host.data, def.name).parent;
+        if (def.change) _eval_code(host, def.change, parent_item, true);
         if (typeof update === 'string') update = { "url": update };
         if (typeof update === 'boolean' || (update && ('url' in update || host.settings.update === true))) {
             var options = {
@@ -300,7 +293,7 @@ var form;
                     return update;
                 if (typeof update !== 'object') return false;
                 if (!('enabled' in update)) update.enabled = true;
-                if ('when' in update) update.enabled = _eval(host, update.when);
+                if ('when' in update) update.enabled = _eval(host, update.when, false, parent_item);
                 if (update.enabled) {
                     if (!('url' in update)) return true;
                     if ((url = _match_replace(host, update.url)) !== false) {
@@ -326,13 +319,13 @@ var form;
         if (host.events.required.length > 0) {
             for (let x in host.events.required) {
                 var field = host.events.required[x];
-                field.toggleClass('required', _eval(host, field.data('required'), false, field.data('item')));
+                field.toggleClass('required', _eval(host, field.data('required'), false, parent_item));
             }
         }
         if (host.events.disabled.length > 0) {
             for (let x in host.events.disabled) {
                 var i = host.events.disabled[x];
-                var disabled = _eval(host, i.data('disabled'));
+                var disabled = _eval(host, i.data('disabled'), false, parent_item);
                 i.prop('disabled', disabled);
             }
         }
@@ -341,13 +334,13 @@ var form;
     }
 
     function _input_event_focus(host, input) {
-        var def = input.data('def');
-        if (def.focus) _eval_code(host, def.focus, null, true);
+        var def = input.data('def'), parent_item = _get_data_item(host.data, def.name).parent;
+        if (def.focus) _eval_code(host, def.focus, parent_item, true);
     }
 
     function _input_event_blur(host, input) {
-        var def = input.data('def');
-        if (def.blur) _eval_code(host, def.blur, null, true);
+        var def = input.data('def'), parent_item = _get_data_item(host.data, def.name).parent;
+        if (def.blur) _eval_code(host, def.blur, parent_item, true);
     }
 
     function _input_button(host, def) {
@@ -1021,9 +1014,8 @@ var form;
 
     function _check_input_disabled(host, input, def) {
         if (!('disabled' in def) || def.protected) return false;
-        input.prop('disabled', _eval(host, def.disabled));
-        if (typeof def.disabled === 'string')
-            host.events.disabled.push(input.data('disabled', def.disabled));
+        input.prop('disabled', _eval(host, def.disabled, false, _get_data_item(host.data, $(input).attr('data-bind')).parent));
+        if (typeof def.disabled === 'string') host.events.disabled.push(input.data('disabled', def.disabled));
     }
 
     function _form_field_lookup(def, info) {
@@ -1349,7 +1341,7 @@ var form;
             var def = (typeof name === 'object') ? name : _form_field_lookup(host.def, name);
             if (def) {
                 var item = _get_data_item(host.data, def.name);
-                if (def.protected || ('disabled' in def && _eval(host, def.disabled))) {
+                if (def.protected || ('disabled' in def && _eval(host, def.disabled, false, item.parent))) {
                     for (let x in callbacks) callbacks[x](def.name, true, extra);
                 } else if ('fields' in def) {
                     let childItems = (def.type === 'array') ? item.save() : [item], childQueue = [], itemResult = [];
