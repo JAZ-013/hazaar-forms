@@ -433,7 +433,7 @@ var form;
         var def = container.data('def'), postops = {}, item_data = _get_data_item(host.data, def.name);
         Object.assign(postops, options);
         if ((postops.url = _match_replace(host, postops.url, { "site_url": hazaar.url() })) === false) {
-            container.hide();
+            container.parent().hide();
             item_data.value = [];
             return false;
         }
@@ -445,7 +445,7 @@ var form;
                 var remove = values.filter(function (i) { return !(i in data); });
                 for (let x in remove) item_data.remove(remove[x]);
             }
-            container.html(_input_select_multi_items(host, def, data)).show();
+            container.html(_input_select_multi_items(host, def, data)).parent().show();
             _ready(host);
         }).fail(_error);
         return true;
