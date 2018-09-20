@@ -821,11 +821,11 @@ var form;
                             popup = $('<div class="form-lookup-popup card">')
                                 .appendTo(input.parent().parent())
                                 .on('click', function (event) {
-                                    var target = $(event.target);
+                                    var target = $(event.target), data = target.data('lookup');
                                     if (!(target.is('.list-group-item') && typeof target.attr('data-value') === 'string'))
                                         return false;
-                                    item_data.set(target.attr('data-value'), target.text());
-                                    value_input.trigger('update');
+                                    item_data.set(target.attr('data-value'), target.text(),
+                                        'other' in def.lookup && def.lookup.other in data ? data[def.lookup.other] : null);
                                     popup.hide();
                                 });
                         }
@@ -844,11 +844,15 @@ var form;
                             data: query
                         }).always(function () {
                             listDIV.empty();
-                        }).done(function (items) {
-                            if ((Array.isArray(items) ? items.length : Object.keys(items).length) > 0) {
-                                for (let x in items)
+                        }).done(function (data) {
+                            data = _convert_data(data, valueKey, labelKey, def);
+                            if (Object.keys(data).length > 0) {
+                                for (let x in data) {
                                     listDIV.append($('<li class="list-group-item">')
-                                        .html(_kv(items[x], labelKey)).attr('data-value', _kv(items[x], valueKey)));
+                                        .html(_kv(data[x], labelKey))
+                                        .attr('data-value', _kv(data[x], valueKey))
+                                        .data('lookup', data[x]));
+                                }
                             } else listDIV.html($('<li class="list-group-item">').html('No results...'));
                         }).fail(function (r) {
                             listDIV.html($('<li class="list-group-item">').html('Error ' + r.status + ': ' + r.statusText));
