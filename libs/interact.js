@@ -180,8 +180,7 @@ var form;
     }
 
     function _toggle_show(host, obj) {
-        var item_data = obj.data('item');
-        var toggle = _eval(host, obj.data('show'), true, item_data), def = obj.data('def');
+        var toggle = _eval(host, obj.data('show'), true, obj.data('item')), def = obj.data('def');
         obj.toggle(toggle);
         if (!toggle) _nullify(host, def, obj.data('name'));
     }
