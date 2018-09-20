@@ -278,39 +278,42 @@ var form;
     }
 
     function _input_event_update(host, input) {
-        var def = input.data('def'), update = def.update, cb_done = null, parent_item = _get_data_item(host.data, def.name).parent;
+        var def = typeof input === 'string' ? _form_field_lookup(host.def, input) : input.data('def'),
+            update = def.update, cb_done = null, parent_item = _get_data_item(host.data, def.name).parent;
         if (def.change) _eval_code(host, def.change, parent_item, true);
         if (typeof update === 'string') update = { "url": update };
-        if (typeof update === 'boolean' || (update && ('url' in update || host.settings.update === true))) {
-            var options = {
-                originator: def.name,
-                form: host.data.save()
-            };
-            var check_api = function (host, update) {
-                var url = null;
-                if (typeof update === 'boolean')
-                    return update;
-                if (typeof update !== 'object') return false;
-                if (!('enabled' in update)) update.enabled = true;
-                if ('when' in update) update.enabled = _eval(host, update.when, false, parent_item);
-                if (update.enabled) {
-                    if (!('url' in update)) return true;
-                    if ((url = _match_replace(host, update.url)) !== false) {
-                        options.api = url;
-                        return true;
+        if (typeof input === 'object') {
+            if (typeof update === 'boolean' || (update && ('url' in update || host.settings.update === true))) {
+                var options = {
+                    originator: def.name,
+                    form: host.data.save()
+                };
+                var check_api = function (host, update) {
+                    var url = null;
+                    if (typeof update === 'boolean')
+                        return update;
+                    if (typeof update !== 'object') return false;
+                    if (!('enabled' in update)) update.enabled = true;
+                    if ('when' in update) update.enabled = _eval(host, update.when, false, parent_item);
+                    if (update.enabled) {
+                        if (!('url' in update)) return true;
+                        if ((url = _match_replace(host, update.url)) !== false) {
+                            options.api = url;
+                            return true;
+                        }
                     }
-                }
-                return false;
-            };
-            if (check_api(host, update)) cb_done = function () {
-                _post(host, 'update', options, false).done(function (response) {
-                    if (response.ok) {
-                        host.data.extend(response.updates);
-                        _validate_input(host, input);
-                    }
-                }).fail(_error);
-            };
-        } else _validate_input(host, input);
+                    return false;
+                };
+                if (check_api(host, update)) cb_done = function () {
+                    _post(host, 'update', options, false).done(function (response) {
+                        if (response.ok) {
+                            host.data.extend(response.updates);
+                            _validate_input(host, input);
+                        }
+                    }).fail(_error);
+                };
+            } else _validate_input(host, input);
+        }
         if (host.events.show.length > 0) {
             for (let x in host.events.show)
                 _toggle_show(host, host.events.show[x]);
@@ -1166,8 +1169,11 @@ var form;
             field.append($('<div>').html(_match_replace(host, html, null, true, true)));
         }
         if ('show' in def && apply_rules !== false) _make_showable(host, def, field);
-        if ('hint' in def)
-            field.append($('<small class="form-text text-muted">').html(_match_replace(host, def.hint, null, true, true)));
+        if ('hint' in def) field.append($('<small class="form-text text-muted">').html(_match_replace(host, def.hint, null, true, true)));
+        if ('watch' in def) {
+            if (!Array.isArray(def.watch)) def.watch = [def.watch];
+            for (x in def.watch) host.data.watch(def.watch[x], function (field) { _input_event_update(host, field); });
+        }
         return field;
     }
 
