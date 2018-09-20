@@ -563,6 +563,7 @@ var form;
     }
 
     function _input_select_populate(host, options, select, track) {
+        if (!options) return select.empty();
         var def = select.data('def'), item_data = _get_data_item(host.data, select.attr('data-bind'));
         if (typeof options !== 'object' || Array.isArray(options) || Object.keys(options).length === 0)
             return select.prop('disabled', true).empty();
