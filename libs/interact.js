@@ -612,6 +612,8 @@ var form;
                     host.data.watch(def.watch, watch_func);
                 }
             }
+        } else if (def.options instanceof dataBinderValue) {
+            options = typeof def.options.value === 'object' ? def.options.value : typeof def.options.other === 'object' ? def.options.other : null;
         } else Object.assign(options, def.options);
         if (typeof cb === 'function') cb(select, options);
         return options;
@@ -639,7 +641,16 @@ var form;
         if ('css' in def) select.css(def.css);
         if ('cssClass' in def) select.addClass(def.cssClass);
         _check_input_disabled(host, select, def);
-        if (typeof def.options === 'string') def.options = { url: def.options };
+        if (typeof def.options === 'string') {
+            let match = def.options.match(/\{\{[\w\.]+\}\}/);
+            if (match !== null) {
+                var field = def.options.substr(2, def.options.length - 4);
+                host.data.watch(field, function (key, value, label, other) {
+                    _input_select_populate(host, typeof value === 'object' ? value : typeof other === 'object' ? other : null, select);
+                });
+                def.options = _get_data_item(host.data, field);
+            } else def.options = { url: def.options };
+        }
         if (populate !== false) _input_select_options(host, def, select, null, function (select, options) {
             _input_select_populate(host, options, select);
         });
