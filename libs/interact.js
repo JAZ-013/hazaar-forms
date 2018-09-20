@@ -642,13 +642,12 @@ var form;
         if ('cssClass' in def) select.addClass(def.cssClass);
         _check_input_disabled(host, select, def);
         if (typeof def.options === 'string') {
-            let match = def.options.match(/\{\{[\w\.]+\}\}/);
+            let match = def.options.match(/^\{\{([\w\.]+)\}\}$/);
             if (match !== null) {
-                var field = def.options.substr(2, def.options.length - 4);
-                host.data.watch(field, function (key, value, label, other) {
-                    _input_select_populate(host, typeof value === 'object' ? value : typeof other === 'object' ? other : null, select);
+                host.data.watch(match[1], function (key, item) {
+                    _input_select_populate(host, typeof item.value === 'object' ? item.value : typeof item.other === 'object' ? item.other : null, select);
                 });
-                def.options = _get_data_item(host.data, field);
+                def.options = _get_data_item(host.data, match[1]);
             } else def.options = { url: def.options };
         }
         if (populate !== false) _input_select_options(host, def, select, null, function (select, options) {
