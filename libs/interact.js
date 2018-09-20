@@ -452,6 +452,7 @@ var form;
     }
 
     function _input_select_multi_populate(host, options, container, track) {
+        if (!options) return container.empty();
         var def = container.data('def');
         if ('url' in options) {
             var matches = options.url.match(/\{\{[\w\.]+\}\}/g);
@@ -485,7 +486,15 @@ var form;
             container.attr('data-bind', def.name).attr('data-toggle', 'checks');
         }
         def.watchers = {};
-        if (typeof def.options === 'string') def.options = { "url": def.options };
+        if (typeof def.options === 'string') {
+            let match = def.options.match(/^\{\{([\w\.]+)\}\}$/);
+            if (match !== null) {
+                host.data.watch(match[1], function (key, item, container) {
+                    _input_select_multi_populate(host, typeof item.value === 'object' ? item.value : typeof item.other === 'object' ? item.other : null, container);
+                }, container);
+                def.options = _get_data_item(host.data, match[1]);
+            } else def.options = { url: def.options };
+        }
         _input_select_options(host, def, container, null, function (select, options) {
             _input_select_multi_populate(host, options, select, true);
         });
@@ -645,9 +654,9 @@ var form;
         if (typeof def.options === 'string') {
             let match = def.options.match(/^\{\{([\w\.]+)\}\}$/);
             if (match !== null) {
-                host.data.watch(match[1], function (key, item) {
+                host.data.watch(match[1], function (key, item, select) {
                     _input_select_populate(host, typeof item.value === 'object' ? item.value : typeof item.other === 'object' ? item.other : null, select);
-                });
+                }, select);
                 def.options = _get_data_item(host.data, match[1]);
             } else def.options = { url: def.options };
         }
