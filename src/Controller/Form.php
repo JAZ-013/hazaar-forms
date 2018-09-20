@@ -18,7 +18,14 @@ abstract class Form extends Action {
 
     protected $__initialized = false;
 
+    protected $__form_path;
+
     public function __initialize(\Hazaar\Application\Request $request) {
+
+        if(!($path = $this->application->config->paths->get('forms')))
+            $path = 'forms';
+
+        $this->setFormPath($path);
 
         parent::__initialize($request);
 
@@ -514,14 +521,12 @@ abstract class Form extends Action {
 
     protected function form_get($name, $tags){
 
-        $app = \Hazaar\Application::getInstance();
-
         $file = $name . '.json';
 
-        if(!($source = $app->filePath('forms', $file, true)))
-            throw new \Exception('Form model source not found: ' . $file);
+        if(!$this->__form_path instanceof \Hazaar\File\Dir)
+            throw new \Exception('This controller does not have a forms source directory!');
 
-        $source_file = new \Hazaar\File($source);
+        $source_file = $this->__form_path->get($file);
 
         if(!$source_file->exists())
             throw new \Exception('Form model source file not found!', 500);
@@ -535,16 +540,12 @@ abstract class Form extends Action {
 
     protected function form_dir($include_hidden = false){
 
+        if(!$this->__form_path instanceof \Hazaar\File\Dir)
+            throw new \Exception('This controller does not have a forms source directory!');
+
         $list = array();
 
-        $app = \Hazaar\Application::getInstance();
-
-        if(!($source = $app->filePath('forms')))
-            return $list;
-
-        $dir = new \Hazaar\File\Dir($source);
-
-        $files = $dir->find('*.json');
+        $files = $this->__form_path->find('*.json');
 
         foreach($files as $file){
 
@@ -672,6 +673,21 @@ abstract class Form extends Action {
         }
 
         return true;
+
+    }
+
+    /**
+     * Set the path to load form definitions from, relative to the current application path.
+     *
+     * If you wish to load forms from a directory outside the application path, you are still
+     * able to override the `Hazaar\Controller\Form::get_form()` method to build your own
+     * form definition loader.
+     *
+     * @param string $path
+     */
+    protected function setFormPath($path){
+
+        $this->__form_path = new \Hazaar\File\Dir(APPLICATION_PATH . DIRECTORY_SEPARATOR .$path);
 
     }
 
