@@ -368,7 +368,16 @@ var form;
         return group;
     }
 
-    function _input_select_multi_items(host, def, data) {
+    function _input_select_multi_items(host, data, container) {
+        var def = container.data('def'), item_data = _get_data_item(host.data, def.name);
+        if (data === null || Array.isArray(data) && data.length === 0) {
+            return container.parent().hide();
+        }
+        var values = item_data.save(true);
+        if (values) {
+            var remove = values.filter(function (i) { return !(i in data); });
+            for (let x in remove) item_data.remove(remove[x]);
+        }
         var fChange = function () {
             var value = this.childNodes[0].value;
             var item_data = _get_data_item(host.data, def.name);
@@ -427,35 +436,27 @@ var form;
         }
         if ('cssClass' in def) cols.addClass(def.cssClass);
         return cols.html(items);
+        return container.html(cols.html(items)).parent().show();
     }
 
     function _input_select_multi_populate_ajax(host, options, container, track) {
-        var def = container.data('def'), postops = {}, item_data = _get_data_item(host.data, def.name);
+        var postops = {};
         Object.assign(postops, options);
         if ((postops.url = _match_replace(host, postops.url, { "site_url": hazaar.url() })) === false) {
-            container.parent().hide();
-            item_data.value = [];
-            return false;
+            return _input_select_multi_items(host, null, container);
         }
         if (track === true) _track(host);
         postops.url = _url(host, postops.url);
         $.ajax(postops).done(function (data) {
-            var values = item_data.save(true);
-            if (values) {
-                var remove = values.filter(function (i) { return !(i in data); });
-                for (let x in remove) item_data.remove(remove[x]);
-            }
-            container.html(_input_select_multi_items(host, def, data)).parent().show();
+            _input_select_multi_items(host, data, container);
             _ready(host);
         }).fail(_error);
         return true;
     }
 
     function _input_select_multi_populate(host, options, container, track) {
-        if (!options) return container.empty();
-        var def = container.data('def');
-        if ('url' in options) {
-            var matches = options.url.match(/\{\{[\w\.]+\}\}/g);
+        if (options !== null && typeof options === 'object' && 'url' in options) {
+            var matches = options.url.match(/\{\{[\w\.]+\}\}/g), def = container.data('def');
             for (let x in matches) {
                 var match = matches[x].substr(2, matches[x].length - 4);
                 if (!(match in def.watchers)) def.watchers[match] = [];
@@ -465,7 +466,7 @@ var form;
             }
             return _input_select_multi_populate_ajax(host, options, container, track);
         }
-        container.empty().append(_input_select_multi_items(host, def, options));
+        _input_select_multi_items(host, options, container);
         return true;
     }
 
