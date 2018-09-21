@@ -1639,10 +1639,11 @@ var form;
     }
 
     function _prepare_field_definitions(host, fields, extra) {
-        if (!('types' in host.def)) return;
         for (x in fields) {
             let itemExtra = extra ? $.extend(true, {}, extra) : null;
-            if ('type' in fields[x] && fields[x].type in host.def.types) {
+            if (!('type' in fields[x]) && ('options' in fields[x] || 'lookup' in fields[x])) {
+                fields[x].type = 'text';
+            } else if ('type' in fields[x] && 'types' in host.def && fields[x].type in host.def.types) {
                 let source_type = host.def.types[fields[x].type];
                 fields[x] = jQuery.extend(true, {}, fields[x], source_type, extra);
                 fields[x].horizontal = false;
