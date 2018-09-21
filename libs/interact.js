@@ -371,6 +371,9 @@ var form;
     function _input_select_multi_items(host, data, container) {
         var def = container.data('def'), item_data = _get_data_item(host.data, def.name);
         if (data === null || Array.isArray(data) && data.length === 0) {
+            item_data.empty();
+            item_data.enabled(false);
+            _input_event_update(host, def.name);
             return container.parent().hide();
         }
         var values = item_data.save(true);
@@ -435,7 +438,8 @@ var form;
             if (items[column].children().length >= per_col) column++;
         }
         if ('cssClass' in def) cols.addClass(def.cssClass);
-        return cols.html(items);
+        item_data.enabled(true);
+        _input_event_update(host, def.name);
         return container.html(cols.html(items)).parent().show();
     }
 
@@ -502,83 +506,80 @@ var form;
         return group;
     }
 
-    function _input_select_populate_ajax(host, options, select, track) {
-        var def = select.data('def'), postops = {}, item_data = _get_data_item(host.data, select.attr('data-bind'));
-        Object.assign(postops, options);
-        if ((postops.url = _match_replace(host, postops.url, { "site_url": hazaar.url() })) === false) {
-            select.empty().prop('disabled', true);
+    function _input_select_items(host, data, select) {
+        var item_data = _get_data_item(host.data, select.attr('data-bind')), def = select.data('def'), options = def.options;
+        var valueKey = options.value || 'value', labelKey = options.label || 'label';
+        select.prop('disabled', !(def.disabled !== true && def.protected !== true));
+        if (data === null || typeof data !== 'object' || Array.isArray(data) && data.length === 0 || Object.keys(data).length === 0) {
             _nullify(host, def);
-            return;
+            item_data.enabled(false);
+            _input_event_update(host, def.name);
+            return select.empty().prop('disabled', true);
         }
-        if (track !== false) select.prop('disabled', true).html($('<option value selected>').html('Loading...'));
-        postops.url = _url(host, postops.url);
-        $.ajax(postops).done(function (data) {
-            var item_data = _get_data_item(host.data, select.attr('data-bind'));
-            var required = ('required' in def) ? _eval(host, def.required) : false;
-            var valueKey = options.value || 'value', labelKey = options.label || 'label';
-            var default_item = (item_data && item_data.value === null && 'default' in options) ? options.default : null;
-            select.prop('disabled', !(def.disabled !== true && def.protected !== true));
-            if ((data === null || typeof data !== 'object')
-                || (Array.isArray(data) && data.length === 0)
-                || Object.keys(data).length === 0) {
-                select.empty().append($('<option>').attr('value', '').html('No data!'));
-                return;
+        select.empty().append($('<option>').attr('value', '').html(def.placeholder));
+        data = _convert_data(data, valueKey, labelKey, def);
+        if ('sort' in options) {
+            if (typeof options.sort === 'boolean') options.sort = labelKey;
+            data = _sort_data(data, options.sort, labelKey, valueKey);
+        }
+        var default_item = item_data && item_data.value === null && 'default' in options ? options.default : null;
+        for (let x in data) {
+            if ('filter' in options && options.filter.indexOf(data[x][labelKey]) === -1) {
+                delete data[x];
+                continue;
             }
-            select.empty().append($('<option>').attr('value', '').html(def.placeholder));
-            data = _convert_data(data, valueKey, labelKey, def);
-            if ('sort' in options) {
-                if (typeof options.sort === 'boolean') options.sort = labelKey;
-                data = _sort_data(data, options.sort, labelKey, valueKey);
-            }
-            for (let x in data) {
-                if ('filter' in options && options.filter.indexOf(data[x][labelKey]) === -1) {
-                    delete data[x];
-                    continue;
-                }
-                var option = $('<option>').attr('value', data[x][valueKey])
-                    .html((labelKey.indexOf('{{') > -1)
-                        ? _match_replace(null, labelKey, data[x], true)
-                        : data[x][labelKey]).appendTo(select);
-                if (data[x][valueKey] === '__spacer__') option.prop('disabled', true).addClass('form-select-spacer');
-                if ('other' in options && typeof options.other === 'string')
-                    option.data('other', (options.other.indexOf('{{') > -1)
-                        ? _match_replace(null, options.other, data[x], true)
-                        : data[x][options.other]);
-                if (default_item !== null && data[x][labelKey] === default_item)
-                    item_data.set(data[x][valueKey], data[x][labelKey], data[x][options.other]);
-            }
-            if ('other' in def && _eval(host, def.other) === true) {
-                select.append($('<option>').attr('value', '__hz_other').html("Other"));
-                if (def.name in item_data && item_data[def.name].value === null && item_data[def.name].other !== null)
-                    select.val('__hz_other').change();
-            }
-            if (item_data) {
-                if (item_data.value && data.find(function (e, index, obj) {
-                    return e && e[valueKey] === item_data.value;
-                })) select.val(item_data.value);
-                else if (item_data.value === null && item_data.other !== null) {
-                    select.val('__hz_other').change();
-                } else {
-                    item_data.value = null;
-                    if (Object.keys(data).length === 1 && options.single === true) {
-                        var item = data[Object.keys(data)[0]], key = _is_int(def, item[valueKey]);
-                        if (item_data.value !== key) {
-                            item_data.set(key, (labelKey.indexOf('{{') > -1) ? _match_replace(null, labelKey, item, true) : item[labelKey]);
-                            if ('other' in options && options.other in item) item_data.other = item[options.other];
-                        }
+            var option = $('<option>').attr('value', data[x][valueKey])
+                .html((labelKey.indexOf('{{') > -1)
+                    ? _match_replace(null, labelKey, data[x], true)
+                    : data[x][labelKey]).appendTo(select);
+            if (data[x][valueKey] === '__spacer__') option.prop('disabled', true).addClass('form-select-spacer');
+            if ('other' in options && typeof options.other === 'string')
+                option.data('other', (options.other.indexOf('{{') > -1)
+                    ? _match_replace(null, options.other, data[x], true)
+                    : data[x][options.other]);
+            if (default_item !== null && data[x][labelKey] === default_item)
+                item_data.set(data[x][valueKey], data[x][labelKey], data[x][options.other]);
+        }
+        if ('other' in def && _eval(host, def.other) === true) {
+            select.append($('<option>').attr('value', '__hz_other').html("Other"));
+            if (def.name in item_data && item_data[def.name].value === null && item_data[def.name].other !== null)
+                select.val('__hz_other').change();
+        }
+        if (item_data) {
+            if (item_data.value && data.find(function (e, index, obj) {
+                return e && e[valueKey] === item_data.value;
+            })) select.val(item_data.value);
+            else if (item_data.value === null && item_data.other !== null) {
+                select.val('__hz_other').change();
+            } else {
+                item_data.value = null;
+                if (Object.keys(data).length === 1 && options.single === true) {
+                    var item = data[Object.keys(data)[0]], key = _is_int(def, item[valueKey]);
+                    if (item_data.value !== key) {
+                        item_data.set(key, (labelKey.indexOf('{{') > -1) ? _match_replace(null, labelKey, item, true) : item[labelKey]);
+                        if ('other' in options && options.other in item) item_data.other = item[options.other];
                     }
                 }
             }
-        }).fail(_error);
+        }
+        item_data.enabled(true);
+        _input_event_update(host, def.name);
+        return select;
+    }
+
+    function _input_select_populate_ajax(host, options, select, track) {
+        var postops = {};
+        Object.assign(postops, options);
+        if ((postops.url = _match_replace(host, postops.url, { "site_url": hazaar.url() })) === false)
+            return _input_select_items(host, null, select);
+        if (track !== false) select.prop('disabled', true).html($('<option value selected>').html('Loading...'));
+        postops.url = _url(host, postops.url);
+        return $.ajax(postops).done(function (data) { _input_select_items(host, data, select); }).fail(_error);
     }
 
     function _input_select_populate(host, options, select, track) {
-        if (!options) return select.empty();
-        var def = select.data('def'), item_data = _get_data_item(host.data, select.attr('data-bind'));
-        if (typeof options !== 'object' || Array.isArray(options) || Object.keys(options).length === 0)
-            return select.prop('disabled', true).empty();
-        if ('url' in options) {
-            var matches = options.url.match(/\{\{[\w\.]+\}\}/g);
+        if (options !== null && typeof options === 'object' && 'url' in options) {
+            var matches = options.url.match(/\{\{[\w\.]+\}\}/g), def = select.data('def');
             for (let x in matches) {
                 var match = matches[x].substr(2, matches[x].length - 4);
                 if (!(match in def.watchers)) def.watchers[match] = [];
@@ -588,16 +589,7 @@ var form;
             }
             return _input_select_populate_ajax(host, options, select, track);
         }
-        select.html($('<option value>').html(def.placeholder).prop('selected', (!item_data || item_data.value === null)));
-        for (let x in options)
-            select.append($('<option>').attr('value', x).html(options[x]));
-        if ('other' in def && _eval(host, def.other) === true) {
-            var otherOption = $('<option>').attr('value', '__hz_other').html("Other");
-            select.append(otherOption);
-            if (item_data && item_data.value === null && item_data.other !== null)
-                select.val('__hz_other').change();
-        }
-        select.prop('disabled', false);
+        _input_select_items(host, options, select);
         return true;
     }
 
