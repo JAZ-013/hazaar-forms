@@ -278,7 +278,7 @@ var form;
     }
 
     function _input_event_update(host, input) {
-        var def = typeof input === 'string' ? _form_field_lookup(host.def, input) : input.data('def'),
+        var def = _form_field_lookup(host.def, typeof input === 'string' ? input : input.attr('data-bind')),
             update = def.update, cb_done = null, parent_item = _get_data_item(host.data, def.name).parent;
         if (def.change) _eval_code(host, def.change, parent_item, true);
         if (typeof update === 'string') update = { "url": update };
@@ -336,13 +336,13 @@ var form;
     }
 
     function _input_event_focus(host, input) {
-        var def = input.data('def'), parent_item = _get_data_item(host.data, def.name).parent;
-        if (def.focus) _eval_code(host, def.focus, parent_item, true);
+        var def = input.data('def');
+        if (def.focus) _eval_code(host, def.focus, _get_data_item(host.data, input.attr('data-bind')).parent, true);
     }
 
     function _input_event_blur(host, input) {
-        var def = input.data('def'), parent_item = _get_data_item(host.data, def.name).parent;
-        if (def.blur) _eval_code(host, def.blur, parent_item, true);
+        var def = input.data('def');
+        if (def.blur) _eval_code(host, def.blur, _get_data_item(host.data, input.attr('data-bind')).parent, true);
     }
 
     function _input_button(host, def) {
@@ -506,8 +506,8 @@ var form;
         return group;
     }
 
-    function _input_select_items(host, data, select) {
-        var item_data = _get_data_item(host.data, select.attr('data-bind')), def = select.data('def'), options = def.options;
+    function _input_select_items(host, options, data, select) {
+        var item_data = _get_data_item(host.data, select.attr('data-bind')), def = select.data('def');
         var valueKey = options.value || 'value', labelKey = options.label || 'label';
         select.prop('disabled', !(def.disabled !== true && def.protected !== true));
         if (data === null || typeof data !== 'object' || Array.isArray(data) && data.length === 0 || Object.keys(data).length === 0) {
@@ -563,7 +563,7 @@ var form;
             }
         }
         item_data.enabled(true);
-        _input_event_update(host, def.name);
+        _input_event_update(host, select);
         return select;
     }
 
@@ -571,10 +571,10 @@ var form;
         var postops = {};
         Object.assign(postops, options);
         if ((postops.url = _match_replace(host, postops.url, { "site_url": hazaar.url() })) === false)
-            return _input_select_items(host, null, select);
+            return _input_select_items(host, options, null, select);
         if (track !== false) select.prop('disabled', true).html($('<option value selected>').html('Loading...'));
         postops.url = _url(host, postops.url);
-        return $.ajax(postops).done(function (data) { _input_select_items(host, data, select); }).fail(_error);
+        return $.ajax(postops).done(function (data) { _input_select_items(host, options, data, select); }).fail(_error);
     }
 
     function _input_select_populate(host, options, select, track) {
@@ -589,7 +589,7 @@ var form;
             }
             return _input_select_populate_ajax(host, options, select, track);
         }
-        _input_select_items(host, options, select);
+        _input_select_items(host, options, options, select);
         return true;
     }
 
@@ -599,7 +599,7 @@ var form;
         if (Array.isArray(def.options)) {
             Object.assign(options, function (options) {
                 for (let x in options) {
-                    if (!(typeof options[x] === 'object' && ('when' in options[x]))) continue;
+                    if (!(typeof options[x] === 'object' && 'when' in options[x])) continue;
                     if (_eval(host, options[x].when, null, item_data)) return ('items' in options[x]) ? options[x].items : options[x];
                 }
             }(def.options));
@@ -1042,10 +1042,9 @@ var form;
         else {
             var parts = info.split(/[\.\[]/);
             for (let x in parts) {
-                var key = parts[x];
-                if (parts[x].slice(-1) === ']') key = parseInt(key.slice(0, -1));
-                if (!("fields" in def && key in def.fields)) return null;
-                def = def.fields[key];
+                if (parts[x].slice(-1) === ']') continue;
+                if (!("fields" in def && parts[x] in def.fields)) return null;
+                def = def.fields[parts[x]];
             }
             def = $.extend({}, def, { name: info });
         }
