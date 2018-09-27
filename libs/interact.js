@@ -578,19 +578,17 @@ var form;
     }
 
     function _input_select_populate(host, options, select, track) {
-        if (options !== null && typeof options === 'object' && 'url' in options) {
-            var matches = options.url.match(/\{\{[\w\.]+\}\}/g), def = select.data('def');
-            for (let x in matches) {
-                var match = matches[x].substr(2, matches[x].length - 4);
-                if (!(match in def.watchers)) def.watchers[match] = [];
-                def.watchers[match].push(host.data.watch(match, function (key, value, select) {
-                    _input_select_populate_ajax(host, options, select, true);
-                }, select));
-            }
-            return _input_select_populate_ajax(host, options, select, track);
+        if (!(options !== null && typeof options === 'object' && 'url' in options))
+            return _input_select_items(host, options, options, select);
+        var matches = options.url.match(/\{\{[\w\.]+\}\}/g), def = select.data('def');
+        for (let x in matches) {
+            var match = matches[x].substr(2, matches[x].length - 4);
+            if (!(match in def.watchers)) def.watchers[match] = [];
+            def.watchers[match].push(host.data.watch(match, function (key, value, select) {
+                _input_select_populate_ajax(host, options, select, true);
+            }, select));
         }
-        _input_select_items(host, options, options, select);
-        return true;
+        return _input_select_populate_ajax(host, options, select, track);
     }
 
     function _input_select_options(host, def, select, item_data, cb) {
@@ -600,7 +598,7 @@ var form;
             Object.assign(options, function (options) {
                 for (let x in options) {
                     if (!(typeof options[x] === 'object' && 'when' in options[x])) continue;
-                    if (_eval(host, options[x].when, null, item_data)) return ('items' in options[x]) ? options[x].items : options[x];
+                    if (_eval(host, options[x].when, null, item_data)) return 'items' in options[x] ? options[x].items : options[x];
                 }
             }(def.options));
             if (select && 'watch' in def) {
