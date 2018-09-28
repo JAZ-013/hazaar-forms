@@ -516,7 +516,7 @@ var form;
             _input_event_update(host, def.name);
             return select.empty().prop('disabled', true);
         }
-        select.empty().append($('<option>').attr('value', '').html(def.placeholder));
+        select.empty().append($('<option>').attr('value', '').html(_match_replace(host, def.placeholder, null, true, true)));
         data = _convert_data(data, valueKey, labelKey, def);
         if ('sort' in options) {
             if (typeof options.sort === 'boolean') options.sort = labelKey;
@@ -716,8 +716,7 @@ var form;
             if (item_data) options.defaultViewDate = item_data;
             input.attr('type', 'text');
             input.datepicker($.extend({}, options, def.dateOptions));
-            if (!def.placeholder)
-                def.placeholder = def.format;
+            if (!def.placeholder) def.placeholder = def.format;
         }
         if (def.placeholder) input.attr('placeholder', def.placeholder);
         _check_input_disabled(host, input, def);
@@ -894,11 +893,9 @@ var form;
                 }
             });
         }
-        if ('placeholder' in def)
-            input.attr('placeholder', def.placeholder);
-        if (!def.protected)
-            input_group.append($('<div>').addClass(host.settings.styleClasses.inputGroupAppend)
-                .html($('<span>').addClass(host.settings.styleClasses.inputGroupText).html($('<i class="fa fa-search">'))));
+        if ('placeholder' in def) input.attr('placeholder', def.placeholder);
+        if (!def.protected) input_group.append($('<div>').addClass(host.settings.styleClasses.inputGroupAppend)
+            .html($('<span>').addClass(host.settings.styleClasses.inputGroupText).html($('<i class="fa fa-search">'))));
         return group;
     }
 
