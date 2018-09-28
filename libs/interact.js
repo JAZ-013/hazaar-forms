@@ -1623,12 +1623,11 @@ var form;
                 fields[x] = jQuery.extend(true, {}, fields[x], source_type, extra);
                 fields[x].horizontal = false;
                 //Propagate some field options
-                itemExtra = {
-                    disabled: fields[x].disabled,
-                    protected: fields[x].protected,
-                    required: fields[x].required
-                };
-            } else if (itemExtra) jQuery.extend(true, fields[x], itemExtra);
+                itemExtra = {};
+                if ('disabled' in fields[x]) itemExtra.disabled = fields[x].disabled;
+                if ('protected' in fields[x]) itemExtra.protected = fields[x].protected;
+                if ('required' in fields[x]) itemExtra.required = fields[x].required;
+            } else if (itemExtra) fields[x] = jQuery.extend(true, itemExtra, fields[x]);
             if ('fields' in fields[x]) _prepare_field_definitions(host, fields[x].fields, itemExtra);
         }
     }
