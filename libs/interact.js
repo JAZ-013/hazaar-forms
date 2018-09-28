@@ -612,7 +612,7 @@ var form;
                     host.data.watch(def.watch, watch_func);
                 }
             }
-        } else Object.assign(options, def.options);
+        } else options = def.options;
         if (typeof cb === 'function') cb(select, options);
         return options;
     }
