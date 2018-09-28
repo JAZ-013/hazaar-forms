@@ -508,7 +508,6 @@ var form;
 
     function _input_select_items(host, options, data, select) {
         var item_data = _get_data_item(host.data, select.attr('data-bind')), def = select.data('def');
-        var valueKey = options.value || 'value', labelKey = options.label || 'label';
         select.prop('disabled', !(def.disabled !== true && def.protected !== true));
         if (data === null || typeof data !== 'object' || Array.isArray(data) && data.length === 0 || Object.keys(data).length === 0) {
             _nullify(host, def);
@@ -516,6 +515,7 @@ var form;
             _input_event_update(host, def.name);
             return select.empty().prop('disabled', true);
         }
+        var valueKey = options.value || 'value', labelKey = options.label || 'label';
         select.empty().append($('<option>').attr('value', '').html(_match_replace(host, def.placeholder, null, true, true)));
         data = _convert_data(data, valueKey, labelKey, def);
         if ('sort' in options) {
@@ -578,6 +578,17 @@ var form;
     }
 
     function _input_select_populate(host, options, select, track) {
+        if (typeof options === 'string') {
+            let match = options.match(/^\{\{([\w\.]+)\}\}$/);
+            if (match !== null) {
+                host.data.watch(match[1], function (key, item, select) {
+                    _input_select_populate(host, item, select);
+                }, select);
+                options = _get_data_item(host.data, match[1]);
+            } else options = { url: options };
+        }
+        if (options instanceof dataBinderValue)
+            return _input_select_items(host, {}, typeof options.value === 'object' ? options.value : typeof options.other === 'object' ? options.other : null, select);
         if (!(options !== null && typeof options === 'object' && 'url' in options))
             return _input_select_items(host, options, options, select);
         var matches = options.url.match(/\{\{[\w\.]+\}\}/g), def = select.data('def');
@@ -595,13 +606,13 @@ var form;
         if (!('options' in def)) return false;
         var options = {};
         if (Array.isArray(def.options)) {
-            Object.assign(options, function (o) {
-                for (let x in o) {
-                    if (!(typeof o[x] === 'object' && 'when' in o[x])) continue;
-                    if (_eval(host, o[x].when, null, item_data))
-                        return 'items' in o[x] ? typeof o[x].items === 'string' ? { url: o[x].items } : o[x].items : o[x];
+            for (let x in def.options) {
+                if (!(typeof def.options[x] === 'object' && 'when' in def.options[x])) continue;
+                if (_eval(host, def.options[x].when, null, item_data)) {
+                    options = 'items' in def.options[x] ? def.options[x].items : def.options[x];
+                    break;
                 }
-            }(def.options));
+            }
             if (select && 'watch' in def) {
                 var watch_func = function (key, value, obj) {
                     _get_data_item(item_data, def.name).value = null;
@@ -614,10 +625,6 @@ var form;
                     host.data.watch(def.watch, watch_func);
                 }
             }
-        } else if (typeof def.options === 'string') {
-            options = { url: def.options };
-        } else if (def.options instanceof dataBinderValue) {
-            options = typeof def.options.value === 'object' ? def.options.value : typeof def.options.other === 'object' ? def.options.other : null;
         } else Object.assign(options, def.options);
         if (typeof cb === 'function') cb(select, options);
         return options;
