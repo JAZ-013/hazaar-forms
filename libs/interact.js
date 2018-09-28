@@ -162,20 +162,7 @@ var form;
         if (typeof name === 'string') {
             let item_data = _get_data_item(host.data, name);
             if (item_data instanceof dataBinderValue) item_data.set(def.default || null, def.placeholder || null);
-        }
-        if (def.fields) {
-            for (let x in def.fields) {
-                var sdef = def.fields[x];
-                if (sdef instanceof Array) {
-                    _nullify(host, { fields: sdef }, sdef.name);
-                } else {
-                    if (typeof sdef === 'object') {
-                        sdef = (name ? name + '.' : null) + x;
-                    }
-                    let item_data = _get_data_item(host.data, sdef);
-                    if (item_data) item_data.empty();
-                }
-            }
+            else if (item_data instanceof dataBinder) item_data.empty();
         }
     }
 
