@@ -595,10 +595,11 @@ var form;
         if (!('options' in def)) return false;
         var options = {};
         if (Array.isArray(def.options)) {
-            Object.assign(options, function (options) {
-                for (let x in options) {
-                    if (!(typeof options[x] === 'object' && 'when' in options[x])) continue;
-                    if (_eval(host, options[x].when, null, item_data)) return 'items' in options[x] ? options[x].items : options[x];
+            Object.assign(options, function (o) {
+                for (let x in o) {
+                    if (!(typeof o[x] === 'object' && 'when' in o[x])) continue;
+                    if (_eval(host, o[x].when, null, item_data))
+                        return 'items' in o[x] ? typeof o[x].items === 'string' ? { url: o[x].items } : o[x].items : o[x];
                 }
             }(def.options));
             if (select && 'watch' in def) {
@@ -613,6 +614,8 @@ var form;
                     host.data.watch(def.watch, watch_func);
                 }
             }
+        } else if (typeof def.options === 'string') {
+            options = { url: def.options };
         } else if (def.options instanceof dataBinderValue) {
             options = typeof def.options.value === 'object' ? def.options.value : typeof def.options.other === 'object' ? def.options.other : null;
         } else Object.assign(options, def.options);
@@ -642,15 +645,6 @@ var form;
         if ('css' in def) select.css(def.css);
         if ('cssClass' in def) select.addClass(def.cssClass);
         _check_input_disabled(host, select, def);
-        if (typeof def.options === 'string') {
-            let match = def.options.match(/^\{\{([\w\.]+)\}\}$/);
-            if (match !== null) {
-                host.data.watch(match[1], function (key, item, select) {
-                    _input_select_populate(host, typeof item.value === 'object' ? item.value : typeof item.other === 'object' ? item.other : null, select);
-                }, select);
-                def.options = _get_data_item(host.data, match[1]);
-            } else def.options = { url: def.options };
-        }
         if (populate !== false) _input_select_options(host, def, select, null, function (select, options) {
             _input_select_populate(host, options, select);
         });
