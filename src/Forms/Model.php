@@ -12,8 +12,22 @@ namespace Hazaar\Forms;
  */
 class Model extends \Hazaar\Model\Strict {
 
+    /**
+     * The name of the form
+     * @var string
+     */
     private $__form_name;
 
+    /**
+     * The path to use for includes;
+     * @var mixed
+     */
+    private $__form_import_path;
+
+    /**
+     * The current form definition
+     * @var array
+     */
     private $__form = array();
 
     private $__items = array();
@@ -24,9 +38,11 @@ class Model extends \Hazaar\Model\Strict {
 
     private $__controller;
 
-    function __construct($form_name, $form = null, $tags = null){
+    function __construct($form_name, $form = null, $tags = null, \Hazaar\File\Dir $form_include_path = null){
 
         $this->__form_name = $form_name;
+
+        $this->__form_import_path = $form_include_path;
 
         $this->setTags($tags);
 
@@ -57,6 +73,9 @@ class Model extends \Hazaar\Model\Strict {
 
             if(is_object($item) && property_exists($item, 'import')){
 
+                if(!$this->__form_import_path instanceof \Hazaar\File\Dir)
+                    throw new \Exception('No import path set on this form model.  Imports are not supported.');
+
                 if(!is_array($item->import))
                     $item->import = array($item->import);
 
@@ -65,7 +84,7 @@ class Model extends \Hazaar\Model\Strict {
                     if(strtolower(substr($ext_item, -5)) !== '.json')
                         $ext_item .= '.json';
 
-                    if(!($source = \Hazaar\Application::getInstance()->filePath('forms', $ext_item)))
+                    if(!($source = $this->__form_import_path->get($ext_item)))
                         throw new \Exception('Form include file not found: ' . $ext_item, 404);
 
                     $include_file = new \Hazaar\File($source);

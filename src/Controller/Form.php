@@ -534,7 +534,7 @@ abstract class Form extends Action {
         if(!($form = $source_file->parseJSON()))
             throw new \Exception('An error ocurred parsing the form definition \'' . $source_file->name() . '\'');
 
-        return new \Hazaar\Forms\Model($name, $form, $tags);
+        return new \Hazaar\Forms\Model($name, $form, $tags, $this->__form_path);
 
     }
 
