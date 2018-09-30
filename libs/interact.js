@@ -318,7 +318,7 @@ var form;
                 i.prop('disabled', disabled);
             }
         }
-        if (def.save === true) _save(host, false).done(cb_done);
+        if ('save' in def && _eval(host, def.save, false)) _save(host, false).done(cb_done);
         else if (typeof cb_done === 'function') cb_done();
     }
 
@@ -1247,8 +1247,7 @@ var form;
             host.objects.container.empty();
             if (host.settings.singlePage) {
                 _page_init(host, 0);
-                for (let x in host.def.pages)
-                    host.objects.container.append(_page(host, host.def.pages[x]));
+                for (let x in host.def.pages) host.objects.container.append(_page(host, host.def.pages[x]));
             } else {
                 _page_init(host, pageno);
                 host.objects.container.append(_page(host, host.def.pages[pageno]));
@@ -1265,6 +1264,9 @@ var form;
                     if (result === true) _page_nav(host, pageno);
                     else $(host).trigger('validate', [result, errors]);
                 });
+                return;
+            } else if ('save' in page && _eval(host, page.save, false)) {
+                _save(host, false).done(function () { _page_nav(host, pageno); });
                 return;
             }
         }
