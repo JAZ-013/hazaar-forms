@@ -156,20 +156,32 @@ var form;
         return _eval_code(host, parts.join(' '), item_data);
     }
 
-    function _nullify(host, def, name) {
+    function _nullify(host, def) {
         if (typeof def !== 'object' || def.protected || def.keep) return;
-        if (!name && 'name' in def) name = def.name;
-        if (typeof name === 'string') {
-            let item_data = _get_data_item(host.data, name);
+        if (typeof def.name === 'string') {
+            let item_data = _get_data_item(host.data, def.name);
             if (item_data instanceof dataBinderValue) item_data.set(def.default || null, def.placeholder || null);
             else if (item_data instanceof dataBinder) item_data.empty();
+        } else if ('fields' in def) {
+            for (let x in def.fields) {
+                var sdef = def.fields[x];
+                if (sdef instanceof Array) {
+                    _nullify(host, { fields: sdef });
+                } else if (typeof sdef === 'string') {
+                    //_nullify(host, _form_field_lookup(host.def, sdef));
+                    let item_data = _get_data_item(host.data, sdef);
+                    if (item_data instanceof dataBinderValue) item_data.set(def.default || null, def.placeholder || null);
+                }
+            }
         }
     }
 
     function _toggle_show(host, obj) {
+        host.working = true;
         var toggle = _eval(host, obj.data('show'), true, obj.data('item')), def = obj.data('def');
         obj.toggle(toggle);
-        if (!toggle) _nullify(host, def, obj.data('name'));
+        if (!toggle) _nullify(host, def);
+        host.working = false;
     }
 
     function _match_replace(host, str, extra, force, use_html) {
@@ -266,7 +278,7 @@ var form;
         if (def.change) _eval_code(host, def.change, item_data.parent, true);
         if (typeof update === 'string') update = { "url": update };
         if (typeof input === 'object') {
-            if (input.is('select') && !item_data.label) {
+            if (item_data.value && input.is('select') && !item_data.label) {
                 let other = input.children('option[value="' + item_data.value + '"]').data('other') || null;
                 item_data.set(item_data.value, input.children('option:selected').text(), other);
             } else if (typeof update === 'boolean' || (update && ('url' in update || host.settings.update === true))) {
@@ -300,7 +312,7 @@ var form;
                 };
             } else _validate_input(host, input);
         }
-        if (host.events.show.length > 0) {
+        if (!host.working && host.events.show.length > 0) {
             for (let x in host.events.show)
                 _toggle_show(host, host.events.show[x]);
         }
@@ -1630,7 +1642,7 @@ var form;
                 if ('disabled' in fields[x]) itemExtra.disabled = fields[x].disabled;
                 if ('protected' in fields[x]) itemExtra.protected = fields[x].protected;
                 if ('required' in fields[x]) itemExtra.required = fields[x].required;
-            } else if (itemExtra) fields[x] = jQuery.extend(true, itemExtra, fields[x]);
+            } else if (itemExtra) fields[x] = jQuery.extend(true, {}, itemExtra, fields[x]);
             if ('fields' in fields[x]) _prepare_field_definitions(host, fields[x].fields, itemExtra);
         }
     }
@@ -1665,6 +1677,7 @@ var form;
         host.events = {};
         host.posts = {};
         host.page = null;
+        host.working = false;
         host.pageInputs = [];
         host.loading = 0;
         host.uploads = [];
