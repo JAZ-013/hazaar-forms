@@ -252,11 +252,7 @@ var form;
                 $('<span class="input-group-btn">').html(button).appendTo(group);
                 input.hide().after(group);
                 oInput.focus();
-            } else if (item_data) {
-                var other = input.children('option[value="' + value + '"]').data('other') || null;
-                value = _is_int(def, value);
-                item_data.set(value, input.children('option:selected').text(), other);
-            }
+            } else item_data.value = _is_int(def, value);
         } else if (def.other === true) {
             item_data.other = input.val();
         } else {
@@ -266,11 +262,14 @@ var form;
 
     function _input_event_update(host, input) {
         var def = _form_field_lookup(host.def, typeof input === 'string' ? input : input.attr('data-bind')),
-            update = def.update, cb_done = null, parent_item = _get_data_item(host.data, def.name).parent;
-        if (def.change) _eval_code(host, def.change, parent_item, true);
+            update = def.update, cb_done = null, item_data = _get_data_item(host.data, def.name);
+        if (def.change) _eval_code(host, def.change, item_data.parent, true);
         if (typeof update === 'string') update = { "url": update };
         if (typeof input === 'object') {
-            if (typeof update === 'boolean' || (update && ('url' in update || host.settings.update === true))) {
+            if (input.is('select') && item_data.label === null) {
+                let other = input.children('option[value="' + item_data.value + '"]').data('other') || null;
+                item_data.set(item_data.value, input.children('option:selected').text(), other);
+            } else if (typeof update === 'boolean' || (update && ('url' in update || host.settings.update === true))) {
                 var options = {
                     originator: def.name,
                     form: host.data.save()
@@ -281,7 +280,7 @@ var form;
                         return update;
                     if (typeof update !== 'object') return false;
                     if (!('enabled' in update)) update.enabled = true;
-                    if ('when' in update) update.enabled = _eval(host, update.when, false, parent_item);
+                    if ('when' in update) update.enabled = _eval(host, update.when, false, item_data.parent);
                     if (update.enabled) {
                         if (!('url' in update)) return true;
                         if ((url = _match_replace(host, update.url)) !== false) {
@@ -308,13 +307,13 @@ var form;
         if (host.events.required.length > 0) {
             for (let x in host.events.required) {
                 var field = host.events.required[x];
-                field.toggleClass('required', _eval(host, field.data('required'), false, parent_item));
+                field.toggleClass('required', _eval(host, field.data('required'), false, item_data.parent));
             }
         }
         if (host.events.disabled.length > 0) {
             for (let x in host.events.disabled) {
                 var i = host.events.disabled[x];
-                var disabled = _eval(host, i.data('disabled'), false, parent_item);
+                var disabled = _eval(host, i.data('disabled'), false, item_data.parent);
                 i.prop('disabled', disabled);
             }
         }
