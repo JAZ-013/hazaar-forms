@@ -252,7 +252,7 @@ var form;
                 $('<span class="input-group-btn">').html(button).appendTo(group);
                 input.hide().after(group);
                 oInput.focus();
-            } else item_data.value = _is_int(def, value);
+            } else item_data.set(_is_int(def, value));
         } else if (def.other === true) {
             item_data.other = input.val();
         } else {
@@ -266,7 +266,7 @@ var form;
         if (def.change) _eval_code(host, def.change, item_data.parent, true);
         if (typeof update === 'string') update = { "url": update };
         if (typeof input === 'object') {
-            if (input.is('select') && item_data.label === null) {
+            if (input.is('select') && !item_data.label) {
                 let other = input.children('option[value="' + item_data.value + '"]').data('other') || null;
                 item_data.set(item_data.value, input.children('option:selected').text(), other);
             } else if (typeof update === 'boolean' || (update && ('url' in update || host.settings.update === true))) {
