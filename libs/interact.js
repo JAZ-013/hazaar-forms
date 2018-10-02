@@ -492,11 +492,11 @@ var form;
         return group;
     }
 
-    function _input_select_items(host, options, data, select) {
+    function _input_select_items(host, options, data, select, no_nullify) {
         var item_data = _get_data_item(host.data, select.attr('data-bind')), def = select.data('def');
         select.prop('disabled', !(def.disabled !== true && def.protected !== true));
         if (data === null || typeof data !== 'object' || Array.isArray(data) && data.length === 0 || Object.keys(data).length === 0) {
-            _nullify(host, def);
+            if (no_nullify !== true) _nullify(host, def);
             item_data.enabled(false);
             _input_event_update(host, def.name);
             return select.empty().prop('disabled', true);
@@ -573,8 +573,10 @@ var form;
                 options = _get_data_item(host.data, match[1]);
             } else options = { url: options };
         }
-        if (options instanceof dataBinderValue)
-            return _input_select_items(host, {}, typeof options.value === 'object' ? options.value : typeof options.other === 'object' ? options.other : null, select);
+        if (options instanceof dataBinderValue) {
+            let o = typeof options.value === 'object' ? options.value : typeof options.other === 'object' ? options.other : null;
+            return _input_select_items(host, {}, o, select, o ? false : true);
+        }
         if (!(options !== null && typeof options === 'object' && 'url' in options))
             return _input_select_items(host, options, options, select);
         var matches = options.url.match(/\{\{[\w\.]+\}\}/g), def = select.data('def');
