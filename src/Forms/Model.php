@@ -696,9 +696,6 @@ class Model extends \Hazaar\Model\Strict {
                 if (!property_exists($field, 'name'))
                     $field->name = $name . '.' . $object_key;
 
-            }else{
-
-                throw new \Exception('Unknown field type: ' . gettype($field));
             }
 
         }
