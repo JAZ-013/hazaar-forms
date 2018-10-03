@@ -278,9 +278,15 @@ var form;
         if (def.change) _eval_code(host, def.change, item_data.parent, true);
         if (typeof update === 'string') update = { "url": update };
         if (typeof input === 'object') {
-            if (item_data.value && input.is('select') && !item_data.label) {
-                let other = input.children('option[value="' + item_data.value + '"]').data('other') || null;
-                item_data.set(item_data.value, input.children('option:selected').text(), other);
+            if (input.is('select')) {
+                if (item_data.enabled() === true) {
+                    let other = input.children('option[value="' + item_data.value + '"]').data('other') || null;
+                    item_data.enabled(false);
+                    item_data.set(item_data.value, input.children('option:selected').text(), other);
+                } else {
+                    item_data.enabled(true);
+                    _validate_input(host, input);
+                }
             } else if (typeof update === 'boolean' || (update && ('url' in update || host.settings.update === true))) {
                 var options = {
                     originator: def.name,
@@ -329,6 +335,7 @@ var form;
                 i.prop('disabled', disabled);
             }
         }
+        item_data.enabled(true);
         if ('save' in def && _eval(host, def.save, false)) _save(host, false).done(cb_done);
         else if (typeof cb_done === 'function') cb_done();
     }
@@ -669,8 +676,7 @@ var form;
             .attr('checked', _get_data_item(host.data, def.name).value)
             .data('def', def)
             .appendTo(div);
-        if (def.protected)
-            input.prop('disabled', true);
+        if (def.protected) input.prop('disabled', true);
         else input.focus(function (event) { _input_event_focus(host, $(event.target)); })
             .blur(function (event) { _input_event_blur(host, $(event.target)); })
             .change(function (event) { _input_event_change(host, $(event.target)); })
@@ -1223,12 +1229,8 @@ var form;
         if (typeof page !== 'object') return null;
         var form = $('<div>').addClass(host.settings.styleClasses.page).data('def', page), sections = [];
         if (page.label) form.append($('<h1>').html(_match_replace(host, page.label, null, true, true)));
-        for (let x in page.sections)
-            sections.push(_section(host, page.sections[x]));
-        if (host.events.show.length > 0) {
-            for (let x in host.events.show)
-                _toggle_show(host, host.events.show[x]);
-        }
+        for (let x in page.sections) sections.push(_section(host, page.sections[x]));
+        if (host.events.show.length > 0) for (let x in host.events.show) _toggle_show(host, host.events.show[x]);
         return form.append(sections);
     }
 
