@@ -283,10 +283,9 @@ var form;
                     let other = input.children('option[value="' + item_data.value + '"]').data('other') || null;
                     item_data.enabled(false);
                     item_data.set(item_data.value, input.children('option:selected').text(), other);
-                } else {
-                    item_data.enabled(true);
-                    _validate_input(host, input);
                 }
+                item_data.enabled(true);
+                _validate_input(host, input);
             } else if (typeof update === 'boolean' || (update && ('url' in update || host.settings.update === true))) {
                 var options = {
                     originator: def.name,
