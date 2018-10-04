@@ -188,9 +188,9 @@ var form;
         if (!str) return null;
         while ((match = str.match(/\{\{([\W]*)([\w\.]+)\}\}/)) !== null) {
             var modifiers = match[1].split(''), value = host ? _get_data_item(host.data, match[2]) : null;
-            if (value === null) value = (match[2].substr(0, 5) === 'this.'
+            if (value === null) value = match[2].substr(0, 5) === 'this.'
                 ? _get_data_item(host.settings, match[2].substr(5))
-                : _get_data_item(extra, match[2]));
+                : _get_data_item(extra, match[2]);
             if (modifiers.indexOf('!') === -1
                 && (value instanceof dataBinderValue ? value.value : value) === null
                 && force !== true) return false;
@@ -236,11 +236,11 @@ var form;
         if (!item_data) return;
         if (input.is('[type=checkbox]')) {
             let value = input.is(':checked');
-            item_data.set(value, (value ? 'Yes' : 'No'));
+            item_data.set(value, value ? 'Yes' : 'No');
         } else if (input.is('select')) {
             let value = input.val();
             if (value === '__hz_other') {
-                item_data.set(null, null, (item_data.value ? null : undefined));
+                item_data.set(null, null, item_data.value ? null : undefined);
                 var group = $('<div>').addClass(host.settings.styleClasses.inputGroup);
                 var oInput = $('<input type="text" placeholder="Enter other option...">')
                     .addClass(host.settings.styleClasses.input)
@@ -287,7 +287,7 @@ var form;
                 }
                 item_data.enabled(true);
                 _validate_input(host, input);
-            } else if (typeof update === 'boolean' || (update && ('url' in update || host.settings.update === true))) {
+            } else if (typeof update === 'boolean' || update && ('url' in update || host.settings.update === true)) {
                 var options = {
                     originator: def.name,
                     form: host.data.save()
@@ -406,12 +406,12 @@ var form;
             var btnClass = def.class || 'primary';
             for (let x in data) {
                 let x_value = _is_int(def, data[x][valueKey]), label = data[x][labelKey];
-                let active = (x_value instanceof dataBinderArray && x_value.indexOf(x_value) > -1), name = def.name + '_' + x_value;
+                let active = x_value instanceof dataBinderArray && x_value.indexOf(x_value) > -1, name = def.name + '_' + x_value;
                 items.push($('<label class="btn">').addClass('btn-' + btnClass).html([
                     $('<input type="checkbox" autocomplete="off">')
                         .attr('value', x_value)
                         .prop('checked', active)
-                        .prop('disabled', (def.protected === true))
+                        .prop('disabled', def.protected === true)
                         .attr('data-bind-value', x_value), label
                 ]).toggleClass('active', active).change(fChange));
             }
@@ -419,21 +419,21 @@ var form;
         }
         if (!('columns' in def)) def.columns = 1;
         if (def.columns > 6) def.columns = 6;
-        var col_width = Math.floor(12 / def.columns), per_col = (Math.ceil(Object.keys(data).length / def.columns));
+        var col_width = Math.floor(12 / def.columns), per_col = Math.ceil(Object.keys(data).length / def.columns);
         var cols = $('<div class="row">'), column = 0;
         for (let col = 0; col < def.columns; col++)
             items.push($('<div>').addClass('col-md-' + col_width)
                 .toggleClass('custom-controls-stacked', def.inline));
         for (let x in data) {
             let iv = _is_int(def, data[x][valueKey]), il = data[x][labelKey];
-            let active = (value instanceof dataBinderArray && value.indexOf(iv) > -1), name = def.name + '_' + iv;
+            let active = value instanceof dataBinderArray && value.indexOf(iv) > -1, name = def.name + '_' + iv;
             let label = $('<div>').addClass(host.settings.styleClasses.chkDiv).html([
                 $('<input type="checkbox">')
                     .addClass(host.settings.styleClasses.chkInput)
                     .attr('id', '__field_' + name)
                     .attr('value', iv)
                     .prop('checked', active)
-                    .prop('disabled', (def.protected === true)),
+                    .prop('disabled', def.protected === true),
                 $('<label>').addClass(host.settings.styleClasses.chkLabel)
                     .html(il)
                     .attr('for', '__field_' + name)
@@ -490,7 +490,7 @@ var form;
             $('<div>').html(container.addClass('btn-group')
                 .attr('data-bind', def.name)
                 .attr('data-toggle', 'buttons')
-                .toggleClass('btn-group-justified', (def.justified === true))
+                .toggleClass('btn-group-justified', def.justified === true)
             ).appendTo(group);
         } else {
             container.attr('data-bind', def.name).attr('data-toggle', 'checks');
@@ -534,12 +534,12 @@ var form;
                 continue;
             }
             var option = $('<option>').attr('value', data[x][valueKey])
-                .html((labelKey.indexOf('{{') > -1)
+                .html(labelKey.indexOf('{{') > -1
                     ? _match_replace(null, labelKey, data[x], true)
                     : data[x][labelKey]).appendTo(select);
             if (data[x][valueKey] === '__spacer__') option.prop('disabled', true).addClass('form-select-spacer');
             if ('other' in options && typeof options.other === 'string')
-                option.data('other', (options.other.indexOf('{{') > -1)
+                option.data('other', options.other.indexOf('{{') > -1
                     ? _match_replace(null, options.other, data[x], true)
                     : data[x][options.other]);
             if (default_item !== null && data[x][labelKey] === default_item)
@@ -561,7 +561,7 @@ var form;
                 if (Object.keys(data).length === 1 && options.single === true) {
                     var item = data[Object.keys(data)[0]], key = _is_int(def, item[valueKey]);
                     if (item_data.value !== key) {
-                        item_data.set(key, (labelKey.indexOf('{{') > -1) ? _match_replace(null, labelKey, item, true) : item[labelKey]);
+                        item_data.set(key, labelKey.indexOf('{{') > -1 ? _match_replace(null, labelKey, item, true) : item[labelKey]);
                         if ('other' in options && options.other in item) item_data.other = item[options.other];
                     }
                 }
@@ -724,7 +724,7 @@ var form;
                 autoclose: true,
                 forceParse: true,
                 language: 'en',
-                clearBtn: ((('required' in def) ? _eval(host, def.required) : false) !== true),
+                clearBtn: 'required' in def ? _eval(host, def.required) : false !== true,
                 todayHighlight: true
             };
             if (item_data) options.defaultViewDate = item_data;
@@ -896,7 +896,7 @@ var form;
                             break;
                         case 'End':
                             selected.removeClass(sClass);
-                            list.children().last().addClass(sClass)
+                            list.children().last().addClass(sClass);
                             break;
                         case 'Enter':
                             selected.click();
@@ -940,7 +940,7 @@ var form;
         if ('css' in def) input.css(def.css);
         if ('cssClass' in def) input.addClass(def.cssClass);
         _check_input_disabled(host, input, def);
-        if (('prefix' in def) || ('suffix' in def)) {
+        if ('prefix' in def || 'suffix' in def) {
             var inputDIV = $('<div>').addClass(host.settings.styleClasses.inputGroup)
                 .appendTo(group);
             if (def.prefix) inputDIV.append($('<div>')
@@ -995,7 +995,7 @@ var form;
                     data[item.name] = value;
                 });
                 for (x in data) {
-                    var field_invalid = (def.fields[x].required && !(typeof data[x] === 'object' ? data[x].__hz_value : data[x]));
+                    var field_invalid = def.fields[x].required && !(typeof data[x] === 'object' ? data[x].__hz_value : data[x]);
                     fieldDIV.find('[name="' + x + '"]').toggleClass('is-invalid', field_invalid);
                     if (field_invalid) valid = false;
                 }
@@ -1103,7 +1103,7 @@ var form;
             field = new Function('field', 'form', def.render)($.extend({}, def, { value: item_data.save(true) }), host);
             host.pageInputs.push(field);
         } else if ('fields' in def && def.type !== 'array') {
-            var layout = _resolve_field_layout(host, def.fields, ('layout' in def ? $.extend(true, [], def.layout) : null), def.name);
+            var layout = _resolve_field_layout(host, def.fields, 'layout' in def ? $.extend(true, [], def.layout) : null, def.name);
             var length = layout.length, fields = [], col_width;
             var item_data = def.name ? _get_data_item(host.data, def.name) : parent_item;
             if (typeof p === 'undefined' || p === null) p = !('layout' in def && def.layout);
@@ -1118,12 +1118,12 @@ var form;
                 if (info.protected === true && typeof item === 'object' && !Array.isArray(item)) item.protected = true;
                 fields.push(item);
             }
-            col_width = (12 / length);
+            col_width = 12 / length;
             field = $('<div>').toggleClass('row', p).data('def', def);
             if ('label' in def) field.append($('<div class="col-md-12">').html($('<h5>').html(def.label)));
             for (let x in fields) {
                 var field_width = col_width, child_field = _form_field(host, fields[x], !p, populate, apply_rules, item_data);
-                if (fields[x] instanceof Object && ('weight' in fields[x]))
+                if (fields[x] instanceof Object && 'weight' in fields[x])
                     field_width = Math.round(field_width * fields[x].weight);
                 field.append($('<div>').toggleClass('col-lg-' + field_width, p).html(child_field));
             }
@@ -1209,7 +1209,7 @@ var form;
                     if (!('weight' in section[x])) section[x].weight = 1;
                     length = length + (section[x].weight - 1);
                 }
-                col_width = (12 / length);
+                col_width = 12 / length;
             }
             for (let x in section)
                 group.append($('<div>').toggleClass('col-lg-' + Math.round((section[x].weight || 1) * col_width), p).html(_section(host, section[x], !p)));
@@ -1308,8 +1308,8 @@ var form;
     function _validate_rule(host, name, item, def) {
         if (!def) return true;
         if ('show' in def) if (!_eval(host, def.show)) return true;
-        var required = ('required' in def) ? _eval(host, def.required) : false;
-        var value = ((item instanceof dataBinderArray && item.length > 0) ? item : (def.other && !item.value) ? item.other : item.value);
+        var required = 'required' in def ? _eval(host, def.required) : false;
+        var value = item instanceof dataBinderArray && item.length > 0 ? item : def.other && !item.value ? item.other : item.value;
         if (required && !value) return _validation_error(name, def, "required");
         if (typeof value === 'undefined' || value === null) return true; //Return now if there is no value and the field is not required!
         if ('format' in def && value) {
@@ -1338,12 +1338,12 @@ var form;
                             return _validation_error(name, def, "not_equal");
                         break;
                     case 'minlen':
-                        if ((item instanceof dataBinderValue && (!value || value.length < data))
+                        if (item instanceof dataBinderValue && (!value || value.length < data)
                             || (!item || item.length < data))
                             return _validation_error(name, def, "too_short");
                         break;
                     case 'maxlen':
-                        if ((item instanceof dataBinderValue && (!value || value.length > data))
+                        if (item instanceof dataBinderValue && (!value || value.length > data)
                             || (!item || item.length > data))
                             return _validation_error(name, def, "too_long");
                         break;
@@ -1360,13 +1360,13 @@ var form;
     function _validate_field(host, name, extra) {
         var callbacks = [];
         setTimeout(function () {
-            var def = (typeof name === 'object') ? name : _form_field_lookup(host.def, name);
+            var def = typeof name === 'object' ? name : _form_field_lookup(host.def, name);
             if (def) {
                 var item = _get_data_item(host.data, def.name);
-                if (def.protected || ('disabled' in def && _eval(host, def.disabled, false, item.parent))) {
+                if (def.protected || 'disabled' in def && _eval(host, def.disabled, false, item.parent)) {
                     for (let x in callbacks) callbacks[x](def.name, true, extra);
                 } else if ('fields' in def) {
-                    let childItems = (def.type === 'array') ? item.save() : [item], childQueue = [], itemResult = [];
+                    let childItems = def.type === 'array' ? item.save() : [item], childQueue = [], itemResult = [];
                     let result = _validate_rule(host, def.name, item, def);
                     if (result !== true) {
                         for (let x in callbacks) callbacks[x](def.name, result, extra);
@@ -1392,9 +1392,9 @@ var form;
                     if (item.value && result === true && 'validate' in def && 'url' in def.validate) {
                         var url = _match_replace(host, def.validate.url, { "__input__": item.value }, true);
                         _post(host, 'api', {
-                            target: [url, { "name": def.name, "value": item.value }],
+                            target: [url, { "name": def.name, "value": item.value }]
                         }, false).done(function (response) {
-                            var result = (response.ok === true) ? true : _validation_error(def.name, def, response.reason || "api_failed(" + def.validate.url + ")");
+                            var result = response.ok === true ? true : _validation_error(def.name, def, response.reason || "api_failed(" + def.validate.url + ")");
                             if (callbacks.length > 0) for (let x in callbacks) callbacks[x](def.name, result, response);
                         }).fail(_error);
                     } else if (callbacks.length > 0) for (let x in callbacks) callbacks[x](def.name, result, extra);
@@ -1410,7 +1410,7 @@ var form;
             for (let x in field)
                 if (_validate_nav_field(field[x], error)) return true;
         } else {
-            var name = (typeof field === 'string' ? field : field.name);
+            var name = typeof field === 'string' ? field : field.name;
             if (error.name === name) return true;
         }
         return false;
@@ -1462,10 +1462,10 @@ var form;
                     for (x in result) {
                         if (result[x].result !== true) errors.push(result[x].result);
                         $('[data-bind="' + result[x].name + '"]')
-                            .toggleClass('is-invalid', (result[x].result !== true))
+                            .toggleClass('is-invalid', result[x].result !== true)
                             .toggleClass('border-warning', result[x].result === true && typeof response === 'object' && response.warning === true);
                     }
-                    if (queue.length === 0) for (let x in callbacks) callbacks[x]((errors.length === 0), errors);
+                    if (queue.length === 0) for (let x in callbacks) callbacks[x](errors.length === 0, errors);
                 });
             }
         });
@@ -1605,7 +1605,7 @@ var form;
         return $.ajax({
             method: "POST",
             url: hazaar.url(host.settings.controller, 'interact/' + action),
-            async: (sync !== true),
+            async: sync !== true,
             contentType: "application/json",
             data: JSON.stringify(params)
         }).always(function (response) {
@@ -1731,7 +1731,7 @@ var form;
                             _nav(host, host.page - 1);
                         break;
                     case 'next':
-                        if (host.page < (host.def.pages.length - 1))
+                        if (host.page < host.def.pages.length - 1)
                             _nav(host, host.page + 1);
                         break;
                     case 'save':
@@ -1744,7 +1744,7 @@ var form;
                     case 'validate':
                         _validate(host).done(function (result, errors) {
                             $(host).trigger('validate', [result, errors]);
-                            if (((typeof args[1] === 'undefined' && host.settings.validateNav === true)
+                            if ((typeof args[1] === 'undefined' && host.settings.validateNav === true
                                 || args[1] !== false)
                                 && !result) _validate_nav(host, errors);
                         });
@@ -1829,7 +1829,7 @@ $.fn.fileUpload = function () {
             && this.options.remove(file)))
             return false;
         this.files = this.files.filter(function (item) {
-            return (item.name !== file.name);
+            return item.name !== file.name;
         });
         if (this.files.length === 0 && this.o.dzwords) this.o.dzwords.show();
         return true;
