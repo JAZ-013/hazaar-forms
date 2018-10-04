@@ -565,8 +565,8 @@ var form;
                     }
                 }
             }
+            item_data.enabled(true);
         }
-        item_data.enabled(true);
         _input_event_update(host, select);
         return select;
     }
