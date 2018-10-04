@@ -669,11 +669,12 @@ var form;
         var group = $('<div>').addClass(host.settings.styleClasses.group).data('def', def);
         if ('title' in def) $('<label>').html(def.title).appendTo(group);
         var div = $('<div>').addClass(host.settings.styleClasses.chkDiv).appendTo(group);
+        var item_data = _get_data_item(host.data, def.name);
         var input = $('<input type="checkbox">').addClass(host.settings.styleClasses.chkInput)
             .attr('name', def.name)
             .attr('id', '__hz_field_' + def.name)
             .attr('data-bind', def.name)
-            .attr('checked', _get_data_item(host.data, def.name).value)
+            .attr('checked', item_data ? item_data.value : false)
             .data('def', def)
             .appendTo(div);
         if (def.protected) input.prop('disabled', true);
