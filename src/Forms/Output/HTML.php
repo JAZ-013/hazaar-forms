@@ -34,7 +34,7 @@ class HTML extends \Hazaar\Forms\Output {
         $div = (new \Hazaar\Html\Div())->class(ake($settings, 'formClass', 'form-output'));
 
         if(ake($settings, 'showTitle', true) === true)
-            $div->add((new \Hazaar\Html\Div(new \Hazaar\Html\H1(ake($form, 'name', 'Unnamed Form'))))
+            $div->add((new \Hazaar\Html\Div(new \Hazaar\Html\H1($this->model->matchReplace(ake($form, 'name', 'Unnamed Form')))))
                 ->class(ake($settings, 'titleClass', 'form-header')));
 
         if(!$ixes && property_exists($form, 'html'))

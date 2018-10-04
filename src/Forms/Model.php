@@ -977,6 +977,8 @@ class Model extends \Hazaar\Model\Strict {
 
         while (preg_match('/\{\{([\W]*)([\w\.]+)\}\}/', $string, $match)){
 
+            $modifiers = ($match[1] ? str_split($match[1]) : array());
+
             $value = $this->get($match[2]);
 
             if (substr($match[2], 0, 5) === 'this.') $value = ake($settings, substr($match[2], 5));
@@ -984,7 +986,9 @@ class Model extends \Hazaar\Model\Strict {
             if(is_object($value) && !$value instanceof \Hazaar\Model\dataBinderValue)
                 $value = '';
 
-            $string = str_replace($match[0], ((!$use_label && $value instanceof \Hazaar\Model\dataBinderValue) ? $value->value : (string)$value), $string);
+            $value = ((in_array(':', $modifiers) || !$use_label) && $value instanceof \Hazaar\Model\dataBinderValue) ? $value->value : (string)$value;
+
+            $string = str_replace($match[0], $value, $string);
 
         }
 
