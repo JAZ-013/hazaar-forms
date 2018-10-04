@@ -273,8 +273,9 @@ var form;
     }
 
     function _input_event_update(host, input) {
-        var def = _form_field_lookup(host.def, typeof input === 'string' ? input : input.attr('data-bind')),
-            update = def.update, cb_done = null, item_data = _get_data_item(host.data, def.name);
+        var def = _form_field_lookup(host.def, typeof input === 'string' ? input : input.attr('data-bind'));
+        if (!def) return;
+        var update = def.update, cb_done = null, item_data = _get_data_item(host.data, def.name);
         if (def.change) _eval_code(host, def.change, item_data.parent, true);
         if (typeof update === 'string') update = { "url": update };
         if (typeof input === 'object') {
@@ -515,7 +516,7 @@ var form;
         select.prop('disabled', !(def.disabled !== true && def.protected !== true));
         if (data === null || typeof data !== 'object' || Array.isArray(data) && data.length === 0 || Object.keys(data).length === 0) {
             if (no_nullify !== true) _nullify(host, def);
-            item_data.enabled(false);
+            if (item_data) item_data.enabled(false);
             _input_event_update(host, def.name);
             return select.empty().prop('disabled', true);
         }
