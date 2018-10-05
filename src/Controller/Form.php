@@ -449,7 +449,7 @@ abstract class Form extends Action {
 
             $args = func_get_args();
 
-            $dir = $this->file_init($args[0], null, $args[1]);
+            $dir = $this->file_init($args[1], null, $args[0]);
 
             $file = $dir->get($args[2]);
 
