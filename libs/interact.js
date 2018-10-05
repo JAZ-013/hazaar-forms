@@ -746,7 +746,7 @@ var form;
             .attr('for', '__hz_field_' + def.name)
             .html(_match_replace(host, def.label, null, true, true))
             .appendTo(group);
-        var input = $('<div>').data('def', def).attr('name', def.name).fileUpload({
+        var input = $('<div>').attr('data-bind', def.name).data('def', def).attr('name', def.name).fileUpload({
             name: def.name,
             multiple: def.multiple || false,
             btnClass: def.btnClass || "btn btn-default",
