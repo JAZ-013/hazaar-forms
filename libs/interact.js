@@ -195,7 +195,7 @@ var form;
                 && (value instanceof dataBinderValue ? value.value : value) === null
                 && force !== true) return false;
             if (modifiers.indexOf('>') !== -1) use_html = false;
-            var text = value instanceof dataBinderValue ? modifiers.indexOf(':') === -1 ? value : value.value : value;
+            var text = value instanceof dataBinderValue ? use_html === true && modifiers.indexOf(':') === -1 ? value : value.value : value;
             var out = use_html ? '<span data-bind="' + match[2] + '" data-bind-label="' + (modifiers.indexOf(':') === -1 ? 'true' : 'false') + '">' + text + '</span>' : text || '';
             str = str.replace(match[0], out);
         }
