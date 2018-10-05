@@ -202,13 +202,16 @@ var form;
         return str;
     }
 
-    function _get_data_item(data, name, isArray) {
+    function _get_data_item(data, name, isArray, value) {
         if (!(name && data)) return null;
         var parts = name.split(/[\.\[]/), item = data;
         for (let x in parts) {
             var key = parts[x];
             if (parts[x].slice(-1) === ']') key = parseInt(key.slice(0, -1));
-            if (!(key in item)) return null;
+            if (!(key in item)) {
+                if (typeof value === 'undefined') return null;
+                item[key] = parseInt(x) + 1 < parts.length ? {} : value;
+            }
             if (isArray === true && item[key] instanceof dataBinderValue) item[key] = [];
             item = item[key];
         }
@@ -279,7 +282,7 @@ var form;
         if (def.change) _eval_code(host, def.change, item_data.parent, true);
         if (typeof update === 'string') update = { "url": update };
         if (typeof input === 'object') {
-            if (input.is('select')) {
+            if (item_data && input.is('select')) {
                 if (item_data.enabled() === true) {
                     let other = input.children('option[value="' + item_data.value + '"]').data('other') || null;
                     item_data.enabled(false);
@@ -335,7 +338,7 @@ var form;
                 i.prop('disabled', disabled);
             }
         }
-        item_data.enabled(true);
+        if (item_data) item_data.enabled(true);
         if ('save' in def && _eval(host, def.save, false)) _save(host, false).done(cb_done);
         else if (typeof cb_done === 'function') cb_done();
     }
@@ -956,6 +959,17 @@ var form;
         return group;
     }
 
+    function _field_to_html(layout, name) {
+        if (Array.isArray(layout)) {
+            for (let x in layout) layout[x] = _field_to_html(layout[x]);
+            return layout;
+        } else if ('fields' in layout) {
+            for (let x in layout.fields) layout.fields[x] = _field_to_html(layout.fields[x], (name || layout.name) + '.' + x);
+            return layout;
+        }
+        return { html: '<div data-bind="' + (name || layout.name) + '">', weight: layout.weight || 1 };
+    }
+
     function _input_list(host, def) {
         var item_data = _get_data_item(host.data, def.name);
         var group = $('<div class="itemlist">').addClass(host.settings.styleClasses.group).data('def', def);
@@ -990,23 +1004,22 @@ var form;
             btn.click(function () {
                 var data = {}, field = fieldDIV.attr('data-field'), def = _form_field_lookup(host.def, field), valid = true;
                 fieldDIV.find('input,select,textarea').each(function (index, item) {
-                    var input = $(item), value = input.val();
+                    var input = $(item), value = input.val(), def = input.data('def');
+                    if (def.required && !value) {
+                        input.toggleClass('is-invalid', true);
+                        valid = false;
+                        return;
+                    }
                     if (input.is('select')) value = { __hz_value: value, __hz_label: input.children('option:selected').text() };
-                    data[item.name] = value;
+                    _get_data_item(data, item.name, false, value);
                 });
-                for (x in data) {
-                    var field_invalid = def.fields[x].required && !(typeof data[x] === 'object' ? data[x].__hz_value : data[x]);
-                    fieldDIV.find('[name="' + x + '"]').toggleClass('is-invalid', field_invalid);
-                    if (field_invalid) valid = false;
-                }
                 if (!valid) return;
                 item_data.push(data);
                 fieldDIV.find('input,select,textarea').each(function (index, item) { $(item).val('').removeClass('is-invalid'); });
                 _validate_input(host, group);
             });
         }
-        if (_eval(host, def.allow_edit, false) !== true)
-            for (let x in layout) layout[x] = { html: '<div data-bind="' + layout[x].name + '">', weight: layout[x].weight || 1 };
+        if (_eval(host, def.allow_edit, false) !== true) layout = _field_to_html(layout);
         template.append(_form_field(host, { fields: layout }, null, false, false));
         item_data.watch(function (item) {
             var item_name = item.attr('data-bind'), item_data = _get_data_item(host.data, item_name);
@@ -1306,7 +1319,7 @@ var form;
     }
 
     function _validate_rule(host, name, item, def) {
-        if (!def) return true;
+        if (!(item && def)) return true;
         if ('show' in def) if (!_eval(host, def.show)) return true;
         var required = 'required' in def ? _eval(host, def.required) : false;
         var value = item instanceof dataBinderArray && item.length > 0 ? item : def.other && !item.value ? item.other : item.value;
@@ -1363,6 +1376,7 @@ var form;
             var def = typeof name === 'object' ? name : _form_field_lookup(host.def, name);
             if (def) {
                 var item = _get_data_item(host.data, def.name);
+                if (!item) return;
                 if (def.protected || 'disabled' in def && _eval(host, def.disabled, false, item.parent)) {
                     for (let x in callbacks) callbacks[x](def.name, true, extra);
                 } else if ('fields' in def) {
