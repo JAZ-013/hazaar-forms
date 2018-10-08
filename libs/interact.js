@@ -168,7 +168,6 @@ var form;
                 if (sdef instanceof Array) {
                     _nullify(host, { fields: sdef });
                 } else if (typeof sdef === 'string') {
-                    //_nullify(host, _form_field_lookup(host.def, sdef));
                     let item_data = _get_data_item(host.data, sdef);
                     if (item_data instanceof dataBinderValue) item_data.set(def.default || null, def.placeholder || null);
                 }
@@ -275,7 +274,7 @@ var form;
         }
     }
 
-    function _input_event_update(host, input) {
+    function _input_event_update(host, input, skip_validate) {
         var def = _form_field_lookup(host.def, typeof input === 'string' ? input : input.attr('data-bind'));
         if (!def) return;
         var update = def.update, cb_done = null, item_data = _get_data_item(host.data, def.name);
@@ -287,9 +286,8 @@ var form;
                     let other = input.children('option[value="' + item_data.value + '"]').data('other') || null;
                     item_data.enabled(false);
                     item_data.set(item_data.value, input.children('option:selected').text(), other);
+                    if (skip_validate !== true) _validate_input(host, input);
                 }
-                item_data.enabled(true);
-                _validate_input(host, input);
             } else if (typeof update === 'boolean' || update && ('url' in update || host.settings.update === true)) {
                 var options = {
                     originator: def.name,
@@ -319,19 +317,19 @@ var form;
                         }
                     }).fail(_error);
                 };
-            } else _validate_input(host, input);
+            } else if (skip_validate !== true) _validate_input(host, input);
         }
-        if (!host.working && host.events.show.length > 0) {
+        if (!host.working && host.events.show && host.events.show.length > 0) {
             for (let x in host.events.show)
                 _toggle_show(host, host.events.show[x]);
         }
-        if (host.events.required.length > 0) {
+        if (host.events.required && host.events.required.length > 0) {
             for (let x in host.events.required) {
                 var field = host.events.required[x];
                 field.toggleClass('required', _eval(host, field.data('required'), false, item_data.parent));
             }
         }
-        if (host.events.disabled.length > 0) {
+        if (host.events.disabled && host.events.disabled.length > 0) {
             for (let x in host.events.disabled) {
                 var i = host.events.disabled[x];
                 var disabled = _eval(host, i.data('disabled'), false, item_data.parent);
@@ -381,7 +379,7 @@ var form;
         if (data === null || Array.isArray(data) && data.length === 0) {
             item_data.empty();
             item_data.enabled(false);
-            _input_event_update(host, def.name);
+            _input_event_update(host, def.name, true);
             return container.parent().hide();
         }
         var values = item_data.save(true);
@@ -447,7 +445,7 @@ var form;
         }
         if ('cssClass' in def) cols.addClass(def.cssClass);
         item_data.enabled(true);
-        _input_event_update(host, def.name);
+        _input_event_update(host, def.name, true);
         return container.html(cols.html(items)).parent().show();
     }
 
@@ -520,7 +518,7 @@ var form;
         if (data === null || typeof data !== 'object' || Array.isArray(data) && data.length === 0 || Object.keys(data).length === 0) {
             if (no_nullify !== true) _nullify(host, def);
             if (item_data) item_data.enabled(false);
-            _input_event_update(host, def.name);
+            _input_event_update(host, def.name, true);
             return select.empty().prop('disabled', true);
         }
         var valueKey = options.value || 'value', labelKey = options.label || 'label';
@@ -571,26 +569,26 @@ var form;
             }
             item_data.enabled(true);
         }
-        _input_event_update(host, select);
+        _input_event_update(host, select, true);
         return select;
     }
 
-    function _input_select_populate_ajax(host, options, select, track) {
+    function _input_select_populate_ajax(host, options, select, track, item_data) {
         var postops = {};
         Object.assign(postops, options);
-        if ((postops.url = _match_replace(host, postops.url, { "site_url": hazaar.url() })) === false)
+        if ((postops.url = _match_replace(host, postops.url, item_data)) === false)
             return _input_select_items(host, options, null, select);
         if (track !== false) select.prop('disabled', true).html($('<option value selected>').html('Loading...'));
         postops.url = _url(host, postops.url);
         return $.ajax(postops).done(function (data) { _input_select_items(host, options, data, select); }).fail(_error);
     }
 
-    function _input_select_populate(host, options, select, track) {
+    function _input_select_populate(host, options, select, track, item_data) {
         if (typeof options === 'string') {
             let match = options.match(/^\{\{([\w\.]+)\}\}$/);
             if (match !== null) {
                 host.data.watch(match[1], function (key, item, select) {
-                    _input_select_populate(host, item, select);
+                    _input_select_populate(host, item, select, track, item_data);
                 }, select);
                 options = _get_data_item(host.data, match[1]);
             } else options = { url: options };
@@ -605,11 +603,12 @@ var form;
         for (let x in matches) {
             var match = matches[x].substr(2, matches[x].length - 4);
             if (!(match in def.watchers)) def.watchers[match] = [];
-            def.watchers[match].push(host.data.watch(match, function (key, value, select) {
-                _input_select_populate_ajax(host, options, select, true);
+            if (typeof item_data === 'undefined') item_data = host.data;
+            def.watchers[match].push(item_data.watch(match, function (key, value, select) {
+                _input_select_populate_ajax(host, options, select, true, item_data);
             }, select));
         }
-        return _input_select_populate_ajax(host, options, select, track);
+        return _input_select_populate_ajax(host, options, select, track, item_data);
     }
 
     function _input_select_options(host, def, select, item_data, cb) {
@@ -988,21 +987,25 @@ var form;
                 .addClass('itemlist-newitem')
                 .attr('data-field', def.name);
             fieldDIV.find('input').removeAttr('data-bind');
-            var new_item = {};
-            for (x in def.fields) new_item[x] = '';
-            var sub_host = { data: new_item = new dataBinder(new_item) };
+            var sub_host = _get_empty_host(), new_item = new dataBinder(_define(def.fields));
+            sub_host.data = new_item;
+            sub_host.def = { fields: def.fields };
             group.append($('<div class="itemlist-newitems">').html([
                 $('<div class="itemlist-newitem-add">').html(btn),
                 fieldDIV
             ])).find('select').each(function (index, item) {
                 var select = $(item), def = select.data('def');
-                select.on('change', function () { _input_event_change(sub_host, $(this)); });
-                if ('options' in def) _input_select_options(host, def, select, new_item, function (select, options) {
-                    _input_select_populate(host, options, select);
+                select.off('change').on('change', function () {
+                    _input_event_change(sub_host, $(this));
+                }).off('update').on('update', function () {
+                    _input_event_update(sub_host, $(this));
+                });
+                if ('options' in def) _input_select_options(sub_host, def, select, new_item, function (select, options) {
+                    _input_select_populate(sub_host, options, select);
                 });
             });
             btn.click(function () {
-                var data = {}, field = fieldDIV.attr('data-field'), def = _form_field_lookup(host.def, field), valid = true;
+                var data = {}, valid = true;
                 fieldDIV.find('input,select,textarea').each(function (index, item) {
                     var input = $(item), value = input.val(), def = input.data('def');
                     if (def.required && !value) {
@@ -1026,7 +1029,7 @@ var form;
             item.find('select').each(function (index, item) {
                 var select = $(item), def = select.data('def');
                 if ('options' in def) _input_select_options(host, def, select, item_data, function (select, options) {
-                    _input_select_populate(host, options, select);
+                    _input_select_populate(host, options, select, false, item_data);
                 });
             });
             $(item).find('.form-group').each(function (index, input) {
@@ -1304,12 +1307,12 @@ var form;
 
 
     function _validate_input(host, input) {
-        var def = input.data('def');
-        if (!def) return false;
-        return _validate_field(host, def.name).done(function (event, result, response) {
+        var name = input.attr('data-bind');
+        if (!name) return;
+        return _validate_field(host, name).done(function (event, result, response) {
             input.toggleClass('is-invalid', result !== true)
                 .toggleClass('border-warning', result === true && typeof response === 'object' && response.warning === true);
-            $(host).trigger('validate_field', [def.name, result === true, result]);
+            $(host).trigger('validate_field', [name, result === true, result]);
         });
     }
 
@@ -1687,9 +1690,8 @@ var form;
         }).fail(_error);
     }
 
-    function __initialise(host, settings) {
-        //Define the default object properties
-        host.settings = $.extend({}, $.fn.hzForm.defaults, settings);
+    function _get_empty_host(host) {
+        if (typeof host === 'undefined') host = {};
         host.data = {};
         host.events = {};
         host.posts = {};
@@ -1700,6 +1702,13 @@ var form;
         host.uploads = [];
         host.deloads = [];
         host.monitor = {};
+        return host;
+    }
+
+    function __initialise(host, settings) {
+        //Define the default object properties
+        _get_empty_host(host);
+        host.settings = $.extend({}, $.fn.hzForm.defaults, settings);
         $(host).trigger('init');
         _registerEvents(host);
         _render(host);
