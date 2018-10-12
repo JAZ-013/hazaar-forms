@@ -476,6 +476,10 @@ var form;
             }
             return _input_select_multi_populate_ajax(host, options, container, track);
         }
+        if (options instanceof dataBinderValue) {
+            let o = typeof options.value === 'object' ? options.value : typeof options.other === 'object' ? options.other : null;
+            return _input_select_multi_items(host, o, container);
+        }
         _input_select_multi_items(host, options, container);
         return true;
     }
