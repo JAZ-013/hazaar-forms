@@ -281,13 +281,10 @@ var form;
         if (def.change) _eval_code(host, def.change, item_data.parent, true);
         if (typeof update === 'string') update = { "url": update };
         if (typeof input === 'object') {
-            if (item_data && input.is('select')) {
-                if (item_data.enabled() === true) {
-                    let other = input.children('option[value="' + item_data.value + '"]').data('other') || null;
-                    item_data.enabled(false);
-                    item_data.set(item_data.value, input.children('option:selected').text(), other);
-                    if (skip_validate !== true) _validate_input(host, input);
-                }
+            if (item_data && input.is('select') && item_data.enabled() === true) {
+                let other = input.children('option[value="' + item_data.value + '"]').data('other') || null;
+                item_data.enabled(false);
+                item_data.set(item_data.value, input.children('option:selected').text(), other);
             } else if (typeof update === 'boolean' || update && ('url' in update || host.settings.update === true)) {
                 var options = {
                     originator: def.name,
