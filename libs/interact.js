@@ -42,7 +42,10 @@ var form;
     function _error(error) {
         if (typeof error === 'string') error = { str: error };
         else if (error instanceof Error) error = { status: 'JavaScript Error', str: error.message, line: error.lineNumber, file: error.fileName };
-        else if ('done' in error) error = error.responseJSON.error;
+        else if ('done' in error) {
+            if (!('responseJSON' in error)) error.responseJSON = JSON.parse(error.responseText);
+            error = error.responseJSON.error;
+        }
         $('<div>').css('text-align', 'left').html([
             $('<h4>').html(error.status),
             $('<div>').html(error.str).css({ 'font-weight': 'bold', 'margin-bottom': '15px' }),
@@ -1668,11 +1671,23 @@ var form;
         }
     }
 
+    function _load_scripts(host, scripts) {
+        if (!Array.isArray(scripts)) scripts = [scripts];
+        for (x in scripts) {
+            jQuery.ajax({
+                url: hazaar.url(host.settings.controller, 'script/' + scripts[x]),
+                dataType: 'script',
+                async: false
+            }).fail(_error);
+        }
+    }
+
     function _load_definition(host) {
         return _post(host, 'init').done(function (response) {
             if (!response.ok) return;
             if ('form' in response) host.def = response.form;
             if ('tags' in response) host.tags = response.tags;
+            if ('scripts' in host.def) _load_scripts(host, host.def.scripts);
             _prepare_field_definitions(host, host.def.fields);
             host.data = new dataBinder(_define(host.def.fields));
             $(host).trigger('load', [host.def]);

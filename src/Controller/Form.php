@@ -277,6 +277,16 @@ abstract class Form extends Action {
 
     }
 
+    final public function script(){
+
+        $file = $this->__form_path->get($this->request->getPath());
+
+        $out = new \Hazaar\Controller\Response\Javascript($file);
+
+        return $out;
+
+    }
+
     final public function __attachments($name){
 
         return $this->file_list($name, $this->form_params);
