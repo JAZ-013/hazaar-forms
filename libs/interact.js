@@ -120,7 +120,7 @@ var form;
         return data;
     }
 
-    function _eval_code(host, evaluate, item_data, no_return) {
+    function _eval_code(host, evaluate, item_data, lvalue, no_return) {
         if (typeof evaluate === 'boolean') return evaluate;
         let code = '', values = host.data.save(true), keys = Object.keys(values).sort();
         for (let i in keys) {
@@ -134,7 +134,7 @@ var form;
         if (no_return !== true) code += "return ( " + evaluate.replace(/[\;\s]+$/, '') + " );";
         else code += evaluate;
         try {
-            return new Function('form', 'tags', 'item', code)(host.data, host.tags, item_data);
+            return new Function('form', 'tags', 'item', 'value', code)(host.data, host.tags, item_data, lvalue);
         } catch (e) {
             console.error('Failed to evaluate condition: ' + e);
             console.log(code);
@@ -142,11 +142,11 @@ var form;
         return false;
     }
 
-    function _eval(host, script, default_value, item_data) {
+    function _eval(host, script, default_value, item_data, value) {
         if (typeof script === 'boolean') return script;
         if (typeof script === 'undefined') return typeof default_value === 'undefined' ? false : default_value;
         if (script.indexOf(';') !== -1)
-            return _eval_code(host, script, item_data);
+            return _eval_code(host, script, item_data, value);
         var parts = script.split(/\s*(\&\&|\|\|)\s*/);
         for (let x = 0; x < parts.length; x += 2) {
             var matches = null;
@@ -156,7 +156,7 @@ var form;
             }
             parts[x] = matches[1] + ' ' + matches[2] + ' ' + matches[3];
         }
-        return _eval_code(host, parts.join(' '), item_data);
+        return _eval_code(host, parts.join(' '), item_data, value);
     }
 
     function _nullify(host, def) {
@@ -281,7 +281,7 @@ var form;
         var def = _form_field_lookup(host.def, typeof input === 'string' ? input : input.attr('data-bind'));
         if (!def) return;
         var update = def.update, cb_done = null, item_data = _get_data_item(host.data, def.name);
-        if (def.change) _eval_code(host, def.change, item_data.parent, true);
+        if (def.change) _eval_code(host, def.change, item_data.parent, item_data.value, true);
         if (typeof update === 'string') update = { "url": update };
         if (typeof input === 'object') {
             if (item_data && input.is('select') && item_data.enabled() === true) {
@@ -299,7 +299,7 @@ var form;
                         return update;
                     if (typeof update !== 'object') return false;
                     if (!('enabled' in update)) update.enabled = true;
-                    if ('when' in update) update.enabled = _eval(host, update.when, false, item_data.parent);
+                    if ('when' in update) update.enabled = _eval(host, update.when, false, item_data.parent, item_data.value);
                     if (update.enabled) {
                         if (!('url' in update)) return true;
                         if ((url = _match_replace(host, update.url)) !== false) {
@@ -326,13 +326,13 @@ var form;
         if (host.events.required && host.events.required.length > 0) {
             for (let x in host.events.required) {
                 var field = host.events.required[x];
-                field.toggleClass('required', _eval(host, field.data('required'), false, item_data.parent));
+                field.toggleClass('required', _eval(host, field.data('required'), false, item_data.parent, item_data.value));
             }
         }
         if (host.events.disabled && host.events.disabled.length > 0) {
             for (let x in host.events.disabled) {
                 var i = host.events.disabled[x];
-                var disabled = _eval(host, i.data('disabled'), false, item_data.parent);
+                var disabled = _eval(host, i.data('disabled'), false, item_data.parent, item_data.value);
                 i.prop('disabled', disabled);
             }
         }
@@ -342,13 +342,13 @@ var form;
     }
 
     function _input_event_focus(host, input) {
-        var def = input.data('def');
-        if (def.focus) _eval_code(host, def.focus, _get_data_item(host.data, input.attr('data-bind')).parent, true);
+        var def = input.data('def'), item_data = _get_data_item(host.data, input.attr('data-bind'));
+        if (def.focus) _eval_code(host, def.focus, item_data.parent, item_data.value, true);
     }
 
     function _input_event_blur(host, input) {
-        var def = input.data('def');
-        if (def.blur) _eval_code(host, def.blur, _get_data_item(host.data, input.attr('data-bind')).parent, true);
+        var def = input.data('def'), item_data = _get_data_item(host.data, input.attr('data-bind'));
+        if (def.blur) _eval_code(host, def.blur, item_data.parent, item_data.value, true);
     }
 
     function _input_button(host, def) {
@@ -368,7 +368,7 @@ var form;
                 btn.click(function () { document.location = _url(host, def.url); });
                 break;
             default:
-                btn.click(function () { _eval_code(host, def.action, null, true); });
+                btn.click(function () { _eval_code(host, def.action, null, null, true); });
                 break;
         }
         return group;
@@ -621,7 +621,7 @@ var form;
         if (Array.isArray(def.options)) {
             for (let x in def.options) {
                 if (!(typeof def.options[x] === 'object' && 'when' in def.options[x])) continue;
-                if (_eval(host, def.options[x].when, null, item_data)) {
+                if (_eval(host, def.options[x].when, null, item_data, item_data.value)) {
                     options = 'items' in def.options[x] ? def.options[x].items : def.options[x];
                     break;
                 }
