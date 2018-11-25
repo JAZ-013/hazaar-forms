@@ -281,7 +281,6 @@ var form;
         var def = _form_field_lookup(host.def, typeof input === 'string' ? input : input.attr('data-bind'));
         if (!def) return;
         var update = def.update, cb_done = null, item_data = _get_data_item(host.data, def.name);
-        if (def.change) _eval_code(host, def.change, item_data.parent, item_data.value, true);
         if (typeof update === 'string') update = { "url": update };
         if (typeof input === 'object') {
             if (item_data && input.is('select') && item_data.enabled() === true) {
@@ -319,6 +318,7 @@ var form;
                 };
             } else if (skip_validate !== true) _validate_input(host, input);
         }
+        if (item_data && item_data.enabled() && def.change) _eval_code(host, def.change, item_data.parent, item_data.value, true);
         if (!host.working && host.events.show && host.events.show.length > 0) {
             for (let x in host.events.show)
                 _toggle_show(host, host.events.show[x]);
