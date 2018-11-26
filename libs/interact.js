@@ -1264,7 +1264,7 @@ var form;
             change: {}
         };
         host.pageInputs = [];
-        host.data.unwatch();
+        host.data.unwatchAll();
     }
 
     //Render the whole form
