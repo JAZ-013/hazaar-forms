@@ -855,16 +855,42 @@ class Model extends \Hazaar\Model\Strict {
         if(is_bool($code))
             return $code;
 
-        $parts = preg_split('/\s*(\&{2}|\|{2})\s*/', $code, -1, PREG_SPLIT_DELIM_CAPTURE);
+        $tokens = token_get_all('<?php ' . $code);
 
-        $count = count($parts);
+        $code = '';
 
-        for($i = 0; $i < $count; $i+=2){
+        foreach($tokens as $i => $token){
 
-            if(!preg_match('/([\w\.\(\)\'\"]+)\s*([=\!\<\>]+)\s*(.+)/', $parts[$i], $matches))
-                throw new \Exception('Invalid show script: ' . $parts[$i]);
+            if(is_array($token)){
 
-            $parts[$i] = $this->fixCodeItem($matches[1]) . ' ' . $matches[2] . ' ' . $this->fixCodeItem($matches[3]);
+                switch($token['0']){
+
+                    case T_OPEN_TAG: continue;
+
+                    case T_STRING:
+
+                        if(!($token[1] === 'true' || $token[1] === 'false')){
+
+                            $code .= ((!isset($tokens[$i-1]) || $tokens[$i-1] !== '.') ? '$' : '' ) . $token[1];
+
+                            break;
+
+                        }
+
+                    default:
+                        $code .= $token[1];
+
+                }
+
+            }elseif($token === '.'){
+
+                $code .= '->';
+
+            }else{
+
+                $code .= $token;
+
+            }
 
         }
 
@@ -931,13 +957,13 @@ class Model extends \Hazaar\Model\Strict {
 
             ob_start();
 
-            $result = $func($this->values, implode(' ', $parts));
+            $result = $func($this->values, $code);
 
             if($buf = ob_get_clean()){
 
                 echo $buf;
 
-                var_dump(implode(' ', $parts));
+                var_dump($code);
 
             }
 
@@ -949,25 +975,6 @@ class Model extends \Hazaar\Model\Strict {
         }
 
         return $result;
-
-    }
-
-    private function fixCodeItem($item){
-
-        $keywords = array('true', 'false', 'null');
-
-        if(preg_match('/(\w*)\.length/', $item, $matches))
-            return 'count($' . $matches[1] . ')';
-        elseif(preg_match('/(\w*)\.indexOf\([\'\"](.*)[\'\"]\)/i', $item, $matches))
-            return "(((\$index = array_search('{$matches[2]}', " . $this->fixCodeItem($matches[1]) . ')) === false) ? -1 : $index)';
-
-        if(strpos($item, '.') !== false)
-            $item = preg_replace('/\.(\w+)/', '->$1', $item);
-
-        if(!(substr($item, 0, 1) == "'" && substr($item, -1, 1) == "'") && !in_array(strtolower($item), $keywords) && !is_numeric($item))
-            $item = '$' . $item;
-
-        return $item;
 
     }
 
