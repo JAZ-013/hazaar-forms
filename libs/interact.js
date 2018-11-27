@@ -621,7 +621,7 @@ var form;
         if (Array.isArray(def.options)) {
             for (let x in def.options) {
                 if (!(typeof def.options[x] === 'object' && 'when' in def.options[x])) continue;
-                if (_eval(host, def.options[x].when, null, item_data, item_data.value)) {
+                if (_eval(host, def.options[x].when, null, item_data, item_data ? item_data.value : null)) {
                     options = 'items' in def.options[x] ? def.options[x].items : def.options[x];
                     break;
                 }
