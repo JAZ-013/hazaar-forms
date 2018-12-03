@@ -245,7 +245,7 @@ var form;
         } else if (input.is('select')) {
             let value = input.val();
             if (value === '__hz_other') {
-                item_data.set(null, null, item_data.value ? null : undefined);
+                item_data.set(null, null, item_data.other, false);
                 var group = $('<div>').addClass(host.settings.styleClasses.inputGroup);
                 var oInput = $('<input type="text" placeholder="Enter other option...">')
                     .addClass(host.settings.styleClasses.input)
@@ -283,7 +283,7 @@ var form;
         var update = def.update, cb_done = null, item_data = _get_data_item(host.data, def.name);
         if (typeof update === 'string') update = { "url": update };
         if (typeof input === 'object') {
-            if (item_data && input.is('select') && item_data.enabled() === true) {
+            if (item_data && input.is('select') && item_data.enabled() === true && input.val() !== '__hz_other') {
                 let other = input.children('option[value="' + item_data.value + '"]').data('other') || null;
                 item_data.enabled(false);
                 item_data.set(item_data.value, input.children('option:selected').text(), other);
@@ -550,18 +550,16 @@ var form;
             if (default_item !== null && data[x][labelKey] === default_item)
                 item_data.set(data[x][valueKey], data[x][labelKey], data[x][options.other]);
         }
-        if ('other' in def && _eval(host, def.other) === true) {
-            select.append($('<option>').attr('value', '__hz_other').html("Other"));
-            if (def.name in item_data && item_data[def.name].value === null && item_data[def.name].other !== null)
-                select.val('__hz_other').change();
-        }
         if (item_data) {
+            if ('other' in def && _eval(host, def.other) === true) {
+                select.append($('<option>').attr('value', '__hz_other').html("Other"));
+                if (item_data.value === null && item_data.other !== null)
+                    select.val('__hz_other').change();
+            }
             if (item_data.value && data.find(function (e, index, obj) {
                 return e && e[valueKey] === item_data.value;
             })) select.val(item_data.value);
-            else if (item_data.value === null && item_data.other !== null) {
-                select.val('__hz_other').change();
-            } else {
+            else {
                 item_data.value = null;
                 if (Object.keys(data).length === 1 && options.single === true) {
                     var item = data[Object.keys(data)[0]], key = _is_int(def, item[valueKey]);
