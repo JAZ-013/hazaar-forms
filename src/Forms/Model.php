@@ -198,7 +198,7 @@ class Model extends \Hazaar\Model\Strict {
 
                     if(property_exists($this->__form, 'types') && ($customType = ake($this->__form->types, $def['type']))){
 
-                        $def = array_merge((array)$customType, $def);
+                        $def = array_merge_recursive((array)$customType, $def);
 
                         $def['type'] = ake($customType, 'type', 'text');
 
