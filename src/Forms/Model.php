@@ -164,7 +164,7 @@ class Model extends \Hazaar\Model\Strict {
         $fields = $this->__form->fields;
 
         //Make any changes to the field defs for use in strict models.
-        foreach($fields as $key => &$def)
+        foreach($fields as &$def)
             $this->convert_definition($def);
 
         $this->__initialised = true;
@@ -198,7 +198,7 @@ class Model extends \Hazaar\Model\Strict {
 
                     if(property_exists($this->__form, 'types') && ($customType = ake($this->__form->types, $def['type']))){
 
-                        $def = array_merge_recursive((array)$customType, $def);
+                        $def = $this->array_merge_recursive_override($customType, $def);
 
                         $def['type'] = ake($customType, 'type', 'text');
 
@@ -240,8 +240,24 @@ class Model extends \Hazaar\Model\Strict {
 
             if(ake($def, 'type') !== 'array'){
 
-                foreach($def[$target] as &$field)
+                $extra = array();
+
+                if(array_key_exists('disabled', $def))
+                    $extra['disabled'] = $def['disabled'];
+
+                if(array_key_exists('protected', $def))
+                    $extra['protected'] = $def['protected'];
+
+                if(array_key_exists('required', $def))
+                    $extra['required'] = $def['required'];
+
+                foreach($def[$target] as &$field){
+
+                    $field = $this->array_merge_recursive_override($extra, $field);
+
                     $this->convert_definition($field);
+
+                }
 
             }
 
@@ -254,6 +270,35 @@ class Model extends \Hazaar\Model\Strict {
             $def['value'] = new \Hazaar\Model\DataBinderValue(ake($def['value'], 0), ake($def['value'], 1), ake($def['value'], 2));
 
         }
+
+    }
+
+    /**
+     * Merge multiple arrays into a single array with override priority
+     *
+     * @return \array
+     */
+    private function array_merge_recursive_override(){
+
+        $array = array();
+
+        foreach(func_get_args() as $arg){
+
+            if(!(is_array($arg) || $arg instanceof \stdClass))
+                continue;
+
+            foreach($arg as $key => $value){
+
+                if(is_array($value) || $value instanceof \stdClass)
+                    $array[$key] = $this->array_merge_recursive_override((array_key_exists($key, $array) ? $array[$key] : array()), $value);
+                else
+                    $array[$key] = $value;
+
+            }
+
+        }
+
+        return $array;
 
     }
 

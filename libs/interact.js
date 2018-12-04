@@ -8,7 +8,7 @@ if (typeof Object.assign !== 'function') {
                 throw new TypeError('Cannot convert undefined or null to object');
             }
             var to = Object(target);
-            for (var index = 1; index < arguments.length; index++) {
+            for (let index = 1; index < arguments.length; index++) {
                 var nextSource = arguments[index];
 
                 if (nextSource !== null) { // Skip over if undefined or null
@@ -30,7 +30,7 @@ if (typeof Object.assign !== 'function') {
 Array.fromObject = function (object) {
     if (typeof object !== 'object') return null;
     var array = [];
-    for (x in object) array.push(object[x]);
+    for (let x in object) array.push(object[x]);
     return array;
 };
 
@@ -1077,7 +1077,7 @@ var form;
             return '{{' + name + '.' + item + '}}';
         };
         if (Array.isArray(field.options))
-            for (x in field.options) _fix_subfield_options(name, field.options);
+            for (let x in field.options) _fix_subfield_options(name, field.options);
         else if (typeof field.options === 'object' && 'url' in field.options)
             field.options.url = field.options.url.replace(rx, replacer);
         else if (typeof field.options === 'string') field.options = field.options.replace(rx, replacer);
@@ -1209,7 +1209,7 @@ var form;
         if ('hint' in def) field.append($('<small class="form-text text-muted">').html(_match_replace(host, def.hint, null, true, true)));
         if ('watch' in def) {
             if (!Array.isArray(def.watch)) def.watch = [def.watch];
-            for (x in def.watch) host.data.watch(def.watch[x], function (field) { _input_event_update(host, field); });
+            for (let x in def.watch) host.data.watch(def.watch[x], function (field) { _input_event_update(host, field); });
         }
         return field;
     }
@@ -1417,7 +1417,7 @@ var form;
                             if (callbacks.length > 0) for (let x in callbacks) callbacks[x](def.name, result, response);
                         }).fail(_error);
                     } else if (callbacks.length > 0) for (let x in callbacks) callbacks[x](def.name, result, extra);
-                    if (def.name in host.monitor) for (x in host.monitor[def.name]) host.monitor[def.name][x](result);
+                    if (def.name in host.monitor) for (let x in host.monitor[def.name]) host.monitor[def.name][x](result);
                 }
             } else for (let x in callbacks) callbacks[x](name, false, extra);
         });
@@ -1478,7 +1478,7 @@ var form;
                     var index = queue.indexOf(name);
                     if (index >= 0) queue.splice(index, 1);
                     if (!Array.isArray(result)) result = [{ name: name, result: result }];
-                    for (x in result) {
+                    for (let x in result) {
                         if (result[x].result !== true) errors.push(result[x].result);
                         $('[data-bind="' + result[x].name + '"]')
                             .toggleClass('is-invalid', result[x].result !== true)
@@ -1651,13 +1651,13 @@ var form;
     }
 
     function _prepare_field_definitions(host, fields, extra) {
-        for (x in fields) {
+        for (let x in fields) {
             let itemExtra = extra ? $.extend(true, {}, extra) : null;
             if (!('type' in fields[x]) && ('options' in fields[x] || 'lookup' in fields[x])) {
                 fields[x].type = 'text';
             } else if ('type' in fields[x] && 'types' in host.def && fields[x].type in host.def.types) {
                 let source_type = host.def.types[fields[x].type];
-                fields[x] = jQuery.extend(true, {}, fields[x], source_type, extra);
+                fields[x] = jQuery.extend(true, {}, source_type, itemExtra, fields[x]);
                 fields[x].horizontal = false;
                 //Propagate some field options
                 itemExtra = {};
@@ -1671,7 +1671,7 @@ var form;
 
     function _load_scripts(host, scripts) {
         if (!Array.isArray(scripts)) scripts = [scripts];
-        for (x in scripts) {
+        for (let x in scripts) {
             jQuery.ajax({
                 url: hazaar.url(host.settings.controller, 'script/' + scripts[x]),
                 dataType: 'script',
