@@ -327,6 +327,18 @@ class Model extends \Hazaar\Model\Strict {
 
     }
 
+    public function getDescription(){
+
+        return ake($this->__form, 'description');
+
+    }
+
+    public function getVersion(){
+
+        return ake($this->__form, 'version');
+
+    }
+
     public function lock(){
 
         $this->__locked = true;
