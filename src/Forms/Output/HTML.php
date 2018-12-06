@@ -306,8 +306,14 @@ class HTML extends \Hazaar\Forms\Output {
 
             if($type == 'boolean')
                 $field->value = yn($field->value);
-            elseif($field->value instanceof \Hazaar\Date)
-                $field->value = $field->value->date();
+            elseif($field->value instanceof \Hazaar\Date){
+
+                if(ake($field, 'org_type', 'date') === 'datetime')
+                    $field->value = $field->value->datetime();
+                else
+                    $field->value = $field->value->date();
+
+            }
 
             $value_group = (new \Hazaar\Html\Div())->class('form-value');
 

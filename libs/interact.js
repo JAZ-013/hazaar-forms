@@ -696,7 +696,7 @@ var form;
         return group;
     }
 
-    function _input_date(host, def) {
+    function _input_datetime(host, def) {
         var item_data = _get_data_item(host.data, def.name);
         var group = $('<div>').addClass(host.settings.styleClasses.group).data('def', def);
         var label = $('<label>').addClass(host.settings.styleClasses.label)
@@ -705,7 +705,7 @@ var form;
             .appendTo(group);
         var input_group = $('<label class="date">').addClass(host.settings.styleClasses.inputGroup);
         var input = $('<input>').addClass(host.settings.styleClasses.input)
-            .attr('type', 'date')
+            .attr('type', def.type === 'datetime' ? 'datetime-local' : 'date')
             .attr('name', def.name)
             .attr('id', '__hz_field_' + def.name)
             .attr('data-bind', def.name)
@@ -1172,7 +1172,8 @@ var form;
                     field = _input_std(host, 'number', def);
                     break;
                 case 'date':
-                    field = _input_date(host, def);
+                case 'datetime':
+                    field = _input_datetime(host, def);
                     break;
                 case 'file':
                     field = _input_file(host, def);
@@ -1658,6 +1659,7 @@ var form;
             } else if ('type' in fields[x] && 'types' in host.def && fields[x].type in host.def.types) {
                 let source_type = host.def.types[fields[x].type];
                 fields[x] = jQuery.extend(true, {}, source_type, itemExtra, fields[x]);
+                fields[x].type = source_type.type;
                 fields[x].horizontal = false;
                 //Propagate some field options
                 itemExtra = {};

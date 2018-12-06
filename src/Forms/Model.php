@@ -177,8 +177,21 @@ class Model extends \Hazaar\Model\Strict {
 
         if($type = ake($def, 'type')){
 
+            if(property_exists($this->__form, 'types') && ($customType = ake($this->__form->types, $def['type']))){
+
+                $def = $this->array_merge_recursive_override($customType, $def);
+
+                $type = $def['type'] = ake($customType, 'type', 'text');
+
+                $def['horizontal'] = false;
+
+            }
+
+            $def['org_type'] = $type;
+
             switch($type){
                 case 'date':
+                case 'datetime':
 
                     $def['type'] = 'Hazaar\Date';
 
@@ -193,18 +206,6 @@ class Model extends \Hazaar\Model\Strict {
                     $def['file'] = true;
 
                     break;
-
-                default:
-
-                    if(property_exists($this->__form, 'types') && ($customType = ake($this->__form->types, $def['type']))){
-
-                        $def = $this->array_merge_recursive_override($customType, $def);
-
-                        $def['type'] = ake($customType, 'type', 'text');
-
-                        $def['horizontal'] = false;
-
-                    }
 
             }
 
@@ -476,7 +477,7 @@ class Model extends \Hazaar\Model\Strict {
             $array = parent::toArray(false, null, true, true);
 
         if($fields === null)
-            $fields = $this->__form->fields;
+            $fields = $this->fields;
 
         foreach($fields as $name => $field){
 
@@ -553,10 +554,14 @@ class Model extends \Hazaar\Model\Strict {
             }
 
             //Format date for output to the form
-            if(array_key_exists('type', $field)
-                && $field['type'] == 'date'
-                && $array[$name] instanceof \Hazaar\Date)
-                $array[$name] = $array[$name]->format('Y-m-d');
+            if($array[$name] instanceof \Hazaar\Date){
+
+                if(ake($field, 'org_type', 'date') === 'datetime')
+                    $array[$name] = $array[$name]->format('Y-m-d\TH:i');
+                else
+                    $array[$name] = $array[$name]->format('Y-m-d');
+
+            }
 
             /*
              * Only format the field if the format specifier is a string/number formatter (has A/9 values).
