@@ -481,25 +481,16 @@ class Model extends \Hazaar\Model\Strict {
 
         foreach($fields as $name => $field){
 
-            if(is_array($field) && array_key_exists('fields', $field)){
+            $type = ake($field, 'type');
 
-                if(ake($field, 'type') === 'array'){
+            if($type === 'array' && is_array(ake($field, 'arrayOf'))){
 
-                    foreach($array[$name] as $index => $item)
-                        $array[$name][$index] = $this->toFormArray($array[$name][$index], $field['fields']);
+                foreach($array[$name] as $index => $item)
+                    $array[$name][$index] = $this->toFormArray($array[$name][$index], ake($field, 'arrayOf'));
 
-                }else
-                    $array[$name] = $this->toFormArray($array[$name], $field['fields']);
+            }elseif($type === 'model'){
 
-            }elseif(is_object($field) && property_exists($field, 'fields')){
-
-                if(ake($field, 'type') === 'array'){
-
-                    foreach($array[$name] as $index => $item)
-                        $array[$name][$index] = $this->toFormArray($array[$name][$index], $field->fields);
-
-                }else
-                    $array[$name] = $this->toFormArray($array[$name], $field->fields);
+                $array[$name] = $this->toFormArray($array[$name], ake($field, 'items'));
 
             }else{
 
@@ -538,11 +529,11 @@ class Model extends \Hazaar\Model\Strict {
         if(is_array($field)){
 
             //Look into sub-fields
-            if(array_key_exists('fields', $field)){
+            if(array_key_exists('items', $field)){
 
-                settype($field['fields'], 'array');
+                settype($field['items'], 'array');
 
-                foreach($field['fields'] as $sub_name => $sub_field){
+                foreach($field['items'] as $sub_name => $sub_field){
 
                     if(is_array($array[$name]))
                         $this->exportField($sub_name, (array)$sub_field, $array[$name]);
