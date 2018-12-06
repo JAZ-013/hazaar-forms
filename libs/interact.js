@@ -368,7 +368,8 @@ var form;
                 btn.click(function () { document.location = _url(host, def.url); });
                 break;
             default:
-                btn.click(function () { _eval_code(host, def.action, null, null, true); });
+                var action = def.action ? def.action : def.change ? def.change : def.click;
+                btn.click(function () { _eval_code(host, action, null, null, true); });
                 break;
         }
         return group;
