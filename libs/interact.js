@@ -260,7 +260,7 @@ Array.fromObject = function (object) {
                     .html($('<i class="fa fa-times">'))
                     .click(function (e) {
                         group.remove();
-                        item_data.value = null;
+                        item_data.other = null;
                         input.val('').show();
                     });
                 if ('format' in def) oInput.inputmask(def.format);
