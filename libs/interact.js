@@ -34,8 +34,6 @@ Array.fromObject = function (object) {
     return array;
 };
 
-var form;
-
 (function ($) {
 
     //Error capture method
