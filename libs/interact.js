@@ -284,7 +284,7 @@ Array.fromObject = function (object) {
             if (item_data && input.is('select') && item_data.enabled() === true && input.val() !== '__hz_other') {
                 let other = input.children('option[value="' + item_data.value + '"]').data('other') || null;
                 item_data.enabled(false);
-                item_data.set(item_data.value, input.children('option:selected').text(), other);
+                item_data.set(item_data.value, input.children('option:selected').text(), other, false);
             } else if (typeof update === 'boolean' || update && ('url' in update || host.settings.update === true)) {
                 var options = {
                     originator: def.name,
@@ -314,7 +314,8 @@ Array.fromObject = function (object) {
                         }
                     }).fail(_error);
                 };
-            } else if (skip_validate !== true) _validate_input(host, input);
+            }
+            if (skip_validate !== true) _validate_input(host, input);
         }
         if (item_data && item_data.enabled() && def.change) _eval_code(host, def.change, item_data.parent, item_data.value, true);
         if (!host.working && host.events.show && host.events.show.length > 0) {
@@ -557,8 +558,10 @@ Array.fromObject = function (object) {
             }
             if (item_data.value && data.find(function (e, index, obj) {
                 return e && e[valueKey] === item_data.value;
-            })) select.val(item_data.value);
-            else {
+            })) {
+                select.val(item_data.value);
+                _input_event_update(host, select);
+            } else {
                 item_data.value = null;
                 if (Object.keys(data).length === 1 && options.single === true) {
                     var item = data[Object.keys(data)[0]], key = _is_int(def, item[valueKey]);
@@ -570,7 +573,6 @@ Array.fromObject = function (object) {
             }
             item_data.enabled(true);
         }
-        _input_event_update(host, select, true);
         return select;
     }
 
