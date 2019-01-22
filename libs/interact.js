@@ -1217,8 +1217,9 @@ Array.fromObject = function (object) {
 
     //Render a page section
     function _section(host, section, p) {
+        var group = $('<div>');
         if (Array.isArray(section)) {
-            var group = $('<div>'), col_width = null;
+            var col_width = null;
             if (typeof p === 'undefined') p = true;
             if (p) {
                 group.addClass('row');
@@ -1235,13 +1236,13 @@ Array.fromObject = function (object) {
             return group;
         }
         if (typeof section !== 'object') return null;
-        var fieldset = $('<fieldset>').data('def', section);
+        var fieldset = $('<fieldset class="col col-12">').data('def', section).appendTo(group);
         if (section.label)
             fieldset.append($('<legend>').html(_match_replace(host, section.label, null, true, true)));
         for (let x in section.fields)
             fieldset.append(_form_field(host, section.fields[x]));
         if ('show' in section) _make_showable(host, section, fieldset);
-        return fieldset;
+        return group.addClass('row');
     }
 
     //Render a page
