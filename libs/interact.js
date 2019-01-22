@@ -804,7 +804,7 @@ var form;
             .attr('data-bind-label', true)
             .data('def', def)
             .attr('id', '__hz_field_' + def.name)
-            .attr('autocomplete', 'form-lookup')
+            .attr('autocomplete', 'off')
             .appendTo(input_group);
         if (def.protected)
             input.prop('disabled', true);
@@ -814,10 +814,8 @@ var form;
                 if (popup.length > 0) {
                     popup.css({ "opacity": "0" });
                     setTimeout(function () {
-                        if (popup.is(':visible')) {
-                            popup.hide().empty();
-                            input.val(item_data.label);
-                        }
+                        popup.hide().empty();
+                        input.val(item_data.label);
                     }, 500);
                 }
             });
@@ -905,6 +903,9 @@ var form;
                             break;
                         case 'Enter':
                             selected.click();
+                            break;
+                        case 'Escape':
+                            list.parent().hide().empty();
                             break;
                     }
                     event.preventDefault();
