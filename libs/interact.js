@@ -1655,6 +1655,7 @@ Array.fromObject = function (object) {
     }
 
     function _prepare_field_definitions(host, fields, extra) {
+        var prop_fields = ["disabled", "protected", "required", "change", "focus", "blur"]; //Fields that propagate
         for (let x in fields) {
             let itemExtra = extra ? $.extend(true, {}, extra) : null;
             if (!('type' in fields[x]) && ('options' in fields[x] || 'lookup' in fields[x])) {
@@ -1666,9 +1667,7 @@ Array.fromObject = function (object) {
                 fields[x].horizontal = false;
                 //Propagate some field options
                 itemExtra = {};
-                if ('disabled' in fields[x]) itemExtra.disabled = fields[x].disabled;
-                if ('protected' in fields[x]) itemExtra.protected = fields[x].protected;
-                if ('required' in fields[x]) itemExtra.required = fields[x].required;
+                for (i in prop_fields) if (prop_fields[i] in fields[x]) itemExtra[prop_fields[i]] = fields[x][prop_fields[i]];
             } else if (itemExtra) fields[x] = jQuery.extend(true, {}, itemExtra, fields[x]);
             if ('fields' in fields[x]) _prepare_field_definitions(host, fields[x].fields, itemExtra);
         }
