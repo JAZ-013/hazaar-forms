@@ -284,7 +284,7 @@ Array.fromObject = function (object) {
             if (item_data && input.is('select') && item_data.enabled() === true && input.val() !== '__hz_other') {
                 let other = input.children('option[value="' + item_data.value + '"]').data('other') || null;
                 item_data.enabled(false);
-                item_data.set(item_data.value, input.children('option:selected').text(), other, false);
+                item_data.set(item_data.value, input.children('option:selected').text(), other);
             } else if (typeof update === 'boolean' || update && ('url' in update || host.settings.update === true)) {
                 var options = {
                     originator: def.name,
