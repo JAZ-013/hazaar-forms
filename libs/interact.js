@@ -1299,8 +1299,11 @@ Array.fromObject = function (object) {
             var page = host.def.pages[host.page];
             if ('validate' in page) {
                 _validate_page(host).done(function (result, errors) {
-                    if (result === true) _page_nav(host, pageno);
-                    else $(host).trigger('validate', [result, errors]);
+                    if (result === true) {
+                        if ('save' in page && _eval(host, page.save, false)) {
+                            _save(host, false).done(function () { _page_nav(host, pageno); });
+                        } else _page_nav(host, pageno);
+                    } else $(host).trigger('validate', [result, errors]);
                 });
                 return;
             } else if ('save' in page && _eval(host, page.save, false)) {
