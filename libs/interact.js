@@ -388,16 +388,17 @@ Array.fromObject = function (object) {
             for (let x in remove) item_data.remove(remove[x]);
         }
         var fChange = function () {
-            var value = this.childNodes[0].value;
+            var value = this.childNodes[0].value, def = $(this.childNodes[0]).data('def');
             var item_data = _get_data_item(host.data, def.name);
             var index = item_data.indexOf(_is_int(def, value));
             if (this.childNodes[0].checked && index === -1)
-                item_data.push({ '__hz_value': value, '__hz_label': this.childNodes[1].innerText });
+                item_data.push({ '__hz_value': value, '__hz_label': this.childNodes[1].textContent });
             else
                 item_data.unset(index);
         };
         var value = _get_data_item(host.data, def.name, true), items = [];
         var valueKey = def.options.value || 'value', labelKey = def.options.label || 'label';
+        var disabled = def.protected === true || _eval(host, def.disabled, false);
         data = _convert_data(data, valueKey, labelKey, def);
         if ('sort' in def.options) {
             if (typeof def.options.sort === 'boolean') def.options.sort = labelKey;
@@ -407,21 +408,24 @@ Array.fromObject = function (object) {
             var btnClass = def.class || 'primary';
             for (let x in data) {
                 let x_value = _is_int(def, data[x][valueKey]), label = data[x][labelKey];
-                let active = x_value instanceof dataBinderArray && x_value.indexOf(x_value) > -1, name = def.name + '_' + x_value;
+                let active = item_data.indexOf(x_value) > -1, name = def.name + '_' + x_value;
                 items.push($('<label class="btn">').addClass('btn-' + btnClass).html([
                     $('<input type="checkbox" autocomplete="off">')
+                        .attr('name', name)
                         .attr('value', x_value)
                         .prop('checked', active)
-                        .prop('disabled', def.protected === true)
-                        .attr('data-bind-value', x_value), label
+                        .toggleClass('active', active)
+                        .prop('disabled', disabled)
+                        .attr('data-bind-value', x_value)
+                        .data('def', def), label
                 ]).toggleClass('active', active).change(fChange));
             }
-            return items;
+            return container.addClass('btn-group').addClass('btn-group-toggle').html(items).parent().show();
         }
         if (!('columns' in def)) def.columns = 1;
         if (def.columns > 6) def.columns = 6;
         var col_width = Math.floor(12 / def.columns), per_col = Math.ceil(Object.keys(data).length / def.columns);
-        var cols = $('<div class="row">'), column = 0, disabled = def.protected === true || _eval(host, def.disabled, false);
+        var cols = $('<div class="row">'), column = 0;
         for (let col = 0; col < def.columns; col++)
             items.push($('<div>').addClass('col-md-' + col_width).toggleClass('custom-controls-stacked', def.inline));
         for (let x in data) {
