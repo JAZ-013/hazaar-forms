@@ -421,10 +421,9 @@ Array.fromObject = function (object) {
         if (!('columns' in def)) def.columns = 1;
         if (def.columns > 6) def.columns = 6;
         var col_width = Math.floor(12 / def.columns), per_col = Math.ceil(Object.keys(data).length / def.columns);
-        var cols = $('<div class="row">'), column = 0;
+        var cols = $('<div class="row">'), column = 0, disabled = def.protected === true || _eval(host, def.disabled, false);
         for (let col = 0; col < def.columns; col++)
-            items.push($('<div>').addClass('col-md-' + col_width)
-                .toggleClass('custom-controls-stacked', def.inline));
+            items.push($('<div>').addClass('col-md-' + col_width).toggleClass('custom-controls-stacked', def.inline));
         for (let x in data) {
             let iv = _is_int(def, data[x][valueKey]), il = data[x][labelKey];
             let active = value instanceof dataBinderArray && value.indexOf(iv) > -1, name = def.name + '_' + iv;
@@ -434,7 +433,7 @@ Array.fromObject = function (object) {
                     .attr('id', '__field_' + name)
                     .attr('value', iv)
                     .prop('checked', active)
-                    .prop('disabled', def.protected === true),
+                    .prop('disabled', disabled),
                 $('<label>').addClass(host.settings.styleClasses.chkLabel)
                     .html(il)
                     .attr('for', '__field_' + name)
