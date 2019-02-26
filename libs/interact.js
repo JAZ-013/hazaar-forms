@@ -820,7 +820,7 @@ Array.fromObject = function (object) {
                         popup.hide().empty();
                         input.val(item_data.label);
                     }, 500);
-                }
+                } else input.val(item_data.label);
             });
         var value_input = $('<input type="hidden">')
             .attr('data-bind', def.name)
@@ -909,6 +909,11 @@ Array.fromObject = function (object) {
                             break;
                         case 'Escape':
                             list.parent().hide().empty();
+                            break;
+                        case 'Backspace':
+                            if (input.val() !== '') break;
+                        case 'Delete':
+                            item_data.empty();
                             break;
                     }
                     event.preventDefault();
