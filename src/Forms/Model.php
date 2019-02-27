@@ -201,7 +201,7 @@ class Model extends \Hazaar\Model\Strict {
 
                     $def['type'] = 'array';
 
-                    $def['arrayOf'] = 'string';
+                    $def['arrayOf'] = 'model';
 
                     $def['file'] = true;
 

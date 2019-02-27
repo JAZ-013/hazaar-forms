@@ -767,38 +767,29 @@ Array.fromObject = function (object) {
             select: function (files) {
                 for (let x in files) {
                     host.uploads.push({ "field": def.name, "file": files[x] });
-                    item_data.push(files[x].name);
+                    item_data.push(_objectify_file(files[x]), true);
                 }
                 _input_event_update(host, input);
             },
             remove: function (file) {
-                file = _objectify_file(file);
+                if (file instanceof File) file = _objectify_file(file);
                 host.uploads = host.uploads.filter(function (item, index) {
                     if (!(item.field === def.name && item.file.name === file.name))
                         return item;
                 });
                 host.deloads.push({ "field": def.name, "file": file });
-                item_data.remove(file.name);
+                item_data.remove(file, true);
                 _input_event_update(host, input);
                 return true;
             }
         }).appendTo(group).on('push', function (event, field_name, value) {
-            var item = host.uploads.find(function (element) {
-                return element.field === field_name && element.file.name === value.value;
-            });
-            if (item) input.fileUpload('add', item.file);
+            input.fileUpload('add', value.save());
         }).on('pop', function (event, field_name, value) {
-            input.fileUpload('remove', { name: value.value });
+            input.fileUpload('remove', value.save());
         });
-        _post(host, 'fileinfo', { 'field': def.name }, true).done(function (response) {
-            if (!response.ok) return;
-            var filelist = [];
-            for (let x in response.files) {
-                filelist.push(response.files[x].name);
-                input.fileUpload('add', response.files[x]);
-            }
-            item_data.populate(filelist);
-        }).fail(_error);
+        item_data.each(function (item) {
+            input.fileUpload('add', item.save());
+        });
         return group;
     }
 
@@ -1892,7 +1883,7 @@ $.fn.fileUpload = function () {
             $('<div class="dz-remove">').html($('<i class="fa fa-times">')).click(function (e) {
                 var item = $(this).parent();
                 if (typeof host.options.remove === 'function') host.options.remove(file);
-                if (host.autoRemove) host._remove(item.data('file'));
+                if (host.options.autoRemove) host._remove(item.data('file'));
                 e.stopPropagation();
             })
         ]).data('file', file).click(function (e) { e.stopPropagation(); }));
@@ -1901,11 +1892,11 @@ $.fn.fileUpload = function () {
         this.files = this.files.filter(function (item) {
             return item.name !== file.name;
         });
-        if (this.files.length === 0 && this.o.dzwords) this.o.dzwords.show();
         host.o.list.children().each(function (index, o) {
             var item = $(o);
             if (item.data('file').name === file.name) item.remove();
         });
+        if (this.files.length === 0 && this.o.dzwords) this.o.dzwords.show();
         return true;
     };
     host._preview = function (file) {
@@ -2011,7 +2002,7 @@ $.fn.fileUpload = function () {
     host._render = function (host) {
         $(this).addClass('form-fileupload');
         this.o = {};
-        this.o.input = $('<input type="file" class="form-control">').appendTo(host);//.hide();
+        this.o.input = $('<input type="file" class="form-control">').appendTo(host);
         if (host.options.accept) this.o.input.attr('accept', host.options.accept);
         this.o.list = $('<div class="dz-items">');
         if (host.options.multiple) {
