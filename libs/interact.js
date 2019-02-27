@@ -762,6 +762,8 @@ Array.fromObject = function (object) {
             height: def.height || null,
             accept: def.accept || null,
             maxSize: def.maxSize || host.settings.maxUploadSize || null,
+            autoAdd: false,
+            autoRemove: false,
             select: function (files) {
                 for (let x in files) {
                     host.uploads.push({ "field": def.name, "file": files[x] });
@@ -780,7 +782,14 @@ Array.fromObject = function (object) {
                 _input_event_update(host, input);
                 return true;
             }
-        }).appendTo(group);
+        }).appendTo(group).on('push', function (event, field_name, value) {
+            var item = host.uploads.find(function (element) {
+                return element.field === field_name && element.file.name === value.value;
+            });
+            if (item) input.fileUpload('add', item.file);
+        }).on('pop', function (event, field_name, value) {
+            input.fileUpload('remove', { name: value.value });
+        });
         _post(host, 'fileinfo', { 'field': def.name }, true).done(function (response) {
             if (!response.ok) return;
             var filelist = [];
@@ -1848,11 +1857,23 @@ $.fn.fileUpload = function () {
             case 'add':
                 host._add(arguments[1]);
                 break;
+            case 'remove':
+                host._remove(arguments[1]);
+                break;
+            case 'list':
+                return host.files;
         }
         return this;
     }
     host.files = [];
-    host.options = $.extend({ name: 'file', multiple: false, btnClass: 'btn btn-default', maxSize: 0 }, arguments[0]);
+    host.options = $.extend({
+        name: 'file',
+        multiple: false,
+        btnClass: 'btn btn-default',
+        maxSize: 0,
+        autoAdd: true,
+        autoRemove: true
+    }, arguments[0]);
     host._isIE = function () {
         return !!navigator.userAgent.match(/Trident/g) || !!navigator.userAgent.match(/MSIE/g);
     };
@@ -1870,20 +1891,21 @@ $.fn.fileUpload = function () {
             $('<div class="dz-detail">').html($('<a>').attr('href', file.url).attr('target', '_blank').html(file.name).attr('title', file.name)),
             $('<div class="dz-remove">').html($('<i class="fa fa-times">')).click(function (e) {
                 var item = $(this).parent();
-                if (host._remove(item.data('file')))
-                    item.remove();
+                if (typeof host.options.remove === 'function') host.options.remove(file);
+                if (host.autoRemove) host._remove(item.data('file'));
                 e.stopPropagation();
             })
         ]).data('file', file).click(function (e) { e.stopPropagation(); }));
     };
     host._remove = function (file) {
-        if (!(typeof this.options.remove === 'function'
-            && this.options.remove(file)))
-            return false;
         this.files = this.files.filter(function (item) {
             return item.name !== file.name;
         });
         if (this.files.length === 0 && this.o.dzwords) this.o.dzwords.show();
+        host.o.list.children().each(function (index, o) {
+            var item = $(o);
+            if (item.data('file').name === file.name) item.remove();
+        });
         return true;
     };
     host._preview = function (file) {
@@ -1916,7 +1938,7 @@ $.fn.fileUpload = function () {
             let file = fileArray[x];
             if (host._checkexists(file)) return;
             if (host._checksize(file)) {
-                host._add(file);
+                if (host.options.autoAdd) host._add(file);
                 added.push(file);
             } else {
                 failed.push(file);
