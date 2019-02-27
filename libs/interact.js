@@ -1876,7 +1876,7 @@ $.fn.fileUpload = function () {
         if (Array.isArray(file)) {
             if (host.options.multiple === true) for (let x in file) this._add(file[x]);
             return;
-        }
+        } else if (typeof file !== 'object') file = { name: file, type: "text/text" };
         if (!('lastModifiedDate' in file)) file.lastModifiedDate = new Date(file.lastModified * 1000);
         host.files.push(file);
         if (host.o.dzwords) host.o.dzwords.hide();
