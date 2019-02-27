@@ -766,6 +766,10 @@ Array.fromObject = function (object) {
             autoRemove: false,
             select: function (files) {
                 for (let x in files) {
+                    host.deloads = host.deloads.filter(function (item, index) {
+                        if (!(item.field === def.name && item.file.name === files[x].name))
+                            return item;
+                    });
                     host.uploads.push({ "field": def.name, "file": files[x] });
                     item_data.push(_objectify_file(files[x]), true);
                 }
