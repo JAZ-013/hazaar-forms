@@ -1698,8 +1698,7 @@ Array.fromObject = function (object) {
         for (let x in scripts) {
             jQuery.ajax({
                 url: hazaar.url(host.settings.controller, 'script/' + scripts[x]),
-                dataType: 'script',
-                async: false
+                dataType: 'script'
             }).fail(_error);
         }
     }
