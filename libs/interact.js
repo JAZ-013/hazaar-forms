@@ -586,7 +586,10 @@ Array.fromObject = function (object) {
             return _input_select_items(host, options, null, select);
         if (track !== false) select.prop('disabled', true).html($('<option value selected>').html('Loading...'));
         postops.url = _url(host, postops.url);
-        return $.ajax(postops).done(function (data) { _input_select_items(host, options, data, select); }).fail(_error);
+        return $.ajax(postops).done(function (data) {
+            if (typeof select.data('def') !== 'object') return;
+            _input_select_items(host, options, data, select);
+        }).fail(_error);
     }
 
     function _input_select_populate(host, options, select, track, item_data) {
@@ -1292,6 +1295,7 @@ Array.fromObject = function (object) {
 
     //Navigate to a page
     function _nav(host, pageno, cbComplete) {
+        if (pageno === host.page) return false;
         var _page_nav = function (host, pageno) {
             _track(host);
             host.objects.container.empty();
