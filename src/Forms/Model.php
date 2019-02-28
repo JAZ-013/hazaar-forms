@@ -692,7 +692,7 @@ class Model extends \Hazaar\Model\Strict {
 
     }
 
-    private function __group($fields, &$form){
+    private function __group($fields, &$form, $item_value = null){
 
         if(is_array($fields)){
 
@@ -700,7 +700,7 @@ class Model extends \Hazaar\Model\Strict {
 
             foreach($fields as $item){
 
-                if($item = $this->__group($item, $form))
+                if($item = $this->__group($item, $form, $item_value))
                     $items[] = $item;
 
             }
@@ -725,7 +725,7 @@ class Model extends \Hazaar\Model\Strict {
 
         }
 
-        return $this->__field($fields, $form);
+        return $this->__field($fields, $form, true, $item_value);
 
     }
 
@@ -757,7 +757,7 @@ class Model extends \Hazaar\Model\Strict {
 
     }
 
-    private function __field($field, $form, $evaluate = true){
+    private function __field($field, $form, $evaluate = true, $item_value = null){
 
         if(is_string($field)){
 
@@ -788,7 +788,7 @@ class Model extends \Hazaar\Model\Strict {
         if(!$value && ake($output, 'empty', true) === false)
             return null;
 
-        if($evaluate === true && (!is_object($field) || (property_exists($field, 'show') && !$this->evaluate($field->show))))
+        if($evaluate === true && (!is_object($field) || (property_exists($field, 'show') && !$this->evaluate($field->show, $item_value))))
             return null;
 
         if($value === null){
@@ -862,7 +862,7 @@ class Model extends \Hazaar\Model\Strict {
 
             $layout = $this->__resolve_field_layout($field->name, (property_exists($field, 'layout') ? $field->layout : $field->fields), $field->fields);
 
-            $field->fields = $this->__group($layout, $field);
+            $field->fields = $this->__group($layout, $field, $value);
 
             return $field;
 
@@ -903,7 +903,7 @@ class Model extends \Hazaar\Model\Strict {
 
     }
 
-    public function evaluate($code){
+    public function evaluate($code, $item_value = null){
 
         if(is_bool($code))
             return $code;
@@ -947,7 +947,7 @@ class Model extends \Hazaar\Model\Strict {
 
         }
 
-        $func = function($values, $evaluate){
+        $func = function($values, $evaluate, $item_value){
 
             $export = function(&$export, &$value, $quote = true){
 
@@ -993,6 +993,8 @@ class Model extends \Hazaar\Model\Strict {
                 //Form is also acessible in the evaluted code.
                 $form = $this;
 
+                $item = $item_value;
+
                 $tags = $this->__tags;
 
                 return @eval($code);
@@ -1010,7 +1012,7 @@ class Model extends \Hazaar\Model\Strict {
 
             ob_start();
 
-            $result = $func($this->values, $code);
+            $result = $func($this->values, $code, $item_value);
 
             if($buf = ob_get_clean()){
 
