@@ -461,6 +461,7 @@ Array.fromObject = function (object) {
         if (track === true) _track(host);
         postops.url = _url(host, postops.url);
         $.ajax(postops).done(function (data) {
+            if (typeof container.data('def') !== 'object') return _ready(host);
             _input_select_multi_items(host, data, container);
             _ready(host);
         }).fail(_error);
