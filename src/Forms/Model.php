@@ -995,7 +995,11 @@ class Model extends \Hazaar\Model\Strict {
 
                 $item = $item_value;
 
-                $tags = $this->__tags;
+                $tags = new class($this->__tags){
+                    private $items = array();
+                    function __construct($items){ $this->items = $items; }
+                    function indexOf($value){ return (($index = array_search($value, $this->items)) !== false) ? $index : -1; }
+                };
 
                 return @eval($code);
 

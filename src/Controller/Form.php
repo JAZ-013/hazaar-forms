@@ -49,7 +49,7 @@ abstract class Form extends Action {
 
         }
 
-        if(!($model = $this->form_get($name, $tags)) instanceof \Hazaar\Forms\Model)
+        if(!($model = $this->form_get($name, $this->__tags)) instanceof \Hazaar\Forms\Model)
             throw new \Exception(__CLASS__ . '::get() MUST return a form a Hazaar\Forms\Model object!');
 
         $model->registerController($this);
