@@ -437,7 +437,8 @@ Array.fromObject = function (object) {
                     .attr('id', '__field_' + name)
                     .attr('value', iv)
                     .prop('checked', active)
-                    .prop('disabled', disabled),
+                    .prop('disabled', disabled)
+                    .data('def', def),
                 $('<label>').addClass(host.settings.styleClasses.chkLabel)
                     .html(il)
                     .attr('for', '__field_' + name)
