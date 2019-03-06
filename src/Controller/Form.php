@@ -390,14 +390,11 @@ abstract class Form extends Action {
         if(!$this->request->has('name'))
             throw new \Exception('Missing form name in request!');
 
-        if($params = $this->request->get('params'))
-            $params = json_decode($params, true);
+        $params = $this->request->has('params') ? json_decode($this->request->get('params'), true) : null;
 
         $this->form($this->request->name, $params);
 
         $out = new \Hazaar\Controller\Response\Json(array( 'ok' => false, 'name' => $this->request->name));
-
-        $params = json_decode($this->request->get('params'), true);
 
         $files = new \Hazaar\File\Upload();
 
@@ -418,10 +415,14 @@ abstract class Form extends Action {
 
             }
 
+            $out->attached = array();
+
             foreach($attachments as $name => $files){
 
                 if(!$this->file_attach($name, $files, $params))
                     throw new \Exception('Unknown error saving attachments!');
+
+                $out->attached[] = $files;
 
             }
 
@@ -431,6 +432,8 @@ abstract class Form extends Action {
 
         if(is_array($remove) && count($remove) > 0){
 
+            $out->removed = array();
+
             foreach($remove as $rm){
 
                 if(!(($field = ake($rm, 'field')) && ($file = ake($rm, 'file'))))
@@ -438,6 +441,8 @@ abstract class Form extends Action {
 
                 if(!$this->file_detach($field, array($file), $params))
                     throw new \Exception('Unknown error saving attachments!');
+
+                $out->removed[] = $file;
 
             }
 

@@ -771,7 +771,7 @@ Array.fromObject = function (object) {
             autoRemove: false,
             select: function (files) {
                 for (let x in files) {
-                    host.deloads = host.deloads.filter(function (item, index) {
+                    host.deloads = host.deloads.filter(function (item) {
                         if (!(item.field === def.name && item.file.name === files[x].name))
                             return item;
                     });
@@ -781,13 +781,13 @@ Array.fromObject = function (object) {
                 _input_event_update(host, input);
             },
             remove: function (file) {
-                if (file instanceof File) file = _objectify_file(file);
-                host.uploads = host.uploads.filter(function (item, index) {
+                file = _objectify_file(file);
+                host.uploads = host.uploads.filter(function (item) {
                     if (!(item.field === def.name && item.file.name === file.name))
                         return item;
                 });
-                host.deloads.push({ "field": def.name, "file": file });
-                item_data.remove(file, true);
+                host.deloads.push({ "field": def.name, "file": file.name });
+                item_data.unset(item_data.indexOf(function (item) { return item.name.value === file.name; }), true);
                 _input_event_update(host, input);
                 return true;
             }
@@ -1565,8 +1565,16 @@ Array.fromObject = function (object) {
                 if (host.uploads.length > 0 || host.deloads.length > 0) {
                     _upload_files(host).done(function (upload_response) {
                         if (upload_response.ok) {
-                            host.uploads = [];
-                            host.deloads = [];
+                            if ('attached' in upload_response) {
+                                host.uploads = host.uploads.filter(function (file) {
+                                    return upload_response.attached.indexOf(file.file) === false;
+                                });
+                            }
+                            if ('removed' in upload_response) {
+                                host.deloads = host.deloads.filter(function (file) {
+                                    return upload_response.removed.indexOf(file.file) === false;
+                                });
+                            }
                             $(host).trigger('save', [response.result, host.settings.params]);
                             if (callbacks.done) callbacks.done(response);
                         } else {
