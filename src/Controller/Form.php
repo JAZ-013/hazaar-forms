@@ -620,7 +620,7 @@ abstract class Form extends Action {
             if(!$this->form_model)
                 throw new \Exception('Unable to automatically determine file storage path without an initialised form!');
 
-            $key = md5($this->form_model->getName() . $name . serialize($params));
+            $key = md5($this->form_model->getName() . $name . '_' . $params['id']);
 
         }
 
@@ -665,7 +665,7 @@ abstract class Form extends Action {
 
         foreach($files as $file){
 
-            $file = $dir->get($file['name']);
+            $file = $dir->get($file);
 
             if($file->exists())
                 $file->unlink();

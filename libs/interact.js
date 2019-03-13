@@ -796,9 +796,18 @@ Array.fromObject = function (object) {
         }).on('pop', function (event, field_name, value) {
             input.fileUpload('remove', value.save());
         });
-        item_data.each(function (item) {
-            input.fileUpload('add', item.save());
-        });
+        _post(host, 'fileinfo', { 'field': def.name }, true).done(function (response) {
+            if (!response.ok) return;
+            var item_data = _get_data_item(host.data, response.field);
+            item_data.reduce(function (item) {
+                return response.files.findIndex(function (element) { return element.name === item.name.value; }) >= 0;
+            });
+            for (let x in response.files) {
+                if (item_data.indexOf(function (item) { return item.name.value === response.files[x].name; }) < 0)
+                    item_data.push(response.files[x]);
+                else input.fileUpload('add', response.files[x]);
+            }
+        }).fail(_error);
         return group;
     }
 
@@ -1910,8 +1919,8 @@ $.fn.fileUpload = function () {
             return item.name !== file.name;
         });
         host.o.list.children().each(function (index, o) {
-            var item = $(o);
-            if (item.data('file').name === file.name) item.remove();
+            var item = $(o), data = item.data('file');
+            if (data && data.name === file.name) item.remove();
         });
         if (this.files.length === 0 && this.o.dzwords) this.o.dzwords.show();
         return true;
