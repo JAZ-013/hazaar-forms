@@ -236,7 +236,7 @@ Array.fromObject = function (object) {
     function _input_event_change(host, input) {
         var def = input.data('def');
         var item_data = _get_data_item(host.data, input.attr('data-bind'));
-        if (!item_data) return;
+        if (!item_data) return false;
         if (input.is('[type=checkbox]')) {
             let value = input.is(':checked');
             item_data.set(value, value ? 'Yes' : 'No');
@@ -251,7 +251,7 @@ Array.fromObject = function (object) {
                     .val(item_data.other)
                     .attr('data-bind', input.attr('data-bind'))
                     .attr('data-bind-other', true)
-                    .change(function (event) { _input_event_change(host, $(event.target)); })
+                    .change(function (event) { return _input_event_change(host, $(event.target)); })
                     .on('update', function (event, key, value) {
                         input.show();
                         group.remove();
@@ -268,11 +268,10 @@ Array.fromObject = function (object) {
                 input.hide().after(group);
                 oInput.focus();
             } else item_data.set(_is_int(def, value));
-        } else if (def.other === true) {
-            item_data.other = input.val();
-        } else {
-            item_data.value = _is_int(def, input.val());
-        }
+        } else if (def.other === true) item_data.other = input.val();
+        else item_data.value = _is_int(def, input.val());
+        $(host).trigger('change', [item_data]);
+        return false;
     }
 
     function _input_event_update(host, input, skip_validate) {
@@ -663,10 +662,10 @@ Array.fromObject = function (object) {
             .attr('data-bind', def.name);
         if (def.protected)
             select.prop('disabled', true);
-        else select.focus(function (event) { _input_event_focus(host, $(event.target)); })
-            .blur(function (event) { _input_event_blur(host, $(event.target)); })
-            .change(function (event) { _input_event_change(host, $(event.target)); })
-            .on('update', function (event) { _input_event_update(host, $(event.target)); });
+        else select.focus(function (event) { return _input_event_focus(host, $(event.target)); })
+            .blur(function (event) { return _input_event_blur(host, $(event.target)); })
+            .change(function (event) { return _input_event_change(host, $(event.target)); })
+            .on('update', function (event) { return _input_event_update(host, $(event.target)); });
         def.watchers = {};
         if (!("placeholder" in def)) def.placeholder = host.settings.placeholder;
         if ('css' in def) select.css(def.css);
@@ -691,10 +690,10 @@ Array.fromObject = function (object) {
             .data('def', def)
             .appendTo(div);
         if (def.protected) input.prop('disabled', true);
-        else input.focus(function (event) { _input_event_focus(host, $(event.target)); })
-            .blur(function (event) { _input_event_blur(host, $(event.target)); })
-            .change(function (event) { _input_event_change(host, $(event.target)); })
-            .on('update', function (event) { _input_event_update(host, $(event.target)); });
+        else input.focus(function (event) { return _input_event_focus(host, $(event.target)); })
+            .blur(function (event) { return _input_event_blur(host, $(event.target)); })
+            .change(function (event) { return _input_event_change(host, $(event.target)); })
+            .on('update', function (event) { return _input_event_update(host, $(event.target)); });
         $('<label>').addClass(host.settings.styleClasses.chkLabel)
             .html(_match_replace(host, def.label, null, true, true))
             .attr('for', '__hz_field_' + def.name)
@@ -722,10 +721,10 @@ Array.fromObject = function (object) {
             .val(item_data)
             .appendTo(input_group);
         if (def.protected) input.prop('disabled', true);
-        else input.focus(function (event) { _input_event_focus(host, $(event.target)); })
-            .blur(function (event) { _input_event_blur(host, $(event.target)); })
-            .change(function (event) { _input_event_change(host, $(event.target)); })
-            .on('update', function (event) { _input_event_update(host, $(event.target)); });
+        else input.focus(function (event) { return _input_event_focus(host, $(event.target)); })
+            .blur(function (event) { return _input_event_blur(host, $(event.target)); })
+            .change(function (event) { return _input_event_change(host, $(event.target)); })
+            .on('update', function (event) { return _input_event_update(host, $(event.target)); });
         var glyph = $('<div>').addClass(host.settings.styleClasses.inputGroupAppend)
             .html($('<span style="cursor: pointer;">').addClass(host.settings.styleClasses.inputGroupText)
                 .html($('<i class="fa fa-calendar">')
@@ -962,10 +961,10 @@ Array.fromObject = function (object) {
             .data('def', def)
             .val(item_data);
         if (def.protected) input.prop('disabled', true);
-        else input.focus(function (event) { _input_event_focus(host, $(event.target)); })
-            .blur(function (event) { _input_event_blur(host, $(event.target)); })
-            .change(function (event) { _input_event_change(host, $(event.target)); })
-            .on('update', function (event) { _input_event_update(host, $(event.target)); });
+        else input.focus(function (event) { return _input_event_focus(host, $(event.target)); })
+            .blur(function (event) { return _input_event_blur(host, $(event.target)); })
+            .change(function (event) { return _input_event_change(host, $(event.target)); })
+            .on('update', function (event) { return _input_event_update(host, $(event.target)); });
         if (type === 'text' && 'validate' in def && 'maxlen' in def.validate) input.attr('maxlength', def.validate.maxlen);
         if ('format' in def) input.attr('type', 'text').inputmask(def.format);
         if ('placeholder' in def) input.attr('placeholder', def.placeholder);
@@ -1026,9 +1025,9 @@ Array.fromObject = function (object) {
             ])).find('select').each(function (index, item) {
                 var select = $(item), def = select.data('def');
                 select.off('change').on('change', function () {
-                    _input_event_change(sub_host, $(this));
+                    return _input_event_change(sub_host, $(this));
                 }).off('update').on('update', function () {
-                    _input_event_update(sub_host, $(this));
+                    return _input_event_update(sub_host, $(this));
                 });
                 if ('options' in def) _input_select_options(sub_host, def, select, new_item, function (select, options) {
                     _input_select_populate(sub_host, options, select);
