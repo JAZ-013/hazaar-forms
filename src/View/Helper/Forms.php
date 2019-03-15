@@ -59,7 +59,7 @@ class Forms extends \Hazaar\View\Helper {
 
     public function btnReload($label = 'Reload'){
 
-        $id = 'btn_' . uniqid();
+        $id = 'btn_' . md5(random_bytes(8));
 
         $this->jquery->exec("$('#$id').click(function(){ hzForm.hzForm('reload'); });");
 
@@ -69,7 +69,7 @@ class Forms extends \Hazaar\View\Helper {
 
     public function btnValidate($label = 'Validate'){
 
-        $id = 'btn_' . uniqid();
+        $id = 'btn_' . md5(random_bytes(8));
 
         $this->jquery->exec("$('#$id').click(function(){ hzForm.hzForm('validate'); });");
 
@@ -79,7 +79,7 @@ class Forms extends \Hazaar\View\Helper {
 
     public function btnSave($label = 'Save', $validation = true, $params = array()){
 
-        $id = 'btn_' . uniqid();
+        $id = 'btn_' . md5(random_bytes(8));
 
         $this->jquery->exec("$('#$id').click(function(){ hzForm.hzForm('save', "
             . strbool($validation)
@@ -91,7 +91,7 @@ class Forms extends \Hazaar\View\Helper {
 
     public function btnNext($label = 'Next'){
 
-        $id = 'btn_' . uniqid();
+        $id = 'btn_' . md5(random_bytes(8));
 
         $this->jquery->exec("$('#$id').click(function(){ hzForm.hzForm('next'); });");
 
@@ -101,7 +101,7 @@ class Forms extends \Hazaar\View\Helper {
 
     public function btnPrevious($label = 'Previous'){
 
-        $id = 'btn_' . uniqid();
+        $id = 'btn_' . md5(random_bytes(8));
 
         $this->jquery->exec("$('#$id').click(function(){ hzForm.hzForm('prev'); });");
 
