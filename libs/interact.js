@@ -1569,12 +1569,12 @@ Array.fromObject = function (object) {
                 host.posts = {}; //Reset the post cache so we get clean data after 
                 if (host.uploads.length > 0 || host.deloads.length > 0) {
                     $(host).trigger('attachStart', [host.uploads, host.deloads]);
-                    _upload_files(host, function (result, attached) {
-                        $(host).trigger('attachDone', [attached]);
+                    _upload_files(host, function (result, queue) {
+                        $(host).trigger('attachDone', [queue]);
                         if (result) {
                             $(host).trigger('save', [result, host.settings.params]);
                             if (callbacks.done) callbacks.done();
-                        } else $(host).trigger('saverror', ['File upload failed', params]);
+                        } else $(host).trigger('saverror', [{ responseJSON: { error: { str: 'File upload failed' } } }, params, queue]);
                     });
                 } else {
                     $(host).trigger('save', [response.result, host.settings.params]);
@@ -1635,7 +1635,7 @@ Array.fromObject = function (object) {
             });
         }
         if (host.uploads.length > 0) {
-            var queue = { pending: [], working: [] };
+            var queue = { pending: [], working: [], attached: [], failed: [] };
             host.uploads.sort(function (a, b) {
                 if (a.file.name === b.file.name) return 0;
                 return a.file.name < b.file.name ? -1 : 1;
@@ -1675,12 +1675,15 @@ Array.fromObject = function (object) {
                 host.uploads = host.uploads.filter(function (file) { return !(w.field === file.field && w.file.name === file.file.name); });
                 $(host).trigger('fileDone', [w, response]);
             }).fail(function (xhr) {
+                this.upload_file.failed = true;
+                this.upload_file.response = xhr.responseJSON;
                 $(host).trigger('fileError', [this.upload_file, xhr]);
             }).always(function () {
                 var w = this.upload_file;
                 queue.working = queue.working.filter(function (file) { return !(w.field === file.field && w.file.name === file.file.name); });
+                if (w.failed === true) queue.failed.push(w); else queue.attached.push(w);
                 if (queue.pending.length > 0) _upload_file(host, queue, done_callback);
-                else if (queue.working.length === 0) done_callback(true, queue);
+                else if (queue.working.length === 0) done_callback(queue.failed.length === 0, queue);
             });
         }
     }
