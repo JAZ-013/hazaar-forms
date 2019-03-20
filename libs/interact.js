@@ -1670,12 +1670,12 @@ Array.fromObject = function (object) {
                     xhr.upload.file = this.upload_file;
                     return xhr;
                 }
-            }).done(function () {
+            }).done(function (response) {
                 var w = this.upload_file;
                 host.uploads = host.uploads.filter(function (file) { return !(w.field === file.field && w.file.name === file.file.name); });
-                $(host).trigger('fileDone', [w]);
-            }).fail(function () {
-                $(host).trigger('fileError', [this.upload_file]);
+                $(host).trigger('fileDone', [w, response]);
+            }).fail(function (xhr) {
+                $(host).trigger('fileError', [this.upload_file, xhr]);
             }).always(function () {
                 var w = this.upload_file;
                 queue.working = queue.working.filter(function (file) { return !(w.field === file.field && w.file.name === file.file.name); });
