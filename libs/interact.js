@@ -1561,7 +1561,7 @@ Array.fromObject = function (object) {
             _post(host, 'post', params, false).done(function (response) {
                 if (!response.ok) {
                     return $(host).trigger('saverror', [{
-                        responseJSON: { error: { str: response.reason || "An unknown error occurred while saving the form!" } }
+                        error: { str: response.reason || "An unknown error occurred while saving the form!" }
                     }, params]);
                 }
                 if (response.params)
@@ -1574,21 +1574,21 @@ Array.fromObject = function (object) {
                         if (result) {
                             $(host).trigger('save', [result, host.settings.params]);
                             if (callbacks.done) callbacks.done();
-                        } else $(host).trigger('saverror', [{ responseJSON: { error: { str: 'File upload failed' } } }, params, queue]);
+                        } else $(host).trigger('saverror', [{ error: { str: 'File upload failed' } }, params, queue]);
                     });
                 } else {
                     $(host).trigger('save', [response.result, host.settings.params]);
                     if (callbacks.done) callbacks.done();
                 }
             }).fail(function (error) {
-                $(host).trigger('saverror', [error, params]);
+                $(host).trigger('saverror', [error.responseJSON, params]);
             });
         };
         if (validate === true || typeof validate === 'undefined')
             _validate(host).done(function (result, errors) {
                 if (result) save_data(host, extra);
                 else {
-                    $(host).trigger('saverror', [{ responseJSON: { error: { str: "Validation failed!" } } }, errors]);
+                    $(host).trigger('saverror', [{ error: { str: "Validation failed!" }, validation: errors }]);
                     $(host).trigger('validate', [result, errors]);
                     if (host.settings.validateNav) _validate_nav(host, errors);
                 }
