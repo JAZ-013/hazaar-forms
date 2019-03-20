@@ -439,7 +439,7 @@ abstract class Form extends Action {
                 if(!(($field = ake($attachment, 'field')) && ($file = ake($attachment, 'file'))))
                     continue;
 
-                if($this->file_detach($field, array($file), $params))
+                if($this->file_detach($field, $file, $params))
                     $out->removed[] = $file;
 
             }
