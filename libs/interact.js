@@ -387,9 +387,9 @@ Array.fromObject = function (object) {
             for (let x in remove) item_data.remove(remove[x]);
         }
         var fChange = function () {
-            var value = this.childNodes[0].value, def = $(this.childNodes[0]).data('def');
+            var def = $(this.childNodes[0]).data('def'), value = _is_int(def, this.childNodes[0].value);
             var item_data = _get_data_item(host.data, def.name);
-            var index = item_data.indexOf(_is_int(def, value));
+            var index = item_data.indexOf(value);
             if (this.childNodes[0].checked && index === -1)
                 item_data.push({ '__hz_value': value, '__hz_label': this.childNodes[1].textContent });
             else
