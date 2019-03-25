@@ -1727,6 +1727,7 @@ Array.fromObject = function (object) {
         var prop_fields = ["disabled", "protected", "required", "change", "focus", "blur"]; //Fields that propagate
         for (let x in fields) {
             let itemExtra = extra ? $.extend(true, {}, extra) : null;
+            if (typeof fields[x] === 'string') fields[x] = { type: fields[x], label: x };
             if (!('type' in fields[x]) && ('options' in fields[x] || 'lookup' in fields[x])) {
                 fields[x].type = 'text';
             } else if ('type' in fields[x] && 'types' in host.def && fields[x].type in host.def.types) {
