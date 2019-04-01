@@ -801,7 +801,7 @@ Array.fromObject = function (object) {
             item_data.empty();
             for (let x in response.files) if (host.deloads.findIndex(function (e) {
                 return e.field === response.field && e.file === response.files[x].name;
-            }) < 0) item_data.push(response.files[x]);
+            }) < 0) item_data.push(_objectify_file(response.files[x]));
             for (let x in host.uploads) if (host.uploads[x].field === response.field) item_data.push(_objectify_file(host.uploads[x].file));
         }).fail(_error);
         return group;
@@ -1616,6 +1616,10 @@ Array.fromObject = function (object) {
                 type: file.type,
                 url: URL.createObjectURL(file)
             };
+        } else if (Array.isArray(file)) for (x in file) file[x] = _objectify_file(file[x]);
+        else {
+            let filename = /[^/]*$/.exec(file.url)[0];
+            file.url = file.url.substr(0, file.url.length - filename.length) + encodeURIComponent(filename);
         }
         return file;
     }
@@ -1727,6 +1731,7 @@ Array.fromObject = function (object) {
         var prop_fields = ["disabled", "protected", "required", "change", "focus", "blur"]; //Fields that propagate
         for (let x in fields) {
             let itemExtra = extra ? $.extend(true, {}, extra) : null;
+            if (typeof fields[x] === 'string') fields[x] = { type: fields[x], label: x };
             if (!('type' in fields[x]) && ('options' in fields[x] || 'lookup' in fields[x])) {
                 fields[x].type = 'text';
             } else if ('type' in fields[x] && 'types' in host.def && fields[x].type in host.def.types) {
