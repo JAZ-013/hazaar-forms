@@ -49,7 +49,7 @@ abstract class Form extends Action {
 
         }
 
-        if(!($model = $this->form_get($name, $this->__tags)) instanceof \Hazaar\Forms\Model)
+        if(!($model = $this->form_get($name, $this->__tags, $params)) instanceof \Hazaar\Forms\Model)
             throw new \Exception(__CLASS__ . '::get() MUST return a form a Hazaar\Forms\Model object!');
 
         $model->registerController($this);
@@ -80,7 +80,9 @@ abstract class Form extends Action {
 
         $this->__tags[] = 'interact';
 
-        if(!($this->form_model = $this->form_get($this->request->name, $this->__tags)) instanceof \Hazaar\Forms\Model)
+        $params = $this->request->get('params', array());
+
+        if(!($this->form_model = $this->form_get($this->request->name, $this->__tags, $params)) instanceof \Hazaar\Forms\Model)
             throw new \Exception(__CLASS__ . '::get() MUST return a form a Hazaar\Forms\Model object!');
 
         $out = new \Hazaar\Controller\Response\Json(array( 'ok' => false, 'name' => $this->request->name));
@@ -100,7 +102,7 @@ abstract class Form extends Action {
 
                 $postdata = $this->request->getParams();
 
-                $this->form_model->populate($this->form_load($this->request->get('params', array())));
+                $this->form_model->populate($this->form_load($params));
 
                 $this->form_model->lock();
 
@@ -532,7 +534,7 @@ abstract class Form extends Action {
 
     }
 
-    protected function form_get($name, $tags){
+    protected function form_get($name, $tags, $params = array()){
 
         $file = $name . '.json';
 
