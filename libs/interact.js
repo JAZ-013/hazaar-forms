@@ -387,9 +387,9 @@ Array.fromObject = function (object) {
             for (let x in remove) item_data.remove(remove[x]);
         }
         var fChange = function () {
-            var value = this.childNodes[0].value, def = $(this.childNodes[0]).data('def');
+            var def = $(this.childNodes[0]).data('def'), value = _is_int(def, this.childNodes[0].value);
             var item_data = _get_data_item(host.data, def.name);
-            var index = item_data.indexOf(_is_int(def, value));
+            var index = item_data.indexOf(value);
             if (this.childNodes[0].checked && index === -1)
                 item_data.push({ '__hz_value': value, '__hz_label': this.childNodes[1].textContent });
             else
@@ -798,14 +798,11 @@ Array.fromObject = function (object) {
         _post(host, 'fileinfo', { 'field': def.name }, true).done(function (response) {
             if (!response.ok) return;
             var item_data = _get_data_item(host.data, response.field);
-            item_data.reduce(function (item) {
-                return response.files.findIndex(function (element) { return element.name === item.name.value; }) >= 0;
-            });
-            for (let x in response.files) {
-                if (item_data.indexOf(function (item) { return item.name.value === response.files[x].name; }) < 0)
-                    item_data.push(response.files[x]);
-                else input.fileUpload('add', response.files[x]);
-            }
+            item_data.empty();
+            for (let x in response.files) if (host.deloads.findIndex(function (e) {
+                return e.field === response.field && e.file === response.files[x].name;
+            }) < 0) item_data.push(_objectify_file(response.files[x]));
+            for (let x in host.uploads) if (host.uploads[x].field === response.field) item_data.push(_objectify_file(host.uploads[x].file));
         }).fail(_error);
         return group;
     }
@@ -1564,49 +1561,34 @@ Array.fromObject = function (object) {
             _post(host, 'post', params, false).done(function (response) {
                 if (!response.ok) {
                     return $(host).trigger('saverror', [{
-                        responseJSON: { error: { str: response.reason || "An unknown error occurred while saving the form!" } }
+                        error: { str: response.reason || "An unknown error occurred while saving the form!" }
                     }, params]);
                 }
                 if (response.params)
                     $.extend(host.settings.params, response.params);
                 host.posts = {}; //Reset the post cache so we get clean data after 
                 if (host.uploads.length > 0 || host.deloads.length > 0) {
-                    _upload_files(host).done(function (upload_response) {
-                        if (upload_response.ok) {
-                            if ('attached' in upload_response) {
-                                host.uploads = host.uploads.filter(function (file) {
-                                    return upload_response.attached.indexOf(file.file) === false;
-                                });
-                            }
-                            if ('removed' in upload_response) {
-                                host.deloads = host.deloads.filter(function (file) {
-                                    return upload_response.removed.indexOf(file.file) === false;
-                                });
-                            }
-                            $(host).trigger('save', [response.result, host.settings.params]);
-                            if (callbacks.done) callbacks.done(response);
-                        } else {
-                            $('<div>').html(upload_response.reason).popup({
-                                title: 'Upload error',
-                                buttons: [{ label: 'OK', "class": "btn btn-default" }]
-                            });
-                        }
-                    }).fail(function (error) {
-                        $(host).trigger('saverror', [error, params]);
+                    $(host).trigger('attachStart', [host.uploads, host.deloads]);
+                    _upload_files(host, function (result, queue) {
+                        $(host).trigger('attachDone', [queue]);
+                        if (result) {
+                            $(host).trigger('save', [result, host.settings.params]);
+                            if (callbacks.done) callbacks.done();
+                        } else $(host).trigger('saverror', [{ error: { str: 'File upload failed' } }, params, queue]);
                     });
                 } else {
                     $(host).trigger('save', [response.result, host.settings.params]);
-                    if (callbacks.done) callbacks.done(response);
+                    if (callbacks.done) callbacks.done();
                 }
             }).fail(function (error) {
-                $(host).trigger('saverror', [error, params]);
+                $(host).trigger('saverror', [error.responseJSON, params]);
             });
         };
         if (validate === true || typeof validate === 'undefined')
             _validate(host).done(function (result, errors) {
                 if (result) save_data(host, extra);
                 else {
-                    $(host).trigger('saverror', [{ responseJSON: { error: { str: "Validation failed!" } } }, errors]);
+                    $(host).trigger('saverror', [{ error: { str: "Validation failed!" }, validation: errors }]);
                     $(host).trigger('validate', [result, errors]);
                     if (host.settings.validateNav) _validate_nav(host, errors);
                 }
@@ -1631,29 +1613,83 @@ Array.fromObject = function (object) {
                 lastModifiedDate: file.lastModifiedDate,
                 name: file.name,
                 size: file.size,
-                type: file.type
+                type: file.type,
+                url: URL.createObjectURL(file)
             };
+        } else if (Array.isArray(file)) for (x in file) file[x] = _objectify_file(file[x]);
+        else {
+            let filename = /[^/]*$/.exec(file.url)[0];
+            file.url = file.url.substr(0, file.url.length - filename.length) + encodeURIComponent(filename);
         }
         return file;
     }
 
-    function _upload_files(host) {
-        var fd = new FormData();
-        fd.append('name', host.settings.form);
-        fd.append('params', JSON.stringify(host.settings.params));
-        if (host.deloads.length > 0)
-            fd.append('remove', JSON.stringify(host.deloads));
-        for (let x in host.uploads) {
-            fd.append('__hz_form_file_names[' + x + ']', host.uploads[x].field);
-            fd.append('__hz_form_files[' + x + ']', host.uploads[x].file);
+    function _upload_files(host, done_callback) {
+        if (host.deloads.length > 0) {
+            let data = { name: host.settings.form, params: host.settings.params, remove: host.deloads };
+            $.ajax({
+                url: hazaar.url(host.settings.controller, 'detach'),
+                method: 'POST',
+                data: JSON.stringify(data),
+                contentType: 'application/json'
+            }).done(function (response) {
+                if ('removed' in response)
+                    host.deloads = host.deloads.filter(function (file) { return response.removed.indexOf(file.file) === false; });
+                if (host.uploads.length === 0) done_callback(response.ok);
+            });
         }
-        return $.ajax({
-            type: 'POST',
-            data: fd,
-            processData: false,
-            contentType: false,
-            url: hazaar.url(host.settings.controller, 'attach')
-        });
+        if (host.uploads.length > 0) {
+            var queue = { pending: [], working: [], attached: [], failed: [] };
+            host.uploads.sort(function (a, b) {
+                if (a.file.name === b.file.name) return 0;
+                return a.file.name < b.file.name ? -1 : 1;
+            });
+            queue.pending = Object.assign([], host.uploads);
+            _upload_file(host, queue, done_callback);
+        }
+    }
+
+    function _upload_file(host, queue, done_callback) {
+        while (queue.working.length < host.settings.concurrentUploads) {
+            var fd = new FormData(), current = queue.pending.shift();
+            if (!current) break;
+            queue.working.push(current);
+            fd.append('name', host.settings.form);
+            fd.append('params', JSON.stringify(host.settings.params));
+            fd.append('attachment[field]', current.field);
+            fd.append('attachment[file]', current.file);
+            $(host).trigger('fileStart', [current]);
+            $.ajax({
+                type: 'POST',
+                data: fd,
+                processData: false,
+                contentType: false,
+                url: hazaar.url(host.settings.controller, 'attach'),
+                upload_file: current,
+                xhr: function () {
+                    xhr = new XMLHttpRequest();
+                    xhr.upload.onprogress = function (progress) {
+                        $(host).trigger('fileProgress', [this.file, progress]);
+                    };
+                    xhr.upload.file = this.upload_file;
+                    return xhr;
+                }
+            }).done(function (response) {
+                var w = this.upload_file;
+                host.uploads = host.uploads.filter(function (file) { return !(w.field === file.field && w.file.name === file.file.name); });
+                $(host).trigger('fileDone', [w, response]);
+            }).fail(function (xhr) {
+                this.upload_file.failed = true;
+                this.upload_file.response = xhr.responseJSON;
+                $(host).trigger('fileError', [this.upload_file, xhr]);
+            }).always(function () {
+                var w = this.upload_file;
+                queue.working = queue.working.filter(function (file) { return !(w.field === file.field && w.file.name === file.file.name); });
+                if (w.failed === true) queue.failed.push(w); else queue.attached.push(w);
+                if (queue.pending.length > 0) _upload_file(host, queue, done_callback);
+                else if (queue.working.length === 0) done_callback(queue.failed.length === 0, queue);
+            });
+        }
     }
 
     function _post(host, action, postdata, track, sync) {
@@ -1764,6 +1800,7 @@ Array.fromObject = function (object) {
         //Define the default object properties
         _get_empty_host(host);
         host.settings = $.extend({}, $.fn.hzForm.defaults, settings);
+        if (host.settings.concurrentUploads < 1) host.settings.concurrentUploads = 1;
         $(host).trigger('init');
         _registerEvents(host);
         _render(host);
@@ -1849,6 +1886,7 @@ Array.fromObject = function (object) {
         "loaderClass": "forms-loader",
         "validateNav": true,
         "lookup": { "delay": 300 },
+        "concurrentUploads": 2,
         "styleClasses": {
             "container": "forms-container",
             "page": "form-page",

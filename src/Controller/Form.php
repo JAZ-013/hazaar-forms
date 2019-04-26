@@ -400,55 +400,53 @@ abstract class Form extends Action {
 
         if($files->uploaded()){
 
-            $attachments = array();
+            $attachment = array_merge($this->request->get('attachment'), $files->getFile('attachment'));
 
-            $names = $this->request->get('__hz_form_file_names');
+            if(!$this->file_attach($attachment['field'], $attachment['file'], $params))
+                throw new \Exception('Unknown error saving attachments!');
 
-            $files = $files->getFile('__hz_form_files');
-
-            foreach($files as $index => $file){
-
-                if(!($name = ake($names, $index)) && $file instanceof \Hazaar\File)
-                    continue;
-
-                $attachments[$name][] = $file;
-
-            }
-
-            $out->attached = array();
-
-            foreach($attachments as $name => $files){
-
-                if(!$this->file_attach($name, $files, $params))
-                    throw new \Exception('Unknown error saving attachments!');
-
-                $out->attached[] = $files;
-
-            }
+            $out->ok = true;
 
         }
 
-        $remove = json_decode($this->request->get('remove'), true);
+        return $out;
+
+    }
+
+    //File attachment handlers
+    final public function detach(){
+
+        if(!$this->request->isPOST())
+            throw new \Exception('Method not allowed!', 405);
+
+        if(!$this->request->has('name'))
+            throw new \Exception('Missing form name in request!');
+
+        $params = $this->request->get('params');
+
+        $this->form($this->request->name, $params);
+
+        $out = new \Hazaar\Controller\Response\Json(array( 'ok' => false, 'name' => $this->request->name));
+
+        $remove = $this->request->get('remove');
 
         if(is_array($remove) && count($remove) > 0){
 
             $out->removed = array();
 
-            foreach($remove as $rm){
+            foreach($remove as $attachment){
 
-                if(!(($field = ake($rm, 'field')) && ($file = ake($rm, 'file'))))
+                if(!(($field = ake($attachment, 'field')) && ($file = ake($attachment, 'file'))))
                     continue;
 
-                if(!$this->file_detach($field, array($file), $params))
-                    throw new \Exception('Unknown error saving attachments!');
-
-                $out->removed[] = $file;
+                if($this->file_detach($field, $file, $params))
+                    $out->removed[] = $file;
 
             }
 
-        }
+            $out->ok = true;
 
-        $out->ok = true;
+        }
 
         return $out;
 
@@ -680,12 +678,9 @@ abstract class Form extends Action {
 
         $dir = $this->file_init($name, $params, $key);
 
-        foreach($files as $file){
+        if(!is_array($files)) $files = array($files);
 
-            if($file instanceof \Hazaar\File)
-                $dir->put($file);
-
-        }
+        foreach($files as $file) if($file instanceof \Hazaar\File) $dir->put($file);
 
         return true;
 
