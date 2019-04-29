@@ -1301,8 +1301,8 @@ Array.fromObject = function (object) {
     }
 
     //Navigate to a page
-    function _nav(host, pageno, cbComplete) {
-        if (pageno === host.page) return false;
+    function _nav(host, pageno, cbComplete, force) {
+        if (force !== true && pageno === host.page) return false;
         var _page_nav = function (host, pageno) {
             _track(host);
             host.objects.container.empty();
@@ -1832,7 +1832,7 @@ Array.fromObject = function (object) {
                             _load_definition(host).done(function () {
                                 for (let x in values)
                                     host.data[x] = values[x];
-                                _nav(host, host.page);
+                                _nav(host, host.page, null, true);
                             });
                         }
                         break;
