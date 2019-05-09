@@ -129,10 +129,11 @@ Array.fromObject = function (object) {
             else if (typeof value === 'object' || Array.isArray(value)) value = JSON.stringify(value);
             code += 'var ' + key + " = " + value + ";\n";
         }
+        if (item_data) code += 'var item = ' + JSON.stringify(item_data.save(true)) + ";\n";
         if (no_return !== true) code += "return ( " + evaluate.replace(/[\;\s]+$/, '') + " );";
         else code += evaluate;
         try {
-            return new Function('form', 'tags', 'item', 'value', code)(host.data, host.tags, item_data, lvalue);
+            return new Function('form', 'tags', 'formItem', 'value', code)(host.data, host.tags, item_data, lvalue);
         } catch (e) {
             console.error('Failed to evaluate condition: ' + e);
             console.log(code);
@@ -219,21 +220,24 @@ Array.fromObject = function (object) {
     }
 
     function _make_required(host, def, field) {
-        var item_data = field.data('required', def.required).data('item');
-        _eval_required(host, field, item_data);
+        field.data('required', def.required);
         if (typeof def.required !== 'boolean') host.events.required.push(field);
+        return _eval_required(host, field, false);
     }
 
-    function _eval_required(host, field, item_data, validate) {
-        var required = _eval(host, field.data('required'), false, item_data ? item_data.parent : null, item_data ? item_data.value : null);
+    function _eval_required(host, field, required) {
         var def = field.data('def');
         var label = field.children('label.control-label'), i = label.children('i.form-required');
+        var item_data = ('name' in def) ? _get_data_item(host.data, def.name) : null;
+        if (typeof required === 'undefined') required = false;
+        required = _eval(host, def.required, required, item_data ? item_data.parent : null, item_data ? item_data.value : null);
         if (required !== true) i.remove();
         else if (i.length === 0) label.append($('<i class="fa fa-exclamation-circle form-required" title="Required">'));
-        if (validate === true) _validate_input(host, field, true);
-        if ('fields' in def) {
-            //console.log(def);
-        }
+        if ('fields' in def) field.children('div.form-section,div.form-group').each(function (index, item) {
+            _eval_required(host, $(item), required);
+        });
+        _validate_input(host, field, true);
+        return required;
     }
 
     function _make_showable(host, def, field) {
@@ -332,7 +336,7 @@ Array.fromObject = function (object) {
                 _toggle_show(host, host.events.show[x]);
         }
         if (host.events.required && host.events.required.length > 0)
-            for (let x in host.events.required) _eval_required(host, host.events.required[x], item_data, true);
+            for (let x in host.events.required) _eval_required(host, host.events.required[x], false);
         if (host.events.disabled && host.events.disabled.length > 0) {
             for (let x in host.events.disabled) {
                 var i = host.events.disabled[x];
@@ -1167,13 +1171,13 @@ Array.fromObject = function (object) {
                 fields.push(item);
             }
             col_width = 12 / length;
-            field = $('<div>').toggleClass('row', p).data('def', def);
+            field = $('<div class="form-section">').toggleClass('row', p).data('def', def);
             if ('label' in def) field.append($('<div class="col-md-12">').html($('<h5>').html(def.label)));
             for (let x in fields) {
                 var field_width = col_width, child_field = _form_field(host, fields[x], !p, populate, apply_rules, item_data);
                 if (fields[x] instanceof Object && 'weight' in fields[x])
                     field_width = Math.round(field_width * fields[x].weight);
-                field.append($('<div>').toggleClass('col-lg-' + field_width, p).html(child_field));
+                field.append(child_field.toggleClass('col-lg-' + field_width, p));
             }
         } else if ('options' in def) {
             if (def.type === 'array')
@@ -1365,7 +1369,7 @@ Array.fromObject = function (object) {
     function _validate_rule(host, name, item, def) {
         if (!(item && def)) return true;
         if ('show' in def) if (!_eval(host, def.show)) return true;
-        var required = 'required' in def ? _eval(host, def.required) : false;
+        var required = 'required' in def ? _eval(host, def.required, false, item.parent, item.value) : false;
         var value = item instanceof dataBinderArray && item.length > 0 ? item : def.other && !item.value ? item.other : item.value;
         if (required && !value) return _validation_error(name, def, "required");
         if (typeof value === 'undefined' || value === null) return true; //Return now if there is no value and the field is not required!
