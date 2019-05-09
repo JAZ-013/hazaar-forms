@@ -219,11 +219,21 @@ Array.fromObject = function (object) {
     }
 
     function _make_required(host, def, field) {
-        field.data('required', def.required)
-            .toggleClass('required', _eval(host, def.required, true, field.data('item')))
-            .children('label.control-label')
-            .append($('<i class="fa fa-exclamation-circle form-required" title="Required">'));
+        var item_data = field.data('required', def.required).data('item');
+        _eval_required(host, field, item_data);
         if (typeof def.required !== 'boolean') host.events.required.push(field);
+    }
+
+    function _eval_required(host, field, item_data, validate) {
+        var required = _eval(host, field.data('required'), false, item_data ? item_data.parent : null, item_data ? item_data.value : null);
+        var def = field.data('def');
+        var label = field.children('label.control-label'), i = label.children('i.form-required');
+        if (required !== true) i.remove();
+        else if (i.length === 0) label.append($('<i class="fa fa-exclamation-circle form-required" title="Required">'));
+        if (validate === true) _validate_input(host, field, true);
+        if ('fields' in def) {
+            //console.log(def);
+        }
     }
 
     function _make_showable(host, def, field) {
@@ -321,12 +331,8 @@ Array.fromObject = function (object) {
             for (let x in host.events.show)
                 _toggle_show(host, host.events.show[x]);
         }
-        if (host.events.required && host.events.required.length > 0) {
-            for (let x in host.events.required) {
-                var field = host.events.required[x];
-                field.toggleClass('required', _eval(host, field.data('required'), false, item_data.parent, item_data.value));
-            }
-        }
+        if (host.events.required && host.events.required.length > 0)
+            for (let x in host.events.required) _eval_required(host, host.events.required[x], item_data, true);
         if (host.events.disabled && host.events.disabled.length > 0) {
             for (let x in host.events.disabled) {
                 var i = host.events.disabled[x];
@@ -1338,10 +1344,13 @@ Array.fromObject = function (object) {
     }
 
 
-    function _validate_input(host, input) {
+    function _validate_input(host, input, remove_only) {
+        if (!input.is('input,select,textarea'))
+            return input.find('input,select,textarea').each(function (index, item) { _validate_input(host, $(item), remove_only); });
         var name = input.attr('data-bind');
         if (!name) return;
         return _validate_field(host, name).done(function (event, result, response) {
+            if (result !== true && remove_only === true) return;
             input.toggleClass('is-invalid', result !== true)
                 .toggleClass('border-warning', result === true && typeof response === 'object' && response.warning === true);
             $(host).trigger('validate_field', [name, result === true, result]);
@@ -1728,7 +1737,7 @@ Array.fromObject = function (object) {
     }
 
     function _prepare_field_definitions(host, fields, extra) {
-        var prop_fields = ["disabled", "protected", "required", "change", "focus", "blur"]; //Fields that propagate
+        var prop_fields = ["disabled", "protected", "change", "focus", "blur"]; //Fields that propagate
         for (let x in fields) {
             let itemExtra = extra ? $.extend(true, {}, extra) : null;
             if (typeof fields[x] === 'string') fields[x] = { type: fields[x], label: x };
