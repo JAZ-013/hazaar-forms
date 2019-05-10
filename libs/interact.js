@@ -120,14 +120,19 @@ Array.fromObject = function (object) {
 
     function _eval_code(host, evaluate, item_data, lvalue, no_return) {
         if (typeof evaluate === 'boolean') return evaluate;
-        let code = '', values = host.data.save(true), keys = Object.keys(values).sort();
-        for (let i in keys) {
-            let key = keys[i];
-            if (key === 'form') continue;
-            var value = values[key];
-            if (typeof value === 'string') value = '"' + value.replace(/"/g, '\\"').replace("\n", "\\n") + '"';
-            else if (typeof value === 'object' || Array.isArray(value)) value = JSON.stringify(value);
-            code += 'var ' + key + " = " + value + ";\n";
+        let code = '';
+        if (typeof host.eval_cache === 'string') code = host.eval_cache;
+        else {
+            let values = host.data.save(true), keys = Object.keys(values).sort();
+            for (let i in keys) {
+                let key = keys[i];
+                if (key === 'form') continue;
+                var value = values[key];
+                if (typeof value === 'string') value = '"' + value.replace(/"/g, '\\"').replace("\n", "\\n") + '"';
+                else if (typeof value === 'object' || Array.isArray(value)) value = JSON.stringify(value);
+                code += 'var ' + key + " = " + value + ";\n";
+            }
+            if (host.eval_cache === true) host.eval_cache = code;
         }
         if (item_data) code += 'var item = ' + JSON.stringify(item_data.save(true)) + ";\n";
         if (no_return !== true) code += "return ( " + evaluate.replace(/[\;\s]+$/, '') + " );";
@@ -292,6 +297,7 @@ Array.fromObject = function (object) {
         var def = _form_field_lookup(host.def, typeof input === 'string' ? input : input.attr('data-bind'));
         if (!def) return;
         var update = def.update, cb_done = null, item_data = _get_data_item(host.data, def.name);
+        host.eval_cache = true;
         if (typeof update === 'string') update = { "url": update };
         if (typeof input === 'object') {
             if (item_data && input.is('select') && item_data.enabled() === true && input.val() !== '__hz_other') {
@@ -1297,6 +1303,7 @@ Array.fromObject = function (object) {
             disabled: [],
             change: {}
         };
+        host.eval_cache = null;
         host.pageInputs = [];
         host.data.unwatchAll();
     }
