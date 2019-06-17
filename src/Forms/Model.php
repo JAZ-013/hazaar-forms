@@ -1140,4 +1140,20 @@ class Model extends \Hazaar\Model\Strict {
 
     }
 
+    public function renderHTML($settings = array()){
+
+        $pdf = new \Hazaar\Forms\Output\HTML($this);
+
+        return $pdf->render($settings);
+
+    }
+
+    public function renderPDF($settings = array()){
+
+        $pdf = new \Hazaar\Forms\Output\PDF($this);
+
+        return $pdf->render($settings);
+
+    }
+
 }
