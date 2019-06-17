@@ -1417,10 +1417,9 @@ Array.fromObject = function (object) {
                 } else if ('fields' in def) {
                     let childItems = def.type === 'array' ? item.save() : [item], childQueue = [], itemResult = [];
                     let result = _validate_rule(host, def.name, item, def);
-                    if (result !== true) {
+                    if (result !== true || childItems.length === 0) {
                         for (let x in callbacks) callbacks[x](def.name, result, extra);
                     } else {
-                        var count = 0;
                         for (let i in childItems) {
                             for (let x in def.fields) {
                                 if (!('name' in def.fields[x])) def.fields[x].name = x;
