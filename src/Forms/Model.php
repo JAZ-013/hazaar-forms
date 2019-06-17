@@ -931,7 +931,7 @@ class Model extends \Hazaar\Model\Strict {
 
                     case T_STRING:
 
-                        if(!($token[1] === 'true' || $token[1] === 'false')){
+                        if(!($token[1] === 'true' || $token[1] === 'false' || $token[1] === 'null')){
 
                             $code .= ((!isset($tokens[$i-1]) || $tokens[$i-1] !== '.') ? '$' : '' ) . $token[1];
 
