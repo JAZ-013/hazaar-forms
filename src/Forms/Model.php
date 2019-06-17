@@ -826,16 +826,20 @@ class Model extends \Hazaar\Model\Strict {
 
             }elseif(ake($field, 'file') === true){
 
-                $files = $this->__controller->__attachments($field->name);
+                if($this->__controller instanceof \Hazaar\Controller\Form){
 
-                $value = array();
+                    $files = $this->__controller->__attachments($field->name);
 
-                foreach($files as $file){
+                    $value = array();
 
-                    $value[] = array(
-                        'name' => $file->basename(),
-                        'url' => (string)$file->media_uri()
-                    );
+                    foreach($files as $file){
+
+                        $value[] = array(
+                            'name' => $file->basename(),
+                            'url' => (string)$file->media_uri()
+                        );
+                    }
+
                 }
 
             }elseif($options = ake($field, 'options')){
