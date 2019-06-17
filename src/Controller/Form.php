@@ -20,16 +20,24 @@ abstract class Form extends Action {
 
     protected $__form_path;
 
-    public function __initialize(\Hazaar\Application\Request $request) {
+    function __construct($name, $application, $use_app_config = true) {
+
+        parent::__construct($name, $application, $use_app_config);
 
         if(!($path = $this->application->config->paths->get('forms')))
             $path = 'forms';
 
         $this->setFormPath($path);
 
-        parent::__initialize($request);
+    }
+
+    public function __initialize(\Hazaar\Application\Request $request) {
+
+        $response = parent::__initialize($request);
 
         $this->__initialized = true;
+
+        return $response;
 
     }
 
@@ -361,7 +369,7 @@ abstract class Form extends Action {
 
                 $response = new \Hazaar\Controller\Response\PDF();
 
-                $response->setContent($output->render(array('template' => $template)));
+                $response->setContent($output->renderHTML(array('template' => $template)));
 
                 $response->setTitle($this->form_model->getPDFTitle($params));
 
