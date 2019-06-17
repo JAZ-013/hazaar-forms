@@ -54,7 +54,7 @@ class PDF extends HTML {
 
         $html = $this->renderHTML($settings, $form, $ixes);
 
-        $pdf = new \Hazaar\File\PDF();
+        $pdf = new \Hazaar\File\PDF(basename(ake($settings, 'name', uniqid()), '.pdf') . '.pdf');
 
         $pdf->set_contents($html);
 
