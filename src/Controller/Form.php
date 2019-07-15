@@ -340,7 +340,7 @@ abstract class Form extends Action {
 
     final public function output($type = 'html'){
 
-        if($this->request->getActionName() == 'output'){
+        if($this->getAction() == 'output'){
 
             if(!($name = $this->request->get('name')))
                 throw new \Exception('No form name specified!');
