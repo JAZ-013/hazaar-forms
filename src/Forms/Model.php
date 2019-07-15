@@ -1100,23 +1100,22 @@ class Model extends \Hazaar\Model\Strict {
 
         }else{
 
-            list($controller,) = explode('/', $target, 2);
+            $router = new \Hazaar\Application\Router(new \Hazaar\Application\Config);
 
-            if(!$controller)
-                throw new \Exception('Invalid application endpoint: ' . $target);
+            $request = new \Hazaar\Application\Request\HTTP($args, false);
+
+            $request->setPath($target);
+
+            $router->evaluate($request);
 
             $loader = \Hazaar\Loader::getInstance();
 
-            if(!($controller = $loader->loadController($controller)))
+            if(!($controller = $loader->loadController($router->getController())))
                 throw new \Exception("Controller for target '$target' could not be found!", 404);
 
-            $request = new \Hazaar\Application\Request\HTTP(\Hazaar\Application::getInstance()->config, $args);
-
-            $request->evaluate($target);
+            $controller->__initialize($request);
 
             $controller->setRequest($request);
-
-            $controller->__initialize($request);
 
             $response = $controller->__run();
 
