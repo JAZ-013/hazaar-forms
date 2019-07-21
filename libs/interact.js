@@ -711,7 +711,7 @@ Array.fromObject = function (object) {
             .attr('for', '__hz_field_' + def.name)
             .html(_match_replace(host, def.label, null, true, true))
             .appendTo(group);
-        var input_group = $('<label class="date">').addClass(host.settings.styleClasses.inputGroup);
+        var input_group = $('<div class="date">').addClass(host.settings.styleClasses.inputGroup);
         var input = $('<input>').addClass(host.settings.styleClasses.input)
             .attr('type', def.type === 'datetime' ? 'datetime-local' : 'date')
             .attr('name', def.name)
