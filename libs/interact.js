@@ -760,15 +760,11 @@ Date.getLocalDateFormat = function () {
                 language: 'en',
                 clearBtn: 'required' in def ? _eval(host, def.required) : false !== true,
                 todayHighlight: true,
-                updateViewDate: false
+                updateViewDate: true
             }, def.dateOptions);
             input.attr('type', 'text');
             input.datepicker(def.__datepicker_options);
-            if (item_data && item_data.value) {
-                var when = new Date(item_data.value);
-                def.__datepicker_options.defaultViewDate = when;
-                input.datepicker('setDate', when);
-            }
+            if (item_data && item_data.value) input.datepicker('setDate', new Date(item_data.value));
             if (!def.placeholder) def.placeholder = def.format;
         }
         if (def.placeholder) input.attr('placeholder', def.placeholder);
@@ -1080,14 +1076,16 @@ Date.getLocalDateFormat = function () {
         item_data.watch(function (item) {
             var item_name = item.attr('data-bind'), item_data = _get_data_item(host.data, item_name);
             item.find('select,input').each(function (index, item) {
-                var field = $(item), def = field.data('def');
-                if (field.is('select')) {
-                    if ('options' in def) _input_select_options(host, def, field, item_data, function (select, options) {
+                var input = $(item), def = input.data('def');
+                if (input.is('select')) {
+                    if ('options' in def) _input_select_options(host, def, input, item_data, function (select, options) {
                         _input_select_populate(host, options, select, false, item_data);
                     });
                 } else if (def.type === 'date' && 'format' in def) {
-                    field.data('datepicker', null);
-                    field.datepicker(def.__datepicker_options);
+                    var child_item_data = item_data[def.name];
+                    input.data('datepicker', null);
+                    input.datepicker(def.__datepicker_options);
+                    if (child_item_data && child_item_data.value) input.datepicker('setDate', new Date(child_item_data.value));
                 }
             });
             $(item).find('.form-group').each(function (index, input) {
