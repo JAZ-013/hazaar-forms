@@ -34,6 +34,27 @@ Array.fromObject = function (object) {
     return array;
 };
 
+Date.getLocalDateFormat = function () {
+    let format = [], parts = [], sep = '/', matches = null;
+    let date = (new Date(2001, 4, 9)).toLocaleDateString(); //Month is MONTH INDEX so 0 is January
+    if ((matches = date.match(/\W/)) !== false) sep = matches[0];
+    parts = date.split(sep);
+    if (parseInt(parts[0]) === 2001) { //Check ISO format first
+        format = ['yyyy', 'mm', 'dd'];
+        sep = '-';
+    } else {
+        for (x in parts) {
+            let zp = false, value = parseInt(parts[x]);
+            if (parts[x][0] === "0") zp = true;
+            if (value === 9) format.push(zp ? 'dd' : 'd');
+            else if (value === 5) format.push(zp ? 'mm' : 'm');
+            else if (value === 1) format.push('yy');
+            else if (value === 2001) format.push('yyyy');
+        }
+    }
+    return format.join(sep);
+};
+
 (function ($) {
 
     //Error capture method
@@ -731,17 +752,23 @@ Array.fromObject = function (object) {
                     .click(function () { input.focus(); })))
             .appendTo(input_group);
         if (def.format) {
-            var options = {
+            if (def.format === 'local') def.format = Date.getLocalDateFormat();
+            def.__datepicker_options = $.extend({
                 format: def.format,
                 autoclose: true,
                 forceParse: true,
                 language: 'en',
                 clearBtn: 'required' in def ? _eval(host, def.required) : false !== true,
-                todayHighlight: true
-            };
-            if (item_data) options.defaultViewDate = item_data;
+                todayHighlight: true,
+                updateViewDate: false
+            }, def.dateOptions);
             input.attr('type', 'text');
-            input.datepicker($.extend({}, options, def.dateOptions));
+            input.datepicker(def.__datepicker_options);
+            if (item_data && item_data.value) {
+                var when = new Date(item_data.value);
+                def.__datepicker_options.defaultViewDate = when;
+                input.datepicker('setDate', when);
+            }
             if (!def.placeholder) def.placeholder = def.format;
         }
         if (def.placeholder) input.attr('placeholder', def.placeholder);
@@ -1360,7 +1387,7 @@ Array.fromObject = function (object) {
         var value = item instanceof dataBinderArray && item.length > 0 ? item : def.other && !item.value ? item.other : item.value;
         if (required && !value) return _validation_error(name, def, "required");
         if (typeof value === 'undefined' || value === null) return true; //Return now if there is no value and the field is not required!
-        if ('format' in def && value) {
+        if ('format' in def && value && def.type !== 'date') {
             if (!Inputmask.isValid(String(value), def.format))
                 return _validation_error(name, def, "bad_format");
         }
