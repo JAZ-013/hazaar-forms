@@ -1079,16 +1079,24 @@ Date.getLocalDateFormat = function () {
         template.append(_form_field(host, { fields: layout }, null, false, false));
         item_data.watch(function (item) {
             var item_name = item.attr('data-bind'), item_data = _get_data_item(host.data, item_name);
-            item.find('select').each(function (index, item) {
-                var select = $(item), def = select.data('def');
-                if ('options' in def) _input_select_options(host, def, select, item_data, function (select, options) {
-                    _input_select_populate(host, options, select, false, item_data);
-                });
+            item.find('select,input').each(function (index, item) {
+                var field = $(item), def = field.data('def');
+                if (field.is('select')) {
+                    if ('options' in def) _input_select_options(host, def, field, item_data, function (select, options) {
+                        _input_select_populate(host, options, select, false, item_data);
+                    });
+                } else if (def.type === 'date' && 'format' in def) {
+                    field.data('datepicker', null);
+                    field.datepicker(def.__datepicker_options);
+                }
             });
             $(item).find('.form-group').each(function (index, input) {
                 var group = $(input), def = group.data('def');
                 group.data('name', item_name + '.' + def.name)
                     .data('item', _get_data_item(host.data, item.attr('data-bind')));
+                group.find('label').each(function (index, item) {
+                    item.attributes['for'].value = item_name.replace(/\[|\]/g, '_') + def.name;
+                });
                 if ('required' in def) _make_required(host, def, group);
                 if ('show' in def) _make_showable(host, def, group);
             });
