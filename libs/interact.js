@@ -289,6 +289,9 @@ Date.getLocalDateFormat = function () {
                 input.hide().after(group);
                 oInput.focus();
             } else item_data.set(_is_int(def, value));
+        } else if (def.type === 'date' && 'format' in def) {
+            var date = input.datepicker('getDate');
+            item_data.set(date.getFullYear() + '-' + (date.getMonth() + 1) + '-' + date.getDate(), input.datepicker('getFormattedDate'));
         } else if (def.other === true) item_data.other = input.val();
         else item_data.value = _is_int(def, input.val());
         $(host).trigger('change', [item_data]);
@@ -762,8 +765,9 @@ Date.getLocalDateFormat = function () {
                 todayHighlight: true,
                 updateViewDate: true
             }, def.dateOptions);
-            input.attr('type', 'text');
-            input.datepicker(def.__datepicker_options);
+            input.attr('type', 'text')
+                .attr('data-bind-label', 'true')
+                .datepicker(def.__datepicker_options);
             if (item_data && item_data.value) input.datepicker('setDate', new Date(item_data.value));
             if (!def.placeholder) def.placeholder = def.format;
         }
