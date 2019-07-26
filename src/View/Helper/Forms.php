@@ -113,8 +113,6 @@ class Forms extends \Hazaar\View\Helper {
 
         $controller = \Hazaar\Loader::getInstance()->loadController($controller);
 
-        $controller->setRequest($this->application->request);
-
         $controller->__initialize($this->application->request);
 
         $controller->form($form, $params, $tags);

@@ -20,7 +20,7 @@ abstract class Form extends Action {
 
     protected $__form_path;
 
-    function __construct($name, $application, $use_app_config = true) {
+    function __construct($name, \Hazaar\Application $application, $use_app_config = true) {
 
         parent::__construct($name, $application, $use_app_config);
 

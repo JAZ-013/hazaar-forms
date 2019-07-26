@@ -1115,8 +1115,6 @@ class Model extends \Hazaar\Model\Strict {
 
             $controller->__initialize($request);
 
-            $controller->setRequest($request);
-
             $response = $controller->__run();
 
             if(!$response instanceof \Hazaar\Controller\Response\Json)
