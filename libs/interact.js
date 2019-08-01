@@ -264,7 +264,7 @@ Date.getLocalDateFormat = function () {
         } else if (input.is('select')) {
             let value = input.val();
             if (value === '__hz_other') {
-                item_data.set(null, null, item_data.other, false);
+                item_data.set(null, null, item_data.other);
                 var group = $('<div>').addClass(host.settings.styleClasses.inputGroup);
                 var oInput = $('<input type="text" placeholder="Enter other option...">')
                     .addClass(host.settings.styleClasses.input)
