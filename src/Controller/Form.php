@@ -552,7 +552,7 @@ abstract class Form extends Action {
         $source_file = $this->__form_path->get($file);
 
         if(!$source_file->exists())
-            throw new \Exception('Form model source file not found!', 500);
+            throw new \Exception('Form model source file not found: ' . $file, 500);
 
         if(!($form = $source_file->parseJSON()))
             throw new \Exception('An error ocurred parsing the form definition \'' . $source_file->name() . '\'');
