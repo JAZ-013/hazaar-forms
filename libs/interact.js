@@ -1124,7 +1124,8 @@ Date.getLocalDateFormat = function () {
 
     function _check_input_disabled(host, input, def) {
         if (!('disabled' in def) || def.protected) return false;
-        input.prop('disabled', _eval(host, def.disabled, false, _get_data_item(host.data, $(input).attr('data-bind')).parent));
+        var item_data = _get_data_item(host.data, $(input).attr('data-bind'));
+        input.prop('disabled', _eval(host, def.disabled, false, item_data ? item_data.parent : null));
         if (typeof def.disabled === 'string') host.events.disabled.push(input.data('disabled', def.disabled));
     }
 
@@ -1183,7 +1184,7 @@ Date.getLocalDateFormat = function () {
         if (!(def = _form_field_lookup(host.def, info))) return;
         if ('name' in def && 'default' in def) {
             let item_data = _get_data_item(host.data, def.name);
-            if (item_data.value === null) item_data.value = def.default;
+            if (item_data instanceof dataBinderArray && item_data.value === null) item_data.value = def.default;
         }
         if ('horizontal' in def) p = def.horizontal;
         if ('render' in def) {
