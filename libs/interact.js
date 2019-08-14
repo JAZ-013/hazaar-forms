@@ -860,6 +860,8 @@ Date.getLocalDateFormat = function () {
         else input.focus(function (event) { _input_event_focus(host, $(event.target)); })
             .on('blur', function (event) {
                 var input = $(this), popup = input.parent().parent().children('.form-lookup-popup');
+                var item_data = _get_data_item(host.data, input.attr('data-bind'));
+                if (!item_data) item_data = input.parent().parent().parent().parent().data('item')[input.next().attr('name')];
                 if (popup.length > 0) {
                     popup.css({ "opacity": "0" });
                     setTimeout(function () {
@@ -885,6 +887,7 @@ Date.getLocalDateFormat = function () {
                         var query = '', popup = input.parent().parent().children('.form-lookup-popup');
                         var item_data = _get_data_item(host.data, input.attr('data-bind'));
                         var valueKey = def.lookup.value || 'value', labelKey = def.lookup.label || 'label';
+                        if (!item_data) item_data = input.parent().parent().parent().parent().data('item')[input.next().attr('name')];
                         if (event.target.value === '')
                             return item_data.set(null);
                         if (popup.length === 0) {
@@ -958,6 +961,7 @@ Date.getLocalDateFormat = function () {
                             break;
                         case 'Backspace':
                             if (input.val() !== '') break;
+                        //falls through
                         case 'Delete':
                             item_data.empty();
                             break;
@@ -1044,14 +1048,11 @@ Date.getLocalDateFormat = function () {
             var fieldDIV = _form_field(host, { fields: layout })
                 .addClass('itemlist-newitem')
                 .attr('data-field', def.name);
-            fieldDIV.find('input').removeAttr('data-bind');
             var sub_host = _get_empty_host(), new_item = new dataBinder(_define(def.fields));
             sub_host.data = new_item;
             sub_host.def = { fields: def.fields };
-            group.append($('<div class="itemlist-newitems">').html([
-                $('<div class="itemlist-newitem-add">').html(btn),
-                fieldDIV
-            ])).find('select').each(function (index, item) {
+            fieldDIV.data('item', new_item).find('input').removeAttr('data-bind');
+            fieldDIV.find('select').each(function (index, item) {
                 var select = $(item), def = select.data('def');
                 select.off('change').on('change', function () {
                     return _input_event_change(sub_host, $(this));
@@ -1062,9 +1063,11 @@ Date.getLocalDateFormat = function () {
                     _input_select_populate(sub_host, options, select);
                 });
             });
+            group.append($('<div class="itemlist-newitems">').html([$('<div class="itemlist-newitem-add">').html(btn), fieldDIV]));
             btn.click(function () {
-                var data = {}, valid = true;
+                var data = fieldDIV.data('item'), valid = true;
                 fieldDIV.find('input,select,textarea').each(function (index, item) {
+                    if (!item.name) return;
                     var input = $(item), value = input.val(), def = input.data('def');
                     if (def.required && !value) {
                         input.toggleClass('is-invalid', true);
@@ -1076,10 +1079,13 @@ Date.getLocalDateFormat = function () {
                         let date = input.datepicker('getDate');
                         value = date.getFullYear() + '-' + (date.getMonth() + 1) + '-' + date.getDate();
                     }
-                    _get_data_item(data, item.name, false, value);
+                    if (value) {
+                        var sub_item_data = _get_data_item(data, item.name, false, value);
+                        if (sub_item_data) sub_item_data.set(value);
+                    }
                 });
                 if (!valid) return;
-                item_data.push(data);
+                item_data.push(data.save());
                 fieldDIV.find('input,select,textarea').each(function (index, item) { $(item).val('').removeClass('is-invalid'); });
                 _validate_input(host, group);
             });
