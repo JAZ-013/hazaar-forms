@@ -34,6 +34,27 @@ Array.fromObject = function (object) {
     return array;
 };
 
+Date.getLocalDateFormat = function () {
+    let format = [], parts = [], sep = '/', matches = null;
+    let date = (new Date(2001, 4, 9)).toLocaleDateString(); //Month is MONTH INDEX so 0 is January
+    if ((matches = date.match(/\W/)) !== false) sep = matches[0];
+    parts = date.split(sep);
+    if (parseInt(parts[0]) === 2001) { //Check ISO format first
+        format = ['yyyy', 'mm', 'dd'];
+        sep = '-';
+    } else {
+        for (x in parts) {
+            let zp = false, value = parseInt(parts[x]);
+            if (parts[x][0] === "0") zp = true;
+            if (value === 9) format.push(zp ? 'dd' : 'd');
+            else if (value === 5) format.push(zp ? 'mm' : 'm');
+            else if (value === 1) format.push('yy');
+            else if (value === 2001) format.push('yyyy');
+        }
+    }
+    return format.join(sep);
+};
+
 (function ($) {
 
     //Error capture method
@@ -262,7 +283,7 @@ Array.fromObject = function (object) {
         } else if (input.is('select')) {
             let value = input.val();
             if (value === '__hz_other') {
-                item_data.set(null, null, item_data.other, false);
+                item_data.set(null, null, item_data.other);
                 var group = $('<div>').addClass(host.settings.styleClasses.inputGroup);
                 var oInput = $('<input type="text" placeholder="Enter other option...">')
                     .addClass(host.settings.styleClasses.input)
@@ -287,8 +308,12 @@ Array.fromObject = function (object) {
                 input.hide().after(group);
                 oInput.focus();
             } else item_data.set(_is_int(def, value));
+        } else if (def.type === 'date' && 'format' in def) {
+            var date = input.datepicker('getDate');
+            item_data.set(date.getFullYear() + '-' + (date.getMonth() + 1) + '-' + date.getDate(), input.datepicker('getFormattedDate'));
         } else if (def.other === true) item_data.other = input.val();
         else item_data.value = _is_int(def, input.val());
+        if (item_data.enabled() === false) return false;
         $(host).trigger('change', [item_data]);
         return false;
     }
@@ -727,7 +752,7 @@ Array.fromObject = function (object) {
             .attr('for', '__hz_field_' + def.name)
             .html(_match_replace(host, def.label, null, true, true))
             .appendTo(group);
-        var input_group = $('<label class="date">').addClass(host.settings.styleClasses.inputGroup);
+        var input_group = $('<div class="date">').addClass(host.settings.styleClasses.inputGroup);
         var input = $('<input>').addClass(host.settings.styleClasses.input)
             .attr('type', def.type === 'datetime' ? 'datetime-local' : 'date')
             .attr('name', def.name)
@@ -747,17 +772,24 @@ Array.fromObject = function (object) {
                     .click(function () { input.focus(); })))
             .appendTo(input_group);
         if (def.format) {
-            var options = {
+            if (def.format === 'local') def.format = Date.getLocalDateFormat();
+            def.__datepicker_options = $.extend({
                 format: def.format,
                 autoclose: true,
                 forceParse: true,
                 language: 'en',
                 clearBtn: 'required' in def ? _eval(host, def.required) : false !== true,
-                todayHighlight: true
-            };
-            if (item_data) options.defaultViewDate = item_data;
-            input.attr('type', 'text');
-            input.datepicker($.extend({}, options, def.dateOptions));
+                todayHighlight: true,
+                updateViewDate: true
+            }, def.dateOptions);
+            input.attr('type', 'text')
+                .attr('data-bind-label', 'true')
+                .datepicker(def.__datepicker_options);
+            if (item_data && item_data.value) {
+                item_data.enabled(false);
+                input.datepicker('setDate', new Date(item_data.value));
+                item_data.enabled(true);
+            }
             if (!def.placeholder) def.placeholder = def.format;
         }
         if (def.placeholder) input.attr('placeholder', def.placeholder);
@@ -844,6 +876,8 @@ Array.fromObject = function (object) {
         else input.focus(function (event) { _input_event_focus(host, $(event.target)); })
             .on('blur', function (event) {
                 var input = $(this), popup = input.parent().parent().children('.form-lookup-popup');
+                var item_data = _get_data_item(host.data, input.attr('data-bind'));
+                if (!item_data) item_data = input.parent().parent().parent().parent().data('item')[input.next().attr('name')];
                 if (popup.length > 0) {
                     popup.css({ "opacity": "0" });
                     setTimeout(function () {
@@ -869,6 +903,7 @@ Array.fromObject = function (object) {
                         var query = '', popup = input.parent().parent().children('.form-lookup-popup');
                         var item_data = _get_data_item(host.data, input.attr('data-bind'));
                         var valueKey = def.lookup.value || 'value', labelKey = def.lookup.label || 'label';
+                        if (!item_data) item_data = input.parent().parent().parent().parent().data('item')[input.next().attr('name')];
                         if (event.target.value === '')
                             return item_data.set(null);
                         if (popup.length === 0) {
@@ -942,6 +977,7 @@ Array.fromObject = function (object) {
                             break;
                         case 'Backspace':
                             if (input.val() !== '') break;
+                        //falls through
                         case 'Delete':
                             item_data.empty();
                             break;
@@ -1028,14 +1064,11 @@ Array.fromObject = function (object) {
             var fieldDIV = _form_field(host, { fields: layout })
                 .addClass('itemlist-newitem')
                 .attr('data-field', def.name);
-            fieldDIV.find('input').removeAttr('data-bind');
             var sub_host = _get_empty_host(), new_item = new dataBinder(_define(def.fields));
             sub_host.data = new_item;
             sub_host.def = { fields: def.fields };
-            group.append($('<div class="itemlist-newitems">').html([
-                $('<div class="itemlist-newitem-add">').html(btn),
-                fieldDIV
-            ])).find('select').each(function (index, item) {
+            fieldDIV.data('item', new_item).find('input').removeAttr('data-bind');
+            fieldDIV.find('select').each(function (index, item) {
                 var select = $(item), def = select.data('def');
                 select.off('change').on('change', function () {
                     return _input_event_change(sub_host, $(this));
@@ -1046,9 +1079,11 @@ Array.fromObject = function (object) {
                     _input_select_populate(sub_host, options, select);
                 });
             });
+            group.append($('<div class="itemlist-newitems">').html([$('<div class="itemlist-newitem-add">').html(btn), fieldDIV]));
             btn.click(function () {
-                var data = {}, valid = true;
+                var data = fieldDIV.data('item'), valid = true;
                 fieldDIV.find('input,select,textarea').each(function (index, item) {
+                    if (!item.name) return;
                     var input = $(item), value = input.val(), def = input.data('def');
                     if (def.required && !value) {
                         input.toggleClass('is-invalid', true);
@@ -1056,10 +1091,17 @@ Array.fromObject = function (object) {
                         return;
                     }
                     if (input.is('select')) value = { __hz_value: value, __hz_label: input.children('option:selected').text() };
-                    _get_data_item(data, item.name, false, value);
+                    else if (def.type === 'date' && 'format' in def) {
+                        let date = input.datepicker('getDate');
+                        value = date.getFullYear() + '-' + (date.getMonth() + 1) + '-' + date.getDate();
+                    }
+                    if (value) {
+                        var sub_item_data = _get_data_item(data, item.name, false, value);
+                        if (sub_item_data) sub_item_data.set(value);
+                    }
                 });
                 if (!valid) return;
-                item_data.push(data);
+                item_data.push(data.save());
                 fieldDIV.find('input,select,textarea').each(function (index, item) { $(item).val('').removeClass('is-invalid'); });
                 _validate_input(host, group);
             });
@@ -1068,16 +1110,26 @@ Array.fromObject = function (object) {
         template.append(_form_field(host, { fields: layout }, null, false, false));
         item_data.watch(function (item) {
             var item_name = item.attr('data-bind'), item_data = _get_data_item(host.data, item_name);
-            item.find('select').each(function (index, item) {
-                var select = $(item), def = select.data('def');
-                if ('options' in def) _input_select_options(host, def, select, item_data, function (select, options) {
-                    _input_select_populate(host, options, select, false, item_data);
-                });
+            item.find('select,input').each(function (index, item) {
+                var input = $(item), def = input.data('def');
+                if (input.is('select')) {
+                    if ('options' in def) _input_select_options(host, def, input, item_data, function (select, options) {
+                        _input_select_populate(host, options, select, false, item_data);
+                    });
+                } else if (def.type === 'date' && 'format' in def) {
+                    var child_item_data = item_data[def.name];
+                    input.data('datepicker', null);
+                    input.datepicker(def.__datepicker_options);
+                    if (child_item_data && child_item_data.value) input.datepicker('setDate', new Date(child_item_data.value));
+                }
             });
             $(item).find('.form-group').each(function (index, input) {
                 var group = $(input), def = group.data('def');
                 group.data('name', item_name + '.' + def.name)
                     .data('item', _get_data_item(host.data, item.attr('data-bind')));
+                group.find('label').each(function (index, item) {
+                    item.attributes['for'].value = item_name.replace(/\[|\]/g, '_') + def.name;
+                });
                 if ('required' in def) _make_required(host, def, group);
                 if ('show' in def) _make_showable(host, def, group);
             });
@@ -1094,7 +1146,8 @@ Array.fromObject = function (object) {
 
     function _check_input_disabled(host, input, def) {
         if (!('disabled' in def) || def.protected) return false;
-        input.prop('disabled', _eval(host, def.disabled, false, _get_data_item(host.data, $(input).attr('data-bind')).parent));
+        var item_data = _get_data_item(host.data, $(input).attr('data-bind'));
+        input.prop('disabled', _eval(host, def.disabled, false, item_data ? item_data.parent : null));
         if (typeof def.disabled === 'string') host.events.disabled.push(input.data('disabled', def.disabled));
     }
 
@@ -1153,7 +1206,7 @@ Array.fromObject = function (object) {
         if (!(def = _form_field_lookup(host.def, info))) return;
         if ('name' in def && 'default' in def) {
             let item_data = _get_data_item(host.data, def.name);
-            if (item_data.value === null) item_data.value = def.default;
+            if (item_data instanceof dataBinderArray && item_data.value === null) item_data.value = def.default;
         }
         if ('horizontal' in def) p = def.horizontal;
         if ('render' in def) {
@@ -1380,7 +1433,7 @@ Array.fromObject = function (object) {
         var value = item instanceof dataBinderArray && item.length > 0 ? item : def.other && !item.value ? item.other : item.value;
         if (required && !value) return _validation_error(name, def, "required");
         if (typeof value === 'undefined' || value === null) return true; //Return now if there is no value and the field is not required!
-        if ('format' in def && value) {
+        if ('format' in def && value && def.type !== 'date') {
             if (!Inputmask.isValid(String(value), def.format))
                 return _validation_error(name, def, "bad_format");
         }
@@ -1437,10 +1490,9 @@ Array.fromObject = function (object) {
                 } else if ('fields' in def) {
                     let childItems = def.type === 'array' ? item.save() : [item], childQueue = [], itemResult = [];
                     let result = _validate_rule(host, def.name, item, def);
-                    if (result !== true) {
+                    if (result !== true || childItems.length === 0) {
                         for (let x in callbacks) callbacks[x](def.name, result, extra);
                     } else {
-                        var count = 0;
                         for (let i in childItems) {
                             for (let x in def.fields) {
                                 if (!('name' in def.fields[x])) def.fields[x].name = x;

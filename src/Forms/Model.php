@@ -826,16 +826,20 @@ class Model extends \Hazaar\Model\Strict {
 
             }elseif(ake($field, 'file') === true){
 
-                $files = $this->__controller->__attachments($field->name);
+                if($this->__controller instanceof \Hazaar\Controller\Form){
 
-                $value = array();
+                    $files = $this->__controller->__attachments($field->name);
 
-                foreach($files as $file){
+                    $value = array();
 
-                    $value[] = array(
-                        'name' => $file->basename(),
-                        'url' => (string)$file->media_uri()
-                    );
+                    foreach($files as $file){
+
+                        $value[] = array(
+                            'name' => $file->basename(),
+                            'url' => (string)$file->media_uri()
+                        );
+                    }
+
                 }
 
             }elseif($options = ake($field, 'options')){
@@ -927,7 +931,7 @@ class Model extends \Hazaar\Model\Strict {
 
                     case T_STRING:
 
-                        if(!($token[1] === 'true' || $token[1] === 'false')){
+                        if(!($token[1] === 'true' || $token[1] === 'false' || $token[1] === 'null')){
 
                             $code .= ((!isset($tokens[$i-1]) || $tokens[$i-1] !== '.') ? '$' : '' ) . $token[1];
 
@@ -1096,21 +1100,18 @@ class Model extends \Hazaar\Model\Strict {
 
         }else{
 
-            list($controller,) = explode('/', $target, 2);
+            $router = new \Hazaar\Application\Router(new \Hazaar\Application\Config);
 
-            if(!$controller)
-                throw new \Exception('Invalid application endpoint: ' . $target);
+            $request = new \Hazaar\Application\Request\HTTP($args, false);
+
+            $request->setPath($target);
+
+            $router->evaluate($request);
 
             $loader = \Hazaar\Loader::getInstance();
 
-            if(!($controller = $loader->loadController($controller)))
+            if(!($controller = $loader->loadController($router->getController())))
                 throw new \Exception("Controller for target '$target' could not be found!", 404);
-
-            $request = new \Hazaar\Application\Request\HTTP(\Hazaar\Application::getInstance()->config, $args);
-
-            $request->evaluate($target);
-
-            $controller->setRequest($request);
 
             $controller->__initialize($request);
 
@@ -1137,6 +1138,22 @@ class Model extends \Hazaar\Model\Strict {
             return 'Form Document';
 
         return $this->matchReplace($this->__form->pdf->title, true, $params);
+
+    }
+
+    public function renderHTML($settings = array()){
+
+        $pdf = new \Hazaar\Forms\Output\HTML($this);
+
+        return $pdf->render($settings);
+
+    }
+
+    public function renderPDF($settings = array()){
+
+        $pdf = new \Hazaar\Forms\Output\PDF($this);
+
+        return $pdf->render($settings);
 
     }
 

@@ -52,6 +52,18 @@ class PDF extends HTML {
 
     public function render($settings = array(), $form = null, $ixes = null){
 
+        $html = $this->renderHTML($settings, $form, $ixes);
+
+        $pdf = new \Hazaar\File\PDF(basename(ake($settings, 'name', uniqid()), '.pdf') . '.pdf');
+
+        $pdf->set_contents($html);
+
+        return $pdf;
+
+    }
+
+    public function renderHTML($settings = array(), $form = null, $ixes = null){
+
         $form = $this->model->resolve();
 
         if(property_exists($form, 'pdf')

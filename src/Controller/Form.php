@@ -20,16 +20,24 @@ abstract class Form extends Action {
 
     protected $__form_path;
 
-    public function __initialize(\Hazaar\Application\Request $request) {
+    function __construct($name, \Hazaar\Application $application, $use_app_config = true) {
+
+        parent::__construct($name, $application, $use_app_config);
 
         if(!($path = $this->application->config->paths->get('forms')))
             $path = 'forms';
 
         $this->setFormPath($path);
 
-        parent::__initialize($request);
+    }
+
+    public function __initialize(\Hazaar\Application\Request $request) {
+
+        $response = parent::__initialize($request);
 
         $this->__initialized = true;
+
+        return $response;
 
     }
 
@@ -332,7 +340,7 @@ abstract class Form extends Action {
 
     final public function output($type = 'html'){
 
-        if($this->request->getActionName() == 'output'){
+        if($this->getAction() == 'output'){
 
             if(!($name = $this->request->get('name')))
                 throw new \Exception('No form name specified!');
@@ -361,7 +369,7 @@ abstract class Form extends Action {
 
                 $response = new \Hazaar\Controller\Response\PDF();
 
-                $response->setContent($output->render(array('template' => $template)));
+                $response->setContent($output->renderHTML(array('template' => $template)));
 
                 $response->setTitle($this->form_model->getPDFTitle($params));
 
@@ -544,7 +552,7 @@ abstract class Form extends Action {
         $source_file = $this->__form_path->get($file);
 
         if(!$source_file->exists())
-            throw new \Exception('Form model source file not found!', 500);
+            throw new \Exception('Form model source file not found: ' . $file, 500);
 
         if(!($form = $source_file->parseJSON()))
             throw new \Exception('An error ocurred parsing the form definition \'' . $source_file->name() . '\'');
