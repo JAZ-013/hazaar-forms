@@ -633,7 +633,7 @@ Date.getLocalDateFormat = function () {
             return _input_select_items(host, {}, o, select, o ? false : true);
         }
         if (!(options !== null && typeof options === 'object' && 'url' in options))
-            return _input_select_items(host, options, options, select);
+            return _input_select_items(host, options, 'items' in options ? options.items : options, select);
         var matches = options.url.match(/\{\{[\w\.]+\}\}/g), def = select.data('def');
         for (let x in matches) {
             var match = matches[x].substr(2, matches[x].length - 4);
@@ -1931,6 +1931,7 @@ Date.getLocalDateFormat = function () {
 
     $.fn.hzForm.defaults = {
         "form": "default",
+        "params": {},
         "controller": "index",
         "encode": true,
         "singlePage": false,

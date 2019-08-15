@@ -1157,4 +1157,67 @@ class Model extends \Hazaar\Model\Strict {
 
     }
 
+    public function loadFromModel(\Hazaar\Model\Strict $model){
+
+        $fields = $this->__processModelItem($model);
+
+        $form = (object)array(
+            'name' => $this->__form_name,
+            'pages' => array((object)array('sections' => array((object)array('fields' => array_keys(get_object_vars($fields)))))),
+            'fields' => (object)$fields
+        );
+
+        return $this->load($form);
+
+    }
+
+    public function __processModelItem(\Hazaar\Model\Strict $model){
+
+        $fields = new \stdClass;
+
+        foreach($model as $key => $value){
+
+            $def = $model->getDefinition($key);
+
+            if(ake($def, 'hide') === true) continue;
+
+            $type = ake($def, 'type');
+
+            if($type === 'model'){
+
+                $o = (object)array(
+                     'label' => ake($def, 'label'),
+                     'fields' => $this->__processModelItem($value)
+                );
+
+            }else{
+
+                $o = (object)array(
+                    'type' => $type,
+                    'label' => ake($def, 'label')
+                );
+
+                if(array_key_exists('options', $def))
+                    $o->options = $def['options'];
+                elseif(array_key_exists('source', $def)){
+
+                    $o->options = (object)array('items' => call_user_func(array(($value?$value:new $def['type']), $def['source'])));
+
+                    if(array_key_exists('valueKey', $def))
+                        $o->options->value = $def['valueKey'];
+
+                    if(array_key_exists('labelKey', $def))
+                        $o->options->label = $def['labelKey'];
+
+                }
+
+            }
+
+            $fields->$key = $o;
+
+        }
+
+        return $fields;
+
+    }
 }
