@@ -256,7 +256,7 @@ Date.getLocalDateFormat = function () {
         var label = field.children('label.control-label'), i = label.children('i.form-required');
         var item_data = ('name' in def) ? _get_data_item(host.data, def.name) : null;
         if (typeof required === 'undefined') required = false;
-        required = _eval(host, def.required, required, item_data ? item_data.parent : null, item_data ? item_data.value : null);
+        required = _eval(host, def.required, required, item_data ? item_data._parent : null, item_data ? item_data.value : null);
         if (required !== true) i.remove();
         else if (i.length === 0) label.append($('<i class="fa fa-exclamation-circle form-required" title="Required">'));
         if ('fields' in def) field.children('div.form-section,div.form-group').each(function (index, item) {
