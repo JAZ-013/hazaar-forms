@@ -139,7 +139,7 @@ Date.getLocalDateFormat = function () {
         return data;
     }
 
-    function _eval_code(host, evaluate, item_data, lvalue, no_return) {
+    function _eval_code(host, evaluate, item_data, lvalue, key, no_return) {
         if (typeof evaluate === 'boolean') return evaluate;
         let code = '';
         if (typeof host.eval_cache === 'string') code = host.eval_cache;
@@ -159,7 +159,7 @@ Date.getLocalDateFormat = function () {
         if (no_return !== true) code += "return ( " + evaluate.replace(/[\;\s]+$/, '') + " );";
         else code += evaluate;
         try {
-            return new Function('form', 'tags', 'formItem', 'value', code)(host.data, host.tags, item_data, lvalue);
+            return new Function('form', 'tags', 'formItem', 'value', 'key', code)(host.data, host.tags, item_data, lvalue, key);
         } catch (e) {
             console.error('Failed to evaluate condition: ' + e);
             console.log(code);
@@ -167,11 +167,11 @@ Date.getLocalDateFormat = function () {
         return false;
     }
 
-    function _eval(host, script, default_value, item_data, value) {
+    function _eval(host, script, default_value, item_data, value, key) {
         if (typeof script === 'boolean') return script;
         if (typeof script === 'undefined') return typeof default_value === 'undefined' ? false : default_value;
         if (script.indexOf(';') !== -1)
-            return _eval_code(host, script, item_data, value);
+            return _eval_code(host, script, item_data, value, key);
         var parts = script.split(/\s*(\&\&|\|\|)\s*/);
         for (let x = 0; x < parts.length; x += 2) {
             var matches = null;
@@ -181,7 +181,7 @@ Date.getLocalDateFormat = function () {
             }
             parts[x] = matches[1] + ' ' + matches[2] + ' ' + matches[3];
         }
-        return _eval_code(host, parts.join(' '), item_data, value);
+        return _eval_code(host, parts.join(' '), item_data, value, key);
     }
 
     function _nullify(host, def) {
@@ -205,7 +205,7 @@ Date.getLocalDateFormat = function () {
 
     function _toggle_show(host, obj) {
         host.working = true;
-        var toggle = _eval(host, obj.data('show'), true, obj.data('item')), def = obj.data('def');
+        var toggle = _eval(host, obj.data('show'), true, obj.data('item'), null, def.name), def = obj.data('def');
         obj.toggle(toggle);
         if (!toggle) _nullify(host, def);
         host.working = false;
@@ -340,7 +340,7 @@ Date.getLocalDateFormat = function () {
                         return update;
                     if (typeof update !== 'object') return false;
                     if (!('enabled' in update)) update.enabled = true;
-                    if ('when' in update) update.enabled = _eval(host, update.when, false, item_data.parent, item_data.value);
+                    if ('when' in update) update.enabled = _eval(host, update.when, false, item_data.parent, item_data.value, def.name);
                     if (update.enabled) {
                         if (!('url' in update)) return true;
                         if ((url = _match_replace(host, update.url)) !== false) {
@@ -361,7 +361,7 @@ Date.getLocalDateFormat = function () {
             }
             if (skip_validate !== true) _validate_input(host, input);
         }
-        if (item_data && item_data.enabled() && def.change) _eval_code(host, def.change, item_data.parent, item_data.value, true);
+        if (item_data && item_data.enabled() && def.change) _eval_code(host, def.change, item_data.parent, item_data.value, def.name, true);
         if (!host.working && host.events.show && host.events.show.length > 0) {
             for (let x in host.events.show)
                 _toggle_show(host, host.events.show[x]);
@@ -371,7 +371,7 @@ Date.getLocalDateFormat = function () {
         if (host.events.disabled && host.events.disabled.length > 0) {
             for (let x in host.events.disabled) {
                 var i = host.events.disabled[x];
-                var disabled = _eval(host, i.data('disabled'), false, item_data.parent, item_data.value);
+                var disabled = _eval(host, i.data('disabled'), false, item_data.parent, item_data.value, def.name);
                 i.prop('disabled', disabled);
             }
         }
@@ -382,12 +382,12 @@ Date.getLocalDateFormat = function () {
 
     function _input_event_focus(host, input) {
         var def = input.data('def'), item_data = _get_data_item(host.data, input.attr('data-bind'));
-        if (def.focus) _eval_code(host, def.focus, item_data.parent, item_data.value, true);
+        if (def.focus) _eval_code(host, def.focus, item_data.parent, item_data.value, def.name, true);
     }
 
     function _input_event_blur(host, input) {
         var def = input.data('def'), item_data = _get_data_item(host.data, input.attr('data-bind'));
-        if (def.blur) _eval_code(host, def.blur, item_data.parent, item_data.value, true);
+        if (def.blur) _eval_code(host, def.blur, item_data.parent, item_data.value, def.name, true);
     }
 
     function _input_button(host, def) {
@@ -408,7 +408,7 @@ Date.getLocalDateFormat = function () {
                 break;
             default:
                 var action = def.action ? def.action : def.change ? def.change : def.click;
-                btn.click(function () { _eval_code(host, action, null, null, true); });
+                btn.click(function () { _eval_code(host, action, null, null, def.name, true); });
                 break;
         }
         return group;
@@ -438,7 +438,7 @@ Date.getLocalDateFormat = function () {
         };
         var value = _get_data_item(host.data, def.name, true), items = [];
         var valueKey = def.options.value || 'value', labelKey = def.options.label || 'label';
-        var disabled = def.protected === true || _eval(host, def.disabled, false);
+        var disabled = def.protected === true || _eval(host, def.disabled, false, null, null, def.name);
         data = _convert_data(data, valueKey, labelKey, def);
         if ('sort' in def.options) {
             if (typeof def.options.sort === 'boolean') def.options.sort = labelKey;
@@ -596,7 +596,7 @@ Date.getLocalDateFormat = function () {
                 item_data.set(data[x][valueKey], data[x][labelKey], data[x][options.other]);
         }
         if (item_data) {
-            if ('other' in def && _eval(host, def.other) === true) {
+            if ('other' in def && _eval(host, def.other, null, null, null, def.name) === true) {
                 select.append($('<option>').attr('value', '__hz_other').html("Other"));
                 if (item_data.value === null && item_data.other !== null)
                     select.val('__hz_other').change();
@@ -668,7 +668,7 @@ Date.getLocalDateFormat = function () {
         if (Array.isArray(def.options)) {
             for (let x in def.options) {
                 if (!(typeof def.options[x] === 'object' && 'when' in def.options[x])) continue;
-                if (_eval(host, def.options[x].when, null, item_data, item_data ? item_data.value : null)) {
+                if (_eval(host, def.options[x].when, null, item_data, item_data ? item_data.value : null, def.name)) {
                     options = 'items' in def.options[x] ? def.options[x].items : def.options[x];
                     break;
                 }
@@ -1147,7 +1147,7 @@ Date.getLocalDateFormat = function () {
     function _check_input_disabled(host, input, def) {
         if (!('disabled' in def) || def.protected) return false;
         var item_data = _get_data_item(host.data, $(input).attr('data-bind'));
-        input.prop('disabled', _eval(host, def.disabled, false, item_data ? item_data.parent : null));
+        input.prop('disabled', _eval(host, def.disabled, false, item_data ? item_data.parent : null, null, def.name));
         if (typeof def.disabled === 'string') host.events.disabled.push(input.data('disabled', def.disabled));
     }
 
@@ -1429,7 +1429,7 @@ Date.getLocalDateFormat = function () {
     function _validate_rule(host, name, item, def) {
         if (!(item && def)) return true;
         if ('show' in def) if (!_eval(host, def.show)) return true;
-        var required = 'required' in def ? _eval(host, def.required, false, item.parent, item.value) : false;
+        var required = 'required' in def ? _eval(host, def.required, false, item.parent, item.value, def.name) : false;
         var value = item instanceof dataBinderArray && item.length > 0 ? item : def.other && !item.value ? item.other : item.value;
         if (required && !value) return _validation_error(name, def, "required");
         if (typeof value === 'undefined' || value === null) return true; //Return now if there is no value and the field is not required!
@@ -1485,7 +1485,7 @@ Date.getLocalDateFormat = function () {
             if (def) {
                 var item = _get_data_item(host.data, def.name);
                 if (!item) return;
-                if (def.protected || 'disabled' in def && _eval(host, def.disabled, false, item.parent)) {
+                if (def.protected || 'disabled' in def && _eval(host, def.disabled, false, item.parent, null, def.name)) {
                     for (let x in callbacks) callbacks[x](def.name, true, extra);
                 } else if ('fields' in def) {
                     let childItems = def.type === 'array' ? item.save() : [item], childQueue = [], itemResult = [];
