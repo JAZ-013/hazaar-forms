@@ -62,11 +62,6 @@
 
 .form-group label .form-required {
     color: #ed2b2b;
-    display: none;
-}
-
-.form-group.required label .form-required {
-    display: inline;
 }
 
 .form-group .form-tip {
