@@ -545,7 +545,7 @@ abstract class Form extends Action {
     protected function form_get($name, $tags, $params = array()){
 
         if($name instanceof \Hazaar\Model\Strict)
-            return $this->loadFromModel($name, $tags);
+            return \Hazaar\Forms\Model::loadFromStrictModel($name, $tags);
 
         $file = $name . '.json';
 
@@ -711,18 +711,6 @@ abstract class Form extends Action {
     protected function setFormPath($path){
 
         $this->__form_path = new \Hazaar\File\Dir(APPLICATION_PATH . DIRECTORY_SEPARATOR .$path);
-
-    }
-
-    private function loadFromModel(\Hazaar\Model\Strict $model, $tags = array()){
-
-        $name = get_class($model);
-
-        $form = new \Hazaar\Forms\Model($name, null, $tags);
-
-        $form->loadFromModel($model);
-
-        return $form;
 
     }
 

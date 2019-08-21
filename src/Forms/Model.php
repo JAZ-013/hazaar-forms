@@ -50,6 +50,16 @@ class Model extends \Hazaar\Model\Strict {
 
     }
 
+    static function loadFromStrictModel(\Hazaar\Model\Strict $model, $tags = null){
+
+        $form = new Model(get_class($model), null, $tags);
+
+        $form->loadFromModel($model);
+
+        return $form;
+
+    }
+
     public function registerController(\Hazaar\Controller\Form $controller){
 
         $this->__controller = $controller;
@@ -1167,6 +1177,8 @@ class Model extends \Hazaar\Model\Strict {
             'fields' => (object)$fields
         );
 
+        //dump($form);
+
         return $this->load($form);
 
     }
@@ -1183,11 +1195,21 @@ class Model extends \Hazaar\Model\Strict {
 
             $type = ake($def, 'type');
 
-            if($type === 'model'){
+            if($value instanceof \Hazaar\Model\Strict){
 
                 $o = (object)array(
-                     'label' => ake($def, 'label'),
-                     'fields' => $this->__processModelItem($value)
+                    'label' => ake($def, 'label'),
+                    'fields' => $this->__processModelItem($value)
+                );
+
+            }elseif($value instanceof \Hazaar\Model\ChildArray){
+
+                $o = (object)array(
+                    'type' => 'array',
+                    'label' => ake($def, 'label'),
+                    'allow_add' => true,
+                    'allow_edit' => true,
+                    'fields' => $this->__processModelItem($value->push())
                 );
 
             }else{
