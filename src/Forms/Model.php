@@ -927,7 +927,7 @@ class Model extends \Hazaar\Model\Strict {
 
                 switch($token['0']){
 
-                    case T_OPEN_TAG: continue;
+                    case T_OPEN_TAG: continue 2;
 
                     case T_STRING:
 
