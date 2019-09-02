@@ -4,7 +4,13 @@ namespace Hazaar\Forms;
 
 class Script {
 
+    static public $server_port = 3000;
+
     private $params = array();
+
+    private $params_changed = true;
+
+    private $params_js;
 
     final function __construct($params = array()){
 
@@ -27,12 +33,50 @@ class Script {
 
     }
 
+    private function start_server(){
+
+        $cmd = realpath(dirname(__FILE__)
+            . DIRECTORY_SEPARATOR . '..'
+            . DIRECTORY_SEPARATOR . '..'
+            . DIRECTORY_SEPARATOR . 'libs'
+            . DIRECTORY_SEPARATOR . 'codeserver.js')
+            . ' ' . self::$server_port;
+
+        if($cmd === false)
+            throw new \Exception('Unable to find code execution server script!');
+
+        $pipes = array();
+
+        $descriptorspec = array(
+            0 => array('pipe', 'r'),
+            1 => array('pipe', 'w'),
+            2 => array('pipe', 'w')
+        );
+
+        $proc = proc_open('node ' . $cmd . '&', $descriptorspec, $pipes);
+
+        fclose($pipes[0]);
+
+        do{
+
+            $read = array($pipes[1]);
+
+            $null = null;
+
+        }while(stream_select($read, $null, $null, 0) === 0);
+
+        return (proc_close($proc) !== -1);
+
+    }
+
     public function populate($params){
 
         if(!is_array($params))
             return false;
 
         $this->params = array_merge($this->params, $params);
+
+        $this->params_changed = true;
 
         return true;
 
@@ -41,6 +85,8 @@ class Script {
     public function set($key, $value){
 
         $this->params[$key] = $value;
+
+        $this->params_changed = true;
 
     }
 
@@ -62,40 +108,45 @@ class Script {
      */
     public function execute($code){
 
-        $js = '';
+        if($this->params_changed === true){
 
-        foreach($this->params as $key => $value)
-            $js .= "var $key = " . json_encode($value) . ";\n";
+            $this->params_js = '';
 
-        $js .= $code;
+            foreach($this->params as $key => $value)
+                $this->params_js .= "var $key = " . json_encode($value) . ";\n";
 
-        $descriptorspec = array(
-            0 => array("pipe", "r"),  // stdin is a pipe that the child will read from
-            1 => array("pipe", "w"),  // stdout is a pipe that the child will write to
-            2 => array("file", "/tmp/error-output.txt", "a") // stderr is a file to write to
+            $this->params_changed = false;
+
+        }
+
+        $code = $this->params_js . $code;
+
+        $options = array(
+            'http' => array(
+                'header'  => "Content-type: application/javascript\r\n",
+                'method'  => 'POST',
+                'content' => $code,
+                'ignore_errors' => true
+            )
         );
 
-        $cwd = getcwd();
+        $context = stream_context_create($options);
 
-        $env = array();
+        $count = 0;
 
-        $process = proc_open('node -p', $descriptorspec, $pipes, $cwd, $env);
+        while(($result = @file_get_contents('http://localhost:' . self::$server_port, false, $context)) === false){
 
-        if(!is_resource($process))
-            return false;
+            error_clear_last();
 
-        fwrite($pipes[0], $js);
+            if(++$count > 1)
+                throw new \Exception('Unable to start code execution server!');
 
-        fclose($pipes[0]);
+            $this->start_server();
 
-        $result = trim(stream_get_contents($pipes[1]));
+        }
 
-        fclose($pipes[1]);
-
-        $return_value = proc_close($process);
-
-        if($return_value !== 0)
-            throw new \Exception('Syntax error executing JavaScript code!');
+        if(substr($result, 0, 6) === 'ERROR:')
+            throw new \Exception(substr($result, 7));
 
         return $result;
 
