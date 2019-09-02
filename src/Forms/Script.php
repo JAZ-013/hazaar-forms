@@ -12,7 +12,7 @@ class Script {
 
     private $params_js;
 
-    final function __construct($params = array()){
+    final function __construct($params = null){
 
         if(strtolower(PHP_OS) !== 'linux')
             throw new \Exception('NodeJS script execution is only supported on Linux hosts.');
@@ -21,7 +21,7 @@ class Script {
             throw new \Exception('NodeJS must be installed to use ' . __CLASS__);
 
         if(is_array($params))
-            $this->params = $params;
+            $this->populate($params);
 
     }
 
@@ -70,6 +70,19 @@ class Script {
     }
 
     public function populate($params){
+
+        if(!is_array($params))
+            return false;
+
+        $this->params = $params;
+
+        $this->params_changed = true;
+
+        return true;
+
+    }
+
+    public function extend($params){
 
         if(!is_array($params))
             return false;
