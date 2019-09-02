@@ -38,6 +38,10 @@ class Model extends \Hazaar\Model\Strict {
 
     private $__controller;
 
+    private $__use_node = true;
+
+    private $__script_server;
+
     function __construct($form_name, $form = null, $tags = null, \Hazaar\File\Dir $form_include_path = null){
 
         $this->__form_name = $form_name;
@@ -917,6 +921,14 @@ class Model extends \Hazaar\Model\Strict {
         if(is_bool($code))
             return $code;
 
+        if($this->__use_node === true){
+
+            $s = ($this->__script_server instanceof Script) ? $this->__script_server : new Script($this->values);
+
+            return $s->evaluate($code);
+
+        }
+
         $tokens = token_get_all('<?php ' . $code);
 
         $code = '';
@@ -1154,6 +1166,154 @@ class Model extends \Hazaar\Model\Strict {
         $pdf = new \Hazaar\Forms\Output\PDF($this);
 
         return $pdf->render($settings);
+
+    }
+
+    public function validate(){
+
+        $errors = array();
+
+        foreach($this->__form->fields as $key => $field){
+
+            if (!array_key_exists('name', $field))
+                $field['name'] = $key;
+
+            if(($result = $this->__validate_field($field)) !== true)
+                $errors[$key] = $result;
+
+        }
+
+        if(count($errors) === 0)
+            return true;
+
+        return $errors;
+
+    }
+
+    private function __validate_field($field){
+
+        if(!is_array($field))
+            return 'Not a valid form field!';
+
+        if (ake($field, 'protected') === true
+            || array_key_exists('disabled', $field,)
+            && $this->evaluate($field['disabled'], false)){
+
+            return true;
+
+        }elseif(array_key_exists('fields', $field)){
+
+            return true;
+            /*
+            die('not done yet');
+
+            $childItems = ake($field, 'type') === 'array' ? item.save() : [item];
+
+            $itemResult = [];
+
+            $result = $this->__validate_rule($field);
+
+            if ($result !== true || count($childItems) === 0)
+            return $result;
+
+            foreach($childItems as $i => $item) {
+
+            foreach($field->fields as $name => $def) {
+
+            if (!(property_exists($def, 'name')))
+            $def->name = $name;
+
+            $fullName = $field->name + '[' + $i + '].' + $name;
+
+            $itemResult[] = $this->__validate_field((object)array('def' => $fields->fields, 'monitor' => new \stdClass), $def, fullName);
+
+            }
+
+            }
+
+            $result = $itemResult;
+
+             */
+
+        }
+
+        return $this->__validate_rule($field);
+
+    }
+
+    private function __validate_rule($field) {
+
+        if(!array_key_exists('validate', $field))
+            return true;
+
+        $value = $this->get($field['name']);
+
+        if(!$field['validate'] instanceof \stdClass)
+            $field['validate'] = (object)array('custom' => $field['validate']);
+
+        foreach($field['validate'] as $type => $data){
+
+            switch($type){
+
+                case 'min':
+
+                    if (intval($value) < $data)
+                        return $this->__validation_error($field['name'], $field, "too_small");
+
+                    break;
+                case 'max':
+
+                    if (intval($value) > $data)
+                        return $this->__validation_error($field['name'], $field, "too_big");
+
+                    break;
+
+                case 'with':
+
+                    if(!(is_string($value) && preg_match($data, $value)))
+                        return $this->__validation_error($field['name'], $field, "regex_failed");
+
+                    break;
+
+                case 'equals':
+
+                    if ($value !== $data)
+                        return $this->__validation_error($field['name'], $field, "not_equal");
+
+                    break;
+
+                case 'minlen':
+
+                    if (!$value || strlen($value) < $data)
+                        return $this->__validation_error($field['name'], $field, "too_short");
+
+                    break;
+
+                case 'maxlen':
+
+                    if (!$value || strlen($value) > $data)
+                        return $this->__validation_error($field['name'], $field, "too_long");
+
+                    break;
+
+                case 'custom':
+
+                    if (!$this->evaluate($data, $value))
+                        return $this->__validation_error($field['name'], $field, "custom");
+
+                    break;
+
+            }
+
+        }
+
+        return true;
+
+    }
+
+    private function __validation_error($name, $def, $status) {
+
+        return array('name' => $name, 'field' => $def, 'status' => $status);
 
     }
 
