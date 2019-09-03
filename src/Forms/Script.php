@@ -112,6 +112,78 @@ class Script {
 
     }
 
+    public function __export_param($value, $quote = true, $export_dbv = false){
+
+        if($value instanceof \Hazaar\Model\dataBinderValue){
+
+            if($export_dbv === true)
+                return array('value' => $value->value, 'label' => $value->label, 'other' => $value->other);
+
+            return $quote ? $this->__export_param($value->value, $quote, $export_dbv) : $value->value;
+
+        }elseif($value instanceof \Hazaar\Model\ChildModel){
+
+            $values = array();
+
+            foreach($value as $key => $subValue)
+                $values[$key] = $this->__export_param($subValue, $quote, $export_dbv);
+
+            return $quote ? '{' . ((count($values) > 0) ? ' ' . array_flatten($values, ': ', ', ') . ' ' : '' ). '}' : $values;
+
+        }elseif ($value instanceof \Hazaar\Model\ChildArray){
+
+            $values = array();
+
+            foreach($value as $subValue)
+                $values[] = $this->__export_param($subValue, $quote, $export_dbv);
+
+            return $quote ? '[' . ((count($values) > 0) ? ' ' . implode(', ', $values) . ' ' : '' ). ']' : $values;
+
+        }elseif($value instanceof \Hazaar\Date){
+
+            return $value->sec();
+
+        }
+
+        if($quote !== true)
+            return $value;
+
+        if(is_bool($value)){
+
+            $value = strbool($value);
+
+        }elseif(is_null($value)){
+
+            $value = 'null';
+
+        }elseif (is_array($value)){
+
+            $values = array();
+
+            foreach($value as $subValue)
+                $values[] = $this->__export_param($subValue, $quote, $export_dbv);
+
+            $value = json_encode($values);
+
+        }elseif ($value instanceof \stdClass){
+
+            $values = array();
+
+            foreach($value as $key => $subValue)
+                $values[$key] = $this->__export_param($subValue, false, $export_dbv);
+
+            $value = json_encode($values);
+
+        }elseif ($quote === true && (is_string($value) || is_object($value))){
+
+            $value = '"' . addslashes((string)$value) . '"';
+
+        }
+
+        return $value;
+
+    }
+
     /**
      * Execute JS and return the result as a string
      *
@@ -126,13 +198,18 @@ class Script {
             $this->params_js = '';
 
             foreach($this->params as $key => $value)
-                $this->params_js .= "var $key = " . json_encode($value) . ";\n";
+                $this->params_js .= "var $key = " . $this->__export_param($value) . ";\n";
+
+            $this->params_js .= "var form = " . $this->__export_param((object)$this->params, true, true) . ";\n";
 
             $this->params_changed = false;
 
         }
 
-        $code = $this->params_js . $code;
+        $code = $this->params_js . trim($code);
+
+        if(substr($code, -1) !== ';')
+            $code .= ';';
 
         $options = array(
             'http' => array(
