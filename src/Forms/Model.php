@@ -1195,6 +1195,15 @@ class Model extends \Hazaar\Model\Strict {
         if(!is_array($field))
             return 'Not a valid form field!';
 
+        if(array_key_exists('required', $field)){
+
+            $value = $this->get($field['name']);
+
+            if($this->evaluate($field['required']) === true && !$value)
+                return $this->__validation_error($field['name'], $field, 'required');
+
+        }
+
         if (ake($field, 'protected') === true
             || array_key_exists('disabled', $field,)
             && $this->evaluate($field['disabled'], false)){
@@ -1284,14 +1293,14 @@ class Model extends \Hazaar\Model\Strict {
 
                 case 'minlen':
 
-                    if (!$value || strlen($value) < $data)
+                    if ($value && strlen($value) < $data)
                         return $this->__validation_error($field['name'], $field, "too_short");
 
                     break;
 
                 case 'maxlen':
 
-                    if (!$value || strlen($value) > $data)
+                    if ($value && strlen($value) > $data)
                         return $this->__validation_error($field['name'], $field, "too_long");
 
                     break;

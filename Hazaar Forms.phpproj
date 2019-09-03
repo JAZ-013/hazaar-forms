@@ -31,6 +31,7 @@
   </ItemGroup>
   <ItemGroup>
     <Folder Include="docs\" />
+    <Folder Include="docs\images\" />
     <Folder Include="libs" />
     <Folder Include="src" />
     <Folder Include="src\Forms\" />
@@ -42,7 +43,9 @@
   <ItemGroup>
     <Content Include="docs\form-definitions.md" />
     <Content Include="docs\getting-started.md" />
+    <Content Include="docs\images\example_form.png" />
     <Content Include="docs\index.md" />
+    <Content Include="libs\codeserver.js" />
     <Content Include="libs\pdf.css" />
     <Content Include="libs\interact.css" />
     <Content Include="libs\interact.js" />
