@@ -114,12 +114,16 @@ class Script {
 
     public function __export_param($value, $quote = true, $export_dbv = false){
 
-        if($value instanceof \Hazaar\Model\dataBinderValue){
+        if($value === null && $export_dbv === true){
+
+            return array('value' => $value, 'label' => null, 'other' => null);
+
+        }elseif($value instanceof \Hazaar\Model\dataBinderValue){
 
             if($export_dbv === true)
                 return array('value' => $value->value, 'label' => $value->label, 'other' => $value->other);
 
-            return $quote ? $this->__export_param($value->value, $quote, $export_dbv) : $value->value;
+            $value = $quote ? $this->__export_param($value->value, $quote, $export_dbv) : $value->value;
 
         }elseif($value instanceof \Hazaar\Model\ChildModel){
 
