@@ -50,6 +50,8 @@ class Model extends \Hazaar\Model\Strict {
 
         $this->setTags($tags);
 
+        $this->__use_node = boolify(ake(\Hazaar\Application::getInstance()->config->forms, 'use_node', false));
+
         if($form) $this->load($form);
 
     }
@@ -1211,7 +1213,7 @@ class Model extends \Hazaar\Model\Strict {
         }
 
         if (ake($field, 'protected') === true
-            || array_key_exists('disabled', $field,)
+            || array_key_exists('disabled', $field)
             && $this->evaluate($field['disabled'], false)){
 
             return true;
