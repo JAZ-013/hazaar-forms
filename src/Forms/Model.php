@@ -1118,7 +1118,7 @@ class Model extends \Hazaar\Model\Strict {
 
             $router = new \Hazaar\Application\Router(new \Hazaar\Application\Config);
 
-            $request = new \Hazaar\Application\Request\HTTP($args, false);
+            $request = new \Hazaar\Application\Request\HTTP($args, false, 'POST');
 
             $request->setPath($target);
 
