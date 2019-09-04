@@ -71,12 +71,7 @@ class Model extends \Hazaar\Model\Strict {
         if(!array_key_exists('fields', $this->__form))
             throw new \Exception('Form definition does not contain any fields!');
 
-        foreach($this->__form as &$item){
-
-            if($item instanceof \stdClass)
-                $this->import($item);
-
-        }
+        $this->import($this->__form);
 
         //Convert the fields def to an array for \Hazaar\Model\Strict compatibility.
         settype($this->__form->fields, 'array');
@@ -121,52 +116,61 @@ class Model extends \Hazaar\Model\Strict {
 
     }
 
-    private function import(\stdClass &$item){
+    private function import(&$item){
 
-        if(!(is_object($item) && property_exists($item, 'import')))
+        if(!(is_object($item) || is_array($item)))
             return false;
 
-        if(!$this->__form_import_path instanceof \Hazaar\File\Dir)
-            throw new \Exception('No import path set on this form model.  Imports are not supported.');
+        if($item instanceof \stdClass && property_exists($item, 'import')){
 
-        if(!is_array($item->import))
-            $item->import = array($item->import);
+            if(!$this->__form_import_path instanceof \Hazaar\File\Dir)
+                throw new \Exception('No import path set on this form model.  Imports are not supported.');
 
-        foreach($item->import as $ext_item){
+            $import = is_array($item->import) ? $item->import : array($item->import);
 
-            if(strtolower(substr($ext_item, -5)) !== '.json')
-                $ext_item .= '.json';
+            unset($item->import);
 
-            if(in_array($ext_item, $this->__form_imported))
-                throw new \Exception($ext_item . ' has already been imported.  Cyclic reference?');
-
-            if(!($source = $this->__form_import_path->get($ext_item)))
-                throw new \Exception('Form include file not found: ' . $ext_item, 404);
-
-            $include_file = new \Hazaar\File($source);
-
-            if(!($include_items = $include_file->parseJSON()))
-                throw new \Exception('An error ocurred parsing the form definition \'' . $include_file->name() . '\'');
-
-            if(!is_object($include_items))
-                throw new \Exception('Error importing from ' . $include_file);
-
-            $this->import($include_items);
-
-            foreach($include_items as $key => $value){
-
-                if(property_exists($item, $key))
-                    $value = (object)replace_recursive((array)$value, (array)$item->$key);
-
-                $item->$key = $value;
-
-            }
-
-            $this->__form_imported[] = $ext_item;
+            foreach($import as $ext_item)
+                $this->importItem($item, $ext_item);
 
         }
 
-        unset($item->import);
+        foreach($item as &$field)
+            $this->import($field);
+
+        return true;
+
+    }
+
+    private function importItem(&$item, $ext_item){
+
+        if(strtolower(substr($ext_item, -5)) !== '.json')
+            $ext_item .= '.json';
+
+        if(in_array($ext_item, $this->__form_imported))
+            throw new \Exception($ext_item . ' has already been imported.  Cyclic reference?');
+
+        if(!($source = $this->__form_import_path->get($ext_item)))
+            throw new \Exception('Form import file not found: ' . $ext_item, 404);
+
+        $import_file = new \Hazaar\File($source);
+
+        if(!($import_items = $import_file->parseJSON()))
+            throw new \Exception('An error ocurred parsing the form definition \'' . $import_file->name() . '\'');
+
+        if(!is_object($import_items))
+            throw new \Exception('Error importing from ' . $import_file);
+
+        foreach($import_items as $key => $value){
+
+            if(property_exists($item, $key))
+                $value = (object)replace_recursive((array)$value, (array)$item->$key);
+
+            $item->$key = $value;
+
+        }
+
+        $this->__form_imported[] = $ext_item;
 
         return true;
 
