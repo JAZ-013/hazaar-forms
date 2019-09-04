@@ -1058,7 +1058,7 @@ class Model extends \Hazaar\Model\Strict {
 
     }
 
-    public function matchReplace($string, $use_label = false, $params = array()){
+    public function matchReplace($string, $use_label = false, $params = array(), $value = null){
 
         $settings = array_to_dot_notation(array('params' => $params));
 
@@ -1066,14 +1066,18 @@ class Model extends \Hazaar\Model\Strict {
 
             $modifiers = ($match[1] ? str_split($match[1]) : array());
 
-            $value = $this->get($match[2]);
+            if($value === null){
 
-            if (substr($match[2], 0, 5) === 'this.') $value = ake($settings, substr($match[2], 5));
+                $value = $this->get($match[2]);
 
-            if(is_object($value) && !$value instanceof \Hazaar\Model\dataBinderValue)
-                $value = '';
+                if (substr($match[2], 0, 5) === 'this.') $value = ake($settings, substr($match[2], 5));
 
-            $value = ((in_array(':', $modifiers) || !$use_label) && $value instanceof \Hazaar\Model\dataBinderValue) ? $value->value : (string)$value;
+                if(is_object($value) && !$value instanceof \Hazaar\Model\dataBinderValue)
+                    $value = '';
+
+                $value = ((in_array(':', $modifiers) || !$use_label) && $value instanceof \Hazaar\Model\dataBinderValue) ? $value->value : (string)$value;
+
+            }
 
             $string = str_replace($match[0], $value, $string);
 
@@ -1179,7 +1183,7 @@ class Model extends \Hazaar\Model\Strict {
                 $field['name'] = $key;
 
             if(($result = $this->__validate_field($field)) !== true)
-                $errors[$key] = $result;
+                $errors = array_merge($errors, $result);
 
         }
 
@@ -1190,16 +1194,18 @@ class Model extends \Hazaar\Model\Strict {
 
     }
 
-    private function __validate_field($field){
+    private function __validate_field($field, $value = null){
 
         if(!is_array($field))
             return 'Not a valid form field!';
 
-        if(array_key_exists('required', $field)){
-
+        if($value === null)
             $value = $this->get($field['name']);
 
-            if($this->evaluate($field['required']) === true && !$value)
+        if(array_key_exists('required', $field)){
+
+            if($this->evaluate($field['required']) === true
+                && (($value instanceof \Hazaar\Model\ChildArray && $value->count() === 0) || $value === null))
                 return $this->__validation_error($field['name'], $field, 'required');
 
         }
@@ -1212,50 +1218,45 @@ class Model extends \Hazaar\Model\Strict {
 
         }elseif(array_key_exists('fields', $field)){
 
-            return true;
-            /*
-            die('not done yet');
+            $itemResult = array();
 
-            $childItems = ake($field, 'type') === 'array' ? item.save() : [item];
+            if(ake($field, 'type') === 'array' && $value instanceof \Hazaar\Model\ChildArray){
 
-            $itemResult = [];
+                foreach($value as $subItem){
 
-            $result = $this->__validate_rule($field);
+                    if(($result = $this->__validate_field($field, $subItem)) !== true)
+                        $itemResult = array_merge($itemResult, $result);
 
-            if ($result !== true || count($childItems) === 0)
-            return $result;
+                }
 
-            foreach($childItems as $i => $item) {
+            }else{
 
-            foreach($field->fields as $name => $def) {
+                foreach($field['fields'] as $key => &$subField){
 
-            if (!(property_exists($def, 'name')))
-            $def->name = $name;
+                    $subField = (array)$subField;
 
-            $fullName = $field->name + '[' + $i + '].' + $name;
+                    if(!array_key_exists('name', $subField))
+                        $subField['name'] = $field['name'] . '.' . $key;
 
-            $itemResult[] = $this->__validate_field((object)array('def' => $fields->fields, 'monitor' => new \stdClass), $def, fullName);
+                    if(($result = $this->__validate_field($subField, ake($value, $key))) !== true)
+                        $itemResult = array_merge($itemResult, $result);
+
+                }
 
             }
 
-            }
-
-            $result = $itemResult;
-
-             */
+            return (count($itemResult) > 0) ? $itemResult : true;
 
         }
 
-        return $this->__validate_rule($field);
+        return $this->__validate_rule($field, $value);
 
     }
 
-    private function __validate_rule($field) {
+    private function __validate_rule($field, $value) {
 
         if(!array_key_exists('validate', $field))
             return true;
-
-        $value = $this->get($field['name']);
 
         if(!$field['validate'] instanceof \stdClass)
             $field['validate'] = (object)array('custom' => $field['validate']);
@@ -1305,12 +1306,30 @@ class Model extends \Hazaar\Model\Strict {
 
                     break;
 
+                case 'url':
+
+                    if($value === null)
+                        return true;
+
+                    $data = $this->matchReplace($data, false, array(), $value);
+
+                    $result = $this->api($data);
+
+                    if(ake($result, 'ok', false) !== true)
+                        return $this->__validation_error($field['name'], $field, "api_failed($data)");
+
+                    break;
+
                 case 'custom':
 
                     if (!$this->evaluate($data, $value))
                         return $this->__validation_error($field['name'], $field, "custom");
 
                     break;
+
+                default:
+
+                    throw new \Exception('Unknown validation: ' . $type);
 
             }
 
@@ -1322,7 +1341,7 @@ class Model extends \Hazaar\Model\Strict {
 
     private function __validation_error($name, $def, $status) {
 
-        return array('name' => $name, 'field' => $def, 'status' => $status);
+        return array($name => array('field' => $def, 'status' => $status));
 
     }
 
