@@ -21,6 +21,7 @@
     <Compile Include="src\Controller\Form.php" />
     <Compile Include="src\Form.php" />
     <Compile Include="src\Forms\Controller.php" />
+    <Compile Include="src\Forms\Script.php" />
     <Compile Include="src\Forms\Output.php" />
     <Compile Include="src\Forms\Model.php" />
     <Compile Include="src\Forms\Output\HTML.php" />
@@ -30,6 +31,7 @@
   </ItemGroup>
   <ItemGroup>
     <Folder Include="docs\" />
+    <Folder Include="docs\images\" />
     <Folder Include="libs" />
     <Folder Include="src" />
     <Folder Include="src\Forms\" />
@@ -41,7 +43,9 @@
   <ItemGroup>
     <Content Include="docs\form-definitions.md" />
     <Content Include="docs\getting-started.md" />
+    <Content Include="docs\images\example_form.png" />
     <Content Include="docs\index.md" />
+    <Content Include="libs\codeserver.js" />
     <Content Include="libs\pdf.css" />
     <Content Include="libs\interact.css" />
     <Content Include="libs\interact.js" />

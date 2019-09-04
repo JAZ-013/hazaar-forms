@@ -40,6 +40,10 @@ class Model extends \Hazaar\Model\Strict {
 
     private $__controller;
 
+    private $__use_node = true;
+
+    private $__script_server;
+
     function __construct($form_name, $form = null, $tags = null, \Hazaar\File\Dir $form_include_path = null){
 
         $this->__form_name = $form_name;
@@ -47,6 +51,8 @@ class Model extends \Hazaar\Model\Strict {
         $this->__form_import_path = $form_include_path;
 
         $this->setTags($tags);
+
+        $this->__use_node = boolify(ake(\Hazaar\Application::getInstance()->config->forms, 'use_node', false));
 
         if($form) $this->load($form);
 
@@ -937,6 +943,14 @@ class Model extends \Hazaar\Model\Strict {
         if(is_bool($code))
             return $code;
 
+        if($this->__use_node === true){
+
+            $s = ($this->__script_server instanceof Script) ? $this->__script_server : new Script($this->values);
+
+            return $s->evaluate($code);
+
+        }
+
         $tokens = token_get_all('<?php ' . $code);
 
         $code = '';
@@ -1066,7 +1080,7 @@ class Model extends \Hazaar\Model\Strict {
 
     }
 
-    public function matchReplace($string, $use_label = false, $params = array()){
+    public function matchReplace($string, $use_label = false, $params = array(), $value = null){
 
         $settings = array_to_dot_notation(array('params' => $params));
 
@@ -1074,14 +1088,18 @@ class Model extends \Hazaar\Model\Strict {
 
             $modifiers = ($match[1] ? str_split($match[1]) : array());
 
-            $value = $this->get($match[2]);
+            if($value === null){
 
-            if (substr($match[2], 0, 5) === 'this.') $value = ake($settings, substr($match[2], 5));
+                $value = $this->get($match[2]);
 
-            if(is_object($value) && !$value instanceof \Hazaar\Model\dataBinderValue)
-                $value = '';
+                if (substr($match[2], 0, 5) === 'this.') $value = ake($settings, substr($match[2], 5));
 
-            $value = ((in_array(':', $modifiers) || !$use_label) && $value instanceof \Hazaar\Model\dataBinderValue) ? $value->value : (string)$value;
+                if(is_object($value) && !$value instanceof \Hazaar\Model\dataBinderValue)
+                    $value = '';
+
+                $value = ((in_array(':', $modifiers) || !$use_label) && $value instanceof \Hazaar\Model\dataBinderValue) ? $value->value : (string)$value;
+
+            }
 
             $string = str_replace($match[0], $value, $string);
 
@@ -1122,7 +1140,7 @@ class Model extends \Hazaar\Model\Strict {
 
             $router = new \Hazaar\Application\Router(new \Hazaar\Application\Config);
 
-            $request = new \Hazaar\Application\Request\HTTP($args, false);
+            $request = new \Hazaar\Application\Request\HTTP($args, false, 'POST');
 
             $request->setPath($target);
 
@@ -1174,6 +1192,178 @@ class Model extends \Hazaar\Model\Strict {
         $pdf = new \Hazaar\Forms\Output\PDF($this);
 
         return $pdf->render($settings);
+
+    }
+
+    public function validate(){
+
+        $errors = array();
+
+        foreach($this->__form->fields as $key => $field){
+
+            if (!array_key_exists('name', $field))
+                $field['name'] = $key;
+
+            if(($result = $this->__validate_field($field)) !== true)
+                $errors = array_merge($errors, $result);
+
+        }
+
+        if(count($errors) === 0)
+            return true;
+
+        return $errors;
+
+    }
+
+    private function __validate_field($field, $value = null){
+
+        if(!is_array($field))
+            return 'Not a valid form field!';
+
+        if($value === null)
+            $value = $this->get($field['name']);
+
+        if(array_key_exists('required', $field)){
+
+            if($this->evaluate($field['required']) === true
+                && (($value instanceof \Hazaar\Model\ChildArray && $value->count() === 0) || $value === null))
+                return $this->__validation_error($field['name'], $field, 'required');
+
+        }
+
+        if (ake($field, 'protected') === true
+            || array_key_exists('disabled', $field)
+            && $this->evaluate($field['disabled'], false)){
+
+            return true;
+
+        }elseif(array_key_exists('fields', $field)){
+
+            $itemResult = array();
+
+            if(ake($field, 'type') === 'array' && $value instanceof \Hazaar\Model\ChildArray){
+
+                foreach($value as $subItem){
+
+                    if(($result = $this->__validate_field($field, $subItem)) !== true)
+                        $itemResult = array_merge($itemResult, $result);
+
+                }
+
+            }else{
+
+                foreach($field['fields'] as $key => &$subField){
+
+                    $subField = (array)$subField;
+
+                    if(!array_key_exists('name', $subField))
+                        $subField['name'] = $field['name'] . '.' . $key;
+
+                    if(($result = $this->__validate_field($subField, ake($value, $key))) !== true)
+                        $itemResult = array_merge($itemResult, $result);
+
+                }
+
+            }
+
+            return (count($itemResult) > 0) ? $itemResult : true;
+
+        }
+
+        return $this->__validate_rule($field, $value);
+
+    }
+
+    private function __validate_rule($field, $value) {
+
+        if(!array_key_exists('validate', $field))
+            return true;
+
+        if(!$field['validate'] instanceof \stdClass)
+            $field['validate'] = (object)array('custom' => $field['validate']);
+
+        foreach($field['validate'] as $type => $data){
+
+            switch($type){
+
+                case 'min':
+
+                    if (intval($value) < $data)
+                        return $this->__validation_error($field['name'], $field, "too_small");
+
+                    break;
+                case 'max':
+
+                    if (intval($value) > $data)
+                        return $this->__validation_error($field['name'], $field, "too_big");
+
+                    break;
+
+                case 'with':
+
+                    if(!(is_string($value) && preg_match($data, $value)))
+                        return $this->__validation_error($field['name'], $field, "regex_failed");
+
+                    break;
+
+                case 'equals':
+
+                    if ($value !== $data)
+                        return $this->__validation_error($field['name'], $field, "not_equal");
+
+                    break;
+
+                case 'minlen':
+
+                    if ($value && strlen($value) < $data)
+                        return $this->__validation_error($field['name'], $field, "too_short");
+
+                    break;
+
+                case 'maxlen':
+
+                    if ($value && strlen($value) > $data)
+                        return $this->__validation_error($field['name'], $field, "too_long");
+
+                    break;
+
+                case 'url':
+
+                    if($value === null)
+                        return true;
+
+                    $data = $this->matchReplace($data, false, array(), $value);
+
+                    $result = $this->api($data);
+
+                    if(ake($result, 'ok', false) !== true)
+                        return $this->__validation_error($field['name'], $field, "api_failed($data)");
+
+                    break;
+
+                case 'custom':
+
+                    if (!$this->evaluate($data, $value))
+                        return $this->__validation_error($field['name'], $field, "custom");
+
+                    break;
+
+                default:
+
+                    throw new \Exception('Unknown validation: ' . $type);
+
+            }
+
+        }
+
+        return true;
+
+    }
+
+    private function __validation_error($name, $def, $status) {
+
+        return array($name => array('field' => $def, 'status' => $status));
 
     }
 
