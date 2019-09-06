@@ -603,7 +603,7 @@ Date.getLocalDateFormat = function () {
             }
             var value = item_data.value !== null ? item_data.value.toString() : null;
             if (value && data.find(function (e, index, obj) {
-                return e && e[valueKey] === value;
+                return e && e[valueKey].toString() === value;
             })) {
                 select.val(value);
                 _input_event_update(host, select);
