@@ -83,11 +83,31 @@ Date.getLocalDateFormat = function () {
         return key.split('.').reduce(function (o, i) { return o[i]; }, obj);
     }
 
-    function _is_int(def, value) {
+    function _strbool(value) {
+        if (typeof value === 'object') return false;
+        value = value.toString().trim().toLowerCase();
+        if (value === 't' || value === 'true' || value === 'on' || value === 'yes' || value === 'y' || value === 'ok') return 'true';
+        else if (RegExp('/^(\!|not)\s*null$/').test(value)) return 'true';
+        else if (parseInt(value) === 1) return 'true';
+        return 'false';
+    }
+
+    function _boolify(value) {
+        return _strbool(value) === 'true' ? true : false;
+    }
+
+    function _convert_data_type(def, value) {
         if (!('type' in def)) return value;
         var type = def.type.toLowerCase();
         if (type === 'array' && 'arrayOf' in def) type = def.arrayOf.toLowerCase();
-        return type === 'int' || type === 'integer' ? value === '' ? null : parseInt(value) : value;
+        if (typeof value === 'string' && value === '') return null;
+        if (type === 'int' || type === 'integer')
+            value = parseInt(value);
+        else if (type === 'text' || type === 'string')
+            value = value.toString();
+        else if (type === 'bool' || type === 'boolean')
+            value = _boolify(value);
+        return value;
     }
 
     function _url(host, target) {
@@ -130,7 +150,7 @@ Date.getLocalDateFormat = function () {
         for (let x in data) {
             if (typeof data[x] !== 'object') {
                 let newitem = {};
-                newitem[valueKey] = _is_int(def, x);
+                newitem[valueKey] = _convert_data_type(def, x);
                 newitem[labelKey] = data[x];
                 data[x] = newitem;
             }
@@ -274,8 +294,8 @@ Date.getLocalDateFormat = function () {
 
     //Input events
     function _input_event_change(host, input) {
-        var def = input.data('def');
-        var item_data = _get_data_item(host.data, input.attr('data-bind'));
+        var def = input.data('def'), name = input.attr('data-bind');
+        var item_data = _get_data_item(host.data, name);
         if (!item_data) return false;
         if (input.is('[type=checkbox]')) {
             let value = input.is(':checked');
@@ -307,12 +327,12 @@ Date.getLocalDateFormat = function () {
                 $('<span class="input-group-btn">').html(button).appendTo(group);
                 input.hide().after(group);
                 oInput.focus();
-            } else item_data.set(_is_int(def, value));
+            } else item_data.set(_convert_data_type(def, value));
         } else if (def.type === 'date' && 'format' in def) {
             var date = input.datepicker('getDate');
             item_data.set(date.getFullYear() + '-' + (date.getMonth() + 1) + '-' + date.getDate(), input.datepicker('getFormattedDate'));
         } else if (def.other === true) item_data.other = input.val();
-        else item_data.value = _is_int(def, input.val());
+        else item_data.value = _convert_data_type(def, input.val());
         if (item_data.enabled() === false) return false;
         $(host).trigger('change', [item_data]);
         return false;
@@ -428,7 +448,7 @@ Date.getLocalDateFormat = function () {
             for (let x in remove) item_data.remove(remove[x]);
         }
         var fChange = function () {
-            var def = $(this.childNodes[0]).data('def'), value = _is_int(def, this.childNodes[0].value);
+            var def = $(this.childNodes[0]).data('def'), value = _convert_data_type(def, this.childNodes[0].value);
             var item_data = _get_data_item(host.data, def.name);
             var index = item_data.indexOf(value);
             if (this.childNodes[0].checked && index === -1)
@@ -447,7 +467,7 @@ Date.getLocalDateFormat = function () {
         if (def.buttons === true) {
             var btnClass = def.class || 'primary';
             for (let x in data) {
-                let x_value = _is_int(def, data[x][valueKey]), label = data[x][labelKey];
+                let x_value = _convert_data_type(def, data[x][valueKey]), label = data[x][labelKey];
                 let active = item_data.indexOf(x_value) > -1, name = def.name + '_' + x_value;
                 items.push($('<label class="btn">').addClass('btn-' + btnClass).html([
                     $('<input type="checkbox" autocomplete="off">')
@@ -469,7 +489,7 @@ Date.getLocalDateFormat = function () {
         for (let col = 0; col < def.columns; col++)
             items.push($('<div>').addClass('col-md-' + col_width).toggleClass('custom-controls-stacked', def.inline));
         for (let x in data) {
-            let iv = _is_int(def, data[x][valueKey]), il = data[x][labelKey];
+            let iv = _convert_data_type(def, data[x][valueKey]), il = data[x][labelKey];
             let active = value instanceof dataBinderArray && value.indexOf(iv) > -1, name = def.name + '_' + iv;
             let label = $('<div>').addClass(host.settings.styleClasses.chkDiv).html([
                 $('<input type="checkbox">')
@@ -610,7 +630,7 @@ Date.getLocalDateFormat = function () {
             } else {
                 item_data.value = null;
                 if (Object.keys(data).length === 1 && options.single === true) {
-                    var item = data[Object.keys(data)[0]], key = _is_int(def, item[valueKey]);
+                    var item = data[Object.keys(data)[0]], key = _convert_data_type(def, item[valueKey]);
                     if (item_data.value !== key) {
                         item_data.set(key, labelKey.indexOf('{{') > -1 ? _match_replace(null, labelKey, item, true) : item[labelKey]);
                         if ('other' in options && options.other in item) item_data.other = item[options.other];
