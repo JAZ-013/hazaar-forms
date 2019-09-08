@@ -1452,7 +1452,7 @@ Date.getLocalDateFormat = function () {
         if ('show' in def) if (!_eval(host, def.show)) return true;
         var required = 'required' in def ? _eval(host, def.required, false, item.parent, item.value, def.name) : false;
         var value = item instanceof dataBinderArray && item.length > 0 ? item : def.other && !item.value ? item.other : item.value;
-        if (required && !value) return _validation_error(name, def, "required");
+        if (required && value === null) return _validation_error(name, def, "required");
         if (typeof value === 'undefined' || value === null) return true; //Return now if there is no value and the field is not required!
         if ('format' in def && value && def.type !== 'date') {
             if (!Inputmask.isValid(String(value), def.format))
