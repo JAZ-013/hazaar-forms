@@ -216,6 +216,17 @@ class Model extends \Hazaar\Model\Strict {
             $def['org_type'] = $type;
 
             switch($type){
+                case 'money':
+
+                    $def['type'] = 'Hazaar\Money';
+
+                    $def['read'] = function($value){
+                        if(!$value) $value = new \Hazaar\Money(0);
+                        return array('amt' => $value->toFloat(), 'currency' => $value->getCode());
+                    };
+
+                    break;
+
                 case 'date':
                 case 'datetime':
 

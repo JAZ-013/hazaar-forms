@@ -1014,6 +1014,48 @@ Date.getLocalDateFormat = function () {
         return group;
     }
 
+    function _input_money(host, def) {
+        var group = $('<div>').addClass(host.settings.styleClasses.group).data('def', def);
+        var item_data = _get_data_item(host.data, def.name);
+        var input = $('<input type="text">').addClass(host.settings.styleClasses.input);
+        var inputDIV = $('<div>').addClass(host.settings.styleClasses.inputGroup).appendTo(group);
+        input.attr('name', def.name)
+            .attr('id', '__hz_field_' + def.name)
+            .attr('data-bind', def.name + '.amt')
+            .data('def', def)
+            .val(item_data.amt)
+            .inputmask('currency', { prefix: "" });
+        inputDIV.append([
+            $('<div>').addClass(host.settings.styleClasses.inputGroupPrepend)
+                .html($('<span>').addClass(host.settings.styleClasses.inputGroupText).html("$")),
+            input]);
+        if ('currencies' in def) {
+            var currencySELECT = $('<div class="dropdown-menu">');
+            def.currencies.sort();
+            for (x of def.currencies) currencySELECT.append($('<div class="dropdown-item">').html(x).attr('data-currency', x));
+            inputDIV.append($('<div>').addClass(host.settings.styleClasses.inputGroupAppend)
+                .html([$('<button class="btn btn-outline-secondary dropdown-toggle" type="button" data-toggle="dropdown">')
+                    .html(item_data.currency.value), currencySELECT]));
+            currencySELECT.on('click', function (event) {
+                var item_data = _get_data_item(host.data, $(this).parent().parent().children('input').attr('data-bind'));
+                if (!item_data) return false;
+                var currency = $(event.target).attr('data-currency');
+                $(this).parent().children('button').html(currency);
+                item_data.parent.currency = currency;
+            });
+        }
+        if (def.protected) input.prop('disabled', true);
+        else input.focus(function (event) { return _input_event_focus(host, $(event.target)); })
+            .blur(function (event) { return _input_event_blur(host, $(event.target)); })
+            .change(function (event) {
+                var input = $(event.target), item_data = _get_data_item(host.data, input.attr('data-bind'));
+                if (!item_data) return false;
+                item_data.value = parseFloat(input.val().replace(/\,/g, ''));
+            })
+            .on('update', function (event) { return _input_event_update(host, $(event.target)); });
+        return group;
+    }
+
     function _input_std(host, type, def) {
         var group = $('<div>').addClass(host.settings.styleClasses.group).data('def', def);
         var label = $('<label>').addClass(host.settings.styleClasses.label)
@@ -1291,6 +1333,9 @@ Date.getLocalDateFormat = function () {
                     break;
                 case 'file':
                     field = _input_file(host, def);
+                    break;
+                case 'money':
+                    field = _input_money(host, def);
                     break;
                 case 'text':
                 case 'string':
