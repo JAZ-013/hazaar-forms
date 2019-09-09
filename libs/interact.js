@@ -1016,26 +1016,30 @@ Date.getLocalDateFormat = function () {
 
     function _input_money(host, def) {
         var group = $('<div>').addClass(host.settings.styleClasses.group).data('def', def);
-        var item_data = _get_data_item(host.data, def.name);
+        var item_data = _get_data_item(host.data, def.name), symbol = '$';
         var input = $('<input type="text">').addClass(host.settings.styleClasses.input);
         var inputDIV = $('<div>').addClass(host.settings.styleClasses.inputGroup).appendTo(group);
+        var prefixDIV = $('<div>').addClass(host.settings.styleClasses.inputGroupPrepend);
+        var suffixDIV = $('<div>').addClass(host.settings.styleClasses.inputGroupAppend);
         input.attr('name', def.name)
             .attr('id', '__hz_field_' + def.name)
             .attr('data-bind', def.name + '.amt')
             .data('def', def)
             .val(item_data.amt)
             .inputmask('currency', { prefix: "" });
-        inputDIV.append([
-            $('<div>').addClass(host.settings.styleClasses.inputGroupPrepend)
-                .html($('<span>').addClass(host.settings.styleClasses.inputGroupText).html("$")),
-            input]);
         if ('currencies' in def) {
+            var current = def.currencies.find(function (value, index, o) { if (value.code === item_data.currency.value) return true; });
+            symbol = current.symbol;
+        }
+        inputDIV.append([prefixDIV.html($('<span>').addClass(host.settings.styleClasses.inputGroupText).html(symbol)), input, suffixDIV]);
+        if ('currencies' in def && def.currencies.length > 1) {
             var currencySELECT = $('<div class="dropdown-menu">');
-            def.currencies.sort();
-            for (x of def.currencies) currencySELECT.append($('<div class="dropdown-item">').html(x).attr('data-currency', x));
-            inputDIV.append($('<div>').addClass(host.settings.styleClasses.inputGroupAppend)
-                .html([$('<button class="btn btn-outline-secondary dropdown-toggle" type="button" data-toggle="dropdown">')
-                    .html(item_data.currency.value), currencySELECT]));
+            def.currencies.sort(function (a, b) { return a.code === b.code ? 0 : a.code < b.code ? -1 : 1; });
+            for (x of def.currencies) currencySELECT.append($('<div class="dropdown-item">').html(x.code + ' - ' + x.name).attr('data-currency', x.code));
+            suffixDIV.html([
+                $('<button class="btn btn-outline-secondary dropdown-toggle" type="button" data-toggle="dropdown">').html(item_data.currency.value),
+                currencySELECT
+            ]);
             currencySELECT.on('click', function (event) {
                 var item_data = _get_data_item(host.data, $(this).parent().parent().children('input').attr('data-bind'));
                 if (!item_data) return false;
@@ -1043,7 +1047,11 @@ Date.getLocalDateFormat = function () {
                 $(this).parent().children('button').html(currency);
                 item_data.parent.currency = currency;
             });
-        }
+            item_data.watch('currency', function (key, value) {
+                var info = def.currencies.find(function (value, index, o) { if (value.code === item_data.currency.value) return true; });
+                prefixDIV.children('span').html(info.symbol);
+            });
+        } else suffixDIV.html($('<span>').addClass(host.settings.styleClasses.inputGroupText).html(item_data.currency.value));
         if (def.protected) input.prop('disabled', true);
         else input.focus(function (event) { return _input_event_focus(host, $(event.target)); })
             .blur(function (event) { return _input_event_blur(host, $(event.target)); })
