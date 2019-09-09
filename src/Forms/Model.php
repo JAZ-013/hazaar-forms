@@ -216,6 +216,25 @@ class Model extends \Hazaar\Model\Strict {
             $def['org_type'] = $type;
 
             switch($type){
+                case 'money':
+
+                    $def['type'] = 'Hazaar\Money';
+
+                    $def['read'] = function($value){
+                        if(!$value) $value = new \Hazaar\Money(0);
+                        return array('amt' => $value->toFloat(), 'currency' => $value->getCode());
+                    };
+
+                    $temp = new \Hazaar\Money(0);
+
+                    if(!(array_key_exists('currencies', $def) && is_array($def['currencies'])))
+                        $def['currencies'] = array($temp->getCurrencyCode());
+
+                    foreach($def['currencies'] as &$currency)
+                        $currency = $temp->getCurrencyInfo($currency);
+
+                    break;
+
                 case 'date':
                 case 'datetime':
 
@@ -468,6 +487,18 @@ class Model extends \Hazaar\Model\Strict {
                     }
 
                 }
+
+            }
+
+            if(array_key_exists('type', $item) && $item['type'] === 'money'){
+
+                $temp = new \Hazaar\Money(0);
+
+                if(!(array_key_exists('currencies', $item) && is_array($item['currencies'])))
+                    $item['currencies'] = array($temp->getCurrencyCode());
+
+                foreach($item['currencies'] as &$currency)
+                    $currency = (object)$temp->getCurrencyInfo($currency);
 
             }
 
