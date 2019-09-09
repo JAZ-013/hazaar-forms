@@ -225,7 +225,7 @@ Date.getLocalDateFormat = function () {
 
     function _toggle_show(host, obj) {
         host.working = true;
-        var def = obj.data('def'), toggle = _eval(host, obj.data('show'), true, obj.data('item'), null, def.name);
+        var def = obj.data('def'), toggle = _eval(host, obj.data('show'), true, obj.data('item'), null, def ? def.name : null);
         obj.toggle(toggle);
         if (!toggle) _nullify(host, def);
         host.working = false;
