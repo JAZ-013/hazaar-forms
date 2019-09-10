@@ -490,7 +490,7 @@ class Model extends \Hazaar\Model\Strict {
 
             }
 
-            if(array_key_exists('type', $item) && $item['type'] === 'money'){
+            if(ake($item, 'type') === 'money'){
 
                 $temp = new \Hazaar\Money(0);
 
