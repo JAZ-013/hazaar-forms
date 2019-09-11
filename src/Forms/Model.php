@@ -220,8 +220,8 @@ class Model extends \Hazaar\Model\Strict {
 
                     $def['type'] = 'Hazaar\Money';
 
-                    $def['read'] = function($value){
-                        if(!$value) $value = new \Hazaar\Money(0);
+                    $def['read'] = function($value, $key) use ($def){
+                        if(!$value) $value = new \Hazaar\Money(0, ake($def, 'defaultCurrency'));
                         return array('amt' => $value->toFloat(), 'currency' => $value->getCode());
                     };
 
