@@ -955,6 +955,7 @@ Date.getLocalDateFormat = function () {
                         }).always(function () {
                             listDIV.empty();
                         }).done(function (data) {
+                            if ('dataKey' in def.lookup && def.lookup.dataKey in data) data = data[def.lookup.dataKey];
                             data = _convert_data(data, valueKey, labelKey, def);
                             if (Object.keys(data).length > 0) {
                                 for (let x in data) {
