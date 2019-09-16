@@ -978,7 +978,7 @@ class Model extends \Hazaar\Model\Strict {
 
             $s = ($this->__script_server instanceof Script) ? $this->__script_server : new Script($this->values);
 
-            return $s->evaluate($code);
+            return $s->evaluate($code, array('item' => $item_value));
 
         }
 

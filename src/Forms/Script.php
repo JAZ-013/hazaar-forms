@@ -132,7 +132,7 @@ class Script {
             foreach($value as $key => $subValue)
                 $values[$key] = $this->__export_param($subValue, $quote, $export_dbv);
 
-            return $quote ? '{' . ((count($values) > 0) ? ' ' . array_flatten($values, ': ', ', ') . ' ' : '' ). '}' : $values;
+            return $quote ? json_encode($values) : $values;
 
         }elseif ($value instanceof \Hazaar\Model\ChildArray){
 
@@ -195,7 +195,7 @@ class Script {
      * @throws \Exception
      * @return boolean|string
      */
-    public function execute($code){
+    public function execute($code, $extra = null){
 
         if($this->params_changed === true){
 
@@ -205,6 +205,13 @@ class Script {
                 $this->params_js .= "var $key = " . $this->__export_param($value) . ";\n";
 
             $this->params_js .= "var form = " . $this->__export_param((object)$this->params, true, true) . ";\n";
+
+            if($extra !== null && is_array($extra) && count($extra) > 0){
+
+                foreach($extra as $key => $item)
+                    $this->params_js .= "var $key = " . $this->__export_param((object)$item, true, true) . ";\n";
+
+            }
 
             $this->params_changed = false;
 
@@ -256,9 +263,9 @@ class Script {
      * @param mixed $code The JS code to execute.
      * @return boolean
      */
-    public function evaluate($code){
+    public function evaluate($code, $item = null){
 
-        $result = $this->execute($code);
+        $result = $this->execute($code, $item);
 
         return boolify($result);
 
