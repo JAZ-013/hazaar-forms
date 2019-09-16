@@ -231,7 +231,7 @@ class Model extends \Hazaar\Model\Strict {
                         $def['currencies'] = array($temp->getCurrencyCode());
 
                     foreach($def['currencies'] as &$currency)
-                        $currency = $temp->getCurrencyInfo($currency);
+                        $currency = $temp->getCurrencyInfo((is_object($currency) ? ake($currency, 'code', 'AUD') : $currency));
 
                     break;
 
