@@ -951,7 +951,7 @@ Date.getLocalDateFormat = function () {
                         }).always(function () {
                             listDIV.empty();
                         }).done(function (data) {
-                            if ('dataKey' in def.lookup && def.lookup.dataKey in data) data = data[def.lookup.dataKey];
+                            if ('dataKey' in def.lookup && def.lookup.dataKey in data) data = _form_field_lookup(data, def.lookup.dataKey, true);
                             data = _convert_data(data, valueKey, labelKey, def);
                             if (Object.keys(data).length > 0) {
                                 for (let x in data) {
@@ -1215,17 +1215,21 @@ Date.getLocalDateFormat = function () {
         if (typeof def.disabled === 'string') host.events.disabled.push(input.data('disabled', def.disabled));
     }
 
-    function _form_field_lookup(def, info) {
+    function _form_field_lookup(def, info, raw_mode) {
         if (info instanceof Object) def = 'name' in info ? $.extend({}, _form_field_lookup(def, info.name), info) : info;
         else {
             var parts = info.split(/[\.\[]/);
             for (let x in parts) {
                 if (def && 'type' in def && def.type === 'money' && parts[x] === 'amt') break;
                 if (parts[x].slice(-1) === ']') continue;
-                if (!("fields" in def && parts[x] in def.fields)) return null;
-                def = def.fields[parts[x]];
+                if (raw_mode !== true) {
+                    if (!("fields" in def)) return null;
+                    def = def.fields;
+                }
+                if (!(parts[x] in def)) return null;
+                def = def[parts[x]];
             }
-            def = $.extend({}, def, { name: info });
+            def = $.extend({}, def, raw_mode === true ? {} : { name: info });
         }
         return def;
     }
