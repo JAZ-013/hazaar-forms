@@ -107,6 +107,8 @@ Date.getLocalDateFormat = function () {
             value = value.toString();
         else if (type === 'bool' || type === 'boolean')
             value = _boolify(value);
+        else if (type === 'float' || type === 'double' || type === 'money')
+            value = parseFloat(value.replace(/\,/g, ''));
         return value;
     }
 
@@ -1056,11 +1058,7 @@ Date.getLocalDateFormat = function () {
         if (def.protected) input.prop('disabled', true);
         else input.focus(function (event) { return _input_event_focus(host, $(event.target)); })
             .blur(function (event) { return _input_event_blur(host, $(event.target)); })
-            .change(function (event) {
-                var input = $(event.target), item_data = _get_data_item(host.data, input.attr('data-bind'));
-                if (!item_data) return false;
-                item_data.value = parseFloat(input.val().replace(/\,/g, ''));
-            })
+            .change(function (event) { return _input_event_change(host, $(event.target)); })
             .on('update', function (event) { return _input_event_update(host, $(event.target)); });
         return group;
     }
@@ -1228,6 +1226,7 @@ Date.getLocalDateFormat = function () {
         else {
             var parts = info.split(/[\.\[]/);
             for (let x in parts) {
+                if (def && 'type' in def && def.type === 'money' && parts[x] === 'amt') break;
                 if (parts[x].slice(-1) === ']') continue;
                 if (!("fields" in def && parts[x] in def.fields)) return null;
                 def = def.fields[parts[x]];
