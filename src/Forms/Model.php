@@ -1111,7 +1111,7 @@ class Model extends \Hazaar\Model\Strict {
 
     }
 
-    public function matchReplace($string, $use_label = false, $params = array(), $value = null){
+    public function matchReplace($string, $use_label = false, $params = array(), $default_value = null){
 
         $settings = array_to_dot_notation(array('params' => $params));
 
@@ -1119,7 +1119,7 @@ class Model extends \Hazaar\Model\Strict {
 
             $modifiers = ($match[1] ? str_split($match[1]) : array());
 
-            if($value === null){
+            if($default_value === null){
 
                 $value = $this->get($match[2]);
 
@@ -1130,7 +1130,7 @@ class Model extends \Hazaar\Model\Strict {
 
                 $value = ((in_array(':', $modifiers) || !$use_label) && $value instanceof \Hazaar\Model\dataBinderValue) ? $value->value : (string)$value;
 
-            }
+            } else $value = $default_value;
 
             $string = str_replace($match[0], $value, $string);
 
