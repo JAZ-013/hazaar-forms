@@ -180,11 +180,12 @@ Date.getLocalDateFormat = function () {
         if (item_data) {
             code += 'var value = ' + JSON.stringify(item_data.save(true)) + ";\n";
             code += 'var item = ' + JSON.stringify(item_data._parent.save(true)) + ";\n";
-        } else console.warn('No item data evaluating: ' + evaluate);
+        }
         if (no_return !== true) code += "return ( " + evaluate.replace(/[\;\s]+$/, '') + " );";
         else code += evaluate;
         try {
-            return new Function('form', 'tags', 'formValue', 'formItem', 'key', code)(host.data, host.tags, item_data ? item_data : null, item_data ? item_data.parent : null, key);
+            return new Function('form', 'tags', 'formValue', 'formItem', 'key', code)
+                (host.data, host.tags, item_data ? item_data : null, item_data ? item_data.parent : null, key);
         } catch (e) {
             console.error('Failed to evaluate condition: ' + evaluate);
             console.error(e);
