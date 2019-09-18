@@ -161,8 +161,7 @@ Date.getLocalDateFormat = function () {
         return data;
     }
 
-    function _eval_code(host, evaluate, item_data, key, no_return) {
-        if (typeof evaluate === 'boolean') return evaluate;
+    function _eval_code(host, evaluate, item_data, key, inc_return) {
         let code = '';
         if (typeof host.eval_cache === 'string') code = host.eval_cache;
         else {
@@ -181,7 +180,7 @@ Date.getLocalDateFormat = function () {
             code += 'var value = ' + JSON.stringify(item_data.save(true)) + ";\n";
             code += 'var item = ' + JSON.stringify(item_data._parent.save(true)) + ";\n";
         }
-        if (no_return !== true) code += "return ( " + evaluate.replace(/[\;\s]+$/, '') + " );";
+        if (inc_return === true) code += "return ( " + evaluate.replace(/[\;\s]+$/, '') + " );";
         else code += evaluate;
         try {
             return new Function('form', 'tags', 'formValue', 'formItem', 'key', code)
@@ -196,7 +195,7 @@ Date.getLocalDateFormat = function () {
     function _eval(host, script, default_value, item_data, key) {
         if (typeof script === 'boolean') return script;
         if (typeof script === 'undefined') return typeof default_value === 'undefined' ? false : default_value;
-        return _eval_code(host, script, item_data, key);
+        return _eval_code(host, script, item_data, key, true);
     }
 
     function _nullify(host, def) {
@@ -375,7 +374,7 @@ Date.getLocalDateFormat = function () {
             }
             if (skip_validate !== true) _validate_input(host, input);
         }
-        if (item_data && item_data.enabled() && def.change) _eval_code(host, def.change, item_data, def.name, true);
+        if (item_data && item_data.enabled() && def.change) _eval_code(host, def.change, item_data, def.name);
         if (!host.working && host.events.show && host.events.show.length > 0) {
             for (let x in host.events.show)
                 _toggle_show(host, host.events.show[x]);
@@ -396,12 +395,12 @@ Date.getLocalDateFormat = function () {
 
     function _input_event_focus(host, input) {
         var def = input.data('def'), item_data = _get_data_item(host.data, input.attr('data-bind'));
-        if (def.focus) _eval_code(host, def.focus, item_data, def.name, true);
+        if (def.focus) _eval_code(host, def.focus, item_data, def.name);
     }
 
     function _input_event_blur(host, input) {
         var def = input.data('def'), item_data = _get_data_item(host.data, input.attr('data-bind'));
-        if (def.blur) _eval_code(host, def.blur, item_data, def.name, true);
+        if (def.blur) _eval_code(host, def.blur, item_data, def.name);
     }
 
     function _input_button(host, def) {
@@ -422,7 +421,7 @@ Date.getLocalDateFormat = function () {
                 break;
             default:
                 var action = def.action ? def.action : def.change ? def.change : def.click;
-                btn.click(function () { _eval_code(host, action, null, def.name, true); });
+                btn.click(function () { _eval_code(host, action, null, def.name); });
                 break;
         }
         return group;
@@ -1268,19 +1267,17 @@ Date.getLocalDateFormat = function () {
         return layout;
     }
 
-    function _form_field(host, info, p, populate, apply_rules) {
+    function _form_field(host, info, p, populate, apply_rules, item_data) {
         var def = null, field = null;
         if (info instanceof Array)
             info = { fields: info };
         if (!(def = _form_field_lookup(host.def, info))) return;
-        if ('name' in def && 'default' in def) {
-            let item_data = _get_data_item(host.data, def.name);
-            if (item_data instanceof dataBinderArray && item_data.value === null) item_data.value = def.default;
-        }
+        if (typeof item_data === 'undefined' || 'name' in def && def.name) item_data = _get_data_item(host.data, def.name);
+        if ('name' in def && 'default' in def && item_data instanceof dataBinderArray && item_data.value === null) item_data.value = def.default;
         if ('horizontal' in def) p = def.horizontal;
         if ('render' in def) {
-            let item_data = _get_data_item(host.data, def.name);
-            field = new Function('field', 'form', def.render)($.extend({}, def, { value: item_data.save(true) }), host);
+            field = _eval_code(host, def.render, item_data, def.name);
+            if (!field) return;
             host.pageInputs.push(field);
         } else if ('fields' in def && def.type !== 'array') {
             var layout = _resolve_field_layout(host, def.fields, 'layout' in def ? $.extend(true, [], def.layout) : null, def.name);
@@ -1301,16 +1298,13 @@ Date.getLocalDateFormat = function () {
             field = $('<div class="form-section">').toggleClass('row', p).data('def', def);
             if ('label' in def) field.append($('<div class="col-md-12">').html($('<h5>').html(def.label)));
             for (let x in fields) {
-                var field_width = col_width, child_field = _form_field(host, fields[x], !p, populate, apply_rules);
+                let field_width = col_width, child_field = _form_field(host, fields[x], !p, populate, apply_rules, item_data);
                 if (fields[x] instanceof Object && 'weight' in fields[x])
                     field_width = Math.round(field_width * fields[x].weight);
                 field.append(child_field.toggleClass('col-lg-' + field_width, p));
             }
         } else if ('options' in def) {
-            if (def.type === 'array')
-                field = _input_select_multi(host, def);
-            else
-                field = _input_select(host, def, populate);
+            field = def.type === 'array' ? _input_select_multi(host, def) : _input_select(host, def, populate);
             host.pageInputs.push(field);
         } else if ('lookup' in def && def.type !== 'array') {
             if (typeof def.lookup === 'string') def.lookup = { url: def.lookup };
@@ -1350,7 +1344,7 @@ Date.getLocalDateFormat = function () {
             }
             host.pageInputs.push(field);
         } else field = $('<div>');
-        field.data('def', def).data('item', def.name ? _get_data_item(host.data, def.name) : null);
+        field.data('def', def).data('item', item_data);
         if ('tip' in def) {
             field.children('label.control-label').append($('<i class="fa fa-question-circle form-tip">')
                 .attr('data-title', def.tip)
@@ -1538,7 +1532,7 @@ Date.getLocalDateFormat = function () {
                             return _validation_error(name, def, "too_long");
                         break;
                     case 'custom':
-                        if (!_eval_code(host, data))
+                        if (!_eval(host, data, true))
                             return _validation_error(name, def, "custom");
                         break;
                 }
