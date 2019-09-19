@@ -341,9 +341,39 @@ class Model extends \Hazaar\Model\Strict {
             foreach($arg as $key => $value){
 
                 if(is_array($value) || $value instanceof \stdClass)
-                    $array[$key] = $this->array_merge_recursive_override((array_key_exists($key, $array) ? $array[$key] : array()), $value);
-                else
+                    $value = $this->array_merge_recursive_override((array_key_exists($key, $array) ? $array[$key] : array()), $value);
+
+                $array[$key] = $value;
+
+            }
+
+        }
+
+        return $array;
+
+    }
+
+    private function smart_merge_recursive_override(){
+
+        $array = null;
+
+        foreach(func_get_args() as $arg){
+
+            if(!(is_array($arg) || $arg instanceof \stdClass))
+                continue;
+
+            if($array === null)
+                $array = is_array($arg) ? array() : new \stdClass;
+
+            foreach($arg as $key => $value){
+
+                if(is_array($value) || $value instanceof \stdClass)
+                    $value = $this->smart_merge_recursive_override(ake($array, $key), $value);
+
+                if(is_array($array))
                     $array[$key] = $value;
+                else
+                    $array->$key = $value;
 
             }
 
@@ -673,8 +703,12 @@ class Model extends \Hazaar\Model\Strict {
 
         $form = $this->getFormDefinition();
 
-        foreach($form->fields as $key => &$def)
-            $this->convert_definition($def);
+        //Field defs need to be arrays.  Their contents do not however.
+        array_walk($form->fields, function(&$array){
+            if(is_array($array)) settype($array, 'object');
+        });
+
+        settype($form->fields, 'object');
 
         if(is_array($form->pages)){
 
@@ -754,7 +788,7 @@ class Model extends \Hazaar\Model\Strict {
 
     }
 
-    private function __group($fields, &$form, $item_value = null){
+    private function __group($fields, &$form, $item_value = null, $parent_key = null){
 
         if(is_array($fields)){
 
@@ -762,7 +796,7 @@ class Model extends \Hazaar\Model\Strict {
 
             foreach($fields as $item){
 
-                if($item = $this->__group($item, $form, $item_value))
+                if($item = $this->__group($item, $form, $item_value, $parent_key))
                     $items[] = $item;
 
             }
@@ -771,14 +805,14 @@ class Model extends \Hazaar\Model\Strict {
 
         }elseif($fields instanceof \stdClass && property_exists($fields, 'fields')){
 
-            if(property_exists($fields, 'show') && $this->evaluate($fields->show, true) !== true)
+            if(property_exists($fields, 'show') && $this->evaluate($fields->show, true, $item_value, $parent_key) !== true)
                 return null;
 
             $items = array();
 
             foreach($fields->fields as $field_item){
 
-                if($item = $this->__group($field_item, $form))
+                if($item = $this->__group($field_item, $form, $parent_key))
                     $items[] = $item;
 
             }
@@ -787,7 +821,7 @@ class Model extends \Hazaar\Model\Strict {
 
         }
 
-        return $this->__field($fields, $form, true, $item_value);
+        return $this->__field($fields, $form, true, $item_value, $parent_key);
 
     }
 
@@ -795,16 +829,16 @@ class Model extends \Hazaar\Model\Strict {
 
         foreach($layout as $object_key => &$field) {
 
-            if (is_array($field)) {
+            if (is_array($field) || ($field instanceof \stdClass && property_exists($field, 'fields'))) {
 
                 $field = $this->__resolve_field_layout($name, $field, $fields);
 
             }elseif(is_string($field) && array_key_exists($field, $fields)){
 
-                if (!property_exists($fields[$field], 'name'))
-                    $fields[$field]->name = $name . '.' . $field;
+                if (!property_exists($fields->$field, 'name'))
+                    $fields->$field->name = $name . '.' . $field;
 
-                $field = $fields[$field];
+                $field = $fields->$field;
 
             }elseif($field instanceof \stdClass){
 
@@ -819,14 +853,18 @@ class Model extends \Hazaar\Model\Strict {
 
     }
 
-    private function __field($field, $form, $evaluate = true, $item_value = null){
+    private function __field($field, $form, $evaluate = true, $item_value = null, $parent_key = null){
 
         if(is_string($field)){
 
             if(!(property_exists($form, 'fields') && array_key_exists($field, $form->fields)))
                 return null;
 
-            $field = (object)array_replace($form->fields[$field], array('name' => $field));
+            $name = $field;
+
+            $field = ake($form->fields, $field, (object)array('type' => 'text'));
+
+            $field->name = ($parent_key ? $parent_key . '.' : null) . $name;
 
         }elseif(is_object($field) || is_array($field)){
 
@@ -840,6 +878,9 @@ class Model extends \Hazaar\Model\Strict {
             return null;
 
         }
+
+        if(property_exists($this->__form->types, $field->type))
+            $field = $this->smart_merge_recursive_override(ake($this->__form->types, $field->type), $field);
 
         $value = ($field_key = ake($field, 'name')) ? ake($field, 'value', $this->get($field_key)) : $item_value;
 
@@ -918,16 +959,11 @@ class Model extends \Hazaar\Model\Strict {
 
             }
 
-        }elseif(property_exists($field, 'items')){
-
-            $field->fields = array();
-
-            foreach($field->items as $key => $item)
-                $field->fields[$key] = (object)$item;
+        }elseif(property_exists($field, 'fields')){
 
             $layout = $this->__resolve_field_layout($field->name, (property_exists($field, 'layout') ? $field->layout : $field->fields), $field->fields);
 
-            $field->fields = $this->__group($layout, $field, $value);
+            $field->fields = $this->__group($layout, $field, $value, $field->name);
 
             return $field;
 

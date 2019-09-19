@@ -208,7 +208,7 @@ class Script {
 
                 $this->params_js .= "var formValue = _get_data_item(form, '$value_key');\n";
 
-                $this->params_js .= "var formItem = _get_data_item(form, '$value_key').parent;\n";
+                $this->params_js .= "var formItem = formValue.parent;\n";
 
                 $this->params_js .= "var value = formValue.save(true);\n";
 
