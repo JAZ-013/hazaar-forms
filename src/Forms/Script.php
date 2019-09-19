@@ -195,21 +195,24 @@ class Script {
      * @throws \Exception
      * @return boolean|string
      */
-    public function execute($code, $extra = null){
+    public function execute($code, $value_key = null){
 
         if($this->params_changed === true){
 
-            $this->params_js = '';
+            $this->params_js = "var form = new dataBinder(" . json_encode($this->params) . ");\n";
 
             foreach($this->params as $key => $value)
-                $this->params_js .= "var $key = " . $this->__export_param($value) . ";\n";
+                $this->params_js .= "var $key = _get_data_item(form, '$key').save(true);\n";
 
-            $this->params_js .= "var form = " . $this->__export_param((object)$this->params, true, true) . ";\n";
+            if($value_key !== null){
 
-            if($extra !== null && is_array($extra) && count($extra) > 0){
+                $this->params_js .= "var formValue = _get_data_item(form, '$value_key');\n";
 
-                foreach($extra as $key => $item)
-                    $this->params_js .= "var $key = " . $this->__export_param((object)$item, true, true) . ";\n";
+                $this->params_js .= "var formItem = _get_data_item(form, '$value_key').parent;\n";
+
+                $this->params_js .= "var value = formValue.save(true);\n";
+
+                $this->params_js .= "var item = formItem.save(true);\n";
 
             }
 
@@ -263,11 +266,9 @@ class Script {
      * @param mixed $code The JS code to execute.
      * @return boolean
      */
-    public function evaluate($code, $item = null){
+    public function evaluate($code, $value_key = null){
 
-        $result = $this->execute($code, $item);
-
-        return boolify($result);
+        return boolify($this->execute($code, $value_key));
 
     }
 
