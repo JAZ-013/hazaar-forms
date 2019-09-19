@@ -7,7 +7,6 @@ var dataBinder = function (data, name, parent) {
     this._init(data, name, parent);
 };
 var dataBinderArray = function (data, name, parent) {
-    if (this === window) return new dataBinderArray(data, name, parent);
     this._init(data, name, parent);
 };
 var dataBinderValue = function (name, value, label, parent) {
