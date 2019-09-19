@@ -879,7 +879,7 @@ class Model extends \Hazaar\Model\Strict {
 
         }
 
-        if(property_exists($this->__form->types, $field->type))
+        if(property_exists($this->__form, 'types') && property_exists($this->__form->types, $field->type))
             $field = $this->smart_merge_recursive_override(ake($this->__form->types, $field->type), $field);
 
         $value = ($field_key = ake($field, 'name')) ? ake($field, 'value', $this->get($field_key)) : $item_value;
@@ -962,6 +962,8 @@ class Model extends \Hazaar\Model\Strict {
         }elseif(property_exists($field, 'fields')){
 
             $layout = $this->__resolve_field_layout($field->name, (property_exists($field, 'layout') ? $field->layout : $field->fields), $field->fields);
+
+            $field->horizontal = false;
 
             $field->fields = $this->__group($layout, $field, $value, $field->name);
 
