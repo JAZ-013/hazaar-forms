@@ -697,7 +697,7 @@ class Model extends \Hazaar\Model\Strict {
 
     private function __page($page, &$form){
 
-        if(!is_object($page) || (property_exists($page, 'show') && !$this->evaluate($page->show)))
+        if(!is_object($page) || (property_exists($page, 'show') && $this->evaluate($page->show, true) !== true))
             return null;
 
         if(is_array($page->sections)){
@@ -732,7 +732,7 @@ class Model extends \Hazaar\Model\Strict {
 
         }
 
-        if(!is_object($section) || (property_exists($section, 'show') && !$this->evaluate($section->show)))
+        if(!is_object($section) || (property_exists($section, 'show') && $this->evaluate($section->show, true) !== true))
             return null;
 
         if(property_exists($section, 'fields') && is_array($section->fields)){
@@ -771,7 +771,7 @@ class Model extends \Hazaar\Model\Strict {
 
         }elseif($fields instanceof \stdClass && property_exists($fields, 'fields')){
 
-            if(property_exists($fields, 'show') && !$this->evaluate($fields->show))
+            if(property_exists($fields, 'show') && $this->evaluate($fields->show, true) !== true)
                 return null;
 
             $items = array();
@@ -841,16 +841,15 @@ class Model extends \Hazaar\Model\Strict {
 
         }
 
-        $field_key = $field->name;
-
-        $value = ake($field, 'value', $this->get($field_key));
+        $value = ($field_key = ake($field, 'name')) ? ake($field, 'value', $this->get($field_key)) : $item_value;
 
         $output = ake($field, 'output', array('empty' => true));
 
         if(!$value && ake($output, 'empty', true) === false)
             return null;
 
-        if($evaluate === true && (!is_object($field) || (property_exists($field, 'show') && !$this->evaluate($field->show, $item_value))))
+        if($evaluate === true
+            && (!is_object($field) || (property_exists($field, 'show') && $this->evaluate($field->show, true, $value, $field_key) !== true)))
             return null;
 
         if($value === null){
@@ -969,16 +968,15 @@ class Model extends \Hazaar\Model\Strict {
 
     }
 
-    public function evaluate($code, $item_value = null){
+    public function evaluate($code, $default = null, $item_data = null, $key = null){
 
-        if(is_bool($code))
-            return $code;
+        if(is_bool($code)) return $code;
 
         if($this->__use_node === true){
 
             $s = ($this->__script_server instanceof Script) ? $this->__script_server : new Script($this->values);
 
-            return $s->evaluate($code, array('item' => $item_value));
+            return $s->evaluate($code, $key);
 
         }
 
@@ -1257,7 +1255,7 @@ class Model extends \Hazaar\Model\Strict {
 
         if(array_key_exists('required', $field)){
 
-            if($this->evaluate($field['required']) === true
+            if($this->evaluate($field['required'], true, $value, $field['name']) === true
                 && (($value instanceof \Hazaar\Model\ChildArray && $value->count() === 0) || $value === null))
                 return $this->__validation_error($field['name'], $field, 'required');
 
@@ -1265,7 +1263,7 @@ class Model extends \Hazaar\Model\Strict {
 
         if (ake($field, 'protected') === true
             || array_key_exists('disabled', $field)
-            && $this->evaluate($field['disabled'], false)){
+            && $this->evaluate($field['disabled'], false, $value, $field['name'])){
 
             return true;
 
@@ -1375,7 +1373,7 @@ class Model extends \Hazaar\Model\Strict {
 
                 case 'custom':
 
-                    if (!$this->evaluate($data, $value))
+                    if (!$this->evaluate($data, true, $value, $field['name']))
                         return $this->__validation_error($field['name'], $field, "custom");
 
                     break;
