@@ -932,24 +932,6 @@ class Model extends \Hazaar\Model\Strict {
 
                 }
 
-            }elseif(ake($field, 'file') === true){
-
-                if($this->__controller instanceof \Hazaar\Controller\Form){
-
-                    $files = $this->__controller->__attachments($field->name);
-
-                    $value = array();
-
-                    foreach($files as $file){
-
-                        $value[] = array(
-                            'name' => $file->basename(),
-                            'url' => (string)$file->media_uri()
-                        );
-                    }
-
-                }
-
             }elseif($options = ake($field, 'options')){
 
                 if(is_string($options))
@@ -967,6 +949,24 @@ class Model extends \Hazaar\Model\Strict {
                 }
 
                 $value = $values;
+
+            }
+
+        }elseif(ake($field, 'type') === 'file'){
+
+            if($this->__controller instanceof \Hazaar\Controller\Form){
+
+                $files = $this->__controller->__attachments($field->name);
+
+                $value = array();
+
+                foreach($files as $file){
+
+                    $value[] = array(
+                        'name' => $file->basename(),
+                        'url' => (string)$file->media_uri()
+                    );
+                }
 
             }
 

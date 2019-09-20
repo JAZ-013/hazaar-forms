@@ -285,7 +285,7 @@ class HTML extends \Hazaar\Forms\Output {
 
                 $list = (new \Hazaar\Html\Ul())->class('form-value-group');
 
-                $is_file = ake($field, 'file', false);
+                $is_file = (ake($field, 'type') === 'file');
 
                 foreach($field->value as $item){
 
