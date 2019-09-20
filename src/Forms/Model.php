@@ -1172,9 +1172,10 @@ class Model extends \Hazaar\Model\Strict {
 
                 $value = $this->get($match[2]);
 
-                if (substr($match[2], 0, 5) === 'this.') $value = ake($settings, substr($match[2], 5));
+                if (substr($match[2], 0, 5) === 'this.')
+                    $value = ake($settings, substr($match[2], 5));
 
-                if(is_object($value) && !$value instanceof \Hazaar\Model\dataBinderValue)
+                if(is_object($value) && !method_exists($value, '__toString'))
                     $value = '';
 
                 $value = ((in_array(':', $modifiers) || !$use_label) && $value instanceof \Hazaar\Model\dataBinderValue) ? $value->value : (string)$value;
