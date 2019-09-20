@@ -921,6 +921,17 @@ class Model extends \Hazaar\Model\Strict {
 
                 $value = $items;
 
+            }elseif(property_exists($field, 'fields')
+                && $field->fields instanceof \stdClass
+                && $value instanceof \Hazaar\Model\ChildArray){
+
+                foreach($value as $item){
+
+                    foreach($field->fields as $key => &$def)
+                        $def->value = ake($item, $key);
+
+                }
+
             }elseif(ake($field, 'file') === true){
 
                 if($this->__controller instanceof \Hazaar\Controller\Form){
@@ -961,7 +972,7 @@ class Model extends \Hazaar\Model\Strict {
 
         }elseif(property_exists($field, 'fields')){
 
-            $layout = $this->__resolve_field_layout($field->name, (property_exists($field, 'layout') ? $field->layout : $field->fields), $field->fields);
+            $layout = (array)$this->__resolve_field_layout($field->name, (property_exists($field, 'layout') ? $field->layout : $field->fields), $field->fields);
 
             $field->horizontal = false;
 
