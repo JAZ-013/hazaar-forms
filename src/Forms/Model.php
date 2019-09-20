@@ -843,7 +843,7 @@ class Model extends \Hazaar\Model\Strict {
             }elseif($field instanceof \stdClass){
 
                 if (!property_exists($field, 'name'))
-                    $field->name = $name . '.' . $object_key;
+                    $field->name = $name . (is_int($object_key) ? '' : '.' . $object_key);
 
             }
 
@@ -879,7 +879,9 @@ class Model extends \Hazaar\Model\Strict {
 
         }
 
-        if(property_exists($this->__form, 'types') && property_exists($this->__form->types, $field->type))
+        if(property_exists($field, 'type')
+            && property_exists($this->__form, 'types')
+            && property_exists($this->__form->types, $field->type))
             $field = $this->smart_merge_recursive_override(ake($this->__form->types, $field->type), $field);
 
         $value = ($field_key = ake($field, 'name')) ? ake($field, 'value', $this->get($field_key)) : $item_value;
