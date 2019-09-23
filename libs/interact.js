@@ -1706,8 +1706,6 @@ Date.getLocalDateFormat = function () {
                         error: { str: response.reason || "An unknown error occurred while saving the form!" }
                     }, params]);
                 }
-                if (response.params)
-                    $.extend(host.settings.params, response.params);
                 host.posts = {}; //Reset the post cache so we get clean data after 
                 if (host.uploads.length > 0 || host.deloads.length > 0) {
                     $(host).trigger('attachStart', [host.uploads, host.deloads]);
@@ -1719,7 +1717,7 @@ Date.getLocalDateFormat = function () {
                         } else $(host).trigger('saverror', [{ error: { str: 'File upload failed' } }, params, queue]);
                     });
                 } else {
-                    $(host).trigger('save', [response.result, host.settings.params]);
+                    $(host).trigger('save', [response.result, response.params]);
                     if (callbacks.done) callbacks.done();
                 }
             }).fail(function (error) {
