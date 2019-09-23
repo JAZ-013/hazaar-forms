@@ -898,15 +898,9 @@ Date.getLocalDateFormat = function () {
                     popup.css({ "opacity": "0" });
                     setTimeout(function () {
                         popup.hide().empty();
-                        if (item_data.enabled() === false) item_data.set(input.val(), input.val());
-                        else input.val(item_data.label);
-                        item_data.enabled(true);
+                        if (def.lookup.autocomplete !== true) input.val(item_data.label);
                     }, 500);
-                } else {
-                    if (item_data.enabled() === false) item_data.set(input.val(), input.val());
-                    else input.val(item_data.label);
-                    item_data.enabled(true);
-                }
+                } else if (def.lookup.autocomplete !== true) input.val(item_data.label);
             });
         $('<input type="hidden">')
             .attr('data-bind', def.name)
@@ -919,15 +913,16 @@ Date.getLocalDateFormat = function () {
         _check_input_disabled(host, input, def);
         if (def.lookup && 'url' in def.lookup) {
             input.on('keyup', function (event) {
-                var input = $(this);
+                if (event.keyCode === 32) return;
+                var input = $(this), item_data = _get_data_item(host.data, input.attr('data-bind'));
+                if (event.target.value === '') return item_data.empty();
+                if (def.lookup.autocomplete === true) item_data.set(input.val(), input.val());
                 if (event.keyCode > 47) {
                     delay(function () {
                         var query = '', popup = input.parent().parent().children('.form-lookup-popup');
                         var item_data = _get_data_item(host.data, input.attr('data-bind'));
                         var valueKey = def.lookup.value || 'value', labelKey = def.lookup.label || 'label';
                         if (!item_data) item_data = input.parent().parent().parent().parent().data('item')[input.next().attr('name')];
-                        if (event.target.value === '')
-                            return item_data.set(null);
                         if (popup.length === 0) {
                             popup = $('<div class="form-lookup-popup card">').hide().appendTo(input.parent().parent())
                                 .on('click', function (event) {
@@ -947,7 +942,6 @@ Date.getLocalDateFormat = function () {
                         if ('query' in def.lookup && (query = _match_replace(host, def.lookup.query, values)) === false) return;
                         popup.css({ "min-width": input.parent().outerWidth(), "opacity": "1" });
                         if (def.lookup.autocomplete !== true) listDIV.html($('<li class="list-group-item">').html('Loading results...'));
-                        else item_data.enabled(false);
                         if (listDIV.children().length > 0) popup.show();
                         $.ajax({
                             method: def.lookup.method || 'GET',
