@@ -961,7 +961,8 @@ Date.getLocalDateFormat = function () {
                                         .attr('data-value', _kv(data[x], valueKey))
                                         .data('lookup', data[x]));
                                 }
-                                if (def.lookup.autocomplete === true) popup.show();
+                                if (Object.keys(data).length === 1) listDIV.children().first().click();
+                                else if (def.lookup.autocomplete === true) popup.show();
                             } else if (def.lookup.autocomplete === true) {
                                 listDIV.empty();
                                 popup.hide();
