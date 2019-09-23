@@ -892,17 +892,23 @@ Date.getLocalDateFormat = function () {
         else input.focus(function (event) { _input_event_focus(host, $(event.target)); })
             .on('blur', function (event) {
                 var input = $(this), popup = input.parent().parent().children('.form-lookup-popup');
-                var item_data = _get_data_item(host.data, input.attr('data-bind'));
+                var def = input.data('def'); item_data = _get_data_item(host.data, input.attr('data-bind'));
                 if (!item_data) item_data = input.parent().parent().parent().parent().data('item')[input.next().attr('name')];
                 if (popup.length > 0) {
                     popup.css({ "opacity": "0" });
                     setTimeout(function () {
                         popup.hide().empty();
-                        input.val(item_data.label);
+                        if (item_data.enabled() === false) item_data.set(input.val(), input.val());
+                        else input.val(item_data.label);
+                        item_data.enabled(true);
                     }, 500);
-                } else input.val(item_data.label);
+                } else {
+                    if (item_data.enabled() === false) item_data.set(input.val(), input.val());
+                    else input.val(item_data.label);
+                    item_data.enabled(true);
+                }
             });
-        var value_input = $('<input type="hidden">')
+        $('<input type="hidden">')
             .attr('data-bind', def.name)
             .attr('name', def.name)
             .data('def', def)
@@ -923,8 +929,7 @@ Date.getLocalDateFormat = function () {
                         if (event.target.value === '')
                             return item_data.set(null);
                         if (popup.length === 0) {
-                            popup = $('<div class="form-lookup-popup card">')
-                                .appendTo(input.parent().parent())
+                            popup = $('<div class="form-lookup-popup card">').hide().appendTo(input.parent().parent())
                                 .on('click', function (event) {
                                     var target = $(event.target), data = target.data('lookup');
                                     if (!(target.is('.list-group-item') && typeof target.attr('data-value') === 'string'))
@@ -934,32 +939,38 @@ Date.getLocalDateFormat = function () {
                                     popup.hide();
                                 });
                         }
-                        if ('startlen' in def.lookup && event.target.value.length < def.lookup.startlen)
-                            return popup.hide();
+                        if ('startlen' in def.lookup && event.target.value.length < def.lookup.startlen) return popup.hide();
                         var values = { '__input__': event.target.value };
-                        var listDIV = $('<ul class="list-group">').html($('<li class="list-group-item">').html('Loading results...'));
+                        var listDIV = popup.children('ul');
+                        if (listDIV.length === 0) listDIV = $('<ul class="list-group">').appendTo(popup);
                         if ((url = _match_replace(host, def.lookup.url, values)) === false) return;
                         if ('query' in def.lookup && (query = _match_replace(host, def.lookup.query, values)) === false) return;
-                        popup.css({ "min-width": input.parent().outerWidth(), "opacity": "1" })
-                            .html(listDIV)
-                            .show();
+                        popup.css({ "min-width": input.parent().outerWidth(), "opacity": "1" });
+                        if (def.lookup.autocomplete !== true) listDIV.html($('<li class="list-group-item">').html('Loading results...'));
+                        else item_data.enabled(false);
+                        if (listDIV.children().length > 0) popup.show();
                         $.ajax({
                             method: def.lookup.method || 'GET',
                             url: _url(host, url),
                             data: query
                         }).always(function () {
-                            listDIV.empty();
+                            if (def.lookup.autocomplete !== true) listDIV.empty();
                         }).done(function (data) {
                             if ('dataKey' in def.lookup && def.lookup.dataKey in data) data = _form_field_lookup(data, def.lookup.dataKey, true);
                             data = _convert_data(data, valueKey, labelKey, def);
                             if ('extra' in def.lookup) $.merge(data, def.lookup.extra);
                             if (Object.keys(data).length > 0) {
+                                if (def.lookup.autocomplete === true) listDIV.empty();
                                 for (let x in data) {
                                     listDIV.append($('<li class="list-group-item">')
                                         .html(_kv(data[x], labelKey))
                                         .attr('data-value', _kv(data[x], valueKey))
                                         .data('lookup', data[x]));
                                 }
+                                if (def.lookup.autocomplete === true) popup.show();
+                            } else if (def.lookup.autocomplete === true) {
+                                listDIV.empty();
+                                popup.hide();
                             } else listDIV.html($('<li class="list-group-item">').html('No results...'));
                         }).fail(function (r) {
                             listDIV.html($('<li class="list-group-item">').html('Error ' + r.status + ': ' + r.statusText));
@@ -2021,7 +2032,7 @@ Date.getLocalDateFormat = function () {
         "placeholder": "Please select...",
         "loaderClass": "forms-loader",
         "validateNav": true,
-        "lookup": { "delay": 300 },
+        "lookup": { "delay": 300, "startlen": 0, "autocomplete": false },
         "concurrentUploads": 2,
         "styleClasses": {
             "container": "forms-container",
