@@ -1884,6 +1884,10 @@ Date.getLocalDateFormat = function () {
                 //Propagate some field options
                 itemExtra = {};
                 for (i in prop_fields) if (prop_fields[i] in fields[x]) itemExtra[prop_fields[i]] = fields[x][prop_fields[i]];
+            } else if ('type' in fields[x] && fields[x].type === 'array'
+                && 'arrayOf' in fields[x] && 'types' in host.def && fields[x].arrayOf in host.def.types) {
+                fields[x].fields = host.def.types[fields[x].arrayOf].fields;
+                delete fields[x].arrayOf;
             } else if (itemExtra) fields[x] = jQuery.extend(true, {}, itemExtra, fields[x]);
             if ('fields' in fields[x]) _prepare_field_definitions(host, fields[x].fields, itemExtra);
         }
