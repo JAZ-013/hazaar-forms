@@ -577,6 +577,8 @@ class Model extends \Hazaar\Model\Strict {
 
             if($type === 'array' && is_array(ake($field, 'arrayOf'))){
 
+                if(!ake($array, $name)) continue;
+
                 foreach($array[$name] as $index => $item)
                     $array[$name][$index] = $this->toFormArray($array[$name][$index], ake($field, 'arrayOf'));
 
