@@ -203,19 +203,24 @@ class Model extends \Hazaar\Model\Strict {
 
         if($type = ake($def, 'type')){
 
-            if(property_exists($this->__form, 'types') && ($customType = ake($this->__form->types, $type))){
+            if(property_exists($this->__form, 'types')){
 
-                $def = $this->array_merge_recursive_override($customType, $def);
+                if($type === 'array' && array_key_exists('arrayOf', $def)
+                    && ($customType = ake($this->__form->types, $def['arrayOf']))){
 
-                $type = $def['type'] = ake($customType, 'type', 'text');
+                    unset($def['arrayOf']);
 
-                $def['horizontal'] = false;
+                    $def['fields'] = ake($customType, 'fields');
 
-            }elseif($type === 'array' && array_key_exists('arrayOf', $def) && ($customType = ake($this->__form->types, $def['arrayOf']))){
+                }elseif($customType = ake($this->__form->types, $type)){
 
-                unset($def['arrayOf']);
+                    $def = $this->array_merge_recursive_override($customType, $def);
 
-                $def['fields'] = ake($customType, 'fields');
+                    $type = $def['type'] = ake($customType, 'type', 'text');
+
+                    $def['horizontal'] = false;
+
+                }
 
             }
 
