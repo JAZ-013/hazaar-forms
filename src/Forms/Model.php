@@ -1083,7 +1083,7 @@ class Model extends \Hazaar\Model\Strict {
 
         }
 
-        $func = function($values, $evaluate, $item_value){
+        $func = function($values, $evaluate, $item_data){
 
             $export = function(&$export, &$value, $quote = true){
 
@@ -1129,7 +1129,7 @@ class Model extends \Hazaar\Model\Strict {
                 //Form is also acessible in the evaluted code.
                 $form = $this;
 
-                $item = $item_value;
+                $item = $item_data;
 
                 $tags = new class($this->__tags){
                     private $items = array();
@@ -1152,7 +1152,7 @@ class Model extends \Hazaar\Model\Strict {
 
             ob_start();
 
-            $result = $func($this->values, $code, $item_value);
+            $result = $func($this->values, $code, $item_data);
 
             if($buf = ob_get_clean()){
 
