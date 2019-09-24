@@ -331,10 +331,11 @@ Date.getLocalDateFormat = function () {
         return false;
     }
 
-    function _input_event_update(host, input, skip_validate) {
+    function _input_event_update(host, input, skip_validate, item_data) {
         var def = _form_field_lookup(host.def, typeof input === 'string' ? input : input.attr('data-bind'));
         if (!def) return;
-        var update = def.update, cb_done = null, item_data = _get_data_item(host.data, def.name);
+        var update = def.update, cb_done = null;
+        if (!item_data) item_data = _get_data_item(host.data, def.name);
         host.eval_cache = true;
         if (typeof update === 'string') update = { "url": update };
         if (typeof input === 'object') {
@@ -721,7 +722,7 @@ Date.getLocalDateFormat = function () {
         else select.focus(function (event) { return _input_event_focus(host, $(event.target)); })
             .blur(function (event) { return _input_event_blur(host, $(event.target)); })
             .change(function (event) { return _input_event_change(host, $(event.target)); })
-            .on('update', function (event) { return _input_event_update(host, $(event.target)); });
+            .on('update', function (event, key, value, item_data) { return _input_event_update(host, $(event.target), false, item_data); });
         def.watchers = {};
         if (!("placeholder" in def)) def.placeholder = host.settings.placeholder;
         if ('css' in def) select.css(def.css);
@@ -749,7 +750,7 @@ Date.getLocalDateFormat = function () {
         else input.focus(function (event) { return _input_event_focus(host, $(event.target)); })
             .blur(function (event) { return _input_event_blur(host, $(event.target)); })
             .change(function (event) { return _input_event_change(host, $(event.target)); })
-            .on('update', function (event) { return _input_event_update(host, $(event.target)); });
+            .on('update', function (event, key, value, item_data) { return _input_event_update(host, $(event.target), false, item_data); });
         $('<label>').addClass(host.settings.styleClasses.chkLabel)
             .html(_match_replace(host, def.label, null, true, true))
             .attr('for', '__hz_field_' + def.name)
@@ -780,7 +781,7 @@ Date.getLocalDateFormat = function () {
         else input.focus(function (event) { return _input_event_focus(host, $(event.target)); })
             .blur(function (event) { return _input_event_blur(host, $(event.target)); })
             .change(function (event) { return _input_event_change(host, $(event.target)); })
-            .on('update', function (event) { return _input_event_update(host, $(event.target)); });
+            .on('update', function (event, key, value, item_data) { return _input_event_update(host, $(event.target), false, item_data); });
         var glyph = $('<div>').addClass(host.settings.styleClasses.inputGroupAppend)
             .html($('<span style="cursor: pointer;">').addClass(host.settings.styleClasses.inputGroupText)
                 .html($('<i class="fa fa-calendar">')
@@ -906,7 +907,7 @@ Date.getLocalDateFormat = function () {
             .attr('name', def.name)
             .data('def', def)
             .appendTo(input_group)
-            .on('update', function (event) { _input_event_update(host, $(event.target)); });
+            .on('update', function (event, key, value, item_data) { _input_event_update(host, $(event.target), false, item_data); });
         if ('css' in def) input.css(def.css);
         if ('cssClass' in def) input.addClass(def.cssClass);
         _check_input_disabled(host, input, def);
@@ -1058,7 +1059,7 @@ Date.getLocalDateFormat = function () {
         else input.focus(function (event) { return _input_event_focus(host, $(event.target)); })
             .blur(function (event) { return _input_event_blur(host, $(event.target)); })
             .change(function (event) { return _input_event_change(host, $(event.target)); })
-            .on('update', function (event) { return _input_event_update(host, $(event.target)); });
+            .on('update', function (event, key, value, item_data) { return _input_event_update(host, $(event.target), false, item_data); });
         return group;
     }
 
@@ -1082,7 +1083,7 @@ Date.getLocalDateFormat = function () {
         else input.focus(function (event) { return _input_event_focus(host, $(event.target)); })
             .blur(function (event) { return _input_event_blur(host, $(event.target)); })
             .change(function (event) { return _input_event_change(host, $(event.target)); })
-            .on('update', function (event) { return _input_event_update(host, $(event.target)); });
+            .on('update', function (event, key, value, item_data) { return _input_event_update(host, $(event.target), false, item_data); });
         if (type === 'text' && 'validate' in def && 'maxlen' in def.validate) input.attr('maxlength', def.validate.maxlen);
         if ('format' in def) input.attr('type', 'text').inputmask(def.format);
         if ('placeholder' in def) input.attr('placeholder', def.placeholder);
@@ -1141,8 +1142,8 @@ Date.getLocalDateFormat = function () {
                 var select = $(item), def = select.data('def');
                 select.off('change').on('change', function () {
                     return _input_event_change(sub_host, $(this));
-                }).off('update').on('update', function () {
-                    return _input_event_update(sub_host, $(this));
+                }).off('update').on('update', function (event, key, value, item_data) {
+                    return _input_event_update(sub_host, $(this), false, item_data);
                 });
                 if ('options' in def) _input_select_options(sub_host, def, select, new_item, function (select, options) {
                     _input_select_populate(sub_host, options, select);
