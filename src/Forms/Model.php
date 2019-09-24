@@ -1236,6 +1236,16 @@ class Model extends \Hazaar\Model\Strict {
 
             $request = new \Hazaar\Application\Request\HTTP($args, false, 'POST');
 
+            if($pos = strpos($target, '?')){
+
+                parse_str(substr($target, $pos + 1), $params);
+
+                $request->setParams($params);
+
+                $target = substr($target, 0, $pos);
+
+            }
+
             $request->setPath($target);
 
             $router->evaluate($request);
