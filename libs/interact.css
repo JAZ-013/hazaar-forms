@@ -52,22 +52,22 @@
     position: relative;
 }
 
-.form-group-nolabel {
-    padding-top: 24px;
-}
+    .form-group.no-label {
+        padding-top: 2em;
+    }
 
-.form-group label .fa {
-    margin-left: 5px;
-}
+    .form-group label .fa {
+        margin-left: 5px;
+    }
 
-.form-group label .form-required {
-    color: #ed2b2b;
-}
+    .form-group label .form-required {
+        color: #ed2b2b;
+    }
 
-.form-group .form-tip {
-    position: absolute;
-    right: 15px;
-}
+    .form-group .form-tip {
+        position: absolute;
+        right: 15px;
+    }
 
 .form-fileupload .dz-items {
     overflow-y: auto;

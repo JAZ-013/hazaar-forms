@@ -404,9 +404,8 @@ Date.getLocalDateFormat = function () {
     }
 
     function _input_button(host, def) {
-        var group = $('<div class="form-group-nolabel">').addClass(host.settings.styleClasses.group);
-        var btn = $('<button type="button" class="btn">')
-            .addClass(host.settings.styleClasses.input)
+        var group = $('<div class="no-label">').addClass(host.settings.styleClasses.group);
+        var btn = $('<button type="button">').addClass(host.settings.styleClasses.button)
             .addClass(def.class || 'btn-default')
             .data('def', def)
             .appendTo(group);
@@ -2043,7 +2042,8 @@ Date.getLocalDateFormat = function () {
             "inputGroupAppend": "input-group-append",
             "chkDiv": "custom-control custom-checkbox",
             "chkInput": "custom-control-input",
-            "chkLabel": "custom-control-label"
+            "chkLabel": "custom-control-label",
+            "button": "btn"
         }
     };
 

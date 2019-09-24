@@ -190,8 +190,14 @@ class Model extends \Hazaar\Model\Strict {
         $fields = $this->__form->fields;
 
         //Make any changes to the field defs for use in strict models.
-        foreach($fields as &$def)
+        foreach($fields as $index => &$def){
+
             $this->convert_definition($def);
+
+            if($def === false)
+                unset($fields[$index]);
+
+        }
 
         $this->__initialised = true;
 
@@ -227,6 +233,12 @@ class Model extends \Hazaar\Model\Strict {
             $def['org_type'] = $type;
 
             switch($type){
+                case 'button':
+
+                    $def = false;
+
+                    return;
+
                 case 'money':
 
                     $def['type'] = 'Hazaar\Money';
@@ -892,10 +904,14 @@ class Model extends \Hazaar\Model\Strict {
 
         }
 
-        if(property_exists($field, 'type')
-            && property_exists($this->__form, 'types')
-            && property_exists($this->__form->types, $field->type))
-            $field = $this->smart_merge_recursive_override(ake($this->__form->types, $field->type), $field);
+        if(property_exists($field, 'type')){
+
+            if($field->type === 'button')
+                return null;
+            elseif(property_exists($this->__form, 'types') && property_exists($this->__form->types, $field->type))
+                $field = $this->smart_merge_recursive_override(ake($this->__form->types, $field->type), $field);
+
+        }
 
         $value = ($field_key = ake($field, 'name')) ? ake($field, 'value', $this->get($field_key)) : $item_value;
 
