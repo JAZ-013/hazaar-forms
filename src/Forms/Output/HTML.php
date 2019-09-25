@@ -71,7 +71,7 @@ class HTML extends \Hazaar\Forms\Output {
 
     }
 
-    private function __section($section, $p = true){
+    private function __section($section, $horizontal = true){
 
         if(is_array($section)){
 
@@ -79,7 +79,7 @@ class HTML extends \Hazaar\Forms\Output {
 
             $group = new \Hazaar\Html\Div();
 
-            if($p){
+            if($horizontal){
 
                 $group->addClass('row');
 
@@ -101,9 +101,9 @@ class HTML extends \Hazaar\Forms\Output {
 
             foreach($section as &$s){
 
-                $col = new \Hazaar\Html\Div($this->__section($s, !$p));
+                $col = new \Hazaar\Html\Div($this->__section($s, !$horizontal));
 
-                if($p){
+                if($horizontal){
 
                     $field_width = (is_object($s) ? $s->weight : 1) * $col_width;
 
@@ -198,7 +198,7 @@ class HTML extends \Hazaar\Forms\Output {
                 if(property_exists($field, 'label'))
                     $group->add(new \Hazaar\Html\H4($field->label));
 
-                if ($horizontal === null) $p = !(property_exists($field, 'layout') && $field['layout']);
+                if ($horizontal === null) $horizontal = !(property_exists($field, 'layout') && $field->layout);
 
                 $group->add($this->__group(array((array)$field->fields), $horizontal));
 
@@ -223,7 +223,7 @@ class HTML extends \Hazaar\Forms\Output {
         if($label = ake($field, 'label'))
             $group->add(new \Hazaar\Html\H5($this->model->matchReplace($label, true)));
 
-        $type = ake($field, 'type');
+        $type = ake($field, 'type', 'text');
 
         if($type == 'button'){
 
