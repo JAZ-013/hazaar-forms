@@ -178,7 +178,7 @@ Date.getLocalDateFormat = function () {
         }
         if (item_data) {
             code += 'var value = ' + JSON.stringify(item_data.save(true)) + ";\n";
-            code += 'var item = ' + JSON.stringify(item_data._parent.save(true)) + ";\n";
+            code += 'var item = ' + JSON.stringify(item_data.parent.save(true)) + ";\n";
         }
         if (inc_return === true) code += "return ( " + evaluate.replace(/[\;\s]+$/, '') + " );";
         else code += evaluate;
@@ -219,7 +219,7 @@ Date.getLocalDateFormat = function () {
 
     function _toggle_show(host, obj) {
         host.working = true;
-        var def = obj.data('def'), toggle = _eval(host, obj.data('show'), true, obj.data('item'), def ? def.name : null);
+        var def = obj.data('def'), toggle = _eval(host, obj.data('show'), true, _get_data_item(host.data, obj.data('item')), def ? def.name : null);
         obj.toggle(toggle);
         if (!toggle) _nullify(host, def);
         host.working = false;
@@ -544,7 +544,7 @@ Date.getLocalDateFormat = function () {
 
     function _input_select_multi(host, def) {
         var item_data = _get_data_item(host.data, def.name);
-        var group = $('<div>').addClass(host.settings.styleClasses.group).data('def', def).data('item', item_data), options = {};
+        var group = $('<div>').addClass(host.settings.styleClasses.group).data('def', def).data('item', item_data.name), options = {};
         var label = $('<label>').addClass(host.settings.styleClasses.label)
             .attr('for', def.name)
             .html(_match_replace(host, def.label, null, true, true))
@@ -707,7 +707,7 @@ Date.getLocalDateFormat = function () {
 
     function _input_select(host, def, populate) {
         var item_data = _get_data_item(host.data, def.name);
-        var group = $('<div>').addClass(host.settings.styleClasses.group).data('def', def).data('item', item_data);
+        var group = $('<div>').addClass(host.settings.styleClasses.group).data('def', def).data('item', item_data.name);
         var label = $('<label>').addClass(host.settings.styleClasses.label)
             .attr('for', def.name)
             .html(_match_replace(host, def.label, null, true, true))
@@ -873,7 +873,7 @@ Date.getLocalDateFormat = function () {
 
     function _input_lookup(host, def) {
         var item_data = _get_data_item(host.data, def.name);
-        var group = $('<div>').addClass(host.settings.styleClasses.group).data('def', def).data('item', item_data);
+        var group = $('<div>').addClass(host.settings.styleClasses.group).data('def', def).data('item', item_data.name);
         var label = $('<label>').addClass(host.settings.styleClasses.label)
             .attr('for', '__hz_field_' + def.name)
             .html(_match_replace(host, def.label, null, true, true))
@@ -893,7 +893,7 @@ Date.getLocalDateFormat = function () {
             .on('blur', function (event) {
                 var input = $(this), popup = input.parent().parent().children('.form-lookup-popup');
                 var def = input.data('def'); item_data = _get_data_item(host.data, input.attr('data-bind'));
-                if (!item_data) item_data = input.parent().parent().parent().parent().data('item')[input.next().attr('name')];
+                if (!item_data) item_data = _get_data_item(host.data, input.parent().parent().parent().parent().data('item'))[input.next().attr('name')];
                 if (popup.length > 0) {
                     popup.css({ "opacity": "0" });
                     setTimeout(function () {
@@ -922,7 +922,7 @@ Date.getLocalDateFormat = function () {
                         var query = '', popup = input.parent().parent().children('.form-lookup-popup');
                         var item_data = _get_data_item(host.data, input.attr('data-bind'));
                         var valueKey = def.lookup.value || 'value', labelKey = def.lookup.label || 'label';
-                        if (!item_data) item_data = input.parent().parent().parent().parent().data('item')[input.next().attr('name')];
+                        if (!item_data) item_data = _get_data_item(host.data, input.parent().parent().parent().parent().data('item'))[input.next().attr('name')];
                         if (popup.length === 0) {
                             popup = $('<div class="form-lookup-popup card">').hide().appendTo(input.parent().parent())
                                 .on('click', function (event) {
@@ -1137,7 +1137,7 @@ Date.getLocalDateFormat = function () {
             var sub_host = _get_empty_host(), new_item = new dataBinder(_define(def.fields));
             sub_host.data = new_item;
             sub_host.def = { fields: def.fields };
-            fieldDIV.data('item', new_item).find('input').removeAttr('data-bind');
+            fieldDIV.data('newitem', new_item).find('input').removeAttr('data-bind');
             fieldDIV.find('select').each(function (index, item) {
                 var select = $(item), def = select.data('def');
                 select.off('change').on('change', function () {
@@ -1151,7 +1151,7 @@ Date.getLocalDateFormat = function () {
             });
             group.append($('<div class="itemlist-newitems">').html([$('<div class="itemlist-newitem-add">').html(btn), fieldDIV]));
             btn.click(function () {
-                var data = fieldDIV.data('item'), valid = true;
+                var data = fieldDIV.data('newitem'), valid = true;
                 fieldDIV.find('input,select,textarea').each(function (index, item) {
                     if (!item.name) return;
                     var input = $(item), value = input.val(), def = input.data('def');
@@ -1196,7 +1196,7 @@ Date.getLocalDateFormat = function () {
             $(item).find('.form-group').each(function (index, input) {
                 var group = $(input), def = group.data('def');
                 group.data('name', item_name + '.' + def.name)
-                    .data('item', _get_data_item(host.data, item.attr('data-bind')));
+                    .data('item', _get_data_item(host.data, item.attr('data-bind')).name);
                 group.find('label').each(function (index, item) {
                     item.attributes['for'].value = item_name.replace(/\[|\]/g, '_') + def.name;
                 });
@@ -1351,7 +1351,7 @@ Date.getLocalDateFormat = function () {
             }
             host.pageInputs.push(field);
         } else field = $('<div>');
-        field.data('def', def).data('item', item_data);
+        field.data('def', def).data('item', item_data ? item_data.name : null);
         if ('tip' in def) {
             field.children('label.control-label').append($('<i class="fa fa-question-circle form-tip">')
                 .attr('data-title', def.tip)
