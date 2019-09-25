@@ -178,7 +178,7 @@ Date.getLocalDateFormat = function () {
         }
         if (item_data) {
             code += 'var value = ' + JSON.stringify(item_data.save(true)) + ";\n";
-            code += 'var item = ' + JSON.stringify(item_data._parent.save(true)) + ";\n";
+            code += 'var item = ' + JSON.stringify(item_data.parent.save(true)) + ";\n";
         }
         if (inc_return === true) code += "return ( " + evaluate.replace(/[\;\s]+$/, '') + " );";
         else code += evaluate;
@@ -219,7 +219,7 @@ Date.getLocalDateFormat = function () {
 
     function _toggle_show(host, obj) {
         host.working = true;
-        var def = obj.data('def'), toggle = _eval(host, obj.data('show'), true, obj.data('item'), def ? def.name : null);
+        var def = obj.data('def'), toggle = _eval(host, obj.data('show'), true, _get_data_item(host.data, obj.data('item')), def ? def.name : null);
         obj.toggle(toggle);
         if (!toggle) _nullify(host, def);
         host.working = false;
@@ -244,7 +244,7 @@ Date.getLocalDateFormat = function () {
     }
 
     function _get_data_item(data, name, isArray, value) {
-        if (!(name && data)) return null;
+        if (!(typeof name === 'string' && typeof data === 'object')) return null;
         var parts = name.split(/[\.\[]/), item = data;
         for (let x in parts) {
             var key = parts[x];
@@ -331,10 +331,11 @@ Date.getLocalDateFormat = function () {
         return false;
     }
 
-    function _input_event_update(host, input, skip_validate) {
+    function _input_event_update(host, input, skip_validate, item_data) {
         var def = _form_field_lookup(host.def, typeof input === 'string' ? input : input.attr('data-bind'));
         if (!def) return;
-        var update = def.update, cb_done = null, item_data = _get_data_item(host.data, def.name);
+        var update = def.update, cb_done = null;
+        if (!item_data) item_data = _get_data_item(host.data, def.name);
         host.eval_cache = true;
         if (typeof update === 'string') update = { "url": update };
         if (typeof input === 'object') {
@@ -404,9 +405,8 @@ Date.getLocalDateFormat = function () {
     }
 
     function _input_button(host, def) {
-        var group = $('<div class="form-group-nolabel">').addClass(host.settings.styleClasses.group);
-        var btn = $('<button type="button" class="btn">')
-            .addClass(host.settings.styleClasses.input)
+        var group = $('<div class="no-label">').addClass(host.settings.styleClasses.group);
+        var btn = $('<button type="button">').addClass(host.settings.styleClasses.button)
             .addClass(def.class || 'btn-default')
             .data('def', def)
             .appendTo(group);
@@ -544,7 +544,7 @@ Date.getLocalDateFormat = function () {
 
     function _input_select_multi(host, def) {
         var item_data = _get_data_item(host.data, def.name);
-        var group = $('<div>').addClass(host.settings.styleClasses.group).data('def', def).data('item', item_data), options = {};
+        var group = $('<div>').addClass(host.settings.styleClasses.group).data('def', def).data('item', item_data.attrName), options = {};
         var label = $('<label>').addClass(host.settings.styleClasses.label)
             .attr('for', def.name)
             .html(_match_replace(host, def.label, null, true, true))
@@ -707,7 +707,7 @@ Date.getLocalDateFormat = function () {
 
     function _input_select(host, def, populate) {
         var item_data = _get_data_item(host.data, def.name);
-        var group = $('<div>').addClass(host.settings.styleClasses.group).data('def', def).data('item', item_data);
+        var group = $('<div>').addClass(host.settings.styleClasses.group).data('def', def).data('item', item_data.attrName);
         var label = $('<label>').addClass(host.settings.styleClasses.label)
             .attr('for', def.name)
             .html(_match_replace(host, def.label, null, true, true))
@@ -722,7 +722,7 @@ Date.getLocalDateFormat = function () {
         else select.focus(function (event) { return _input_event_focus(host, $(event.target)); })
             .blur(function (event) { return _input_event_blur(host, $(event.target)); })
             .change(function (event) { return _input_event_change(host, $(event.target)); })
-            .on('update', function (event) { return _input_event_update(host, $(event.target)); });
+            .on('update', function (event, key, value, item_data) { return _input_event_update(host, $(event.target), false, item_data); });
         def.watchers = {};
         if (!("placeholder" in def)) def.placeholder = host.settings.placeholder;
         if ('css' in def) select.css(def.css);
@@ -750,7 +750,7 @@ Date.getLocalDateFormat = function () {
         else input.focus(function (event) { return _input_event_focus(host, $(event.target)); })
             .blur(function (event) { return _input_event_blur(host, $(event.target)); })
             .change(function (event) { return _input_event_change(host, $(event.target)); })
-            .on('update', function (event) { return _input_event_update(host, $(event.target)); });
+            .on('update', function (event, key, value, item_data) { return _input_event_update(host, $(event.target), false, item_data); });
         $('<label>').addClass(host.settings.styleClasses.chkLabel)
             .html(_match_replace(host, def.label, null, true, true))
             .attr('for', '__hz_field_' + def.name)
@@ -781,7 +781,7 @@ Date.getLocalDateFormat = function () {
         else input.focus(function (event) { return _input_event_focus(host, $(event.target)); })
             .blur(function (event) { return _input_event_blur(host, $(event.target)); })
             .change(function (event) { return _input_event_change(host, $(event.target)); })
-            .on('update', function (event) { return _input_event_update(host, $(event.target)); });
+            .on('update', function (event, key, value, item_data) { return _input_event_update(host, $(event.target), false, item_data); });
         var glyph = $('<div>').addClass(host.settings.styleClasses.inputGroupAppend)
             .html($('<span style="cursor: pointer;">').addClass(host.settings.styleClasses.inputGroupText)
                 .html($('<i class="fa fa-calendar">')
@@ -873,7 +873,7 @@ Date.getLocalDateFormat = function () {
 
     function _input_lookup(host, def) {
         var item_data = _get_data_item(host.data, def.name);
-        var group = $('<div>').addClass(host.settings.styleClasses.group).data('def', def).data('item', item_data);
+        var group = $('<div>').addClass(host.settings.styleClasses.group).data('def', def).data('item', item_data.attrName);
         var label = $('<label>').addClass(host.settings.styleClasses.label)
             .attr('for', '__hz_field_' + def.name)
             .html(_match_replace(host, def.label, null, true, true))
@@ -893,7 +893,7 @@ Date.getLocalDateFormat = function () {
             .on('blur', function (event) {
                 var input = $(this), popup = input.parent().parent().children('.form-lookup-popup');
                 var def = input.data('def'); item_data = _get_data_item(host.data, input.attr('data-bind'));
-                if (!item_data) item_data = input.parent().parent().parent().parent().data('item')[input.next().attr('name')];
+                if (!item_data) item_data = _get_data_item(host.data, input.parent().parent().parent().parent().data('item').attrName)[input.next().attr('name')];
                 if (popup.length > 0) {
                     popup.css({ "opacity": "0" });
                     setTimeout(function () {
@@ -907,7 +907,7 @@ Date.getLocalDateFormat = function () {
             .attr('name', def.name)
             .data('def', def)
             .appendTo(input_group)
-            .on('update', function (event) { _input_event_update(host, $(event.target)); });
+            .on('update', function (event, key, value, item_data) { _input_event_update(host, $(event.target), false, item_data); });
         if ('css' in def) input.css(def.css);
         if ('cssClass' in def) input.addClass(def.cssClass);
         _check_input_disabled(host, input, def);
@@ -922,7 +922,7 @@ Date.getLocalDateFormat = function () {
                         var query = '', popup = input.parent().parent().children('.form-lookup-popup');
                         var item_data = _get_data_item(host.data, input.attr('data-bind'));
                         var valueKey = def.lookup.value || 'value', labelKey = def.lookup.label || 'label';
-                        if (!item_data) item_data = input.parent().parent().parent().parent().data('item')[input.next().attr('name')];
+                        if (!item_data) item_data = _get_data_item(host.data, input.parent().parent().parent().parent().data('item').attrName)[input.next().attr('name')];
                         if (popup.length === 0) {
                             popup = $('<div class="form-lookup-popup card">').hide().appendTo(input.parent().parent())
                                 .on('click', function (event) {
@@ -1059,7 +1059,7 @@ Date.getLocalDateFormat = function () {
         else input.focus(function (event) { return _input_event_focus(host, $(event.target)); })
             .blur(function (event) { return _input_event_blur(host, $(event.target)); })
             .change(function (event) { return _input_event_change(host, $(event.target)); })
-            .on('update', function (event) { return _input_event_update(host, $(event.target)); });
+            .on('update', function (event, key, value, item_data) { return _input_event_update(host, $(event.target), false, item_data); });
         return group;
     }
 
@@ -1083,7 +1083,7 @@ Date.getLocalDateFormat = function () {
         else input.focus(function (event) { return _input_event_focus(host, $(event.target)); })
             .blur(function (event) { return _input_event_blur(host, $(event.target)); })
             .change(function (event) { return _input_event_change(host, $(event.target)); })
-            .on('update', function (event) { return _input_event_update(host, $(event.target)); });
+            .on('update', function (event, key, value, item_data) { return _input_event_update(host, $(event.target), false, item_data); });
         if (type === 'text' && 'validate' in def && 'maxlen' in def.validate) input.attr('maxlength', def.validate.maxlen);
         if ('format' in def) input.attr('type', 'text').inputmask(def.format);
         if ('placeholder' in def) input.attr('placeholder', def.placeholder);
@@ -1137,13 +1137,13 @@ Date.getLocalDateFormat = function () {
             var sub_host = _get_empty_host(), new_item = new dataBinder(_define(def.fields));
             sub_host.data = new_item;
             sub_host.def = { fields: def.fields };
-            fieldDIV.data('item', new_item).find('input').removeAttr('data-bind');
+            fieldDIV.data('newitem', new_item).find('input').removeAttr('data-bind');
             fieldDIV.find('select').each(function (index, item) {
                 var select = $(item), def = select.data('def');
                 select.off('change').on('change', function () {
                     return _input_event_change(sub_host, $(this));
-                }).off('update').on('update', function () {
-                    return _input_event_update(sub_host, $(this));
+                }).off('update').on('update', function (event, key, value, item_data) {
+                    return _input_event_update(sub_host, $(this), false, item_data);
                 });
                 if ('options' in def) _input_select_options(sub_host, def, select, new_item, function (select, options) {
                     _input_select_populate(sub_host, options, select);
@@ -1151,7 +1151,7 @@ Date.getLocalDateFormat = function () {
             });
             group.append($('<div class="itemlist-newitems">').html([$('<div class="itemlist-newitem-add">').html(btn), fieldDIV]));
             btn.click(function () {
-                var data = fieldDIV.data('item'), valid = true;
+                var data = fieldDIV.data('newitem'), valid = true;
                 fieldDIV.find('input,select,textarea').each(function (index, item) {
                     if (!item.name) return;
                     var input = $(item), value = input.val(), def = input.data('def');
@@ -1196,7 +1196,7 @@ Date.getLocalDateFormat = function () {
             $(item).find('.form-group').each(function (index, input) {
                 var group = $(input), def = group.data('def');
                 group.data('name', item_name + '.' + def.name)
-                    .data('item', _get_data_item(host.data, item.attr('data-bind')));
+                    .data('item', _get_data_item(host.data, item.attr('data-bind')).attrName);
                 group.find('label').each(function (index, item) {
                     item.attributes['for'].value = item_name.replace(/\[|\]/g, '_') + def.name;
                 });
@@ -1279,7 +1279,7 @@ Date.getLocalDateFormat = function () {
         if (info instanceof Array)
             info = { fields: info };
         if (!(def = _form_field_lookup(host.def, info))) return;
-        if (typeof item_data === 'undefined' || 'name' in def && def.name) item_data = _get_data_item(host.data, def.name);
+        if (typeof item_data === 'undefined' && 'name' in def && def.name) item_data = _get_data_item(host.data, def.name);
         if ('name' in def && 'default' in def && item_data instanceof dataBinderArray && item_data.value === null) item_data.value = def.default;
         if ('horizontal' in def) p = def.horizontal;
         if ('render' in def) {
@@ -1351,7 +1351,7 @@ Date.getLocalDateFormat = function () {
             }
             host.pageInputs.push(field);
         } else field = $('<div>');
-        field.data('def', def).data('item', item_data);
+        field.data('def', def).data('item', item_data ? item_data.attrName : null);
         if ('tip' in def) {
             field.children('label.control-label').append($('<i class="fa fa-question-circle form-tip">')
                 .attr('data-title', def.tip)
@@ -2043,7 +2043,8 @@ Date.getLocalDateFormat = function () {
             "inputGroupAppend": "input-group-append",
             "chkDiv": "custom-control custom-checkbox",
             "chkInput": "custom-control-input",
-            "chkLabel": "custom-control-label"
+            "chkLabel": "custom-control-label",
+            "button": "btn"
         }
     };
 
