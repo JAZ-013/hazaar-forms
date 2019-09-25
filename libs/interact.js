@@ -544,7 +544,7 @@ Date.getLocalDateFormat = function () {
 
     function _input_select_multi(host, def) {
         var item_data = _get_data_item(host.data, def.name);
-        var group = $('<div>').addClass(host.settings.styleClasses.group).data('def', def).data('item', item_data.name), options = {};
+        var group = $('<div>').addClass(host.settings.styleClasses.group).data('def', def).data('item', item_data.attrName), options = {};
         var label = $('<label>').addClass(host.settings.styleClasses.label)
             .attr('for', def.name)
             .html(_match_replace(host, def.label, null, true, true))
@@ -707,7 +707,7 @@ Date.getLocalDateFormat = function () {
 
     function _input_select(host, def, populate) {
         var item_data = _get_data_item(host.data, def.name);
-        var group = $('<div>').addClass(host.settings.styleClasses.group).data('def', def).data('item', item_data.name);
+        var group = $('<div>').addClass(host.settings.styleClasses.group).data('def', def).data('item', item_data.attrName);
         var label = $('<label>').addClass(host.settings.styleClasses.label)
             .attr('for', def.name)
             .html(_match_replace(host, def.label, null, true, true))
@@ -873,7 +873,7 @@ Date.getLocalDateFormat = function () {
 
     function _input_lookup(host, def) {
         var item_data = _get_data_item(host.data, def.name);
-        var group = $('<div>').addClass(host.settings.styleClasses.group).data('def', def).data('item', item_data.name);
+        var group = $('<div>').addClass(host.settings.styleClasses.group).data('def', def).data('item', item_data.attrName);
         var label = $('<label>').addClass(host.settings.styleClasses.label)
             .attr('for', '__hz_field_' + def.name)
             .html(_match_replace(host, def.label, null, true, true))
@@ -893,7 +893,7 @@ Date.getLocalDateFormat = function () {
             .on('blur', function (event) {
                 var input = $(this), popup = input.parent().parent().children('.form-lookup-popup');
                 var def = input.data('def'); item_data = _get_data_item(host.data, input.attr('data-bind'));
-                if (!item_data) item_data = _get_data_item(host.data, input.parent().parent().parent().parent().data('item'))[input.next().attr('name')];
+                if (!item_data) item_data = _get_data_item(host.data, input.parent().parent().parent().parent().data('item').attrName)[input.next().attr('name')];
                 if (popup.length > 0) {
                     popup.css({ "opacity": "0" });
                     setTimeout(function () {
@@ -922,7 +922,7 @@ Date.getLocalDateFormat = function () {
                         var query = '', popup = input.parent().parent().children('.form-lookup-popup');
                         var item_data = _get_data_item(host.data, input.attr('data-bind'));
                         var valueKey = def.lookup.value || 'value', labelKey = def.lookup.label || 'label';
-                        if (!item_data) item_data = _get_data_item(host.data, input.parent().parent().parent().parent().data('item'))[input.next().attr('name')];
+                        if (!item_data) item_data = _get_data_item(host.data, input.parent().parent().parent().parent().data('item').attrName)[input.next().attr('name')];
                         if (popup.length === 0) {
                             popup = $('<div class="form-lookup-popup card">').hide().appendTo(input.parent().parent())
                                 .on('click', function (event) {
@@ -1196,7 +1196,7 @@ Date.getLocalDateFormat = function () {
             $(item).find('.form-group').each(function (index, input) {
                 var group = $(input), def = group.data('def');
                 group.data('name', item_name + '.' + def.name)
-                    .data('item', _get_data_item(host.data, item.attr('data-bind')).name);
+                    .data('item', _get_data_item(host.data, item.attr('data-bind')).attrName);
                 group.find('label').each(function (index, item) {
                     item.attributes['for'].value = item_name.replace(/\[|\]/g, '_') + def.name;
                 });
@@ -1279,7 +1279,7 @@ Date.getLocalDateFormat = function () {
         if (info instanceof Array)
             info = { fields: info };
         if (!(def = _form_field_lookup(host.def, info))) return;
-        if (typeof item_data === 'undefined' || 'name' in def && def.name) item_data = _get_data_item(host.data, def.name);
+        if (typeof item_data === 'undefined' && 'name' in def && def.name) item_data = _get_data_item(host.data, def.name);
         if ('name' in def && 'default' in def && item_data instanceof dataBinderArray && item_data.value === null) item_data.value = def.default;
         if ('horizontal' in def) p = def.horizontal;
         if ('render' in def) {
@@ -1351,7 +1351,7 @@ Date.getLocalDateFormat = function () {
             }
             host.pageInputs.push(field);
         } else field = $('<div>');
-        field.data('def', def).data('item', item_data ? item_data.name : null);
+        field.data('def', def).data('item', item_data ? item_data.attrName : null);
         if ('tip' in def) {
             field.children('label.control-label').append($('<i class="fa fa-question-circle form-tip">')
                 .attr('data-title', def.tip)
