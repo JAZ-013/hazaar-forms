@@ -1099,20 +1099,22 @@ class Model extends \Hazaar\Model\Strict {
 
         }
 
-        $func = function($values, $evaluate, $item_data){
+        $eval_code = function($values, $evaluate, $item_data, $key){
 
-            $export = function(&$export, &$value, $quote = true){
+            $export = null; //Hack to allow use($export) to work
+
+            $export = function($value, $quote = true) use($export) {
 
                 if($value instanceof \Hazaar\Model\dataBinderValue)
                     $value = $value->value;
                 elseif($value instanceof \Hazaar\Model\ChildModel)
-                    $value = $value->toArray();
+                    $value = array_to_object($value->toArray());
                 elseif($value instanceof \Hazaar\Model\ChildArray){
 
                     $values = array();
 
                     foreach($value as $key => $subValue)
-                        $values[$key] = $export($export, $subValue, false);
+                        $values[$key] = $export($subValue, false);
 
                     $value = $values;
 
@@ -1124,7 +1126,7 @@ class Model extends \Hazaar\Model\Strict {
                     $value = strbool($value);
                 elseif(is_null($value))
                     $value = 'null';
-                elseif (is_array($value) && $quote)
+                elseif ((is_array($value) || $value instanceof \stdClass) && $quote)
                     $value = var_export($value, true);
                 elseif ((is_string($value) || is_object($value)) && $quote)
                     $value = "'" . addslashes((string)$value) . "'";
@@ -1133,19 +1135,22 @@ class Model extends \Hazaar\Model\Strict {
 
             };
 
-            $code = '';
+            $__hz_code = '';
 
             foreach($values as $key => $value)
-                $code .= '$' . $key . ' = ' . $export($export, $value) . ";\n";
+                $__hz_code .= '$' . $key . ' = ' . $export($value) . ";\n";
 
-            $code .= "return ( " . $evaluate . " );\n";
+            if ($item_data) {
+
+                $__hz_code .= '$value = ' . $export($item_data) . ";\n";
+
+                //$__hz_code .= '$item = ' . $export($item_data) . ";\n";
+
+            }
+
+            $__hz_code .= "return ( " . $evaluate . " );\n";
 
             try{
-
-                //Form is also acessible in the evaluted code.
-                $form = $this;
-
-                $item = $item_data;
 
                 $tags = new class($this->__tags){
                     private $items = array();
@@ -1153,12 +1158,14 @@ class Model extends \Hazaar\Model\Strict {
                     function indexOf($value){ return (($index = array_search($value, $this->items)) !== false) ? $index : -1; }
                 };
 
-                return @eval($code);
+                $eval = function($form, $tags, $item) use($__hz_code) { return @eval($__hz_code); };
+
+                return $eval($this, $tags, $item_data);
 
             }
-            catch(ParseError $e){
+            catch(\ParseError $e){
 
-                die($code);
+                die($__hz_code);
 
             }
 
@@ -1168,7 +1175,7 @@ class Model extends \Hazaar\Model\Strict {
 
             ob_start();
 
-            $result = $func($this->values, $code, $item_data);
+            $result = $eval_code($this->values, $code, $item_data, $key);
 
             if($buf = ob_get_clean()){
 
