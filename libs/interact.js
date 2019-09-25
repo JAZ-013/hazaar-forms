@@ -244,7 +244,7 @@ Date.getLocalDateFormat = function () {
     }
 
     function _get_data_item(data, name, isArray, value) {
-        if (!(name && data)) return null;
+        if (!(typeof name === 'string' && typeof data === 'object')) return null;
         var parts = name.split(/[\.\[]/), item = data;
         for (let x in parts) {
             var key = parts[x];
