@@ -71,7 +71,7 @@ class HTML extends \Hazaar\Forms\Output {
 
     }
 
-    private function __section($section, $horizontal = true){
+    private function __section($section, $p = true){
 
         if(is_array($section)){
 
@@ -79,7 +79,7 @@ class HTML extends \Hazaar\Forms\Output {
 
             $group = new \Hazaar\Html\Div();
 
-            if($horizontal){
+            if($p){
 
                 $group->addClass('row');
 
@@ -101,9 +101,9 @@ class HTML extends \Hazaar\Forms\Output {
 
             foreach($section as &$s){
 
-                $col = new \Hazaar\Html\Div($this->__section($s, !$horizontal));
+                $col = new \Hazaar\Html\Div($this->__section($s, !$p));
 
-                if($horizontal){
+                if($p){
 
                     $field_width = (is_object($s) ? $s->weight : 1) * $col_width;
 
@@ -198,7 +198,7 @@ class HTML extends \Hazaar\Forms\Output {
                 if(property_exists($field, 'label'))
                     $group->add(new \Hazaar\Html\H4($field->label));
 
-                if ($horizontal === null) $horizontal = !(property_exists($field, 'layout') && $field->layout);
+                if ($horizontal === null) $p = !(property_exists($field, 'layout') && $field['layout']);
 
                 $group->add($this->__group(array((array)$field->fields), $horizontal));
 
@@ -304,14 +304,18 @@ class HTML extends \Hazaar\Forms\Output {
 
         }elseif($type !== null){
 
-            if($type == 'boolean')
-                $field->value = yn($field->value);
-            elseif($field->value instanceof \Hazaar\Date){
+            $value = ake($field, 'value');
+
+            if($type == 'boolean'){
+
+                $value = yn($value);
+
+            }elseif($value instanceof \Hazaar\Date){
 
                 if(ake($field, 'org_type', 'date') === 'datetime')
-                    $field->value = $field->value->datetime();
+                    $value = $value->datetime();
                 else
-                    $field->value = $field->value->date();
+                    $value = $value->date();
 
             }
 
@@ -320,7 +324,7 @@ class HTML extends \Hazaar\Forms\Output {
             if($prefix = ake($field, 'prefix'))
                 $value_group->add($this->model->matchReplace((string)$prefix) . ' ');
 
-            if(($value = $field->value) === null && $null = (array)ake($this->options, 'null'))
+            if($value === null && $null = (array)ake($this->options, 'null'))
                 $value = is_array($null) ? ake($null, $type, ake($null, 'default')) : $null;
 
             $value_group->add($value);

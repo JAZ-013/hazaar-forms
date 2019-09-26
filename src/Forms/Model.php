@@ -972,10 +972,10 @@ class Model extends \Hazaar\Model\Strict {
 
                 foreach($value as $key => $item){
 
-                    if(($item instanceof \Hazaar\Model\dataBinderValue) && ($label = $item->label))
+                    if(($item instanceof \Hazaar\Model\DataBinderValue) && ($label = $item->label))
                         $values[$key] = $label;
                     else
-                        $values[$key] = ake((array)$options, (($item instanceof \Hazaar\Model\dataBinderValue)?$item->value:$item));
+                        $values[$key] = ake((array)$options, (($item instanceof \Hazaar\Model\DataBinderValue)?$item->value:$item));
 
                 }
 
@@ -1011,16 +1011,20 @@ class Model extends \Hazaar\Model\Strict {
 
             return $field;
 
-        }elseif ($value instanceof \Hazaar\Model\dataBinderValue && $value->label){
+        }elseif ($value instanceof \Hazaar\Model\Strict || $value instanceof \Hazaar\Model\ChildArray){
 
-            $value = $value->label;
+            $value = null;
+
+        }elseif ($value instanceof \Hazaar\Model\DataBinderValue){
+
+            $value = (string)$value;
 
         }elseif($options = ake($field, 'options')){
 
             if(is_string($options))
                 $options = $this->api($this->matchReplace($options));
 
-            if($value instanceof \Hazaar\Model\dataBinderValue){
+            if($value instanceof \Hazaar\Model\DataBinderValue){
                 $value = (string)$value;
             }else
                 $value = ake((array)$options, $value);
@@ -1107,7 +1111,7 @@ class Model extends \Hazaar\Model\Strict {
 
             $export = function($value, $quote = true) use($export) {
 
-                if($value instanceof \Hazaar\Model\dataBinderValue)
+                if($value instanceof \Hazaar\Model\DataBinderValue)
                     $value = $value->value;
                 elseif($value instanceof \Hazaar\Model\Strict || $value instanceof \Hazaar\Model\ChildModel)
                     $value = array_to_object($value->toArray());
@@ -1223,7 +1227,7 @@ class Model extends \Hazaar\Model\Strict {
                 if(is_object($value) && !method_exists($value, '__toString'))
                     $value = '';
 
-                $value = ((in_array(':', $modifiers) || !$use_label) && $value instanceof \Hazaar\Model\dataBinderValue) ? $value->value : (string)$value;
+                $value = ((in_array(':', $modifiers) || !$use_label) && $value instanceof \Hazaar\Model\DataBinderValue) ? $value->value : (string)$value;
 
             } else $value = $default_value;
 
