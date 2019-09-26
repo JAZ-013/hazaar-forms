@@ -830,7 +830,7 @@ class Model extends \Hazaar\Model\Strict {
 
         }elseif($fields instanceof \stdClass && property_exists($fields, 'fields')){
 
-            if(property_exists($fields, 'show') && $this->evaluate($fields->show, true, $item_value, $parent_key) !== true)
+            if(property_exists($fields, 'show') && $this->evaluate($fields->show, true, $parent_key) !== true)
                 return null;
 
             $items = array();
@@ -921,7 +921,7 @@ class Model extends \Hazaar\Model\Strict {
             return null;
 
         if($evaluate === true
-            && (!is_object($field) || (property_exists($field, 'show') && $this->evaluate($field->show, true, $value, $field_key) !== true)))
+            && (!is_object($field) || (property_exists($field, 'show') && $this->evaluate($field->show, true, $field_key) !== true)))
             return null;
 
         if($value === null){
@@ -1048,7 +1048,7 @@ class Model extends \Hazaar\Model\Strict {
 
     }
 
-    public function evaluate($code, $default = null, $item_data = null, $key = null){
+    public function evaluate($code, $default = null, $key = null){
 
         if(is_bool($code)) return $code;
 
@@ -1099,20 +1099,24 @@ class Model extends \Hazaar\Model\Strict {
 
         }
 
-        $func = function($values, $evaluate, $item_value){
+        $model = $this;
 
-            $export = function(&$export, &$value, $quote = true){
+        $eval_code = function($evaluate, $key) use($model){
+
+            $export = null; //Hack to allow use($export) to work
+
+            $export = function($value, $quote = true) use($export) {
 
                 if($value instanceof \Hazaar\Model\dataBinderValue)
                     $value = $value->value;
-                elseif($value instanceof \Hazaar\Model\ChildModel)
-                    $value = $value->toArray();
+                elseif($value instanceof \Hazaar\Model\Strict || $value instanceof \Hazaar\Model\ChildModel)
+                    $value = array_to_object($value->toArray());
                 elseif($value instanceof \Hazaar\Model\ChildArray){
 
                     $values = array();
 
                     foreach($value as $key => $subValue)
-                        $values[$key] = $export($export, $subValue, false);
+                        $values[$key] = $export($subValue, false);
 
                     $value = $values;
 
@@ -1124,7 +1128,7 @@ class Model extends \Hazaar\Model\Strict {
                     $value = strbool($value);
                 elseif(is_null($value))
                     $value = 'null';
-                elseif (is_array($value) && $quote)
+                elseif ((is_array($value) || $value instanceof \stdClass) && $quote)
                     $value = var_export($value, true);
                 elseif ((is_string($value) || is_object($value)) && $quote)
                     $value = "'" . addslashes((string)$value) . "'";
@@ -1133,19 +1137,26 @@ class Model extends \Hazaar\Model\Strict {
 
             };
 
-            $code = '';
+            $__hz_code = '';
 
-            foreach($values as $key => $value)
-                $code .= '$' . $key . ' = ' . $export($export, $value) . ";\n";
+            foreach($model->values as $var_key => $value)
+                $__hz_code .= '$' . $var_key . ' = ' . $export($value) . ";\n";
 
-            $code .= "return ( " . $evaluate . " );\n";
+            $eval_item = null;
+
+            $eval_value = $model;
+
+            if($key){
+
+                $eval_item = (($pos = strrpos($key, '.')) === false) ? $model : $model->get(substr($key, 0, $pos));
+
+                $eval_value = $model->get($key);
+
+            }
+
+            $__hz_code .= "return ( " . $evaluate . " );\n";
 
             try{
-
-                //Form is also acessible in the evaluted code.
-                $form = $this;
-
-                $item = $item_value;
 
                 $tags = new class($this->__tags){
                     private $items = array();
@@ -1153,12 +1164,17 @@ class Model extends \Hazaar\Model\Strict {
                     function indexOf($value){ return (($index = array_search($value, $this->items)) !== false) ? $index : -1; }
                 };
 
-                return @eval($code);
+                $eval = function($form, $value, $formValue, $item, $formItem, $tags) use($__hz_code) { return @eval($__hz_code); };
+
+                return $eval($this,
+                    ($eval_value ? array_to_object($eval_value->toArray()) : null), $eval_value,
+                    ($eval_item ? array_to_object($eval_item->toArray()) : null), $eval_item,
+                    $tags);
 
             }
-            catch(ParseError $e){
+            catch(\ParseError $e){
 
-                die($code);
+                die($__hz_code);
 
             }
 
@@ -1168,7 +1184,7 @@ class Model extends \Hazaar\Model\Strict {
 
             ob_start();
 
-            $result = $func($this->values, $code, $item_value);
+            $result = $eval_code($code, $key);
 
             if($buf = ob_get_clean()){
 
@@ -1346,7 +1362,7 @@ class Model extends \Hazaar\Model\Strict {
 
         if(array_key_exists('required', $field)){
 
-            if($this->evaluate($field['required'], true, $value, $field['name']) === true
+            if($this->evaluate($field['required'], true, $field['name']) === true
                 && (($value instanceof \Hazaar\Model\ChildArray && $value->count() === 0) || $value === null))
                 return $this->__validation_error($field['name'], $field, 'required');
 
@@ -1354,7 +1370,7 @@ class Model extends \Hazaar\Model\Strict {
 
         if (ake($field, 'protected') === true
             || array_key_exists('disabled', $field)
-            && $this->evaluate($field['disabled'], false, $value, $field['name'])){
+            && $this->evaluate($field['disabled'], false, $field['name'])){
 
             return true;
 
@@ -1464,7 +1480,7 @@ class Model extends \Hazaar\Model\Strict {
 
                 case 'custom':
 
-                    if (!$this->evaluate($data, true, $value, $field['name']))
+                    if (!$this->evaluate($data, true, $field['name']))
                         return $this->__validation_error($field['name'], $field, "custom");
 
                     break;
