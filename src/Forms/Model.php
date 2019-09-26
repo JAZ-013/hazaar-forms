@@ -830,7 +830,7 @@ class Model extends \Hazaar\Model\Strict {
 
         }elseif($fields instanceof \stdClass && property_exists($fields, 'fields')){
 
-            if(property_exists($fields, 'show') && $this->evaluate($fields->show, true, $item_value, $parent_key) !== true)
+            if(property_exists($fields, 'show') && $this->evaluate($fields->show, true, $parent_key) !== true)
                 return null;
 
             $items = array();
@@ -921,7 +921,7 @@ class Model extends \Hazaar\Model\Strict {
             return null;
 
         if($evaluate === true
-            && (!is_object($field) || (property_exists($field, 'show') && $this->evaluate($field->show, true, $value, $field_key) !== true)))
+            && (!is_object($field) || (property_exists($field, 'show') && $this->evaluate($field->show, true, $field_key) !== true)))
             return null;
 
         if($value === null){
@@ -1048,7 +1048,7 @@ class Model extends \Hazaar\Model\Strict {
 
     }
 
-    public function evaluate($code, $default = null, $item_data = null, $key = null){
+    public function evaluate($code, $default = null, $key = null){
 
         if(is_bool($code)) return $code;
 
@@ -1099,7 +1099,9 @@ class Model extends \Hazaar\Model\Strict {
 
         }
 
-        $eval_code = function($values, $evaluate, $item_data, $key){
+        $model = $this;
+
+        $eval_code = function($evaluate, $key) use($model){
 
             $export = null; //Hack to allow use($export) to work
 
@@ -1107,7 +1109,7 @@ class Model extends \Hazaar\Model\Strict {
 
                 if($value instanceof \Hazaar\Model\dataBinderValue)
                     $value = $value->value;
-                elseif($value instanceof \Hazaar\Model\ChildModel)
+                elseif($value instanceof \Hazaar\Model\Strict || $value instanceof \Hazaar\Model\ChildModel)
                     $value = array_to_object($value->toArray());
                 elseif($value instanceof \Hazaar\Model\ChildArray){
 
@@ -1137,14 +1139,18 @@ class Model extends \Hazaar\Model\Strict {
 
             $__hz_code = '';
 
-            foreach($values as $key => $value)
-                $__hz_code .= '$' . $key . ' = ' . $export($value) . ";\n";
+            foreach($model->values as $var_key => $value)
+                $__hz_code .= '$' . $var_key . ' = ' . $export($value) . ";\n";
 
-            if ($item_data) {
+            $eval_item = null;
 
-                $__hz_code .= '$value = ' . $export($item_data) . ";\n";
+            $eval_value = $model;
 
-                //$__hz_code .= '$item = ' . $export($item_data) . ";\n";
+            if($key){
+
+                $eval_item = (($pos = strrpos($key, '.')) === false) ? $model : $model->get(substr($key, 0, $pos));
+
+                $eval_value = $model->get($key);
 
             }
 
@@ -1158,9 +1164,12 @@ class Model extends \Hazaar\Model\Strict {
                     function indexOf($value){ return (($index = array_search($value, $this->items)) !== false) ? $index : -1; }
                 };
 
-                $eval = function($form, $tags, $item) use($__hz_code) { return @eval($__hz_code); };
+                $eval = function($form, $value, $formValue, $item, $formItem, $tags) use($__hz_code) { return @eval($__hz_code); };
 
-                return $eval($this, $tags, $item_data);
+                return $eval($this,
+                    ($eval_value ? array_to_object($eval_value->toArray()) : null), $eval_value,
+                    ($eval_item ? array_to_object($eval_item->toArray()) : null), $eval_item,
+                    $tags);
 
             }
             catch(\ParseError $e){
@@ -1175,7 +1184,7 @@ class Model extends \Hazaar\Model\Strict {
 
             ob_start();
 
-            $result = $eval_code($this->values, $code, $item_data, $key);
+            $result = $eval_code($code, $key);
 
             if($buf = ob_get_clean()){
 
@@ -1353,7 +1362,7 @@ class Model extends \Hazaar\Model\Strict {
 
         if(array_key_exists('required', $field)){
 
-            if($this->evaluate($field['required'], true, $value, $field['name']) === true
+            if($this->evaluate($field['required'], true, $field['name']) === true
                 && (($value instanceof \Hazaar\Model\ChildArray && $value->count() === 0) || $value === null))
                 return $this->__validation_error($field['name'], $field, 'required');
 
@@ -1361,7 +1370,7 @@ class Model extends \Hazaar\Model\Strict {
 
         if (ake($field, 'protected') === true
             || array_key_exists('disabled', $field)
-            && $this->evaluate($field['disabled'], false, $value, $field['name'])){
+            && $this->evaluate($field['disabled'], false, $field['name'])){
 
             return true;
 
@@ -1471,7 +1480,7 @@ class Model extends \Hazaar\Model\Strict {
 
                 case 'custom':
 
-                    if (!$this->evaluate($data, true, $value, $field['name']))
+                    if (!$this->evaluate($data, true, $field['name']))
                         return $this->__validation_error($field['name'], $field, "custom");
 
                     break;
