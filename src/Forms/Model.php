@@ -920,6 +920,38 @@ class Model extends \Hazaar\Model\Strict {
         if(!$value && ake($output, 'empty', true) === false)
             return null;
 
+        if(!$value instanceof \Hazaar\Model\DataBinderValue
+            && ($options = ake($field, 'options'))){
+
+            if(is_string($options))
+                $options = (object)array('url' => $options);
+
+            if($options instanceof \stdClass && property_exists($options, 'url')){
+
+                $valueKey = ake($options, 'value', 'value');
+
+                $labelKey = ake($options, 'label', 'label');
+
+                $data = $this->api($this->matchReplace($options->url));
+
+                $options = array();
+
+                foreach($data as $k => &$v){
+
+                    if(!is_int($k)) break;
+
+                    $options[ake($v, $valueKey)] = ake($v, $labelKey);
+
+                }
+
+            }
+
+            $value = \Hazaar\Model\DataBinderValue::create($value, ake((array)$options, $value, $value));
+
+            $this->set($field_key, $value);
+
+        }
+
         if($evaluate === true
             && (!is_object($field) || (property_exists($field, 'show') && $this->evaluate($field->show, true, $field_key) !== true)))
             return null;
@@ -1011,23 +1043,10 @@ class Model extends \Hazaar\Model\Strict {
 
             return $field;
 
-        }elseif ($value instanceof \Hazaar\Model\Strict || $value instanceof \Hazaar\Model\ChildArray){
+        }elseif ($value instanceof \Hazaar\Model\Strict
+            || $value instanceof \Hazaar\Model\ChildArray){
 
             $value = null;
-
-        }elseif ($value instanceof \Hazaar\Model\DataBinderValue){
-
-            $value = (string)$value;
-
-        }elseif($options = ake($field, 'options')){
-
-            if(is_string($options))
-                $options = $this->api($this->matchReplace($options));
-
-            if($value instanceof \Hazaar\Model\DataBinderValue){
-                $value = (string)$value;
-            }else
-                $value = ake((array)$options, $value);
 
         }
 
@@ -1282,6 +1301,10 @@ class Model extends \Hazaar\Model\Strict {
 
             }
 
+            $app = \Hazaar\Application::getInstance();
+
+            $response_type = $app->getResponseType();
+
             $request->setPath($target);
 
             $router->evaluate($request);
@@ -1302,6 +1325,8 @@ class Model extends \Hazaar\Model\Strict {
                 throw new \Exception('API endpoint returned status code ' . $response->getStatus() . ' - ' . $response->getStatusMessage());
 
             $result = $response->toArray();
+
+            $app->setResponseType($response_type);
 
         }
 
