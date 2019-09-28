@@ -122,7 +122,7 @@ class Model extends \Hazaar\Model\Strict {
 
     }
 
-    private function import(&$item){
+    private function import(&$item, $path_prefix = null){
 
         if(!(is_object($item) || is_array($item)))
             return false;
@@ -137,18 +137,18 @@ class Model extends \Hazaar\Model\Strict {
             unset($item->import);
 
             foreach($import as $ext_item)
-                $this->importItem($item, $ext_item);
+                $this->importItem($item, ($path_prefix ? $path_prefix . '/' : '' ) . $ext_item);
 
         }
 
         foreach($item as &$field)
-            $this->import($field);
+            $this->import($field, $path_prefix);
 
         return true;
 
     }
 
-    private function importItem(&$item, $ext_item){
+    private function importItem(&$item, $ext_item, $path_prefix = null){
 
         if(strtolower(substr($ext_item, -5)) !== '.json')
             $ext_item .= '.json';
@@ -156,10 +156,8 @@ class Model extends \Hazaar\Model\Strict {
         if(in_array($ext_item, $this->__form_imported))
             throw new \Exception($ext_item . ' has already been imported.  Cyclic reference?');
 
-        if(!($source = $this->__form_import_path->get($ext_item)))
+        if(!($import_file = $this->__form_import_path->get(($path_prefix ? $path_prefix . '/' : '' ) . $ext_item)))
             throw new \Exception('Form import file not found: ' . $ext_item, 404);
-
-        $import_file = new \Hazaar\File($source);
 
         if(!($import_items = $import_file->parseJSON()))
             throw new \Exception('An error ocurred parsing the form definition \'' . $import_file->name() . '\'');
@@ -173,6 +171,8 @@ class Model extends \Hazaar\Model\Strict {
                 $value = (object)replace_recursive((array)$value, (array)$item->$key);
 
             $item->$key = $value;
+
+            $this->import($item->$key, dirname($ext_item));
 
         }
 
