@@ -1128,7 +1128,7 @@ class Model extends \Hazaar\Model\Strict {
 
             $export = null; //Hack to allow use($export) to work
 
-            $export = function($value, $quote = true) use($export) {
+            $export = function($value, $quote = true) use(&$export) {
 
                 if($value instanceof \Hazaar\Model\DataBinderValue)
                     $value = $value->value;
@@ -1174,6 +1174,11 @@ class Model extends \Hazaar\Model\Strict {
                 $eval_item = (($pos = strrpos($key, '.')) === false) ? $model : $model->get(substr($key, 0, $pos));
 
                 $eval_value = $model->get($key);
+
+                if(!($eval_value instanceof \Hazaar\Model\Strict
+                    || $eval_value instanceof \Hazaar\Model\ChildArray
+                    || $eval_value instanceof \Hazaar\Model\DataBinderValue))
+                    $eval_value = \Hazaar\Model\DataBinderValue::create($eval_value);
 
             }
 
