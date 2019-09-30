@@ -1279,7 +1279,7 @@ Date.getLocalDateFormat = function () {
         if (info instanceof Array)
             info = { fields: info };
         if (!(def = _form_field_lookup(host.def, info))) return;
-        if (typeof item_data === 'undefined' && 'name' in def && def.name) item_data = _get_data_item(host.data, def.name);
+        if (!item_data && 'name' in def && def.name) item_data = _get_data_item(host.data, def.name);
         if ('name' in def && 'default' in def && item_data instanceof dataBinderArray && item_data.value === null) item_data.value = def.default;
         if ('horizontal' in def) p = def.horizontal;
         if ('render' in def) {
@@ -1305,7 +1305,7 @@ Date.getLocalDateFormat = function () {
             field = $('<div class="form-section">').toggleClass('row', p).data('def', def);
             if ('label' in def) field.append($('<div class="col-md-12">').html($('<h5>').html(def.label)));
             for (let x in fields) {
-                let field_width = col_width, child_field = _form_field(host, fields[x], !p, populate, apply_rules, item_data);
+                let field_width = col_width, child_field = _form_field(host, fields[x], !p, populate, apply_rules, 'name' in fields[x] ? undefined : item_data);
                 if (fields[x] instanceof Object && 'weight' in fields[x])
                     field_width = Math.round(field_width * fields[x].weight);
                 field.append(child_field.toggleClass('col-lg-' + field_width, p));
