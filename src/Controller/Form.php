@@ -98,7 +98,7 @@ abstract class Form extends Action {
         switch($method){
             case 'init':
 
-                $out->form = $this->form_model->getFormDefinition();
+                $out->form = $this->form_model->getFormDefinition(true);
 
                 $out->tags = $this->__tags;
 
