@@ -564,13 +564,17 @@ class Model extends \Hazaar\Model\Strict {
 
     }
 
-    public function getFormDefinition(){
+    public function getFormDefinition($secure = false){
 
         $form = clone $this->__form;
 
-        $this->filterItems($form->fields, true, array('fields'));
+        if($secure === true){
 
-        $this->filterItems($form->pages, false, array('sections', 'fields'));
+            $this->filterItems($form->fields, true, array('fields'));
+
+            $this->filterItems($form->pages, false, array('sections', 'fields'));
+
+        }
 
         return $form;
 
@@ -726,7 +730,7 @@ class Model extends \Hazaar\Model\Strict {
 
     public function resolve(){
 
-        $form = $this->getFormDefinition();
+        $form = $this->getFormDefinition(true);
 
         //Field defs need to be arrays.  Their contents do not however.
         array_walk($form->fields, function(&$array){
@@ -1277,7 +1281,7 @@ class Model extends \Hazaar\Model\Strict {
 
         $args['form'] = $this->toArray();
 
-        $args['def'] = $this->getFormDefinition();
+        $args['def'] = $this->getFormDefinition(true);
 
         $args['name'] = $this->getName();
 
