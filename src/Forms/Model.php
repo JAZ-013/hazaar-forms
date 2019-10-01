@@ -1008,20 +1008,46 @@ class Model extends \Hazaar\Model\Strict {
             }elseif($options = ake($field, 'options')){
 
                 if(is_string($options))
-                    $options = $this->api($this->matchReplace($options));
+                    $options = (object)array('url' => $options);
 
-                $values = array();
+                if($options instanceof \stdClass && property_exists($options, 'url')){
 
-                foreach($value as $key => $item){
+                    $valueKey = ake($options, 'value', 'value');
 
-                    if(($item instanceof \Hazaar\Model\DataBinderValue) && ($label = $item->label))
-                        $values[$key] = $label;
-                    else
-                        $values[$key] = ake((array)$options, (($item instanceof \Hazaar\Model\DataBinderValue)?$item->value:$item));
+                    $labelKey = ake($options, 'label', 'label');
+
+                    $data = $this->api($this->matchReplace($options->url));
+
+                    if(is_array($data) || $data instanceof \stdClass){
+
+                        $options = array();
+
+                        foreach($data as $k => &$v){
+
+                            if(!is_int($k)) break;
+
+                            $options[ake($v, $valueKey)] = ake($v, $labelKey);
+
+                        }
+
+                    }
+
+                    $values = array();
+
+                    foreach($value as $key => &$item){
+
+                        if($item instanceof \Hazaar\Model\DataBinderValue)
+                            continue;
+
+                        $item = \Hazaar\Model\DataBinderValue::create($value, ake((array)$options, $value, $value));
+
+                    }
+
+                    $value = $values;
+
+                    $this->set($field_key, $value);
 
                 }
-
-                $value = $values;
 
             }
 
