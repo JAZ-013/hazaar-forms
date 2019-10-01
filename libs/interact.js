@@ -543,8 +543,7 @@ Date.getLocalDateFormat = function () {
     }
 
     function _input_select_multi(host, def) {
-        var item_data = _get_data_item(host.data, def.name);
-        var group = $('<div>').addClass(host.settings.styleClasses.group).data('def', def).data('item', item_data.attrName), options = {};
+        var group = $('<div>').addClass(host.settings.styleClasses.group).data('def', def);
         var label = $('<label>').addClass(host.settings.styleClasses.label)
             .attr('for', def.name)
             .html(_match_replace(host, def.label, null, true, true))
@@ -706,8 +705,7 @@ Date.getLocalDateFormat = function () {
     }
 
     function _input_select(host, def, populate) {
-        var item_data = _get_data_item(host.data, def.name);
-        var group = $('<div>').addClass(host.settings.styleClasses.group).data('def', def).data('item', item_data.attrName);
+        var group = $('<div>').addClass(host.settings.styleClasses.group).data('def', def);
         var label = $('<label>').addClass(host.settings.styleClasses.label)
             .attr('for', def.name)
             .html(_match_replace(host, def.label, null, true, true))
@@ -873,7 +871,7 @@ Date.getLocalDateFormat = function () {
 
     function _input_lookup(host, def) {
         var item_data = _get_data_item(host.data, def.name);
-        var group = $('<div>').addClass(host.settings.styleClasses.group).data('def', def).data('item', item_data.attrName);
+        var group = $('<div>').addClass(host.settings.styleClasses.group).data('def', def);
         var label = $('<label>').addClass(host.settings.styleClasses.label)
             .attr('for', '__hz_field_' + def.name)
             .html(_match_replace(host, def.label, null, true, true))
