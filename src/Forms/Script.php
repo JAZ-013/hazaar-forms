@@ -195,7 +195,7 @@ class Script {
      * @throws \Exception
      * @return boolean|string
      */
-    public function execute($code, $value_key = null){
+    public function execute($code, $value_key = null, $extra = null){
 
         if($this->params_changed === true){
 
@@ -203,6 +203,13 @@ class Script {
 
             foreach($this->params as $key => $value)
                 $this->params_js .= "var $key = _get_data_item(form, '$key').save(true);\n";
+
+            if(is_array($extra)){
+
+                foreach($extra as $key => $value)
+                    $this->params_js .= "var $key = " . json_encode($value) . "\n";
+
+            }
 
             if($value_key !== null){
 
@@ -266,9 +273,9 @@ class Script {
      * @param mixed $code The JS code to execute.
      * @return boolean
      */
-    public function evaluate($code, $value_key = null){
+    public function evaluate($code, $value_key = null, $extra = null){
 
-        return boolify($this->execute($code, $value_key));
+        return boolify($this->execute($code, $value_key, $extra));
 
     }
 

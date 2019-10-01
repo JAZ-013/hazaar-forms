@@ -924,7 +924,7 @@ class Model extends \Hazaar\Model\Strict {
         if(!$value && ake($output, 'empty', true) === false)
             return null;
 
-        if(!($value instanceof \Hazaar\Model\Strict
+        if($value && !($value instanceof \Hazaar\Model\Strict
             || $value instanceof \Hazaar\Model\ChildArray
             || $value instanceof \Hazaar\Model\DataBinderValue)
             && ($options = ake($field, 'options'))){
@@ -1089,7 +1089,7 @@ class Model extends \Hazaar\Model\Strict {
 
             $s = ($this->__script_server instanceof Script) ? $this->__script_server : new Script($this->values);
 
-            return $s->evaluate($code, $key);
+            return $s->evaluate($code, $key, array('tags' => $this->__tags));
 
         }
 
