@@ -924,7 +924,9 @@ class Model extends \Hazaar\Model\Strict {
         if(!$value && ake($output, 'empty', true) === false)
             return null;
 
-        if(!$value instanceof \Hazaar\Model\DataBinderValue
+        if(!($value instanceof \Hazaar\Model\Strict
+            || $value instanceof \Hazaar\Model\ChildArray
+            || $value instanceof \Hazaar\Model\DataBinderValue)
             && ($options = ake($field, 'options'))){
 
             if(is_string($options))
