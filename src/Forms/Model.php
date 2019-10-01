@@ -938,13 +938,17 @@ class Model extends \Hazaar\Model\Strict {
 
                 $data = $this->api($this->matchReplace($options->url));
 
-                $options = array();
+                if(is_array($data) || $data instanceof \stdClass){
 
-                foreach($data as $k => &$v){
+                    $options = array();
 
-                    if(!is_int($k)) break;
+                    foreach($data as $k => &$v){
 
-                    $options[ake($v, $valueKey)] = ake($v, $labelKey);
+                        if(!is_int($k)) break;
+
+                        $options[ake($v, $valueKey)] = ake($v, $labelKey);
+
+                    }
 
                 }
 
@@ -1310,32 +1314,41 @@ class Model extends \Hazaar\Model\Strict {
 
             }
 
-            $app = \Hazaar\Application::getInstance();
+            try{
 
-            $response_type = $app->getResponseType();
+                $app = \Hazaar\Application::getInstance();
 
-            $request->setPath($target);
+                $response_type = $app->getResponseType();
 
-            $router->evaluate($request);
+                $request->setPath($target);
 
-            $loader = \Hazaar\Loader::getInstance();
+                $router->evaluate($request);
 
-            if(!($controller = $loader->loadController($router->getController())))
-                throw new \Exception("Controller for target '$target' could not be found!", 404);
+                $loader = \Hazaar\Loader::getInstance();
 
-            $controller->__initialize($request);
+                if(!($controller = $loader->loadController($router->getController())))
+                    throw new \Exception("Controller for target '$target' could not be found!", 404);
 
-            $response = $controller->__run();
+                $controller->__initialize($request);
 
-            if(!$response instanceof \Hazaar\Controller\Response\Json)
-                throw new \Exception('Only JSON API responses are currently supported!');
+                $response = $controller->__run();
 
-            if($response->getStatus()!= 200)
-                throw new \Exception('API endpoint returned status code ' . $response->getStatus() . ' - ' . $response->getStatusMessage());
+                if(!$response instanceof \Hazaar\Controller\Response\Json)
+                    throw new \Exception('Only JSON API responses are currently supported!');
 
-            $result = $response->toArray();
+                if($response->getStatus()!= 200)
+                    throw new \Exception('API endpoint returned status code ' . $response->getStatus() . ' - ' . $response->getStatusMessage());
 
-            $app->setResponseType($response_type);
+                $result = $response->toArray();
+
+                $app->setResponseType($response_type);
+
+            }
+            catch(\Exception $e){
+
+                $result = false;
+
+            }
 
         }
 
