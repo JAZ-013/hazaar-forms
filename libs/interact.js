@@ -689,9 +689,9 @@ Date.getLocalDateFormat = function () {
                 }
             }
             if (select && 'watch' in def) {
-                var watch_func = function (key, value, obj) {
+                var watch_func = function (key, value, args) {
                     _get_data_item(item_data, def.name).value = null;
-                    if (typeof cb === 'function') cb(select, _input_select_options(host, def, null, this));
+                    if (typeof cb === 'function') cb(select, _input_select_options(host, def, null, value));
                 };
                 if (def.watch.substr(0, 5) === 'item.' && item_data)
                     item_data.watch(def.watch.substr(5), watch_func);
