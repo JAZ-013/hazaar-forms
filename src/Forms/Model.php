@@ -940,7 +940,7 @@ class Model extends \Hazaar\Model\Strict {
 
                 $data = $this->api($this->matchReplace($options->url));
 
-                if(is_array($data) || $data instanceof \stdClass){
+                if((is_assoc($data) && is_array($data)) || $data instanceof \stdClass){
 
                     $options = array();
 
@@ -952,7 +952,7 @@ class Model extends \Hazaar\Model\Strict {
 
                     }
 
-                }
+                }else $options = $data;
 
             }
 
