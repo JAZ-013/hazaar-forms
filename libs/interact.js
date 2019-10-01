@@ -1704,7 +1704,7 @@ Date.getLocalDateFormat = function () {
                 if (!response.ok) {
                     return $(host).trigger('saverror', [{
                         error: { str: response.reason || "An unknown error occurred while saving the form!" }
-                    }, params]);
+                    }, response.params]);
                 }
                 host.posts = {}; //Reset the post cache so we get clean data after 
                 if (host.uploads.length > 0 || host.deloads.length > 0) {
@@ -1712,16 +1712,16 @@ Date.getLocalDateFormat = function () {
                     _upload_files(host, function (result, queue) {
                         $(host).trigger('attachDone', [queue]);
                         if (result) {
-                            $(host).trigger('save', [result, host.settings.params]);
+                            $(host).trigger('save', [response.result, response.params]);
                             if (callbacks.done) callbacks.done();
-                        } else $(host).trigger('saverror', [{ error: { str: 'File upload failed' } }, params, queue]);
+                        } else $(host).trigger('saverror', [{ error: { str: 'File upload failed' } }, response.params, queue]);
                     });
                 } else {
                     $(host).trigger('save', [response.result, response.params]);
                     if (callbacks.done) callbacks.done();
                 }
             }).fail(function (error) {
-                $(host).trigger('saverror', [error.responseJSON, params]);
+                $(host).trigger('saverror', [error.responseJSON, response.params]);
             });
         };
         if (validate === true || typeof validate === 'undefined')
