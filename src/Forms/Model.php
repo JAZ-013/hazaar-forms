@@ -1060,8 +1060,11 @@ class Model extends \Hazaar\Model\Strict {
 
     private function __convert_data($data, $valueKey, $labelKey){
 
+        if(!is_array($data))
+            return array();
+
         //Convert multi-dimensional arrays to single dimension
-        if((is_array($data) && is_array($data[array_key_first($data)])) || $data instanceof \stdClass){
+        if(is_array(reset($data)) || $data instanceof \stdClass){
 
             $result = array();
 
