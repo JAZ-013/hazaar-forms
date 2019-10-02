@@ -934,29 +934,12 @@ class Model extends \Hazaar\Model\Strict {
 
             if($options instanceof \stdClass && property_exists($options, 'url')){
 
-                $valueKey = ake($options, 'value', 'value');
-
-                $labelKey = ake($options, 'label', 'label');
-
-                $data = $this->api($this->matchReplace($options->url));
-
-                if((is_assoc($data) && is_array($data)) || $data instanceof \stdClass){
-
-                    $options = array();
-
-                    foreach($data as $k => &$v){
-
-                        if(!is_int($k)) break;
-
-                        $options[ake($v, $valueKey)] = ake($v, $labelKey);
-
-                    }
-
-                }else $options = $data;
+                if($data = $this->api($this->matchReplace($options->url)))
+                    $field->options = $this->__convert_data($data, ake($options, 'value', 'value'), ake($options, 'label', 'label'));
 
             }
 
-            $value = \Hazaar\Model\DataBinderValue::create($value, ake((array)$options, $value, $value));
+            $value = \Hazaar\Model\DataBinderValue::create($value, ake($field->options, $value, $value));
 
             $this->set($field_key, $value);
 
@@ -1012,40 +995,8 @@ class Model extends \Hazaar\Model\Strict {
 
                 if($options instanceof \stdClass && property_exists($options, 'url')){
 
-                    $valueKey = ake($options, 'value', 'value');
-
-                    $labelKey = ake($options, 'label', 'label');
-
-                    $data = $this->api($this->matchReplace($options->url));
-
-                    if(is_array($data) || $data instanceof \stdClass){
-
-                        $options = array();
-
-                        foreach($data as $k => &$v){
-
-                            if(!is_int($k)) break;
-
-                            $options[ake($v, $valueKey)] = ake($v, $labelKey);
-
-                        }
-
-                    }
-
-                    $values = array();
-
-                    foreach($value as $key => &$item){
-
-                        if($item instanceof \Hazaar\Model\DataBinderValue)
-                            continue;
-
-                        $item = \Hazaar\Model\DataBinderValue::create($value, ake((array)$options, $value, $value));
-
-                    }
-
-                    $value = $values;
-
-                    $this->set($field_key, $value);
+                    if($data = $this->api($this->matchReplace($options->url)))
+                        $field->options = $this->__convert_data($data, ake($options, 'value', 'value'), ake($options, 'label', 'label'));
 
                 }
 
@@ -1104,6 +1055,27 @@ class Model extends \Hazaar\Model\Strict {
         }
 
         return $field;
+
+    }
+
+    private function __convert_data($data, $valueKey, $labelKey){
+
+        //Convert multi-dimensional arrays to single dimension
+        if((is_array($data) && is_array($data[array_key_first($data)])) || $data instanceof \stdClass){
+
+            $result = array();
+
+            foreach($data as $k => &$v){
+
+                if(!is_int($k)) break;
+
+                $result[ake($v, $valueKey)] = ake($v, $labelKey);
+
+            }
+
+        }else $result = $data;
+
+        return $result;
 
     }
 
