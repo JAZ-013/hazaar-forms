@@ -191,7 +191,7 @@ class HTML extends \Hazaar\Forms\Output {
 
                 $items[] = $html;
 
-            }elseif(is_object($field) && property_exists($field, 'fields')){
+            }elseif(is_object($field) && !property_exists($field, 'type') && property_exists($field, 'fields')){
 
                 $group = new \Hazaar\Html\Div();
 
@@ -231,7 +231,7 @@ class HTML extends \Hazaar\Forms\Output {
 
         }elseif($type == 'array' || $type == 'file'){
 
-            if(property_exists($field, 'arrayOf') && is_array($field->arrayOf)){
+            if(property_exists($field, 'fields') && $field->fields instanceof \stdClass){
 
                 $table = (new \Hazaar\Html\Table())->class('table');
 
@@ -241,7 +241,7 @@ class HTML extends \Hazaar\Forms\Output {
 
                 $count = 0;
 
-                foreach(ake($field, 'arrayOf', array()) as $key => $def){
+                foreach(ake($field, 'fields', array()) as $key => $def){
 
                     if(ake($def, 'hidden')) continue;
 

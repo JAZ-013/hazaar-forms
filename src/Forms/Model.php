@@ -955,19 +955,19 @@ class Model extends \Hazaar\Model\Strict {
 
         }elseif(ake($field, 'type') == 'array'){
 
-            if(property_exists($field, 'arrayOf') && is_array($field->arrayOf)){
+            if(property_exists($field, 'fields') && $field->fields instanceof \stdClass){
 
                 $items = array();
 
                 foreach($value as $id => $item){
 
-                    $keys = ake($field, 'arrayOf', array());
+                    $keys = ake($field, 'fields', array());
 
                     foreach($keys as $key => $def){
 
-                        $def['name'] = $key;
+                        $def->name = $key;
 
-                        $def['value'] = ake($item, $key);
+                        $def->value = ake($item, $key);
 
                         $items[$id][$key] = $this->__field($def, $form, false);
 
