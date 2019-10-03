@@ -191,7 +191,7 @@ class HTML extends \Hazaar\Forms\Output {
 
                 $items[] = $html;
 
-            }elseif(is_object($field) && !property_exists($field, 'type') && property_exists($field, 'fields')){
+            }elseif(is_object($field) && property_exists($field, 'fields') && ake($field, 'type') !== 'array'){
 
                 $group = new \Hazaar\Html\Div();
 
