@@ -1192,9 +1192,9 @@ Date.getLocalDateFormat = function () {
                 }
             });
             $(item).find('.form-group').each(function (index, input) {
-                var group = $(input), def = group.data('def');
+                var group = $(input), def = group.data('def'), sub_item_data = item_data[def.name];
                 group.data('name', item_name + '.' + def.name)
-                    .data('item', _get_data_item(host.data, item.attr('data-bind')).attrName);
+                    .data('item', sub_item_data.attrName);
                 group.find('label').each(function (index, item) {
                     item.attributes['for'].value = item_name.replace(/\[|\]/g, '_') + def.name;
                 });
