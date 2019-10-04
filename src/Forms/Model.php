@@ -959,7 +959,7 @@ class Model extends \Hazaar\Model\Strict {
 
                 $items = array();
 
-                foreach($value as $id => $item){
+                for($i = 0; $i < $value->count(); $i++){
 
                     $keys = ake($field, 'fields', array());
 
@@ -967,9 +967,9 @@ class Model extends \Hazaar\Model\Strict {
 
                         $def->name = $key;
 
-                        $def->value = ake($item, $key);
+                        $def->value = ake($value[$i], $key);
 
-                        $items[$id][$key] = $this->__field($def, $form, false);
+                        $items[$i][$key] = $this->__field($def, $form, false);
 
                     }
 
