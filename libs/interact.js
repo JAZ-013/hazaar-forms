@@ -231,7 +231,7 @@ Date.getLocalDateFormat = function () {
             var modifiers = match[1].split(''), value = host ? _get_data_item(host.data, match[2]) : null;
             if (value === null) value = match[2].substr(0, 5) === 'this.'
                 ? _get_data_item(host.settings, match[2].substr(5))
-                : _get_data_item(extra, match[2]);
+                : extra ? _get_data_item(extra, match[2]) : null;
             if (modifiers.indexOf('!') === -1
                 && (value instanceof dataBinderValue ? value.value : value) === null
                 && force !== true) return false;
@@ -244,7 +244,7 @@ Date.getLocalDateFormat = function () {
     }
 
     function _get_data_item(data, name, isArray, value) {
-        if (!(typeof name === 'string' && typeof data === 'object')) return null;
+        if (!(typeof name === 'string' && typeof data === 'object' && data)) return null;
         var parts = name.split(/[\.\[]/), item = data;
         for (let x in parts) {
             var key = parts[x];
