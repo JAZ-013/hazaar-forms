@@ -259,7 +259,7 @@ abstract class Form extends Action {
 
                         if(substr($info['type'], 0, 5) == 'image'){
 
-                            $url['thumbnail'] = 'true';
+                            $info['thumbnail'] = 'true';
 
                             $info['preview'] = (string)$url;
 
