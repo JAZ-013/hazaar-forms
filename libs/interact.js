@@ -1591,12 +1591,15 @@ Date.getLocalDateFormat = function () {
                     let result = _validate_rule(host, def.name, item, def);
                     if (item.value && result === true && 'validate' in def && 'url' in def.validate) {
                         var url = _match_replace(host, def.validate.url, { "__input__": item.value }, true);
-                        _post(host, 'api', {
-                            target: [url, { "name": def.name, "value": item.value }]
-                        }, false).done(function (response) {
+                        var request = { target: [url, { "name": def.name, "value": item.value }] };
+                        var indexKey = JSON.stringify(request).hash();
+                        var apiDone = function (response) {
+                            if (!(indexKey in host.apiCache)) host.apiCache[indexKey] = response;
                             var result = response.ok === true ? true : _validation_error(def.name, def, response.reason || "api_failed(" + def.validate.url + ")");
                             if (callbacks.length > 0) for (let x in callbacks) callbacks[x](def.name, result, response);
-                        }).fail(_error);
+                        };
+                        if (indexKey in host.apiCache) apiDone(host.apiCache[indexKey]);
+                        else _post(host, 'api', request, false).done(apiDone).fail(_error);
                     } else if (callbacks.length > 0) for (let x in callbacks) callbacks[x](def.name, result, extra);
                     if (def.name in host.monitor) for (let x in host.monitor[def.name]) host.monitor[def.name][x](result);
                 }
@@ -1948,6 +1951,7 @@ Date.getLocalDateFormat = function () {
         host.uploads = [];
         host.deloads = [];
         host.monitor = {};
+        host.apiCache = {};
         return host;
     }
 
