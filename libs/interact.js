@@ -286,7 +286,6 @@ Date.getLocalDateFormat = function () {
         if ('fields' in def) field.children('div.form-section,div.form-group').each(function (index, item) {
             _eval_required(host, $(item), required);
         });
-        _validate_input(host, field, true);
         return required;
     }
 
@@ -1489,7 +1488,7 @@ Date.getLocalDateFormat = function () {
 
     function _validate_input(host, input, remove_only) {
         if (!input.is('input,select,textarea'))
-            return input.find('input,select,textarea').each(function (index, item) { _validate_input(host, $(item), remove_only); });
+            return input.children('input,select,textarea').each(function (index, item) { _validate_input(host, $(item), remove_only); });
         var name = input.attr('data-bind');
         if (!name) return;
         return _validate_field(host, name).done(function (event, result, response) {
