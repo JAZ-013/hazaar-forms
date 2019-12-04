@@ -1,3 +1,4 @@
+var ud = undefined;
 //Object.assign() Polyfill
 if (typeof Object.assign !== 'function') {
     // Must be writable: true, enumerable: false, configurable: true
@@ -1139,7 +1140,7 @@ Date.getLocalDateFormat = function () {
         if (_eval(host, def.allow_add, true, item_data, def.name)) {
             var btn = $('<button type="button" class="btn btn-success btn-sm">')
                 .html($('<i class="fa fa-plus">'));
-            var fieldDIV = _form_field(host, { fields: layout })
+            var fieldDIV = _form_field(host, { fields: layout }, ud, ud, ud, ud, true)
                 .addClass('itemlist-newitem')
                 .attr('data-field', def.name);
             var sub_host = _get_empty_host(), new_item = new dataBinder(_define(def.fields));
@@ -1282,7 +1283,7 @@ Date.getLocalDateFormat = function () {
         return layout;
     }
 
-    function _form_field(host, info, p, populate, apply_rules, item_data) {
+    function _form_field(host, info, p, populate, apply_rules, item_data, hidden) {
         var def = null, field = null;
         if (info instanceof Array)
             info = { fields: info };
@@ -1293,7 +1294,7 @@ Date.getLocalDateFormat = function () {
         if ('render' in def) {
             field = _eval_code(host, def.render, item_data, def.name);
             if (!field) return;
-            host.pageInputs.push(field);
+            if (hidden !== true) host.pageInputs.push(field);
         } else if ('fields' in def && def.type !== 'array') {
             var layout = _resolve_field_layout(host, def.fields, 'layout' in def ? $.extend(true, [], def.layout) : null, def.name);
             var length = layout.length, fields = [], col_width;
@@ -1313,18 +1314,18 @@ Date.getLocalDateFormat = function () {
             field = $('<div class="form-section">').toggleClass('row', p).data('def', def);
             if ('label' in def) field.append($('<div class="col-md-12">').html($('<h5>').html(def.label)));
             for (let x in fields) {
-                let field_width = col_width, child_field = _form_field(host, fields[x], !p, populate, apply_rules, 'name' in fields[x] ? undefined : item_data);
+                let field_width = col_width, child_field = _form_field(host, fields[x], !p, populate, apply_rules, 'name' in fields[x] ? undefined : item_data, hidden);
                 if (fields[x] instanceof Object && 'weight' in fields[x])
                     field_width = Math.round(field_width * fields[x].weight);
                 field.append(child_field.toggleClass('col-lg-' + field_width, p));
             }
         } else if ('options' in def) {
             field = def.type === 'array' ? _input_select_multi(host, def) : _input_select(host, def, populate);
-            host.pageInputs.push(field);
+            if (hidden !== true) host.pageInputs.push(field);
         } else if ('lookup' in def && def.type !== 'array') {
             if (typeof def.lookup === 'string') def.lookup = { url: def.lookup };
             field = _input_lookup(host, def);
-            host.pageInputs.push(field);
+            if (hidden !== true) host.pageInputs.push(field);
         } else if (def.type) {
             switch (def.type) {
                 case 'button':
@@ -1357,7 +1358,7 @@ Date.getLocalDateFormat = function () {
                     field = _input_std(host, def.type, def);
                     break;
             }
-            host.pageInputs.push(field);
+            if (hidden !== true) host.pageInputs.push(field);
         } else field = $('<div>');
         field.data('def', def).data('item', item_data ? item_data.attrName : null);
         if ('tip' in def) {
