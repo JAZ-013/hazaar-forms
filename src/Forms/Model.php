@@ -834,12 +834,17 @@ class Model extends \Hazaar\Model\Strict {
 
         }elseif($fields instanceof \stdClass && property_exists($fields, 'fields')){
 
-            if(property_exists($fields, 'show') && $this->evaluate($fields->show, true, $parent_key) !== true)
+            $value_key = property_exists($fields, 'name') ? $fields->name : $parent_key;
+
+            if(property_exists($fields, 'show') && $this->evaluate($fields->show, true, $value_key) !== true)
                 return null;
 
             $items = array();
 
-            foreach($fields->fields as $field_item){
+            foreach($fields->fields as $field_name => $field_item){
+
+                if($field_item instanceof \stdClass && !property_exists($field_item, 'name'))
+                    $field_item->name = $fields->name . '.' . $field_name;
 
                 if($item = $this->__group($field_item, $form, $parent_key))
                     $items[] = $item;
@@ -867,12 +872,28 @@ class Model extends \Hazaar\Model\Strict {
                 if (!property_exists($fields->$field, 'name'))
                     $fields->$field->name = $name . '.' . $field;
 
-                $field = $fields->$field;
+                $field = ake($fields, $field);
 
             }elseif($field instanceof \stdClass){
 
-                if (!property_exists($field, 'name'))
+                if (property_exists($field, 'type') && !property_exists($field, 'name'))
                     $field->name = $name . (is_int($object_key) ? '' : '.' . $object_key);
+
+            }
+
+            if($field instanceof \stdClass && property_exists($field, 'type')){
+
+                if($field->type === 'button')
+                    return null;
+                elseif(property_exists($this->__form, 'types') && property_exists($this->__form->types, $field->type)){
+
+                    $field = $this->smart_merge_recursive_override(ake($this->__form->types, $field->type), $field);
+
+                    $field->fields = (array)$this->__resolve_field_layout($field->name, (property_exists($field, 'layout') ? $field->layout : $field->fields), $field->fields);
+
+                    if(property_exists($field, 'layout')) unset($field->layout);
+
+                }
 
             }
 
@@ -897,8 +918,8 @@ class Model extends \Hazaar\Model\Strict {
 
         }elseif(is_object($field) || is_array($field)){
 
-            if(ake($field, 'name') !== null)
-                $field = $this->smart_merge_recursive_override(ake($form->fields, ake($field, 'name')), $field);
+            if($name = ake($field, 'name'))
+                $field = $this->smart_merge_recursive_override(ake($form->fields, $name), $field);
 
         }else{
 
@@ -915,7 +936,7 @@ class Model extends \Hazaar\Model\Strict {
 
         }
 
-        $value = ($field_key = ake($field, 'name')) ? ake($field, 'value', $this->get($field_key)) : $item_value;
+        $value = ($field_key = ake($field, 'name', $parent_key)) ? ake($field, 'value', $this->get($field_key)) : $item_value;
 
         $output = ake($field, 'output', array('empty' => true));
 
