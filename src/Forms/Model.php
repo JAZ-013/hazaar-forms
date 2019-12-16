@@ -897,10 +897,8 @@ class Model extends \Hazaar\Model\Strict {
 
         }elseif(is_object($field) || is_array($field)){
 
-            if(ake($field, 'name') === null)
-                return $field;
-
-            $field = $this->smart_merge_recursive_override(ake($form->fields, ake($field, 'name')), $field);
+            if(ake($field, 'name') !== null)
+                $field = $this->smart_merge_recursive_override(ake($form->fields, ake($field, 'name')), $field);
 
         }else{
 
