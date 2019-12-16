@@ -227,16 +227,16 @@ class Script {
 
         }
 
-        $code = $this->params_js . trim($code);
+        $eval = $this->params_js . trim($code);
 
-        if(substr($code, -1) !== ';')
-            $code .= ';';
+        if(substr($eval, -1) !== ';')
+            $eval .= ';';
 
         $options = array(
             'http' => array(
                 'header'  => "Content-type: application/javascript\r\n",
                 'method'  => 'POST',
-                'content' => $code,
+                'content' => $eval,
                 'ignore_errors' => true
             )
         );
@@ -257,7 +257,7 @@ class Script {
         }
 
         if(substr($result, 0, 6) === 'ERROR:')
-            throw new \Exception(substr($result, 7));
+            throw new \Exception(substr($result, 7) . ': ' . $code);
 
         return $result;
 
