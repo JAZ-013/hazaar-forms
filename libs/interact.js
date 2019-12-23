@@ -1223,9 +1223,11 @@ Date.getLocalDateFormat = function () {
                 group.find('label').each(function (index, item) {
                     item.attributes['for'].value = item_name.replace(/\[|\]/g, '_') + def.name;
                 });
+                if ('disabled' in def) _eval_disabled(host, group);
                 if ('required' in def) _make_required(host, def, group);
                 if ('show' in def) _make_showable(host, def, group);
             });
+            _eval_disabled(host, $(item).parent().parent());
         });
         group.append($('<div class="itemlist-items" data-bind-template="o">')
             .attr('data-bind', def.name)
@@ -1236,9 +1238,8 @@ Date.getLocalDateFormat = function () {
                 item_data.unset(index);
             });
         _make_disabled(host, def, group, function (result, group) {
-            console.log('List disabled: ' + result);
-            group.find('button').prop('disabled', result);
-            return false;
+            if (result !== true) result = false;
+            group.find('input,textarea,select,button').prop('disabled', result);
         });
         return group;
     }
