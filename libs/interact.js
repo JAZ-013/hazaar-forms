@@ -290,6 +290,24 @@ Date.getLocalDateFormat = function () {
         return required;
     }
 
+    function _make_disabled(host, def, input, func) {
+        if (!('disabled' in def) || def.protected) return;
+        if (typeof func !== 'function') func = function (result, input) {
+            input.prop('disabled', result);
+        }
+        if (typeof def.disabled === 'string') host.events.disabled.push(input.data('disabled_func', func));
+        _eval_disabled(host, input, func);
+    }
+
+    function _eval_disabled(host, input, func) {
+        let def = input.data('def');
+        if (!def) return false;
+        let item_data = _get_data_item(host.data, input.attr('data-bind'))
+        let disabled = _eval(host, def.disabled, false, item_data, def.name);
+        if (typeof func !== 'function') func = input.data('disabled_func');
+        return func(disabled, input);
+    }
+
     function _make_showable(host, def, field) {
         field.data('show', def.show);
         if (typeof def.show !== 'boolean') host.events.show.push(field);
@@ -394,11 +412,7 @@ Date.getLocalDateFormat = function () {
         if (host.events.required && host.events.required.length > 0)
             for (let x in host.events.required) _eval_required(host, host.events.required[x], false);
         if (host.events.disabled && host.events.disabled.length > 0) {
-            for (let x in host.events.disabled) {
-                var i = host.events.disabled[x];
-                var disabled = _eval(host, i.data('disabled'), false, item_data, def.name);
-                i.prop('disabled', disabled);
-            }
+            for (let x in host.events.disabled) _eval_disabled(host, host.events.disabled[x]);
         }
         if (item_data) item_data.enabled(true);
         if ('save' in def && _eval(host, def.save, false, item_data, def.name)) _save(host, false).done(cb_done);
@@ -736,7 +750,7 @@ Date.getLocalDateFormat = function () {
         if (!("placeholder" in def)) def.placeholder = host.settings.placeholder;
         if ('css' in def) select.css(def.css);
         if ('cssClass' in def) select.addClass(def.cssClass);
-        _check_input_disabled(host, select, def);
+        _make_disabled(host, def, select);
         if (populate !== false) _input_select_options(host, def, select, null, function (select, options) {
             _input_select_populate(host, options, select);
         });
@@ -766,7 +780,7 @@ Date.getLocalDateFormat = function () {
             .appendTo(div);
         if ('css' in def) input.css(def.css);
         if ('cssClass' in def) input.addClass(def.cssClass);
-        _check_input_disabled(host, input, def);
+        _make_disabled(host, def, input);
         return group;
     }
 
@@ -818,7 +832,7 @@ Date.getLocalDateFormat = function () {
             if (!def.placeholder) def.placeholder = def.format;
         }
         if (def.placeholder) input.attr('placeholder', def.placeholder);
-        _check_input_disabled(host, input, def);
+        _make_disabled(host, def, input);
         if ('css' in def) input.css(def.css);
         if ('cssClass' in def) input.addClass(def.cssClass);
         return group.append(input_group);
@@ -919,7 +933,7 @@ Date.getLocalDateFormat = function () {
             .on('update', function (event, key, value, item_data) { _input_event_update(host, $(event.target), false, item_data); });
         if ('css' in def) input.css(def.css);
         if ('cssClass' in def) input.addClass(def.cssClass);
-        _check_input_disabled(host, input, def);
+        _make_disabled(host, def, input);
         if (def.lookup && 'url' in def.lookup) {
             input.on('keyup', function (event) {
                 if (event.keyCode === 32) return;
@@ -1098,7 +1112,7 @@ Date.getLocalDateFormat = function () {
         if ('placeholder' in def) input.attr('placeholder', def.placeholder);
         if ('css' in def) input.css(def.css);
         if ('cssClass' in def) input.addClass(def.cssClass);
-        _check_input_disabled(host, input, def);
+        _make_disabled(host, def, input);
         if ('prefix' in def || 'suffix' in def) {
             var inputDIV = $('<div>').addClass(host.settings.styleClasses.inputGroup)
                 .appendTo(group);
@@ -1209,25 +1223,25 @@ Date.getLocalDateFormat = function () {
                 group.find('label').each(function (index, item) {
                     item.attributes['for'].value = item_name.replace(/\[|\]/g, '_') + def.name;
                 });
+                if ('disabled' in def) _eval_disabled(host, group);
                 if ('required' in def) _make_required(host, def, group);
                 if ('show' in def) _make_showable(host, def, group);
             });
+            _eval_disabled(host, $(item).parent().parent());
         });
         group.append($('<div class="itemlist-items" data-bind-template="o">')
             .attr('data-bind', def.name)
             .data('template', template))
+            .data('def', def)
             .on('click', '.btn-danger', function (event) {
                 var index = Array.from(this.parentNode.parentNode.parentNode.children).indexOf(this.parentNode.parentNode);
                 item_data.unset(index);
             });
+        _make_disabled(host, def, group, function (result, group) {
+            if (result !== true) result = false;
+            group.find('input,textarea,select,button').prop('disabled', result);
+        });
         return group;
-    }
-
-    function _check_input_disabled(host, input, def) {
-        if (!('disabled' in def) || def.protected) return false;
-        var item_data = _get_data_item(host.data, $(input).attr('data-bind'));
-        input.prop('disabled', _eval(host, def.disabled, false, item_data, def.name));
-        if (typeof def.disabled === 'string') host.events.disabled.push(input.data('disabled', def.disabled));
     }
 
     function _form_field_lookup(def, info, raw_mode) {
