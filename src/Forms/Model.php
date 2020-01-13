@@ -843,7 +843,9 @@ class Model extends \Hazaar\Model\Strict {
 
             foreach($fields->fields as $field_name => $field_item){
 
-                if($field_item instanceof \stdClass && !property_exists($field_item, 'name'))
+                if($field_item instanceof \stdClass
+                    && property_exists($fields, 'name')
+                    && !property_exists($field_item, 'name'))
                     $field_item->name = $fields->name . '.' . $field_name;
 
                 if($item = $this->__group($field_item, $form, null, $parent_key))
