@@ -292,10 +292,8 @@ Date.getLocalDateFormat = function () {
 
     function _make_disabled(host, def, input, func) {
         if (!('disabled' in def) || def.protected) return;
-        if (typeof func !== 'function') func = function (result, input) {
-            input.prop('disabled', result);
-        }
-        host.events.disabled.push(input.data('disabled_func', func));
+        if (typeof func === 'function') input.data('disabled_func', func);
+        if (typeof def.disabled === 'string') host.events.disabled.push(input);
         _eval_disabled(host, input, func);
     }
 
@@ -305,6 +303,7 @@ Date.getLocalDateFormat = function () {
         let item_data = _get_data_item(host.data, input.attr('data-bind'))
         let disabled = _eval(host, def.disabled, false, item_data, def.name);
         if (typeof func !== 'function') func = input.data('disabled_func');
+        if (typeof func !== 'function') func = function (result, input) { input.prop('disabled', result); }
         return func(disabled, input);
     }
 
