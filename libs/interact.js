@@ -295,7 +295,7 @@ Date.getLocalDateFormat = function () {
         if (typeof func !== 'function') func = function (result, input) {
             input.prop('disabled', result);
         }
-        if (typeof def.disabled === 'string') host.events.disabled.push(input.data('disabled_func', func));
+        host.events.disabled.push(input.data('disabled_func', func));
         _eval_disabled(host, input, func);
     }
 
