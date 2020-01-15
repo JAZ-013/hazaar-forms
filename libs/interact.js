@@ -229,14 +229,6 @@ Date.getLocalDateFormat = function () {
         }
     }
 
-    function _toggle_show(host, obj) {
-        host.working = true;
-        var def = obj.data('def'), toggle = _eval(host, obj.data('show'), true, _get_data_item(host.data, obj.data('item')), def ? def.name : null);
-        obj.toggle(toggle);
-        if (!toggle) _nullify(host, def);
-        host.working = false;
-    }
-
     function _match_replace(host, str, extra, force, use_html) {
         if (!str) return null;
         while ((match = str.match(/\{\{([\W]*)([\w\.]+)\}\}/)) !== null) {
@@ -256,7 +248,8 @@ Date.getLocalDateFormat = function () {
     }
 
     function _get_data_item(data, name, isArray, value) {
-        if (!(typeof name === 'string' && typeof data === 'object' && data)) return null;
+        if (name instanceof dataBinder || name instanceof dataBinderArray || name instanceof dataBinderValue) return name;
+        else if (!(typeof name === 'string' && typeof data === 'object' && data)) return null;
         var parts = name.split(/[\.\[]/), item = data;
         for (let x in parts) {
             var key = parts[x];
@@ -271,46 +264,64 @@ Date.getLocalDateFormat = function () {
         return item;
     }
 
-    function _make_required(host, def, field) {
-        field.data('required', def.required);
-        if (typeof def.required !== 'boolean') host.events.required.push(field);
-        return _eval_required(host, field, false);
+    function _make_required(host, def, input) {
+        if (!('required' in def)) return;
+        if (typeof def.required !== 'boolean') host.events.required.push(input);
+        return _eval_required(host, input, false);
     }
 
-    function _eval_required(host, field, default_required) {
-        var def = field.data('def');
-        var label = field.children('label.control-label'), i = label.children('i.form-required');
-        var item_data = 'name' in def ? _get_data_item(host.data, def.name) : null;
-        var required = _eval(host, def.required, typeof default_required === 'undefined' ? false : default_required, item_data, def.name);
+    function _eval_required(host, input, default_required) {
+        let def = input.data('def');
+        if (!def) return false;
+        let label = input.children('label.control-label'), i = label.children('i.form-required');
+        let item_data = _get_data_item(host.data, input.data('item'));
+        if (!item_data) return false;
+        let required = _eval(host, def.required, typeof default_required === 'undefined' ? false : default_required, item_data, def.name);
         if (required !== true) i.remove();
         else if (i.length === 0) label.append($('<i class="fa fa-exclamation-circle form-required" title="Required">'));
-        if ('fields' in def) field.children('div.form-section,div.form-group').each(function (index, item) {
+        if ('fields' in def) input.children('div.form-section,div.form-group').each(function (index, item) {
             _eval_required(host, $(item), required);
         });
         return required;
     }
 
     function _make_disabled(host, def, input, func) {
-        if (!('disabled' in def) || def.protected) return;
+        if (!('disabled' in def) || def.protected === true) return;
         if (typeof func === 'function') input.data('disabled_func', func);
         if (typeof def.disabled === 'string') host.events.disabled.push(input);
-        _eval_disabled(host, input, func);
+        return _eval_disabled(host, input, func);
     }
 
     function _eval_disabled(host, input, func) {
         let def = input.data('def');
         if (!def) return false;
-        let item_data = _get_data_item(host.data, input.attr('data-bind'))
+        let item_data = _get_data_item(host.data, input.data('item'));
+        if (!item_data) return false;
         let disabled = _eval(host, def.disabled, false, item_data, def.name);
         if (typeof func !== 'function') func = input.data('disabled_func');
-        if (typeof func !== 'function') func = function (result, input) { input.prop('disabled', result); }
+        if (typeof func !== 'function') func = function (result, field) {
+            if (result !== true) result = false;
+            field.find('input,textarea,select,button').prop('disabled', result);
+        };
         return func(disabled, input);
     }
 
-    function _make_showable(host, def, field) {
-        field.data('show', def.show);
-        if (typeof def.show !== 'boolean') host.events.show.push(field);
-        _toggle_show(host, field);
+    function _make_showable(host, def, input) {
+        input.data('show', def.show);
+        if (typeof def.show !== 'boolean') host.events.show.push(input);
+        _toggle_show(host, input);
+    }
+
+    function _toggle_show(host, input) {
+        host.working = true;
+        let def = input.data('def');
+        if (!def) return false;
+        let item_data = _get_data_item(host.data, input.data('item'));
+        if (!item_data) return false;
+        let toggle = _eval(host, input.data('show'), true, item_data, def ? def.name : null);
+        input.toggle(toggle);
+        if (!toggle) _nullify(host, def);
+        host.working = false;
     }
 
     //Input events
@@ -749,7 +760,6 @@ Date.getLocalDateFormat = function () {
         if (!("placeholder" in def)) def.placeholder = host.settings.placeholder;
         if ('css' in def) select.css(def.css);
         if ('cssClass' in def) select.addClass(def.cssClass);
-        _make_disabled(host, def, select);
         if (populate !== false) _input_select_options(host, def, select, null, function (select, options) {
             _input_select_populate(host, options, select);
         });
@@ -779,7 +789,6 @@ Date.getLocalDateFormat = function () {
             .appendTo(div);
         if ('css' in def) input.css(def.css);
         if ('cssClass' in def) input.addClass(def.cssClass);
-        _make_disabled(host, def, input);
         return group;
     }
 
@@ -831,7 +840,6 @@ Date.getLocalDateFormat = function () {
             if (!def.placeholder) def.placeholder = def.format;
         }
         if (def.placeholder) input.attr('placeholder', def.placeholder);
-        _make_disabled(host, def, input);
         if ('css' in def) input.css(def.css);
         if ('cssClass' in def) input.addClass(def.cssClass);
         return group.append(input_group);
@@ -932,7 +940,6 @@ Date.getLocalDateFormat = function () {
             .on('update', function (event, key, value, item_data) { _input_event_update(host, $(event.target), false, item_data); });
         if ('css' in def) input.css(def.css);
         if ('cssClass' in def) input.addClass(def.cssClass);
-        _make_disabled(host, def, input);
         if (def.lookup && 'url' in def.lookup) {
             input.on('keyup', function (event) {
                 if (event.keyCode === 32) return;
@@ -1111,7 +1118,6 @@ Date.getLocalDateFormat = function () {
         if ('placeholder' in def) input.attr('placeholder', def.placeholder);
         if ('css' in def) input.css(def.css);
         if ('cssClass' in def) input.addClass(def.cssClass);
-        _make_disabled(host, def, input);
         if ('prefix' in def || 'suffix' in def) {
             var inputDIV = $('<div>').addClass(host.settings.styleClasses.inputGroup)
                 .appendTo(group);
@@ -1151,9 +1157,10 @@ Date.getLocalDateFormat = function () {
                 .html($('<button type="button" class="btn btn-danger btn-sm">').html($('<i class="fa fa-minus">'))));
         }
         if (_eval(host, def.allow_add, true, item_data, def.name)) {
-            var btn = $('<button type="button" class="btn btn-success btn-sm">')
+            var data = {}, btn = $('<button type="button" class="btn btn-success btn-sm">')
                 .html($('<i class="fa fa-plus">'));
-            var fieldDIV = _form_field(host, { fields: layout }, ud, ud, ud, ud, true)
+            var item = new dataBinder(function (fields) { let data = []; for (x in fields) data[x] = null; return data; }(def.fields));
+            var fieldDIV = _form_field(host, { fields: layout }, ud, ud, ud, item, true, true)
                 .addClass('itemlist-newitem')
                 .attr('data-field', def.name);
             var sub_host = _get_empty_host(), new_item = new dataBinder(_define(def.fields));
@@ -1222,11 +1229,11 @@ Date.getLocalDateFormat = function () {
                 group.find('label').each(function (index, item) {
                     item.attributes['for'].value = item_name.replace(/\[|\]/g, '_') + def.name;
                 });
-                if ('disabled' in def) _eval_disabled(host, group);
+                if ('disabled' in def) _make_disabled(host, def, group);
                 if ('required' in def) _make_required(host, def, group);
                 if ('show' in def) _make_showable(host, def, group);
             });
-            _eval_disabled(host, $(item).parent().parent());
+            if ('disabled' in def) _make_disabled(host, def, $(item).parent().parent());
         });
         group.append($('<div class="itemlist-items" data-bind-template="o">')
             .attr('data-bind', def.name)
@@ -1236,10 +1243,6 @@ Date.getLocalDateFormat = function () {
                 var index = Array.from(this.parentNode.parentNode.parentNode.children).indexOf(this.parentNode.parentNode);
                 item_data.unset(index);
             });
-        _make_disabled(host, def, group, function (result, group) {
-            if (result !== true) result = false;
-            group.find('input,textarea,select,button').prop('disabled', result);
-        });
         return group;
     }
 
@@ -1296,7 +1299,7 @@ Date.getLocalDateFormat = function () {
         return layout;
     }
 
-    function _form_field(host, info, p, populate, apply_rules, item_data, hidden) {
+    function _form_field(host, info, p, populate, apply_rules, item_data, hidden, store_object) {
         var def = null, field = null;
         if (info instanceof Array)
             info = { fields: info };
@@ -1327,7 +1330,8 @@ Date.getLocalDateFormat = function () {
             field = $('<div class="form-section">').toggleClass('row', p).data('def', def);
             if ('label' in def) field.append($('<div class="col-md-12">').html($('<h5>').html(def.label)));
             for (let x in fields) {
-                let field_width = col_width, child_field = _form_field(host, fields[x], !p, populate, apply_rules, 'name' in fields[x] ? undefined : item_data, hidden);
+                let item = 'name' in fields[x] ? (item_data instanceof dataBinder ? item_data[fields[x].name] : undefined) : item_data;
+                let field_width = col_width, child_field = _form_field(host, fields[x], !p, populate, apply_rules, item, hidden, store_object);
                 if (fields[x] instanceof Object && 'weight' in fields[x])
                     field_width = Math.round(field_width * fields[x].weight);
                 field.append(child_field.toggleClass('col-lg-' + field_width, p));
@@ -1373,7 +1377,7 @@ Date.getLocalDateFormat = function () {
             }
             if (hidden !== true) host.pageInputs.push(field);
         } else field = $('<div>');
-        field.data('def', def).data('item', item_data ? item_data.attrName : null);
+        field.data('def', def).data('item', item_data ? (store_object === true ? item_data : item_data.attrName) : null);
         if ('tip' in def) {
             field.children('label.control-label').append($('<i class="fa fa-question-circle form-tip">')
                 .attr('data-title', def.tip)
@@ -1384,6 +1388,7 @@ Date.getLocalDateFormat = function () {
                 });
         }
         if ('required' in def && apply_rules !== false) _make_required(host, def, field);
+        if ('disabled' in def && apply_rules !== false) _make_disabled(host, def, field);
         if ('invalid' in def) field.append($('<div class="invalid-feedback">').html(def.invalid));
         if ('width' in def) field.width(def.width);
         if ('html' in def) {
