@@ -1,4 +1,5 @@
 var ud = undefined;
+
 //Object.assign() Polyfill
 if (typeof Object.assign !== 'function') {
     // Must be writable: true, enumerable: false, configurable: true
@@ -8,9 +9,9 @@ if (typeof Object.assign !== 'function') {
             if (target === null) { // TypeError if undefined or null
                 throw new TypeError('Cannot convert undefined or null to object');
             }
-            var to = Object(target);
+            let to = Object(target);
             for (let index = 1; index < arguments.length; index++) {
-                var nextSource = arguments[index];
+                let nextSource = arguments[index];
 
                 if (nextSource !== null) { // Skip over if undefined or null
                     for (let nextKey in nextSource) {
@@ -30,13 +31,13 @@ if (typeof Object.assign !== 'function') {
 
 Array.fromObject = function (object) {
     if (typeof object !== 'object') return null;
-    var array = [];
+    let array = [];
     for (let x in object) array.push(object[x]);
     return array;
 };
 
 String.prototype.hash = function () {
-    var hash = 0, i, chr;
+    let hash = 0, i, chr;
     if (this.length === 0) return hash;
     for (i = 0; i < this.length; i++) {
         chr = this.charCodeAt(i);
@@ -110,7 +111,7 @@ Date.getLocalDateFormat = function () {
 
     function _convert_data_type(def, value) {
         if (!('type' in def)) return value;
-        var type = def.type.toLowerCase();
+        let type = def.type.toLowerCase();
         if (type === 'array' && 'arrayOf' in def) type = def.arrayOf.toLowerCase();
         if (typeof value === 'string' && value === '') return null;
         if (type === 'int' || type === 'integer')
@@ -139,7 +140,7 @@ Date.getLocalDateFormat = function () {
                 return a[field] < b[field] ? -1 : a[field] > b[field] ? 1 : 0;
             });
         } else if (Array.isArray(field)) {
-            var newdata = [];
+            let newdata = [];
             for (let x in field) {
                 let newIndex = data.findIndex(function (element, index, array) {
                     return element[labelKey] === field[x];
@@ -181,16 +182,16 @@ Date.getLocalDateFormat = function () {
             for (let i in keys) {
                 let key = keys[i];
                 if (key === 'form') continue;
-                var value = values[key];
+                let value = values[key];
                 if (typeof value === 'string') value = '"' + value.replace(/"/g, '\\"').replace("\n", "\\n") + '"';
                 else if (typeof value === 'object' || Array.isArray(value)) value = JSON.stringify(value);
-                code += 'var ' + key + " = " + value + ";\n";
+                code += 'let ' + key + " = " + value + ";\n";
             }
             if (host.eval_cache === true) host.eval_cache = code;
         }
         if (item_data) {
-            code += 'var value = ' + JSON.stringify(item_data.save(true)) + ";\n";
-            code += 'var item = ' + JSON.stringify(item_data.parent.save(true)) + ";\n";
+            code += 'let value = ' + JSON.stringify(item_data.save(true)) + ";\n";
+            code += 'let item = ' + JSON.stringify(item_data.parent.save(true)) + ";\n";
         }
         if (inc_return === true) code += "return ( " + evaluate.replace(/[\;\s]+$/, '') + " );";
         else code += evaluate;
@@ -218,7 +219,7 @@ Date.getLocalDateFormat = function () {
             else if (item_data instanceof dataBinder) item_data.empty();
         } else if ('fields' in def) {
             for (let x in def.fields) {
-                var sdef = def.fields[x];
+                let sdef = def.fields[x];
                 if (sdef instanceof Array) {
                     _nullify(host, { fields: sdef });
                 } else if (typeof sdef === 'string') {
@@ -232,7 +233,7 @@ Date.getLocalDateFormat = function () {
     function _match_replace(host, str, extra, force, use_html) {
         if (!str) return null;
         while ((match = str.match(/\{\{([\W]*)([\w\.]+)\}\}/)) !== null) {
-            var modifiers = match[1].split(''), value = host ? _get_data_item(host.data, match[2]) : null;
+            let modifiers = match[1].split(''), value = host ? _get_data_item(host.data, match[2]) : null;
             if (value === null) value = match[2].substr(0, 5) === 'this.'
                 ? _get_data_item(host.settings, match[2].substr(5))
                 : extra ? _get_data_item(extra, match[2]) : null;
@@ -240,8 +241,8 @@ Date.getLocalDateFormat = function () {
                 && (value instanceof dataBinderValue ? value.value : value) === null
                 && force !== true) return false;
             if (modifiers.indexOf('>') !== -1) use_html = false;
-            var text = value instanceof dataBinderValue ? use_html === true && modifiers.indexOf(':') === -1 ? value : value.value : value;
-            var out = use_html ? '<span data-bind="' + match[2] + '" data-bind-label="' + (modifiers.indexOf(':') === -1 ? 'true' : 'false') + '">' + text + '</span>' : text || '';
+            let text = value instanceof dataBinderValue ? use_html === true && modifiers.indexOf(':') === -1 ? value : value.value : value;
+            let out = use_html ? '<span data-bind="' + match[2] + '" data-bind-label="' + (modifiers.indexOf(':') === -1 ? 'true' : 'false') + '">' + text + '</span>' : text || '';
             str = str.replace(match[0], out);
         }
         return str;
@@ -250,9 +251,9 @@ Date.getLocalDateFormat = function () {
     function _get_data_item(data, name, isArray, value) {
         if (name instanceof dataBinder || name instanceof dataBinderArray || name instanceof dataBinderValue) return name;
         else if (!(typeof name === 'string' && typeof data === 'object' && data)) return null;
-        var parts = name.split(/[\.\[]/), item = data;
+        let parts = name.split(/[\.\[]/), item = data;
         for (let x in parts) {
-            var key = parts[x];
+            let key = parts[x];
             if (parts[x].slice(-1) === ']') key = parseInt(key.slice(0, -1));
             if (!(key in item)) {
                 if (typeof value === 'undefined') return null;
@@ -326,8 +327,8 @@ Date.getLocalDateFormat = function () {
 
     //Input events
     function _input_event_change(host, input) {
-        var def = input.data('def'), name = input.attr('data-bind');
-        var item_data = _get_data_item(host.data, name);
+        let def = input.data('def'), name = input.attr('data-bind');
+        let item_data = _get_data_item(host.data, name);
         if (!item_data) return false;
         if (input.is('[type=checkbox]')) {
             let value = input.is(':checked');
@@ -336,8 +337,8 @@ Date.getLocalDateFormat = function () {
             let value = input.val();
             if (value === '__hz_other') {
                 item_data.set(null, null, item_data.other);
-                var group = $('<div>').addClass(host.settings.styleClasses.inputGroup);
-                var oInput = $('<input type="text" placeholder="Enter other option...">')
+                let group = $('<div>').addClass(host.settings.styleClasses.inputGroup);
+                let oInput = $('<input type="text" placeholder="Enter other option...">')
                     .addClass(host.settings.styleClasses.input)
                     .data('def', def)
                     .val(item_data.other)
@@ -348,7 +349,7 @@ Date.getLocalDateFormat = function () {
                         input.show();
                         group.remove();
                     }).appendTo(group);
-                var button = $('<button class="btn btn-secondary" type="button">')
+                let button = $('<button class="btn btn-secondary" type="button">')
                     .html($('<i class="fa fa-times">'))
                     .click(function (e) {
                         group.remove();
@@ -361,7 +362,7 @@ Date.getLocalDateFormat = function () {
                 oInput.focus();
             } else item_data.set(_convert_data_type(def, value));
         } else if (def.type === 'date' && 'format' in def) {
-            var date = input.datepicker('getDate');
+            let date = input.datepicker('getDate');
             item_data.set(date.getFullYear() + '-' + (date.getMonth() + 1) + '-' + date.getDate(), input.datepicker('getFormattedDate'));
         } else if (def.other === true) item_data.other = input.val();
         else item_data.value = _convert_data_type(def, input.val());
@@ -371,9 +372,9 @@ Date.getLocalDateFormat = function () {
     }
 
     function _input_event_update(host, input, skip_validate, item_data) {
-        var def = _form_field_lookup(host.def, typeof input === 'string' ? input : input.attr('data-bind'));
+        let def = _form_field_lookup(host.def, typeof input === 'string' ? input : input.attr('data-bind'));
         if (!def) return;
-        var update = def.update, cb_done = null;
+        let update = def.update, cb_done = null;
         if (!item_data) item_data = _get_data_item(host.data, def.name);
         host.eval_cache = true;
         if (typeof update === 'string') update = { "url": update };
@@ -383,12 +384,12 @@ Date.getLocalDateFormat = function () {
                 item_data.enabled(false);
                 item_data.set(item_data.value, input.children('option:selected').text(), other);
             } else if (typeof update === 'boolean' || update && ('url' in update || host.settings.update === true)) {
-                var options = {
+                let options = {
                     originator: def.name,
                     form: host.data.save()
                 };
-                var check_api = function (host, update) {
-                    var url = null;
+                let check_api = function (host, update) {
+                    let url = null;
                     if (typeof update === 'boolean')
                         return update;
                     if (typeof update !== 'object') return false;
@@ -430,18 +431,18 @@ Date.getLocalDateFormat = function () {
     }
 
     function _input_event_focus(host, input) {
-        var def = input.data('def'), item_data = _get_data_item(host.data, input.attr('data-bind'));
+        let def = input.data('def'), item_data = _get_data_item(host.data, input.attr('data-bind'));
         if (def.focus) _eval_code(host, def.focus, item_data, def.name);
     }
 
     function _input_event_blur(host, input) {
-        var def = input.data('def'), item_data = _get_data_item(host.data, input.attr('data-bind'));
+        let def = input.data('def'), item_data = _get_data_item(host.data, input.attr('data-bind'));
         if (def.blur) _eval_code(host, def.blur, item_data, def.name);
     }
 
     function _input_button(host, def) {
-        var group = $('<div class="no-label">').addClass(host.settings.styleClasses.group);
-        var btn = $('<button type="button">').addClass(host.settings.styleClasses.button)
+        let group = $('<div class="no-label">').addClass(host.settings.styleClasses.group);
+        let btn = $('<button type="button">').addClass(host.settings.styleClasses.button)
             .addClass(def.class || 'btn-default')
             .data('def', def)
             .appendTo(group);
@@ -455,7 +456,7 @@ Date.getLocalDateFormat = function () {
                 btn.click(function () { document.location = _url(host, def.url); });
                 break;
             default:
-                var action = def.action ? def.action : def.change ? def.change : def.click;
+                let action = def.action ? def.action : def.change ? def.change : def.click;
                 btn.click(function () { _eval_code(host, action, null, def.name); });
                 break;
         }
@@ -463,37 +464,37 @@ Date.getLocalDateFormat = function () {
     }
 
     function _input_select_multi_items(host, data, container) {
-        var def = container.data('def'), item_data = _get_data_item(host.data, def.name);
+        let def = container.data('def'), item_data = _get_data_item(host.data, def.name);
         if (data === null || Array.isArray(data) && data.length === 0) {
             item_data.empty();
             item_data.enabled(false);
             _input_event_update(host, def.name, true);
             return container.parent().hide();
         }
-        var values = item_data.save(true);
+        let values = item_data.save(true);
         if (values) {
-            var remove = values.filter(function (i) { return !(i in data); });
+            let remove = values.filter(function (i) { return !(i in data); });
             for (let x in remove) item_data.remove(remove[x]);
         }
-        var fChange = function () {
-            var def = $(this.childNodes[0]).data('def'), value = _convert_data_type(def, this.childNodes[0].value);
-            var item_data = _get_data_item(host.data, def.name);
-            var index = item_data.indexOf(value);
+        let fChange = function () {
+            let def = $(this.childNodes[0]).data('def'), value = _convert_data_type(def, this.childNodes[0].value);
+            let item_data = _get_data_item(host.data, def.name);
+            let index = item_data.indexOf(value);
             if (this.childNodes[0].checked && index === -1)
                 item_data.push({ '__hz_value': value, '__hz_label': this.childNodes[1].textContent });
             else
                 item_data.unset(index);
         };
-        var value = _get_data_item(host.data, def.name, true), items = [];
-        var valueKey = def.options.value || 'value', labelKey = def.options.label || 'label';
-        var disabled = def.protected === true || _eval(host, def.disabled, false, item_data, def.name);
+        let value = _get_data_item(host.data, def.name, true), items = [];
+        let valueKey = def.options.value || 'value', labelKey = def.options.label || 'label';
+        let disabled = def.protected === true || _eval(host, def.disabled, false, item_data, def.name);
         data = _convert_data(data, valueKey, labelKey, def);
         if ('sort' in def.options) {
             if (typeof def.options.sort === 'boolean') def.options.sort = labelKey;
             data = _sort_data(data, def.options.sort, labelKey);
         }
         if (def.buttons === true) {
-            var btnClass = def.class || 'primary';
+            let btnClass = def.class || 'primary';
             for (let x in data) {
                 let x_value = _convert_data_type(def, data[x][valueKey]), label = data[x][labelKey];
                 let active = item_data.indexOf(x_value) > -1, name = def.name + '_' + x_value;
@@ -512,8 +513,8 @@ Date.getLocalDateFormat = function () {
         }
         if (!('columns' in def)) def.columns = 1;
         if (def.columns > 6) def.columns = 6;
-        var col_width = Math.floor(12 / def.columns), per_col = Math.ceil(Object.keys(data).length / def.columns);
-        var cols = $('<div class="row">'), column = 0;
+        let col_width = Math.floor(12 / def.columns), per_col = Math.ceil(Object.keys(data).length / def.columns);
+        let cols = $('<div class="row">'), column = 0;
         for (let col = 0; col < def.columns; col++)
             items.push($('<div>').addClass('col-md-' + col_width).toggleClass('custom-controls-stacked', def.inline));
         for (let x in data) {
@@ -542,7 +543,7 @@ Date.getLocalDateFormat = function () {
     }
 
     function _input_select_multi_populate_ajax(host, options, container, track) {
-        var postops = {};
+        let postops = {};
         Object.assign(postops, options);
         if ((postops.url = _match_replace(host, postops.url, { "site_url": hazaar.url() })) === false) {
             return _input_select_multi_items(host, null, container);
@@ -559,9 +560,9 @@ Date.getLocalDateFormat = function () {
 
     function _input_select_multi_populate(host, options, container, track) {
         if (options !== null && typeof options === 'object' && 'url' in options) {
-            var matches = options.url.match(/\{\{[\w\.]+\}\}/g), def = container.data('def');
+            let matches = options.url.match(/\{\{[\w\.]+\}\}/g), def = container.data('def');
             for (let x in matches) {
-                var match = matches[x].substr(2, matches[x].length - 4);
+                let match = matches[x].substr(2, matches[x].length - 4);
                 if (!(match in def.watchers)) def.watchers[match] = [];
                 def.watchers[match].push(host.data.watch(match, function (key, value, container) {
                     _input_select_multi_populate_ajax(host, options, container, false);
@@ -578,12 +579,12 @@ Date.getLocalDateFormat = function () {
     }
 
     function _input_select_multi(host, def) {
-        var group = $('<div>').addClass(host.settings.styleClasses.group).data('def', def);
-        var label = $('<label>').addClass(host.settings.styleClasses.label)
+        let group = $('<div>').addClass(host.settings.styleClasses.group).data('def', def);
+        let label = $('<label>').addClass(host.settings.styleClasses.label)
             .attr('for', def.name)
             .html(_match_replace(host, def.label, null, true, true))
             .appendTo(group);
-        var container = $('<div>').data('def', def).appendTo(group);
+        let container = $('<div>').data('def', def).appendTo(group);
         if (def.buttons === true) {
             $('<div>').html(container.addClass('btn-group')
                 .attr('data-bind', def.name)
@@ -610,7 +611,7 @@ Date.getLocalDateFormat = function () {
     }
 
     function _input_select_items(host, options, data, select, no_nullify) {
-        var item_data = _get_data_item(host.data, select.attr('data-bind')), def = select.data('def');
+        let item_data = _get_data_item(host.data, select.attr('data-bind')), def = select.data('def');
         select.prop('disabled', !(def.disabled !== true && def.protected !== true));
         if (data === null || typeof data !== 'object' || Array.isArray(data) && data.length === 0 || Object.keys(data).length === 0) {
             if (no_nullify !== true) _nullify(host, def);
@@ -618,20 +619,20 @@ Date.getLocalDateFormat = function () {
             _input_event_update(host, def.name, true);
             return select.empty().prop('disabled', true);
         }
-        var valueKey = options.value || 'value', labelKey = options.label || 'label';
+        let valueKey = options.value || 'value', labelKey = options.label || 'label';
         select.empty().append($('<option>').attr('value', '').html(_match_replace(host, def.placeholder, null, true, true)));
         data = _convert_data(data, valueKey, labelKey, def);
         if ('sort' in options) {
             if (typeof options.sort === 'boolean') options.sort = labelKey;
             data = _sort_data(data, options.sort, labelKey, valueKey);
         }
-        var default_item = item_data && item_data.value === null && 'default' in options ? options.default : null;
+        let default_item = item_data && item_data.value === null && 'default' in options ? options.default : null;
         for (let x in data) {
             if ('filter' in options && options.filter.indexOf(data[x][labelKey]) === -1) {
                 delete data[x];
                 continue;
             }
-            var option = $('<option>').attr('value', data[x][valueKey])
+            let option = $('<option>').attr('value', data[x][valueKey])
                 .html(labelKey.indexOf('{{') > -1
                     ? _match_replace(null, labelKey, data[x], true)
                     : data[x][labelKey]).appendTo(select);
@@ -649,7 +650,7 @@ Date.getLocalDateFormat = function () {
                 if (item_data.value === null && item_data.other !== null)
                     select.val('__hz_other').change();
             }
-            var value = item_data.value !== null ? item_data.value.toString() : null;
+            let value = item_data.value !== null ? item_data.value.toString() : null;
             if (value && data.find(function (e, index, obj) {
                 return e && e[valueKey].toString() === value;
             })) {
@@ -658,7 +659,7 @@ Date.getLocalDateFormat = function () {
             } else {
                 item_data.value = null;
                 if (Object.keys(data).length === 1 && options.single === true) {
-                    var item = data[Object.keys(data)[0]], key = _convert_data_type(def, item[valueKey]);
+                    let item = data[Object.keys(data)[0]], key = _convert_data_type(def, item[valueKey]);
                     if (item_data.value !== key) {
                         item_data.set(key, labelKey.indexOf('{{') > -1 ? _match_replace(null, labelKey, item, true) : item[labelKey]);
                         if ('other' in options && options.other in item) item_data.other = item[options.other];
@@ -671,7 +672,7 @@ Date.getLocalDateFormat = function () {
     }
 
     function _input_select_populate_ajax(host, options, select, track, item_data) {
-        var postops = {};
+        let postops = {};
         Object.assign(postops, options);
         if ((postops.url = _match_replace(host, postops.url, item_data)) === false)
             return _input_select_items(host, options, null, select);
@@ -699,9 +700,9 @@ Date.getLocalDateFormat = function () {
         }
         if (!(options !== null && typeof options === 'object' && 'url' in options))
             return _input_select_items(host, options, options, select);
-        var matches = options.url.match(/\{\{[\w\.]+\}\}/g), def = select.data('def');
+        let matches = options.url.match(/\{\{[\w\.]+\}\}/g), def = select.data('def');
         for (let x in matches) {
-            var match = matches[x].substr(2, matches[x].length - 4);
+            let match = matches[x].substr(2, matches[x].length - 4);
             if (!(match in def.watchers)) def.watchers[match] = [];
             if (typeof item_data === 'undefined') item_data = host.data;
             def.watchers[match].push(item_data.watch(match, function (key, value, select) {
@@ -713,7 +714,7 @@ Date.getLocalDateFormat = function () {
 
     function _input_select_options(host, def, select, item_data, cb) {
         if (!('options' in def)) return false;
-        var options = {};
+        let options = {};
         if (Array.isArray(def.options)) {
             for (let x in def.options) {
                 if (!(typeof def.options[x] === 'object' && 'when' in def.options[x])) continue;
@@ -723,7 +724,7 @@ Date.getLocalDateFormat = function () {
                 }
             }
             if (select && 'watch' in def) {
-                var watch_func = function (key, value, args) {
+                let watch_func = function (key, value, args) {
                     _get_data_item(item_data, def.name).value = null;
                     if (typeof cb === 'function') cb(select, _input_select_options(host, def, null, value));
                 };
@@ -740,12 +741,12 @@ Date.getLocalDateFormat = function () {
     }
 
     function _input_select(host, def, populate) {
-        var group = $('<div>').addClass(host.settings.styleClasses.group).data('def', def);
-        var label = $('<label>').addClass(host.settings.styleClasses.label)
+        let group = $('<div>').addClass(host.settings.styleClasses.group).data('def', def);
+        let label = $('<label>').addClass(host.settings.styleClasses.label)
             .attr('for', def.name)
             .html(_match_replace(host, def.label, null, true, true))
             .appendTo(group);
-        var select = $('<select>').addClass(host.settings.styleClasses.input)
+        let select = $('<select>').addClass(host.settings.styleClasses.input)
             .attr('name', def.name)
             .data('def', def)
             .appendTo(group)
@@ -767,11 +768,11 @@ Date.getLocalDateFormat = function () {
     }
 
     function _input_checkbox(host, def) {
-        var item_data = _get_data_item(host.data, def.name);
-        var group = $('<div>').addClass(host.settings.styleClasses.group);
+        let item_data = _get_data_item(host.data, def.name);
+        let group = $('<div>').addClass(host.settings.styleClasses.group);
         if ('title' in def) $('<label>').html(def.title).appendTo(group);
-        var div = $('<div>').addClass(host.settings.styleClasses.chkDiv).appendTo(group);
-        var input = $('<input type="checkbox">').addClass(host.settings.styleClasses.chkInput)
+        let div = $('<div>').addClass(host.settings.styleClasses.chkDiv).appendTo(group);
+        let input = $('<input type="checkbox">').addClass(host.settings.styleClasses.chkInput)
             .attr('name', def.name)
             .attr('id', '__hz_field_' + def.name)
             .attr('data-bind', def.name)
@@ -793,14 +794,14 @@ Date.getLocalDateFormat = function () {
     }
 
     function _input_datetime(host, def) {
-        var item_data = _get_data_item(host.data, def.name);
-        var group = $('<div>').addClass(host.settings.styleClasses.group);
-        var label = $('<label>').addClass(host.settings.styleClasses.label)
+        let item_data = _get_data_item(host.data, def.name);
+        let group = $('<div>').addClass(host.settings.styleClasses.group);
+        let label = $('<label>').addClass(host.settings.styleClasses.label)
             .attr('for', '__hz_field_' + def.name)
             .html(_match_replace(host, def.label, null, true, true))
             .appendTo(group);
-        var input_group = $('<div class="date">').addClass(host.settings.styleClasses.inputGroup);
-        var input = $('<input>').addClass(host.settings.styleClasses.input)
+        let input_group = $('<div class="date">').addClass(host.settings.styleClasses.inputGroup);
+        let input = $('<input>').addClass(host.settings.styleClasses.input)
             .attr('type', def.type === 'datetime' ? 'datetime-local' : 'date')
             .attr('name', def.name)
             .attr('id', '__hz_field_' + def.name)
@@ -813,7 +814,7 @@ Date.getLocalDateFormat = function () {
             .blur(function (event) { return _input_event_blur(host, $(event.target)); })
             .change(function (event) { return _input_event_change(host, $(event.target)); })
             .on('update', function (event, key, value, item_data) { return _input_event_update(host, $(event.target), false, item_data); });
-        var glyph = $('<div>').addClass(host.settings.styleClasses.inputGroupAppend)
+        let glyph = $('<div>').addClass(host.settings.styleClasses.inputGroupAppend)
             .html($('<span style="cursor: pointer;">').addClass(host.settings.styleClasses.inputGroupText)
                 .html($('<i class="fa fa-calendar">')
                     .click(function () { input.focus(); })))
@@ -846,13 +847,13 @@ Date.getLocalDateFormat = function () {
     }
 
     function _input_file(host, def) {
-        var item_data = _get_data_item(host.data, def.name);
-        var group = $('<div>').addClass(host.settings.styleClasses.group);
-        var label = $('<label>').addClass(host.settings.styleClasses.label)
+        let item_data = _get_data_item(host.data, def.name);
+        let group = $('<div>').addClass(host.settings.styleClasses.group);
+        let label = $('<label>').addClass(host.settings.styleClasses.label)
             .attr('for', '__hz_field_' + def.name)
             .html(_match_replace(host, def.label, null, true, true))
             .appendTo(group);
-        var input = $('<div>').attr('data-bind', def.name).data('def', def).attr('name', def.name).fileUpload({
+        let input = $('<div>').attr('data-bind', def.name).data('def', def).attr('name', def.name).fileUpload({
             name: def.name,
             multiple: def.multiple || false,
             btnClass: def.btnClass || "btn btn-default",
@@ -891,7 +892,7 @@ Date.getLocalDateFormat = function () {
         });
         _post(host, 'fileinfo', { 'field': def.name }, true).done(function (response) {
             if (!response.ok) return;
-            var item_data = _get_data_item(host.data, response.field);
+            let item_data = _get_data_item(host.data, response.field);
             item_data.empty();
             for (let x in response.files) if (host.deloads.findIndex(function (e) {
                 return e.field === response.field && e.file === response.files[x].name;
@@ -902,15 +903,15 @@ Date.getLocalDateFormat = function () {
     }
 
     function _input_lookup(host, def) {
-        var item_data = _get_data_item(host.data, def.name);
-        var group = $('<div>').addClass(host.settings.styleClasses.group).data('def', def);
-        var label = $('<label>').addClass(host.settings.styleClasses.label)
+        let item_data = _get_data_item(host.data, def.name);
+        let group = $('<div>').addClass(host.settings.styleClasses.group).data('def', def);
+        let label = $('<label>').addClass(host.settings.styleClasses.label)
             .attr('for', '__hz_field_' + def.name)
             .html(_match_replace(host, def.label, null, true, true))
             .appendTo(group);
-        var input_group = $('<div>').addClass(host.settings.styleClasses.inputGroup)
+        let input_group = $('<div>').addClass(host.settings.styleClasses.inputGroup)
             .appendTo(group);
-        var input = $('<input type="text">').addClass(host.settings.styleClasses.input)
+        let input = $('<input type="text">').addClass(host.settings.styleClasses.input)
             .attr('data-bind', def.name)
             .attr('data-bind-label', true)
             .data('def', def)
@@ -921,8 +922,8 @@ Date.getLocalDateFormat = function () {
             input.prop('disabled', true);
         else input.focus(function (event) { _input_event_focus(host, $(event.target)); })
             .on('blur', function (event) {
-                var input = $(this), popup = input.parent().parent().children('.form-lookup-popup');
-                var def = input.data('def'); item_data = _get_data_item(host.data, input.attr('data-bind'));
+                let input = $(this), popup = input.parent().parent().children('.form-lookup-popup');
+                let def = input.data('def'); item_data = _get_data_item(host.data, input.attr('data-bind'));
                 if (!item_data) item_data = _get_data_item(host.data, input.parent().parent().parent().parent().data('item').attrName)[input.next().attr('name')];
                 if (popup.length > 0) {
                     popup.css({ "opacity": "0" });
@@ -943,19 +944,19 @@ Date.getLocalDateFormat = function () {
         if (def.lookup && 'url' in def.lookup) {
             input.on('keyup', function (event) {
                 if (event.keyCode === 32) return;
-                var input = $(this), item_data = _get_data_item(host.data, input.attr('data-bind'));
+                let input = $(this), item_data = _get_data_item(host.data, input.attr('data-bind'));
                 if (event.target.value === '') return item_data.empty();
                 if (def.lookup.autocomplete === true) item_data.set(input.val(), input.val());
                 if (event.keyCode > 47) {
                     delay(function () {
-                        var query = '', popup = input.parent().parent().children('.form-lookup-popup');
-                        var item_data = _get_data_item(host.data, input.attr('data-bind'));
-                        var valueKey = def.lookup.value || 'value', labelKey = def.lookup.label || 'label';
+                        let query = '', popup = input.parent().parent().children('.form-lookup-popup');
+                        let item_data = _get_data_item(host.data, input.attr('data-bind'));
+                        let valueKey = def.lookup.value || 'value', labelKey = def.lookup.label || 'label';
                         if (!item_data) item_data = _get_data_item(host.data, input.parent().parent().parent().parent().data('item').attrName)[input.next().attr('name')];
                         if (popup.length === 0) {
                             popup = $('<div class="form-lookup-popup card">').hide().appendTo(input.parent().parent())
                                 .on('click', function (event) {
-                                    var target = $(event.target), data = target.data('lookup');
+                                    let target = $(event.target), data = target.data('lookup');
                                     if (!(target.is('.list-group-item') && typeof target.attr('data-value') === 'string'))
                                         return false;
                                     item_data.set(target.attr('data-value'), target.text(),
@@ -964,8 +965,8 @@ Date.getLocalDateFormat = function () {
                                 });
                         }
                         if ('startlen' in def.lookup && event.target.value.length < def.lookup.startlen) return popup.hide();
-                        var values = { '__input__': event.target.value };
-                        var listDIV = popup.children('ul');
+                        let values = { '__input__': event.target.value };
+                        let listDIV = popup.children('ul');
                         if (listDIV.length === 0) listDIV = $('<ul class="list-group">').appendTo(popup);
                         if ((url = _match_replace(host, def.lookup.url, values)) === false) return;
                         if ('query' in def.lookup && (query = _match_replace(host, def.lookup.query, values)) === false) return;
@@ -1001,9 +1002,9 @@ Date.getLocalDateFormat = function () {
                         });
                     }, host.settings.lookup.delay);
                 } else {
-                    var sClass = 'bg-primary';
-                    var list = input.parent().parent().children('.form-lookup-popup').children('.list-group');
-                    var selected = list.children('.' + sClass);
+                    let sClass = 'bg-primary';
+                    let list = input.parent().parent().children('.form-lookup-popup').children('.list-group');
+                    let selected = list.children('.' + sClass);
                     switch (event.key) {
                         case 'ArrowDown':
                             if (selected.length > 0) {
@@ -1047,12 +1048,12 @@ Date.getLocalDateFormat = function () {
     }
 
     function _input_money(host, def) {
-        var item_data = _get_data_item(host.data, def.name), symbol = '$';
-        var group = $('<div>').addClass(host.settings.styleClasses.group);
-        var input = $('<input type="text">').addClass(host.settings.styleClasses.input);
-        var inputDIV = $('<div>').addClass(host.settings.styleClasses.inputGroup).appendTo(group);
-        var prefixDIV = $('<div>').addClass(host.settings.styleClasses.inputGroupPrepend);
-        var suffixDIV = $('<div>').addClass(host.settings.styleClasses.inputGroupAppend);
+        let item_data = _get_data_item(host.data, def.name), symbol = '$';
+        let group = $('<div>').addClass(host.settings.styleClasses.group);
+        let input = $('<input type="text">').addClass(host.settings.styleClasses.input);
+        let inputDIV = $('<div>').addClass(host.settings.styleClasses.inputGroup).appendTo(group);
+        let prefixDIV = $('<div>').addClass(host.settings.styleClasses.inputGroupPrepend);
+        let suffixDIV = $('<div>').addClass(host.settings.styleClasses.inputGroupAppend);
         input.attr('name', def.name)
             .attr('id', '__hz_field_' + def.name)
             .attr('data-bind', def.name + '.amt')
@@ -1060,12 +1061,12 @@ Date.getLocalDateFormat = function () {
             .val(item_data.amt)
             .inputmask('currency', { prefix: "" });
         if ('currencies' in def) {
-            var current = def.currencies.find(function (value, index, o) { if (value.code === item_data.currency.value) return true; });
+            let current = def.currencies.find(function (value, index, o) { if (value.code === item_data.currency.value) return true; });
             symbol = current.symbol;
         }
         inputDIV.append([prefixDIV.html($('<span>').addClass(host.settings.styleClasses.inputGroupText).html(symbol)), input, suffixDIV]);
         if ('currencies' in def && def.currencies.length > 1) {
-            var currencySELECT = $('<div class="dropdown-menu">');
+            let currencySELECT = $('<div class="dropdown-menu">');
             def.currencies.sort(function (a, b) { return a.code === b.code ? 0 : a.code < b.code ? -1 : 1; });
             for (x of def.currencies) currencySELECT.append($('<div class="dropdown-item">').html(x.code + ' - ' + x.name).attr('data-currency', x.code));
             suffixDIV.html([
@@ -1073,14 +1074,14 @@ Date.getLocalDateFormat = function () {
                 currencySELECT
             ]);
             currencySELECT.on('click', function (event) {
-                var item_data = _get_data_item(host.data, $(this).parent().parent().children('input').attr('data-bind'));
+                let item_data = _get_data_item(host.data, $(this).parent().parent().children('input').attr('data-bind'));
                 if (!item_data) return false;
-                var currency = $(event.target).attr('data-currency');
+                let currency = $(event.target).attr('data-currency');
                 $(this).parent().children('button').html(currency);
                 item_data.parent.currency = currency;
             });
             item_data.watch('currency', function (key, value) {
-                var info = def.currencies.find(function (value, index, o) { if (value.code === item_data.currency.value) return true; });
+                let info = def.currencies.find(function (value, index, o) { if (value.code === item_data.currency.value) return true; });
                 prefixDIV.children('span').html(info.symbol);
             });
         } else suffixDIV.html($('<span>').addClass(host.settings.styleClasses.inputGroupText).html(item_data.currency.value));
@@ -1093,9 +1094,9 @@ Date.getLocalDateFormat = function () {
     }
 
     function _input_std(host, type, def) {
-        var input = null, item_data = _get_data_item(host.data, def.name);
-        var group = $('<div>').addClass(host.settings.styleClasses.group);
-        var label = $('<label>').addClass(host.settings.styleClasses.label)
+        let input = null, item_data = _get_data_item(host.data, def.name);
+        let group = $('<div>').addClass(host.settings.styleClasses.group);
+        let label = $('<label>').addClass(host.settings.styleClasses.label)
             .attr('for', '__hz_field_' + def.name)
             .html(_match_replace(host, def.label, null, true, true))
             .appendTo(group);
@@ -1119,7 +1120,7 @@ Date.getLocalDateFormat = function () {
         if ('css' in def) input.css(def.css);
         if ('cssClass' in def) input.addClass(def.cssClass);
         if ('prefix' in def || 'suffix' in def) {
-            var inputDIV = $('<div>').addClass(host.settings.styleClasses.inputGroup)
+            let inputDIV = $('<div>').addClass(host.settings.styleClasses.inputGroup)
                 .appendTo(group);
             if (def.prefix) inputDIV.append($('<div>')
                 .addClass(host.settings.styleClasses.inputGroupPrepend)
@@ -1146,28 +1147,28 @@ Date.getLocalDateFormat = function () {
     }
 
     function _input_list(host, def) {
-        var item_data = _get_data_item(host.data, def.name);
-        var group = $('<div class="itemlist">').addClass(host.settings.styleClasses.group);
+        let item_data = _get_data_item(host.data, def.name);
+        let group = $('<div class="itemlist">').addClass(host.settings.styleClasses.group);
         if (!(item_data instanceof dataBinderArray)) return group;
         $('<h4>').addClass(host.settings.styleClasses.label).html(_match_replace(host, def.label, null, true, true)).appendTo(group);
-        var layout = _resolve_field_layout(host, def.fields, def.layout);
-        var template = $('<div class="itemlist-item">');
+        let layout = _resolve_field_layout(host, def.fields, def.layout);
+        let template = $('<div class="itemlist-item">');
         if (_eval(host, def.allow_remove, true, item_data, def.name)) {
             template.append($('<div class="itemlist-item-rm">')
                 .html($('<button type="button" class="btn btn-danger btn-sm">').html($('<i class="fa fa-minus">'))));
         }
         if (_eval(host, def.allow_add, true, item_data, def.name)) {
-            var sub_host = _get_empty_host(), new_item = new dataBinder(_define(def.fields), 'fake');
+            let sub_host = _get_empty_host(), new_item = new dataBinder(_define(def.fields), def.name);
             sub_host.settings = $.extend({}, $.fn.hzForm.defaults, host.settings);
             sub_host.data = new_item;
             sub_host.def = { fields: def.fields };
-            var btn = $('<button type="button" class="btn btn-success btn-sm">').html($('<i class="fa fa-plus">'));
-            var fieldDIV = _form_field(sub_host, { fields: layout }, ud, ud, ud, ud, true)
+            let btn = $('<button type="button" class="btn btn-success btn-sm">').html($('<i class="fa fa-plus">'));
+            let fieldDIV = _form_field(sub_host, { fields: layout }, ud, ud, ud, ud, true)
                 .addClass('itemlist-newitem')
                 .attr('data-field', def.name);
-            fieldDIV.data('newitem', new_item).find('input').removeAttr('data-bind');
+            fieldDIV.find('input,textarea,select').attr('data-bind-namespace', def.name);
             fieldDIV.find('select').each(function (index, item) {
-                var select = $(item), def = select.data('def');
+                let select = $(item), def = select.data('def');
                 select.off('change').on('change', function () {
                     return _input_event_change(sub_host, $(this));
                 }).off('update').on('update', function (event, key, value, item_data) {
@@ -1179,10 +1180,10 @@ Date.getLocalDateFormat = function () {
             });
             group.append($('<div class="itemlist-newitems">').html([$('<div class="itemlist-newitem-add">').html(btn), fieldDIV]));
             btn.click(function () {
-                var data = fieldDIV.data('newitem'), valid = true;
+                let valid = true;
                 fieldDIV.find('input,select,textarea').each(function (index, item) {
                     if (!item.name) return;
-                    var input = $(item), value = input.val(), def = input.data('def'), item_data = _get_data_item(sub_host.data, input.parent().data('item'));
+                    let input = $(item), value = input.val(), def = input.data('def'), item_data = _get_data_item(sub_host.data, input.parent().data('item'));
                     if (_eval(sub_host, def.required, false, item_data, item.name) && !value) {
                         input.toggleClass('is-invalid', true);
                         valid = false;
@@ -1194,35 +1195,36 @@ Date.getLocalDateFormat = function () {
                         value = date.getFullYear() + '-' + (date.getMonth() + 1) + '-' + date.getDate();
                     }
                     if (value) {
-                        var sub_item_data = _get_data_item(data, item.name, false, value);
+                        let sub_item_data = _get_data_item(sub_host.data, item.name, false, value);
                         if (sub_item_data) sub_item_data.set(value);
                     }
                 });
                 if (!valid) return;
-                item_data.push(data.save());
-                fieldDIV.find('input,select,textarea').each(function (index, item) { $(item).val('').removeClass('is-invalid'); });
+                item_data.push(sub_host.data.save());
+                fieldDIV.find('input,select,textarea').removeClass('is-invalid');
+                sub_host.data.empty();
                 _validate_input(sub_host, group);
             });
         }
         if (_eval(host, def.allow_edit, false, item_data, def.name) !== true) layout = _field_to_html(layout);
         template.append(_form_field(host, { fields: layout }, null, false, false, ud, true));
         item_data.watch(function (item) {
-            var item_name = item.attr('data-bind'), item_data = _get_data_item(host.data, item_name);
+            let item_name = item.attr('data-bind'), item_data = _get_data_item(host.data, item_name);
             item.find('select,input').each(function (index, item) {
-                var input = $(item), def = input.data('def');
+                let input = $(item), def = input.data('def');
                 if (input.is('select')) {
                     if ('options' in def) _input_select_options(host, def, input, item_data, function (select, options) {
                         _input_select_populate(host, options, select, false, item_data);
                     });
                 } else if (def.type === 'date' && 'format' in def) {
-                    var child_item_data = item_data[def.name];
+                    let child_item_data = item_data[def.name];
                     input.data('datepicker', null);
                     input.datepicker(def.__datepicker_options);
                     if (child_item_data && child_item_data.value) input.datepicker('setDate', new Date(child_item_data.value));
                 }
             });
             $(item).find('.form-group').each(function (index, input) {
-                var group = $(input), def = group.data('def'), sub_item_data = item_data[def.name];
+                let group = $(input), def = group.data('def'), sub_item_data = item_data[def.name];
                 group.data('name', item_name + '.' + def.name)
                     .data('item', sub_item_data.attrName);
                 group.find('label').each(function (index, item) {
@@ -1239,7 +1241,7 @@ Date.getLocalDateFormat = function () {
             .data('template', template))
             .data('def', def)
             .on('click', '.btn-danger', function (event) {
-                var index = Array.from(this.parentNode.parentNode.parentNode.children).indexOf(this.parentNode.parentNode);
+                let index = Array.from(this.parentNode.parentNode.parentNode.children).indexOf(this.parentNode.parentNode);
                 item_data.unset(index);
             });
         return group;
@@ -1248,7 +1250,7 @@ Date.getLocalDateFormat = function () {
     function _form_field_lookup(def, info, raw_mode) {
         if (info instanceof Object) def = 'name' in info ? $.extend({}, _form_field_lookup(def, info.name), info) : info;
         else {
-            var parts = info.split(/[\.\[]/);
+            let parts = info.split(/[\.\[]/);
             for (let x in parts) {
                 if (def && 'type' in def && def.type === 'money' && parts[x] === 'amt') break;
                 if (parts[x].slice(-1) === ']') continue;
@@ -1283,7 +1285,7 @@ Date.getLocalDateFormat = function () {
             if (Array.isArray(layout[x])) {
                 layout[x] = { fields: _resolve_field_layout(host, fields, layout[x], name, a) };
             } else if ('name' in layout[x]) {
-                var field = layout[x].name in fields ? fields[layout[x].name] : layout[x].name in host.def.fields ? host.def.fields[layout[x].name] : null;
+                let field = layout[x].name in fields ? fields[layout[x].name] : layout[x].name in host.def.fields ? host.def.fields[layout[x].name] : null;
                 if (!field || field.hidden === true) continue;
                 layout[x] = $.extend(true, {}, field, layout[x]);
                 if (name) {
@@ -1299,7 +1301,7 @@ Date.getLocalDateFormat = function () {
     }
 
     function _form_field(host, info, p, populate, apply_rules, item_data, hidden) {
-        var def = null, field = null;
+        let def = null, field = null;
         if (info instanceof Array)
             info = { fields: info };
         if (!(def = _form_field_lookup(host.def, info))) return;
@@ -1311,11 +1313,11 @@ Date.getLocalDateFormat = function () {
             if (!field) return;
             if (hidden !== true) host.pageInputs.push(field);
         } else if ('fields' in def && def.type !== 'array') {
-            var layout = _resolve_field_layout(host, def.fields, 'layout' in def ? $.extend(true, [], def.layout) : null, def.name);
-            var length = layout.length, fields = [], col_width;
+            let layout = _resolve_field_layout(host, def.fields, 'layout' in def ? $.extend(true, [], def.layout) : null, def.name);
+            let length = layout.length, fields = [], col_width;
             if (typeof p === 'undefined' || p === null) p = !('layout' in def && def.layout);
             for (let x in layout) {
-                var item = layout[x];
+                let item = layout[x];
                 if (typeof item === 'string') item = _form_field_lookup(host.def, item);
                 if (!item) continue;
                 if (p && !Array.isArray(item)) {
@@ -1382,7 +1384,7 @@ Date.getLocalDateFormat = function () {
                 .attr('data-title', def.tip)
                 .tooltip({ placement: 'auto', html: true }))
                 .on('show.bs.tooltip', function (e) {
-                    var o = $(this).children('.form-tip');
+                    let o = $(this).children('.form-tip');
                     o.attr('data-original-title', _match_replace(host, o.attr('data-title'), null, true, false)).tooltip('_fixTitle');
                 });
         }
@@ -1391,7 +1393,7 @@ Date.getLocalDateFormat = function () {
         if ('invalid' in def) field.append($('<div class="invalid-feedback">').html(def.invalid));
         if ('width' in def) field.width(def.width);
         if ('html' in def) {
-            var html = def.html;
+            let html = def.html;
             if ('label' in def && field.children().length === 0) field.append($('<label>').addClass(host.settings.styleClasses.label).html(def.label));
             field.append($('<div>').html(_match_replace(host, html, null, true, true)));
         }
@@ -1406,13 +1408,13 @@ Date.getLocalDateFormat = function () {
 
     //Render a page section
     function _section(host, section, p) {
-        var group = $('<div>');
+        let group = $('<div>');
         if (Array.isArray(section)) {
-            var col_width = null;
+            let col_width = null;
             if (typeof p === 'undefined') p = true;
             if (p) {
                 group.addClass('row');
-                var length = section.length;
+                let length = section.length;
                 for (let x in section) {
                     if (typeof section[x] !== 'object' || Array.isArray(section[x])) continue;
                     if (!('weight' in section[x])) section[x].weight = 1;
@@ -1425,7 +1427,7 @@ Date.getLocalDateFormat = function () {
             return group;
         }
         if (typeof section !== 'object') return null;
-        var fieldset = $('<fieldset class="col col-12">').data('def', section).appendTo(group);
+        let fieldset = $('<fieldset class="col col-12">').data('def', section).appendTo(group);
         if (section.label)
             fieldset.append($('<legend>').html(_match_replace(host, section.label, null, true, true)));
         for (let x in section.fields)
@@ -1437,7 +1439,7 @@ Date.getLocalDateFormat = function () {
     //Render a page
     function _page(host, page) {
         if (typeof page !== 'object') return null;
-        var form = $('<div>').addClass(host.settings.styleClasses.page).data('def', page), sections = [];
+        let form = $('<div>').addClass(host.settings.styleClasses.page).data('def', page), sections = [];
         if (page.label) form.append($('<h1>').html(_match_replace(host, page.label, null, true, true)));
         for (let x in page.sections) sections.push(_section(host, page.sections[x]));
         if (host.events.show.length > 0) for (let x in host.events.show) _toggle_show(host, host.events.show[x]);
@@ -1469,7 +1471,7 @@ Date.getLocalDateFormat = function () {
     //Navigate to a page
     function _nav(host, pageno, cbComplete, force) {
         if (force !== true && pageno === host.page) return false;
-        var _page_nav = function (host, pageno) {
+        let _page_nav = function (host, pageno) {
             _track(host);
             host.objects.container.empty();
             if (host.settings.singlePage) {
@@ -1485,7 +1487,7 @@ Date.getLocalDateFormat = function () {
             if (typeof cbComplete === 'function') cbComplete();
         };
         if (host.page !== null && pageno > host.page) {
-            var page = host.def.pages[host.page];
+            let page = host.def.pages[host.page];
             if ('validate' in page) {
                 _validate_page(host).done(function (result, errors) {
                     if (result === true) {
@@ -1507,7 +1509,7 @@ Date.getLocalDateFormat = function () {
     function _validate_input(host, input, remove_only) {
         if (!input.is('input,select,textarea'))
             return input.children('input,select,textarea').each(function (index, item) { _validate_input(host, $(item), remove_only); });
-        var name = input.attr('data-bind');
+        let name = input.attr('data-bind');
         if (!name) return;
         return _validate_field(host, name).done(function (event, result, response) {
             if (result !== true && remove_only === true) return;
@@ -1518,15 +1520,15 @@ Date.getLocalDateFormat = function () {
     }
 
     function _validation_error(name, def, status) {
-        var error = { name: name, field: $.extend({}, def), status: status };
+        let error = { name: name, field: $.extend({}, def), status: status };
         return error;
     }
 
     function _validate_rule(host, name, item, def) {
         if (!(item && def)) return true;
         if ('show' in def) if (!_eval(host, def.show, true, item, def.name)) return true;
-        var required = 'required' in def ? _eval(host, def.required, false, item, def.name) : false;
-        var value = item instanceof dataBinderArray ? item.length > 0 ? item : null : def.other && !item.value ? item.other : item.value;
+        let required = 'required' in def ? _eval(host, def.required, false, item, def.name) : false;
+        let value = item instanceof dataBinderArray ? item.length > 0 ? item : null : def.other && !item.value ? item.other : item.value;
         if (required && value === null) return _validation_error(name, def, "required");
         if (typeof value === 'undefined' || value === null) return true; //Return now if there is no value and the field is not required!
         if ('format' in def && value && def.type !== 'date') {
@@ -1535,7 +1537,7 @@ Date.getLocalDateFormat = function () {
         }
         if ('validate' in def) {
             for (let type in def.validate) {
-                var data = def.validate[type];
+                let data = def.validate[type];
                 switch (type) {
                     case 'min':
                         if (parseInt(value) < data)
@@ -1546,7 +1548,7 @@ Date.getLocalDateFormat = function () {
                             return _validation_error(name, def, "too_big");
                         break;
                     case 'with':
-                        var reg = new RegExp(data);
+                        let reg = new RegExp(data);
                         if (!(typeof value === 'string' && value.match(reg)))
                             return _validation_error(name, def, "regex_failed");
                         break;
@@ -1575,11 +1577,11 @@ Date.getLocalDateFormat = function () {
     }
 
     function _validate_field(host, name, extra) {
-        var callbacks = [];
+        let callbacks = [];
         setTimeout(function () {
-            var def = typeof name === 'object' ? name : _form_field_lookup(host.def, name);
+            let def = typeof name === 'object' ? name : _form_field_lookup(host.def, name);
             if (def) {
-                var item = _get_data_item(host.data, def.name);
+                let item = _get_data_item(host.data, def.name);
                 if (!item) return;
                 if (def.protected || 'disabled' in def && _eval(host, def.disabled, false, item, def.name)) {
                     for (let x in callbacks) callbacks[x](def.name, true, extra);
@@ -1596,7 +1598,7 @@ Date.getLocalDateFormat = function () {
                                 childQueue.push(fullName);
                                 _validate_field({ data: item[i], def: def.fields, monitor: {} }, def.fields[x], fullName)
                                     .done(function (childName, result, fullName) {
-                                        var index = childQueue.indexOf(fullName);
+                                        let index = childQueue.indexOf(fullName);
                                         if (index >= 0) childQueue.splice(index, 1);
                                         itemResult.push({ name: fullName, result: result });
                                         if (childQueue.length === 0) for (let x in callbacks) callbacks[x](def.name, itemResult, extra);
@@ -1607,12 +1609,12 @@ Date.getLocalDateFormat = function () {
                 } else {
                     let result = _validate_rule(host, def.name, item, def);
                     if (item.value && result === true && 'validate' in def && 'url' in def.validate) {
-                        var url = _match_replace(host, def.validate.url, { "__input__": item.value }, true);
-                        var request = { target: [url, { "name": def.name, "value": item.value }] };
-                        var indexKey = JSON.stringify(request).hash();
-                        var apiDone = function (response) {
+                        let url = _match_replace(host, def.validate.url, { "__input__": item.value }, true);
+                        let request = { target: [url, { "name": def.name, "value": item.value }] };
+                        let indexKey = JSON.stringify(request).hash();
+                        let apiDone = function (response) {
                             if (!(indexKey in host.apiCache)) host.apiCache[indexKey] = response;
-                            var result = response.ok === true ? true : _validation_error(def.name, def, response.reason || "api_failed(" + def.validate.url + ")");
+                            let result = response.ok === true ? true : _validation_error(def.name, def, response.reason || "api_failed(" + def.validate.url + ")");
                             if (callbacks.length > 0) for (let x in callbacks) callbacks[x](def.name, result, response);
                         };
                         if (indexKey in host.apiCache) apiDone(host.apiCache[indexKey]);
@@ -1630,7 +1632,7 @@ Date.getLocalDateFormat = function () {
             for (let x in field)
                 if (_validate_nav_field(field[x], error)) return true;
         } else {
-            var name = typeof field === 'string' ? field : field.name;
+            let name = typeof field === 'string' ? field : field.name;
             if (error.name === name) return true;
         }
         return false;
@@ -1642,7 +1644,7 @@ Date.getLocalDateFormat = function () {
                 for (let f in host.def.pages[p].sections[s].fields) {
                     for (let x in errors) {
                         if (_validate_nav_field(host.def.pages[p].sections[s].fields[f], errors[x])) {
-                            var page = parseInt(p);
+                            let page = parseInt(p);
                             if (host.page !== page)
                                 _nav(host, page, function () { _validate_page(host); });
                             return;
@@ -1655,17 +1657,17 @@ Date.getLocalDateFormat = function () {
 
     //Run the data validation
     function _validate(host, fields) {
-        var callbacks = [];
+        let callbacks = [];
         setTimeout(function () {
-            var queue = [], errors = [];
+            let queue = [], errors = [];
             if (typeof fields === 'undefined') {
                 if (!('def' in host && 'fields' in host.def)) return;
-                var _resolve_fields = function (def) {
+                let _resolve_fields = function (def) {
                     if (!('fields' in def)) return;
-                    var fields = [];
+                    let fields = [];
                     for (let x in def.fields) {
                         if ('fields' in def.fields[x] && def.fields[x].type !== 'array') {
-                            var child_fields = _resolve_fields(def.fields[x]);
+                            let child_fields = _resolve_fields(def.fields[x]);
                             for (let y in child_fields) fields.push(x + '.' + child_fields[y]);
                         } else fields.push(x);
                     }
@@ -1676,7 +1678,7 @@ Date.getLocalDateFormat = function () {
             for (let key in fields) {
                 queue.push(fields[key]);
                 _validate_field(host, fields[key]).done(function (name, result, response) {
-                    var index = queue.indexOf(name);
+                    let index = queue.indexOf(name);
                     if (index >= 0) queue.splice(index, 1);
                     if (!Array.isArray(result)) result = [{ name: name, result: result }];
                     for (let x in result) {
@@ -1693,9 +1695,9 @@ Date.getLocalDateFormat = function () {
     }
 
     function _validate_page(host) {
-        var fields = [];
+        let fields = [];
         for (let x in host.pageInputs) {
-            var def = host.pageInputs[x].data('def');
+            let def = host.pageInputs[x].data('def');
             if (!def) continue;
             fields.push(def.name);
         }
@@ -1722,11 +1724,11 @@ Date.getLocalDateFormat = function () {
     //Save form data back to the controller
     //By default calls validation and will only save data if the validation is successful
     function _save(host, validate, extra) {
-        var callbacks = { done: null };
-        var save_data = function (host, extra) {
-            var data = host.data.save();
+        let callbacks = { done: null };
+        let save_data = function (host, extra) {
+            let data = host.data.save();
             for (let x in host.def.fields) if (host.def.fields[x].protected === true) delete data[x];
-            var params = { params: extra || {}, form: data };
+            let params = { params: extra || {}, form: data };
             if ('saveURL' in host.settings) params.url = host.settings.saveURL;
             $(host).trigger('saving', [data, params]);
             _post(host, 'post', params, false).done(function (response) {
@@ -1768,7 +1770,7 @@ Date.getLocalDateFormat = function () {
 
     //Register events that are used to control the form functions
     function _registerEvents(host) {
-        var errors = [];
+        let errors = [];
         $(host).on('submit', function (e) {
             e.preventDefault();
             return false;
@@ -1808,7 +1810,7 @@ Date.getLocalDateFormat = function () {
             });
         }
         if (host.uploads.length > 0) {
-            var queue = { pending: [], working: [], attached: [], failed: [] };
+            let queue = { pending: [], working: [], attached: [], failed: [] };
             host.uploads.sort(function (a, b) {
                 if (a.file.name === b.file.name) return 0;
                 return a.file.name < b.file.name ? -1 : 1;
@@ -1820,7 +1822,7 @@ Date.getLocalDateFormat = function () {
 
     function _upload_file(host, queue, done_callback) {
         while (queue.working.length < host.settings.concurrentUploads) {
-            var fd = new FormData(), current = queue.pending.shift();
+            let fd = new FormData(), current = queue.pending.shift();
             if (!current) break;
             queue.working.push(current);
             fd.append('name', host.settings.form);
@@ -1844,7 +1846,7 @@ Date.getLocalDateFormat = function () {
                     return xhr;
                 }
             }).done(function (response) {
-                var w = this.upload_file;
+                let w = this.upload_file;
                 host.uploads = host.uploads.filter(function (file) { return !(w.field === file.field && w.file.name === file.file.name); });
                 $(host).trigger('fileDone', [w, response]);
             }).fail(function (xhr) {
@@ -1852,7 +1854,7 @@ Date.getLocalDateFormat = function () {
                 this.upload_file.response = xhr.responseJSON;
                 $(host).trigger('fileError', [this.upload_file, xhr]);
             }).always(function () {
-                var w = this.upload_file;
+                let w = this.upload_file;
                 queue.working = queue.working.filter(function (file) { return !(w.field === file.field && w.file.name === file.file.name); });
                 if (w.failed === true) queue.failed.push(w); else queue.attached.push(w);
                 if (queue.pending.length > 0) _upload_file(host, queue, done_callback);
@@ -1863,7 +1865,7 @@ Date.getLocalDateFormat = function () {
 
     function _post(host, action, postdata, track, sync) {
         if (track === true) _track(host);
-        var params = $.extend(true, {}, {
+        let params = $.extend(true, {}, {
             name: host.settings.form,
             params: host.settings.params
         }, postdata);
@@ -1881,7 +1883,7 @@ Date.getLocalDateFormat = function () {
 
     function _define(values) {
         if (!values) return;
-        var data = {};
+        let data = {};
         for (let x in values) {
             if ("fields" in values[x] && values[x].type !== 'array') {
                 data[x] = _define(values[x].fields);
@@ -1897,7 +1899,7 @@ Date.getLocalDateFormat = function () {
     }
 
     function _prepare_field_definitions(host, fields, extra) {
-        var prop_fields = ["disabled", "protected", "change", "focus", "blur"]; //Fields that propagate
+        let prop_fields = ["disabled", "protected", "change", "focus", "blur"]; //Fields that propagate
         for (let x in fields) {
             let itemExtra = extra ? $.extend(true, {}, extra) : null;
             if (typeof fields[x] === 'string') fields[x] = { type: fields[x], label: x };
@@ -1990,11 +1992,11 @@ Date.getLocalDateFormat = function () {
     }
 
     $.fn.hzForm = function () {
-        var args = arguments;
-        var host = this.get(0);
+        let args = arguments;
+        let host = this.get(0);
         switch (args[0]) {
             case 'info':
-                var data = host.data.save(), info = {};
+                let data = host.data.save(), info = {};
                 for (let x in data)
                     info[x] = { label: host.def.fields[x].label, value: data[x] };
                 return info;
@@ -2009,7 +2011,7 @@ Date.getLocalDateFormat = function () {
                     case 'reload':
                         if (args[1] === true) _load(host);
                         else {
-                            var values = host.data.save();
+                            let values = host.data.save();
                             _load_definition(host).done(function () {
                                 for (let x in values)
                                     host.data[x] = values[x];
@@ -2088,7 +2090,7 @@ Date.getLocalDateFormat = function () {
 })(jQuery);
 
 $.fn.fileUpload = function () {
-    var host = this.get(0);
+    let host = this.get(0);
     if (host.options) {
         switch (arguments[0]) {
             case 'add':
@@ -2127,7 +2129,7 @@ $.fn.fileUpload = function () {
             $('<div class="dz-size">').html(humanFileSize(file.size)),
             $('<div class="dz-detail">').html($('<a>').attr('href', file.url).attr('target', '_blank').html(file.name).attr('title', file.name)),
             $('<div class="dz-remove">').html($('<i class="fa fa-times">')).click(function (e) {
-                var item = $(this).parent();
+                let item = $(this).parent();
                 if (typeof host.options.remove === 'function') host.options.remove(file);
                 if (host.options.autoRemove) host._remove(item.data('file'));
                 e.stopPropagation();
@@ -2139,18 +2141,18 @@ $.fn.fileUpload = function () {
             return item.name !== file.name;
         });
         host.o.list.children().each(function (index, o) {
-            var item = $(o), data = item.data('file');
+            let item = $(o), data = item.data('file');
             if (data && data.name === file.name) item.remove();
         });
         if (this.files.length === 0 && this.o.dzwords) this.o.dzwords.show();
         return true;
     };
     host._preview = function (file) {
-        var o = $('<div class="dz-preview">');
+        let o = $('<div class="dz-preview">');
         if (file.preview)
             o.append($('<img>').attr('src', file.preview));
         else if (file instanceof File && file.type.substr(0, 5) === 'image') {
-            var reader = new FileReader();
+            let reader = new FileReader();
             reader.onload = function (event) {
                 o.append($('<img>').attr('src', event.target.result));
             };
@@ -2169,7 +2171,7 @@ $.fn.fileUpload = function () {
         return false;
     };
     host._add_files = function (fileArray) {
-        var added = [], failed = [];
+        let added = [], failed = [];
         if (!host.options.multiple && host.files.length > 0) return;
         for (let x = 0; x < fileArray.length; x++) {
             let file = fileArray[x];
@@ -2185,7 +2187,7 @@ $.fn.fileUpload = function () {
         if (added.length > 0 && typeof host.options.select === 'function')
             host.options.select(added);
         if (failed.length > 0) {
-            var filesP = $('<p>');
+            let filesP = $('<p>');
             for (let x in failed)
                 filesP.append($('<strong>').html(failed[x].name));
             $('<div>').html([
@@ -2273,11 +2275,11 @@ if (!Array.prototype.find) {
     Object.defineProperty(Array.prototype, 'find', {
         value: function (predicate) {
             if (this === null) throw new TypeError('"this" is null or not defined');
-            var o = Object(this), len = o.length >>> 0;
+            let o = Object(this), len = o.length >>> 0;
             if (typeof predicate !== 'function') throw new TypeError('predicate must be a function');
-            var thisArg = arguments[1], k = 0;
+            let thisArg = arguments[1], k = 0;
             while (k < len) {
-                var kValue = o[k];
+                let kValue = o[k];
                 if (predicate.call(thisArg, kValue, k, o)) return kValue;
                 k++;
             }
@@ -2292,11 +2294,11 @@ if (!Array.prototype.findIndex) {
     Object.defineProperty(Array.prototype, 'findIndex', {
         value: function (predicate) {
             if (this === null) throw new TypeError('"this" is null or not defined');
-            var o = Object(this), len = o.length >>> 0;
+            let o = Object(this), len = o.length >>> 0;
             if (typeof predicate !== 'function') throw new TypeError('predicate must be a function');
-            var thisArg = arguments[1], k = 0;
+            let thisArg = arguments[1], k = 0;
             while (k < len) {
-                var kValue = o[k];
+                let kValue = o[k];
                 if (predicate.call(thisArg, kValue, k, o)) return k;
                 k++;
             }
