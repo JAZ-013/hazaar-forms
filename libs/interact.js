@@ -1158,7 +1158,7 @@ Date.getLocalDateFormat = function () {
                 .html($('<button type="button" class="btn btn-danger btn-sm">').html($('<i class="fa fa-minus">'))));
         }
         if (_eval(host, def.allow_add, true, item_data, def.name)) {
-            let sub_host = _get_empty_host(), new_item = new dataBinder(_define(def.fields), def.name);
+            let sub_host = _get_empty_host(), new_item = new dataBinder(_define(def.fields), def.name, null, def.name);
             sub_host.settings = $.extend({}, $.fn.hzForm.defaults, host.settings);
             sub_host.data = new_item;
             sub_host.def = { fields: def.fields };
@@ -1166,7 +1166,7 @@ Date.getLocalDateFormat = function () {
             let fieldDIV = _form_field(sub_host, { fields: layout }, ud, ud, ud, ud, true)
                 .addClass('itemlist-newitem')
                 .attr('data-field', def.name);
-            fieldDIV.find('input,textarea,select').attr('data-bind-namespace', def.name);
+            fieldDIV.find('input,textarea,select').attr('data-bind-ns', def.name);
             fieldDIV.find('select').each(function (index, item) {
                 let select = $(item), def = select.data('def');
                 select.off('change').on('change', function () {
