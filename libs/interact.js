@@ -1242,7 +1242,12 @@ Date.getLocalDateFormat = function () {
             .data('def', def)
             .on('click', '.btn-danger', function (event) {
                 let index = Array.from(this.parentNode.parentNode.parentNode.children).indexOf(this.parentNode.parentNode);
+                let list = $(event.currentTarget.parentNode.parentNode.parentNode);
                 item_data.unset(index);
+                list.find('input,textarea,select').each(function (index, item) {
+                    let input = $(item);
+                    input.parent().data('item', input.attr('data-bind'));
+                });
             });
         return group;
     }
