@@ -1107,7 +1107,7 @@ Date.getLocalDateFormat = function () {
             .attr('id', '__hz_field_' + def.name)
             .attr('data-bind', def.name)
             .data('def', def)
-            .val(item_data);
+            .val(item_data instanceof dataBinderValue ? item_data.value : item_data);
         if (def.protected) input.prop('disabled', true);
         else input.focus(function (event) { return _input_event_focus(host, $(event.target)); })
             .blur(function (event) { return _input_event_blur(host, $(event.target)); })
@@ -1157,15 +1157,14 @@ Date.getLocalDateFormat = function () {
                 .html($('<button type="button" class="btn btn-danger btn-sm">').html($('<i class="fa fa-minus">'))));
         }
         if (_eval(host, def.allow_add, true, item_data, def.name)) {
-            var data = {}, btn = $('<button type="button" class="btn btn-success btn-sm">')
-                .html($('<i class="fa fa-plus">'));
-            var item = new dataBinder(function (fields) { let data = []; for (x in fields) data[x] = null; return data; }(def.fields));
-            var fieldDIV = _form_field(host, { fields: layout }, ud, ud, ud, item, true, true)
-                .addClass('itemlist-newitem')
-                .attr('data-field', def.name);
-            var sub_host = _get_empty_host(), new_item = new dataBinder(_define(def.fields));
+            var sub_host = _get_empty_host(), new_item = new dataBinder(_define(def.fields), 'fake');
+            sub_host.settings = $.extend({}, $.fn.hzForm.defaults, host.settings);
             sub_host.data = new_item;
             sub_host.def = { fields: def.fields };
+            var btn = $('<button type="button" class="btn btn-success btn-sm">').html($('<i class="fa fa-plus">'));
+            var fieldDIV = _form_field(sub_host, { fields: layout }, ud, ud, ud, ud, true)
+                .addClass('itemlist-newitem')
+                .attr('data-field', def.name);
             fieldDIV.data('newitem', new_item).find('input').removeAttr('data-bind');
             fieldDIV.find('select').each(function (index, item) {
                 var select = $(item), def = select.data('def');
@@ -1183,8 +1182,8 @@ Date.getLocalDateFormat = function () {
                 var data = fieldDIV.data('newitem'), valid = true;
                 fieldDIV.find('input,select,textarea').each(function (index, item) {
                     if (!item.name) return;
-                    var input = $(item), value = input.val(), def = input.data('def');
-                    if (def.required && !value) {
+                    var input = $(item), value = input.val(), def = input.data('def'), item_data = _get_data_item(sub_host.data, input.parent().data('item'));
+                    if (_eval(sub_host, def.required, false, item_data, item.name) && !value) {
                         input.toggleClass('is-invalid', true);
                         valid = false;
                         return;
@@ -1202,11 +1201,11 @@ Date.getLocalDateFormat = function () {
                 if (!valid) return;
                 item_data.push(data.save());
                 fieldDIV.find('input,select,textarea').each(function (index, item) { $(item).val('').removeClass('is-invalid'); });
-                _validate_input(host, group);
+                _validate_input(sub_host, group);
             });
         }
         if (_eval(host, def.allow_edit, false, item_data, def.name) !== true) layout = _field_to_html(layout);
-        template.append(_form_field(host, { fields: layout }, null, false, false));
+        template.append(_form_field(host, { fields: layout }, null, false, false, ud, true));
         item_data.watch(function (item) {
             var item_name = item.attr('data-bind'), item_data = _get_data_item(host.data, item_name);
             item.find('select,input').each(function (index, item) {
@@ -1299,7 +1298,7 @@ Date.getLocalDateFormat = function () {
         return layout;
     }
 
-    function _form_field(host, info, p, populate, apply_rules, item_data, hidden, store_object) {
+    function _form_field(host, info, p, populate, apply_rules, item_data, hidden) {
         var def = null, field = null;
         if (info instanceof Array)
             info = { fields: info };
@@ -1331,7 +1330,7 @@ Date.getLocalDateFormat = function () {
             if ('label' in def) field.append($('<div class="col-md-12">').html($('<h5>').html(def.label)));
             for (let x in fields) {
                 let item = 'name' in fields[x] ? (item_data instanceof dataBinder ? item_data[fields[x].name] : undefined) : item_data;
-                let field_width = col_width, child_field = _form_field(host, fields[x], !p, populate, apply_rules, item, hidden, store_object);
+                let field_width = col_width, child_field = _form_field(host, fields[x], !p, populate, apply_rules, item, hidden);
                 if (fields[x] instanceof Object && 'weight' in fields[x])
                     field_width = Math.round(field_width * fields[x].weight);
                 field.append(child_field.toggleClass('col-lg-' + field_width, p));
@@ -1377,7 +1376,7 @@ Date.getLocalDateFormat = function () {
             }
             if (hidden !== true) host.pageInputs.push(field);
         } else field = $('<div>');
-        field.data('def', def).data('item', item_data ? (store_object === true ? item_data : item_data.attrName) : null);
+        field.data('def', def).data('item', item_data ? item_data : null);
         if ('tip' in def) {
             field.children('label.control-label').append($('<i class="fa fa-question-circle form-tip">')
                 .attr('data-title', def.tip)
@@ -1960,7 +1959,12 @@ Date.getLocalDateFormat = function () {
     function _get_empty_host(host) {
         if (typeof host === 'undefined') host = {};
         host.data = {};
-        host.events = {};
+        host.events = {
+            show: [],
+            required: [],
+            disabled: [],
+            change: {}
+        };
         host.posts = {};
         host.page = null;
         host.working = false;
