@@ -276,7 +276,6 @@ Date.getLocalDateFormat = function () {
         if (!def) return false;
         let label = input.children('label.control-label'), i = label.children('i.form-required');
         let item_data = _get_data_item(host.data, input.data('item'));
-        if (!item_data) return false;
         let required = _eval(host, def.required, typeof default_required === 'undefined' ? false : default_required, item_data, def.name);
         if (required !== true) i.remove();
         else if (i.length === 0) label.append($('<i class="fa fa-exclamation-circle form-required" title="Required">'));
@@ -297,7 +296,6 @@ Date.getLocalDateFormat = function () {
         let def = input.data('def');
         if (!def) return false;
         let item_data = _get_data_item(host.data, input.data('item'));
-        if (!item_data) return false;
         let disabled = _eval(host, def.disabled, false, item_data, def.name);
         if (typeof func !== 'function') func = input.data('disabled_func');
         if (typeof func !== 'function') func = function (result, field) {
@@ -314,11 +312,10 @@ Date.getLocalDateFormat = function () {
     }
 
     function _toggle_show(host, input) {
-        host.working = true;
         let def = input.data('def');
         if (!def) return false;
+        host.working = true;
         let item_data = _get_data_item(host.data, input.data('item'));
-        if (!item_data) return false;
         let toggle = _eval(host, input.data('show'), true, item_data, def ? def.name : null);
         input.toggle(toggle);
         if (!toggle) _nullify(host, def);
