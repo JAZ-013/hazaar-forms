@@ -1221,7 +1221,7 @@ Date.getLocalDateFormat = function () {
                 }
             });
             $(item).find('.form-group').each(function (index, input) {
-                let group = $(input), def = group.data('def'), sub_item_data = item_data[def.name];
+                let group = $(input), def = group.data('def'), sub_item_data = _get_data_item(item_data, def.name);
                 group.data('name', item_name + '.' + def.name)
                     .data('item', sub_item_data.attrName);
                 group.find('label').each(function (index, item) {
