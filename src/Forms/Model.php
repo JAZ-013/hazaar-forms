@@ -312,28 +312,8 @@ class Model extends \Hazaar\Model\Strict {
                 elseif(is_object($array)) settype($array, 'array');
             });
 
-            if(ake($def, 'type') !== 'array'){
-
-                $extra = array();
-
-                if(array_key_exists('disabled', $def))
-                    $extra['disabled'] = $def['disabled'];
-
-                if(array_key_exists('protected', $def))
-                    $extra['protected'] = $def['protected'];
-
-                if(array_key_exists('required', $def))
-                    $extra['required'] = $def['required'];
-
-                foreach($def[$target] as &$field){
-
-                    $field = $this->array_merge_recursive_override($extra, $field);
-
-                    $this->convert_definition($field);
-
-                }
-
-            }
+            foreach($def[$target] as &$field)
+                $this->convert_definition($field);
 
         }
 
