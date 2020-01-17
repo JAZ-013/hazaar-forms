@@ -1220,8 +1220,10 @@ Date.getLocalDateFormat = function () {
                     if (child_item_data && child_item_data.value) input.datepicker('setDate', new Date(child_item_data.value));
                 }
             });
-            $(item).find('.form-group').each(function (index, input) {
-                let group = $(input), def = group.data('def'), sub_item_data = _get_data_item(item_data, def.name);
+            $(item).find('.form-group,.form-section').each(function (index, input) {
+                let group = $(input), def = group.data('def');
+                if (!def.name) return;
+                let sub_item_data = _get_data_item(item_data, def.name);
                 group.data('name', item_name + '.' + def.name)
                     .data('item', sub_item_data.attrName);
                 group.find('label').each(function (index, item) {
