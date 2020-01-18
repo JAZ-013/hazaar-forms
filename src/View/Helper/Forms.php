@@ -121,4 +121,22 @@ class Forms extends \Hazaar\View\Helper {
 
     }
 
+    public function layout($name, $def, $data = array(), $options = array()){
+
+        if(!is_array($options)) $options = array();
+
+        if(!is_array($data)) $data = array();
+
+        $options['def'] = $def;
+
+        $options['data'] = $def;
+
+        $options['singlePage'] = true;  
+
+        $this->view->jquery->exec("var hzForm = $('#$name').hzForm(" . json_encode($options) . ");\n", 1);
+
+        return $this->html->div()->id($name);
+
+    }
+
 }

@@ -1952,14 +1952,24 @@ Date.getLocalDateFormat = function () {
 
     //Load all the dynamic bits
     function _load(host) {
-        _load_definition(host).done(function (response) {
-            _post(host, 'load').done(function (response) {
-                if (!response.ok) return;
-                host.data.extend(response.form);
-                $(host).trigger('data', [host.data.save()]);
-                _nav(host, 0);
-            }).fail(_error);
-        }).fail(_error);
+        let p = function (response) {
+            if (!response.ok) return;
+            host.data.extend(response.form);
+            $(host).trigger('data', [host.data.save()]);
+            _nav(host, 0);
+        };
+        if ((host.standalone = ('def' in host.settings)) === true) {
+            host.def = host.settings.def;
+            _prepare_field_definitions(host, host.def.fields);
+            host.data = new dataBinder(_define(host.def.fields));
+            p({ ok: true, form: host.settings.data });
+            delete host.settings.def;
+            delete host.settings.data;
+        } else {
+            _load_definition(host).done(function (response) {
+                _post(host, 'load').done(p).fail(_error);
+            });
+        }
     }
 
     function _get_empty_host(host) {
