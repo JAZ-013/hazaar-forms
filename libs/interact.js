@@ -1735,7 +1735,7 @@ Date.getLocalDateFormat = function () {
             let params = { params: extra || {}, form: data };
             if ('saveURL' in host.settings) params.url = host.settings.saveURL;
             $(host).trigger('saving', [data, params]);
-            _post(host, 'post', params, false).done(function (response) {
+            _post(host, 'save', params, false).done(function (response) {
                 if (!response.ok) {
                     return $(host).trigger('saverror', [{
                         error: { str: response.reason || "An unknown error occurred while saving the form!" }
