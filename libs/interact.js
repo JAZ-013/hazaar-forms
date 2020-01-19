@@ -387,9 +387,8 @@ Date.getLocalDateFormat = function () {
                 };
                 let check_api = function (host, update) {
                     let url = null;
-                    if (typeof update === 'boolean')
-                        return update;
-                    if (typeof update !== 'object') return false;
+                    if (typeof update === 'boolean') return update;
+                    else if (typeof update !== 'object') return false;
                     if (!('enabled' in update)) update.enabled = true;
                     if ('when' in update) update.enabled = _eval(host, update.when, false, item_data, def.name);
                     if (update.enabled) {
@@ -1732,7 +1731,7 @@ Date.getLocalDateFormat = function () {
         let save_data = function (host, extra) {
             let data = host.data.save();
             for (let x in host.def.fields) if (host.def.fields[x].protected === true) delete data[x];
-            let params = { params: extra || {}, form: data };
+            let params = host.standalone ? data : { params: extra || {}, form: data };
             if ('saveURL' in host.settings) params.url = host.settings.saveURL;
             $(host).trigger('saving', [data, params]);
             _post(host, 'save', params, false).done(function (response) {
@@ -1869,13 +1868,20 @@ Date.getLocalDateFormat = function () {
 
     function _post(host, action, postdata, track, sync) {
         if (track === true) _track(host);
-        let params = $.extend(true, {}, {
-            name: host.settings.form,
-            params: host.settings.params
-        }, postdata);
+        let params = {}, url = "";
+        if (host.standalone === true) {
+            if (action in host.settings.endpoints) url = host.settings.endpoints[action];
+            params = postdata;
+        } else {
+            url = hazaar.url(host.settings.controller, "interact/" + action);
+            params = $.extend(true, {}, {
+                name: host.settings.form,
+                params: host.settings.params
+            }, postdata);
+        }
         return $.ajax({
             method: "POST",
-            url: hazaar.url(host.settings.controller, 'interact/' + action),
+            url: url,
             async: sync !== true,
             contentType: "application/json",
             data: JSON.stringify(params)
@@ -1984,6 +1990,7 @@ Date.getLocalDateFormat = function () {
         host.posts = {};
         host.page = null;
         host.working = false;
+        host.standalone = false;
         host.pageInputs = [];
         host.loading = 0;
         host.uploads = [];
@@ -2077,6 +2084,7 @@ Date.getLocalDateFormat = function () {
     $.fn.hzForm.defaults = {
         "form": "default",
         "controller": "index",
+        "endpoint": "interact",
         "encode": true,
         "singlePage": false,
         "placeholder": "Please select...",
@@ -2098,7 +2106,8 @@ Date.getLocalDateFormat = function () {
             "chkInput": "custom-control-input",
             "chkLabel": "custom-control-label",
             "button": "btn"
-        }
+        },
+        "endpoints": {}
     };
 
 })(jQuery);

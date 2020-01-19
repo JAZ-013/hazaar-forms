@@ -121,19 +121,20 @@ class Forms extends \Hazaar\View\Helper {
 
     }
 
-    public function layout($name, $def, $data = array(), $options = array()){
+    public function layout($name, $data = array(), $def = array(), $options = array()){
 
-        if(!is_array($options)) $options = array();
+        $settings = new \Hazaar\Map(array(
+            'def' => $def,
+            'data' => $data,
+            'singlePage' => true,
+            'endpoints' => array(
+                'save' => (string)$this->view->url()
+            )
+        ));
 
-        if(!is_array($data)) $data = array();
+        $settings->extend($options);
 
-        $options['def'] = $def;
-
-        $options['data'] = $def;
-
-        $options['singlePage'] = true;  
-
-        $this->view->jquery->exec("var hzForm = $('#$name').hzForm(" . json_encode($options) . ");\n", 1);
+        $this->view->jquery->exec("var hzForm = $('#$name').hzForm(" . $settings->toJSON() . ");\n", 1);
 
         return $this->html->div()->id($name);
 
