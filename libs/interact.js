@@ -1729,7 +1729,7 @@ Date.getLocalDateFormat = function () {
     function _save(host, validate, extra) {
         let callbacks = { done: null };
         let save_data = function (host, extra) {
-            let data = host.data.save();
+            let data = host.data.save((host.standalone === true));
             for (let x in host.def.fields) if (host.def.fields[x].protected === true) delete data[x];
             let params = host.standalone ? data : { params: extra || {}, form: data };
             if ('saveURL' in host.settings) params.url = host.settings.saveURL;
