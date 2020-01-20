@@ -387,9 +387,8 @@ Date.getLocalDateFormat = function () {
                 };
                 let check_api = function (host, update) {
                     let url = null;
-                    if (typeof update === 'boolean')
-                        return update;
-                    if (typeof update !== 'object') return false;
+                    if (typeof update === 'boolean') return update;
+                    else if (typeof update !== 'object') return false;
                     if (!('enabled' in update)) update.enabled = true;
                     if ('when' in update) update.enabled = _eval(host, update.when, false, item_data, def.name);
                     if (update.enabled) {
@@ -1624,7 +1623,14 @@ Date.getLocalDateFormat = function () {
                             if (callbacks.length > 0) for (let x in callbacks) callbacks[x](def.name, result, response);
                         };
                         if (indexKey in host.apiCache) apiDone(host.apiCache[indexKey]);
+                        else if (host.standalone === true) $.ajax({
+                            method: 'POST',
+                            url: def.validate.url,
+                            contentType: "application/json",
+                            data: JSON.stringify(request.target[1])
+                        }).done(apiDone).fail(_error);
                         else _post(host, 'api', request, false).done(apiDone).fail(_error);
+
                     } else if (callbacks.length > 0) for (let x in callbacks) callbacks[x](def.name, result, extra);
                     if (def.name in host.monitor) for (let x in host.monitor[def.name]) host.monitor[def.name][x](result);
                 }
@@ -1732,12 +1738,12 @@ Date.getLocalDateFormat = function () {
     function _save(host, validate, extra) {
         let callbacks = { done: null };
         let save_data = function (host, extra) {
-            let data = host.data.save();
+            let data = host.data.save((host.standalone === true));
             for (let x in host.def.fields) if (host.def.fields[x].protected === true) delete data[x];
-            let params = { params: extra || {}, form: data };
+            let params = host.standalone ? data : { params: extra || {}, form: data };
             if ('saveURL' in host.settings) params.url = host.settings.saveURL;
             $(host).trigger('saving', [data, params]);
-            _post(host, 'post', params, false).done(function (response) {
+            _post(host, 'save', params, false).done(function (response) {
                 if (!response.ok) {
                     return $(host).trigger('saverror', [{
                         error: { str: response.reason || "An unknown error occurred while saving the form!" }
@@ -1871,13 +1877,20 @@ Date.getLocalDateFormat = function () {
 
     function _post(host, action, postdata, track, sync) {
         if (track === true) _track(host);
-        let params = $.extend(true, {}, {
-            name: host.settings.form,
-            params: host.settings.params
-        }, postdata);
+        let params = {}, url = "";
+        if (host.standalone === true) {
+            if (action in host.settings.endpoints) url = host.settings.endpoints[action];
+            params = postdata;
+        } else {
+            url = hazaar.url(host.settings.controller, "interact/" + action);
+            params = $.extend(true, {}, {
+                name: host.settings.form,
+                params: host.settings.params
+            }, postdata);
+        }
         return $.ajax({
             method: "POST",
-            url: hazaar.url(host.settings.controller, 'interact/' + action),
+            url: url,
             async: sync !== true,
             contentType: "application/json",
             data: JSON.stringify(params)
@@ -1954,14 +1967,24 @@ Date.getLocalDateFormat = function () {
 
     //Load all the dynamic bits
     function _load(host) {
-        _load_definition(host).done(function (response) {
-            _post(host, 'load').done(function (response) {
-                if (!response.ok) return;
-                host.data.extend(response.form);
-                $(host).trigger('data', [host.data.save()]);
-                _nav(host, 0);
-            }).fail(_error);
-        }).fail(_error);
+        let p = function (response) {
+            if (!response.ok) return;
+            host.data.extend(response.form);
+            $(host).trigger('data', [host.data.save()]);
+            _nav(host, 0);
+        };
+        if ((host.standalone = ('def' in host.settings)) === true) {
+            host.def = host.settings.def;
+            _prepare_field_definitions(host, host.def.fields);
+            host.data = new dataBinder(_define(host.def.fields));
+            p({ ok: true, form: host.settings.data });
+            delete host.settings.def;
+            delete host.settings.data;
+        } else {
+            _load_definition(host).done(function (response) {
+                _post(host, 'load').done(p).fail(_error);
+            });
+        }
     }
 
     function _get_empty_host(host) {
@@ -1976,6 +1999,7 @@ Date.getLocalDateFormat = function () {
         host.posts = {};
         host.page = null;
         host.working = false;
+        host.standalone = false;
         host.pageInputs = [];
         host.loading = 0;
         host.uploads = [];
@@ -2069,6 +2093,7 @@ Date.getLocalDateFormat = function () {
     $.fn.hzForm.defaults = {
         "form": "default",
         "controller": "index",
+        "endpoint": "interact",
         "encode": true,
         "singlePage": false,
         "placeholder": "Please select...",
@@ -2090,7 +2115,8 @@ Date.getLocalDateFormat = function () {
             "chkInput": "custom-control-input",
             "chkLabel": "custom-control-label",
             "button": "btn"
-        }
+        },
+        "endpoints": {}
     };
 
 })(jQuery);

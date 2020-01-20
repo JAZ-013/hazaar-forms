@@ -106,7 +106,7 @@ abstract class Form extends Action {
 
                 break;
 
-            case 'post':
+            case 'save':
 
                 $postdata = $this->request->getParams();
 
