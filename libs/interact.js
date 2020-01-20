@@ -1621,7 +1621,14 @@ Date.getLocalDateFormat = function () {
                             if (callbacks.length > 0) for (let x in callbacks) callbacks[x](def.name, result, response);
                         };
                         if (indexKey in host.apiCache) apiDone(host.apiCache[indexKey]);
+                        else if (host.standalone === true) $.ajax({
+                            method: 'POST',
+                            url: def.validate.url,
+                            contentType: "application/json",
+                            data: JSON.stringify(request.target[1])
+                        }).done(apiDone).fail(_error);
                         else _post(host, 'api', request, false).done(apiDone).fail(_error);
+
                     } else if (callbacks.length > 0) for (let x in callbacks) callbacks[x](def.name, result, extra);
                     if (def.name in host.monitor) for (let x in host.monitor[def.name]) host.monitor[def.name][x](result);
                 }
