@@ -276,13 +276,11 @@ Date.getLocalDateFormat = function () {
         if (!def) return false;
         let label = input.children('label.control-label'), i = label.children('i.form-required');
         let item_data = _get_data_item(host.data, input.data('item'));
-        let required = _eval(host, def.required, typeof default_required === 'undefined' ? false : default_required, item_data, def.name);
-        if (required !== true) i.remove();
+        def.actual_required = _eval(host, def.required, typeof default_required === 'undefined' ? false : default_required, item_data, def.name);
+        if (def.actual_required !== true) i.remove();
         else if (i.length === 0) label.append($('<i class="fa fa-exclamation-circle form-required" title="Required">'));
-        if ('fields' in def) input.children('div.form-section,div.form-group').each(function (index, item) {
-            _eval_required(host, $(item), required);
-        });
-        return required;
+        if ('fields' in def) input.children('div.form-section,div.form-group').each(function (index, item) { _eval_required(host, $(item), def.actual_required); });
+        return def.actual_required;
     }
 
     function _make_disabled(host, def, input, func) {
@@ -1253,7 +1251,7 @@ Date.getLocalDateFormat = function () {
     }
 
     function _form_field_lookup(def, info, raw_mode) {
-        if (info instanceof Object) def = 'name' in info ? $.extend({}, _form_field_lookup(def, info.name), info) : info;
+        if (info instanceof Object) def = 'name' in info ? $.extend(_form_field_lookup(def, info.name), info) : info;
         else {
             let parts = info.split(/[\.\[]/);
             for (let x in parts) {
@@ -1266,7 +1264,7 @@ Date.getLocalDateFormat = function () {
                 if (!(parts[x] in def)) return null;
                 def = def[parts[x]];
             }
-            def = $.extend({}, def, raw_mode === true ? {} : { name: info });
+            def = $.extend(def, raw_mode === true ? {} : { name: info });
         }
         return def;
     }
@@ -1532,7 +1530,7 @@ Date.getLocalDateFormat = function () {
     function _validate_rule(host, name, item, def) {
         if (!(item && def)) return true;
         if ('show' in def) if (!_eval(host, def.show, true, item, def.name)) return true;
-        let required = 'required' in def ? _eval(host, def.required, false, item, def.name) : false;
+        let required = 'actual_required' in def ? def.actual_required : false;
         let value = item instanceof dataBinderArray ? item.length > 0 ? item : null : def.other && !item.value ? item.other : item.value;
         if (required && value === null) return _validation_error(name, def, "required");
         if (typeof value === 'undefined' || value === null) return true; //Return now if there is no value and the field is not required!
