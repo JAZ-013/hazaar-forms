@@ -1163,7 +1163,9 @@ Date.getLocalDateFormat = function () {
             let fieldDIV = _form_field(sub_host, { fields: layout }, ud, ud, ud, ud, true)
                 .addClass('itemlist-newitem')
                 .attr('data-field', def.name);
-            fieldDIV.find('input,textarea,select').attr('data-bind-ns', def.name);
+            fieldDIV.find('input,textarea,select').attr('data-bind-ns', def.name).keypress(function (event) {
+                if (event.which === 13) $(event.target).parent().parent().parent().children('.itemlist-newitem-add').children('button').click();
+            });
             fieldDIV.find('select').each(function (index, item) {
                 let select = $(item), def = select.data('def');
                 select.off('change').on('change', function () {
