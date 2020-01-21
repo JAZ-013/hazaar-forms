@@ -1179,8 +1179,10 @@ Date.getLocalDateFormat = function () {
                 let valid = true;
                 fieldDIV.find('input,select,textarea').each(function (index, item) {
                     if (!item.name) return;
-                    let input = $(item), value = input.val(), def = input.data('def'), item_data = _get_data_item(sub_host.data, input.parent().data('item'));
-                    if (_eval(sub_host, def.required, false, item_data, item.name) && !value) {
+                    let input = $(item), value = null, def = input.data('def'), item_data = _get_data_item(sub_host.data, input.parent().data('item'));
+                    if (input.is('[type=checkbox]')) value = input.is(':checked');
+                    else value = input.val();
+                    if (def.actual_required === true && !value) {
                         input.toggleClass('is-invalid', true);
                         valid = false;
                         return;
@@ -1190,10 +1192,8 @@ Date.getLocalDateFormat = function () {
                         let date = input.datepicker('getDate');
                         value = date.getFullYear() + '-' + (date.getMonth() + 1) + '-' + date.getDate();
                     }
-                    if (value) {
-                        let sub_item_data = _get_data_item(sub_host.data, item.name, false, value);
-                        if (sub_item_data) sub_item_data.set(value);
-                    }
+                    let sub_item_data = _get_data_item(sub_host.data, item.name, false, value);
+                    if (sub_item_data) sub_item_data.set(value);
                 });
                 if (!valid) return;
                 item_data.push(sub_host.data.save());
