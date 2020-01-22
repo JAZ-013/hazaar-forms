@@ -722,11 +722,12 @@ Date.getLocalDateFormat = function () {
                     _get_data_item(item_data, def.name).value = null;
                     if (typeof cb === 'function') cb(select, _input_select_options(host, def, null, value));
                 };
-                if (def.watch.substr(0, 5) === 'item.' && item_data)
-                    item_data.watch(def.watch.substr(5), watch_func);
-                else {
-                    item_data = host.data;
-                    host.data.watch(def.watch, watch_func);
+                for (x in def.watch) {
+                    if (def.watch[x].substr(0, 5) === 'item.' && item_data) item_data.watch(def.watch[x].substr(5), watch_func);
+                    else {
+                        item_data = host.data;
+                        host.data.watch(def.watch[x], watch_func);
+                    }
                 }
             }
         } else options = def.options;
@@ -1402,10 +1403,7 @@ Date.getLocalDateFormat = function () {
         }
         if ('show' in def && apply_rules !== false) _make_showable(host, def, field);
         if ('hint' in def) field.append($('<small class="form-text text-muted">').html(_match_replace(host, def.hint, null, true, true)));
-        if ('watch' in def) {
-            if (!Array.isArray(def.watch)) def.watch = [def.watch];
-            for (let x in def.watch) host.data.watch(def.watch[x], function (field) { _input_event_update(host, field); });
-        }
+        if ('watch' in def) for (let x in def.watch) host.data.watch(def.watch[x], function (field) { _input_event_update(host, field); });
         return field;
     }
 
@@ -1940,6 +1938,7 @@ Date.getLocalDateFormat = function () {
                 }
                 if ('default' in fields[x] && !Array.isArray(fields[x].default)) fields[x].default = [fields[x].default];
             } else if (itemExtra) fields[x] = jQuery.extend(true, {}, itemExtra, fields[x]);
+            if ('watch' in fields[x] && !Array.isArray(fields[x].watch)) fields[x].watch = [fields[x].watch];
             if ('fields' in fields[x]) _prepare_field_definitions(host, fields[x].fields, itemExtra);
         }
     }
