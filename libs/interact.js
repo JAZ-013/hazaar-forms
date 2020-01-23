@@ -1183,8 +1183,7 @@ Date.getLocalDateFormat = function () {
                     let input = $(item), value = null, def = input.data('def'), item_data = _get_data_item(sub_host.data, input.parent().data('item'));
                     if (input.is('[type=checkbox]')) value = input.is(':checked');
                     else value = input.val();
-                    debugger;
-                    if (item_data && item_data.actual_required === true && !value) {
+                    if (item_data.attrName in sub_host.actual_required && sub_host.actual_required[item_data.attrName] === true && !value) {
                         input.toggleClass('is-invalid', true);
                         valid = false;
                         return;
