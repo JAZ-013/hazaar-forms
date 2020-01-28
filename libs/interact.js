@@ -1848,7 +1848,8 @@ Date.getLocalDateFormat = function () {
         if (track === true) _track(host);
         let params = {}, url = "";
         if (host.standalone === true) {
-            if (action in host.settings.endpoints) url = host.settings.endpoints[action];
+            if (!(action in host.settings.endpoints)) return $(host).trigger('error', ['Host endpoint ' + action + ' is unknown!']);
+            url = host.settings.endpoints[action];
             params = postdata;
         } else {
             url = hazaar.url(host.settings.controller, "interact/" + action);
