@@ -1181,10 +1181,10 @@ Date.getLocalDateFormat = function () {
                 let valid = true;
                 fieldDIV.find('input,select,textarea').each(function (index, item) {
                     if (!item.name) return;
-                    let input = $(item), value = null, def = input.data('def'), item_data = _get_data_item(sub_host.data, input.parent().data('item'));
+                    let input = $(item), value = null, def = input.data('def'), item_data = _get_data_item(sub_host.data, input.attr('data-bind'));
                     if (input.is('[type=checkbox]')) value = input.is(':checked');
                     else value = input.val();
-                    if (item_data.attrName in sub_host.actual_required && sub_host.actual_required[item_data.attrName] === true && !value) {
+                    if (item_data && item_data.attrName in sub_host.actual_required && sub_host.actual_required[item_data.attrName] === true && !value) {
                         input.toggleClass('is-invalid', true);
                         valid = false;
                         return;
