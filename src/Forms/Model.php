@@ -527,11 +527,26 @@ class Model extends \Hazaar\Model\Strict {
 
                 $temp = new \Hazaar\Money(0);
 
-                if(!(array_key_exists('currencies', $item) && is_array($item['currencies'])))
-                    $item['currencies'] = array($temp->getCurrencyCode());
+                if(!(array_key_exists('currencies', $item) && is_array($item['currencies']))){
 
-                foreach($item['currencies'] as &$currency)
-                    $currency = (object)$temp->getCurrencyInfo($currency);
+                    if(is_object($item))
+                        $item->currencies = array($temp->getCurrencyCode());
+                    elseif(is_array($item))
+                        $item['currencies'] = array($temp->getCurrencyCode());
+
+                }
+
+                if(is_object($item)){
+
+                    foreach($item->currencies as &$currency)
+                        $currency = (object)$temp->getCurrencyInfo($currency);
+
+                }elseif(is_array($item)){
+
+                    foreach($item['currencies'] as &$currency)
+                        $currency = (object)$temp->getCurrencyInfo($currency);
+
+                }
 
             }
 
