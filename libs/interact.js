@@ -504,7 +504,7 @@ Date.getLocalDateFormat = function () {
                         .data('def', def), label
                 ]).toggleClass('active', active).change(fChange));
             }
-            return container.addClass('btn-group').addClass('btn-group-toggle').html(items).parent().show();
+            return container.addClass('btn-group').addClass('btn-group-toggle').attr('role', 'group').attr('aria-label', def.label).html(items).parent().show();
         }
         if (!('columns' in def)) def.columns = 1;
         if (def.columns > 6) def.columns = 6;
@@ -1114,7 +1114,7 @@ Date.getLocalDateFormat = function () {
             sub_host.data = new_item;
             sub_host.def = { fields: def.fields };
             let btn = $('<button type="button" class="btn btn-success btn-sm">').html($('<i class="fa fa-plus">'));
-            let fieldDIV = _form_field(sub_host, { fields: layout }, ud, ud, ud, ud, true)
+            let fieldDIV = _form_field(sub_host, { fields: layout }, true, ud, ud, ud, true)
                 .addClass('itemlist-newitem')
                 .attr('data-field', def.name);
             fieldDIV.find('input,textarea,select').attr('data-bind-ns', def.name).keypress(function (event) {
@@ -1132,7 +1132,7 @@ Date.getLocalDateFormat = function () {
                 });
             });
             group.append($('<div class="itemlist-newitems">').html([$('<div class="itemlist-newitem-add">').html([
-                $('<label>').html('&nbsp;').addClass(host.settings.styleClasses.label),
+                host.settings.horizontal ? '' : $('<label>').html('&nbsp;').addClass(host.settings.styleClasses.label),
                 btn
             ]), fieldDIV]));
             btn.click(function () {
@@ -1161,7 +1161,7 @@ Date.getLocalDateFormat = function () {
             });
         }
         if (_eval(host, def.allow_edit, false, item_data, def.name) !== true) layout = _field_to_html(layout);
-        template.append(_form_field(host, { fields: layout }, null, false, false, ud, true));
+        template.append(_form_field(host, { fields: layout }, true, false, false, ud, true));
         item_data.watch(function (item) {
             let item_name = item.attr('data-bind'), item_data = _get_data_item(host.data, item_name);
             item.find('select,input').each(function (index, item) {
@@ -1276,7 +1276,7 @@ Date.getLocalDateFormat = function () {
         } else if ('fields' in def && def.type !== 'array') {
             let layout = _resolve_field_layout(host, def.fields, 'layout' in def ? $.extend(true, [], def.layout) : null, def.name);
             let length = layout.length, fields = [], col_width;
-            if (typeof p === 'undefined' || p === null) p = !('layout' in def && def.layout);
+            if (typeof p === 'undefined' || p === null) p = host.settings.horizontal ? false : !('layout' in def && def.layout);
             for (let x in layout) {
                 let item = layout[x];
                 if (typeof item === 'string') item = _form_field_lookup(host.def, item);
@@ -1290,7 +1290,7 @@ Date.getLocalDateFormat = function () {
             }
             col_width = 12 / length;
             field = $('<div class="form-section">').toggleClass('row', p).data('def', def);
-            if ('label' in def) field.append($('<div class="col-md-12">').html($('<h5>').html(def.label)));
+            if ('label' in def) field.append($('<div>').toggleClass('col-md-12', p).html($('<h5>').html(def.label)));
             for (let x in fields) {
                 let item = 'name' in fields[x] ? (item_data instanceof dataBinder ? item_data[fields[x].name] : undefined) : item_data;
                 let field_width = col_width, child_field = _form_field(host, fields[x], !p, populate, apply_rules, item, hidden);
@@ -1339,12 +1339,19 @@ Date.getLocalDateFormat = function () {
                 }
             }
             if (hidden !== true) host.pageInputs.push(input);
-            field = $('<div>').addClass(host.settings.styleClasses.group).data('def', def);
+            field = $('<div>').addClass(host.settings.styleClasses.group).toggleClass('row', host.settings.horizontal).data('def', def);
             if (def.label) field.append($('<label>')
                 .addClass(host.settings.styleClasses.label)
+                .toggleClass('col-sm-' + host.settings.hz.left, host.settings.horizontal)
                 .attr('for', '__hz_field_' + def.name)
                 .html(_match_replace(host, def.label, null, true, true)));
-            field.append(input);
+            let col = $('<div>').html(input);
+            if (host.settings.horizontal) {
+                if (def.label) col.addClass('col-sm-' + host.settings.hz.right);
+                else col.addClass('col-sm-12');
+            }
+            if ('hint' in def) col.append($('<small class="form-text text-muted">').html(_match_replace(host, def.hint, null, true, true)));
+            field.append(col);
         }
         field.data('def', def).data('item', item_data ? item_data : null);
         if ('tip' in def) {
@@ -1366,7 +1373,6 @@ Date.getLocalDateFormat = function () {
             field.append($('<div>').html(_match_replace(host, html, null, true, true)));
         }
         if ('show' in def && apply_rules !== false) _make_showable(host, def, field);
-        if ('hint' in def) field.append($('<small class="form-text text-muted">').html(_match_replace(host, def.hint, null, true, true)));
         if ('watch' in def) for (let x in def.watch) host.data.watch(def.watch[x], function (field) { _input_event_update(host, field); });
         return field;
     }
@@ -1933,6 +1939,7 @@ Date.getLocalDateFormat = function () {
     function _load(host) {
         let p = function (response) {
             if (!response.ok) return;
+            if ('horizontal' in host.def) host.settings.horizontal = host.def.horizontal;
             host.data.extend(response.form);
             $(host).trigger('data', [host.data.save()]);
             _nav(host, 0);
@@ -2063,6 +2070,7 @@ Date.getLocalDateFormat = function () {
         "encode": true,
         "singlePage": false,
         "horizontal": false,
+        "hz": { "left": 3, "right": 9 },
         "placeholder": "Please select...",
         "loaderClass": "forms-loader",
         "validateNav": true,
