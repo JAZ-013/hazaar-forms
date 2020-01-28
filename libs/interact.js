@@ -1176,7 +1176,10 @@ Date.getLocalDateFormat = function () {
                     _input_select_populate(sub_host, options, select);
                 });
             });
-            group.append($('<div class="itemlist-newitems">').html([$('<div class="itemlist-newitem-add">').html(btn), fieldDIV]));
+            group.append($('<div class="itemlist-newitems">').html([$('<div class="itemlist-newitem-add">').html([
+                $('<label>').html('&nbsp;').addClass(host.settings.styleClasses.label),
+                btn
+            ]), fieldDIV]));
             btn.click(function () {
                 let valid = true;
                 fieldDIV.find('input,select,textarea').each(function (index, item) {
