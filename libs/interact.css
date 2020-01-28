@@ -52,10 +52,6 @@
     position: relative;
 }
 
-    .form-group.no-label {
-        padding-top: 2em;
-    }
-
     .form-group label .fa {
         margin-left: 5px;
     }
@@ -67,6 +63,7 @@
     .form-group .form-tip {
         position: absolute;
         right: 15px;
+        top: 5px;
     }
 
 .form-fileupload .dz-items {
