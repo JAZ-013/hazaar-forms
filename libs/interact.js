@@ -1100,12 +1100,17 @@ Date.getLocalDateFormat = function () {
         let group = $('<div class="itemlist">').addClass(host.settings.styleClasses.group);
         if (!(item_data instanceof dataBinderArray)) return group;
         $('<h4>').addClass(host.settings.styleClasses.label).html(_match_replace(host, def.label, null, true, true)).appendTo(group);
-        delete def.label;
+        if ('arrayOf' in def && !('fields' in def)) def.fields = {
+            "__list_value": $.extend(true, {}, { "required": def.required, "disabled": def.disabled }, (typeof def.arrayOf === 'object' ? def.arrayOf : { "type": def.arrayOf }))
+        };
+        let bump = def.fields && 'label' in def.arrayOf;
         let layout = _resolve_field_layout(host, def.fields, def.layout);
         let template = $('<div class="itemlist-item">');
         if (_eval(host, def.allow_remove, true, item_data, def.name)) {
-            template.append($('<div class="itemlist-item-rm">')
-                .html($('<button type="button" class="btn btn-danger btn-sm">').html($('<i class="fa fa-minus">'))));
+            template.append($('<div class="itemlist-item-rm">').html([
+                bump ? $('<label>').html('&nbsp;').addClass(host.settings.styleClasses.label) : '',
+                $('<button type="button" class="btn btn-danger btn-sm">').html($('<i class="fa fa-minus">'))
+            ]));
         }
         if (_eval(host, def.allow_add, true, item_data, def.name)) {
             let sub_host = _get_empty_host(), new_item = new dataBinder(_define(def.fields), def.name, null, def.name);
@@ -1132,7 +1137,7 @@ Date.getLocalDateFormat = function () {
                 });
             });
             group.append($('<div class="itemlist-newitems">').html([$('<div class="itemlist-newitem-add">').html([
-                host.settings.horizontal ? '' : $('<label>').html('&nbsp;').addClass(host.settings.styleClasses.label),
+                bump ? $('<label>').html('&nbsp;').addClass(host.settings.styleClasses.label) : '',
                 btn
             ]), fieldDIV]));
             btn.click(function () {
@@ -1205,6 +1210,7 @@ Date.getLocalDateFormat = function () {
                     input.parent().data('item', input.attr('data-bind'));
                 });
             });
+        delete def.label;
         return group;
     }
 
