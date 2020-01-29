@@ -1307,7 +1307,9 @@ Date.getLocalDateFormat = function () {
             }
         } else {
             var input;
-            if ('options' in def) {
+            if (host.settings.viewmode === true) {
+                input = $('<span>').html(item_data.toString());
+            } else if ('options' in def) {
                 input = def.type === 'array' ? _input_select_multi(host, def) : _input_select(host, def, populate);
             } else if ('lookup' in def && def.type !== 'array') {
                 if (typeof def.lookup === 'string') def.lookup = { url: def.lookup };
@@ -1360,6 +1362,7 @@ Date.getLocalDateFormat = function () {
             if ('hint' in def) col.append($('<small class="form-text text-muted">').html(_match_replace(host, def.hint, null, true, true)));
             field.append(col);
         }
+        if (host.settings.viewmode === true) return field;
         field.data('def', def).data('item', item_data ? item_data : null);
         if ('tip' in def) {
             field.children('label.control-label').append($('<i class="fa fa-question-circle form-tip">')
@@ -2058,6 +2061,18 @@ Date.getLocalDateFormat = function () {
                                 && !result) _validate_nav(host, errors);
                         });
                         break;
+                    case 'edit':
+                        host.settings.viewmode = false;
+                        _nav(host, host.page, null, true);
+                        break;
+                    case 'view':
+                        host.settings.viewmode = true;
+                        _nav(host, host.page, null, true);
+                        break;
+                    case 'toggleEdit':
+                        host.settings.viewmode = !host.settings.viewmode;
+                        _nav(host, host.page, null, true);
+                        break;
                     case 'monitor':
                         if (typeof args[2] === 'function') {
                             host.monitor[args[1]] = [args[2]];
@@ -2078,6 +2093,7 @@ Date.getLocalDateFormat = function () {
         "encode": true,
         "singlePage": false,
         "horizontal": false,
+        "viewmode": true,
         "hz": { "left": 3, "right": 9 },
         "placeholder": "Please select...",
         "loaderClass": "forms-loader",
