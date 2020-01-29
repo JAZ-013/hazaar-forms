@@ -1103,12 +1103,13 @@ Date.getLocalDateFormat = function () {
         if ('arrayOf' in def && !('fields' in def)) def.fields = {
             "__list_value": $.extend(true, {}, { "required": def.required, "disabled": def.disabled }, (typeof def.arrayOf === 'object' ? def.arrayOf : { "type": def.arrayOf }))
         };
-        let bump = def.fields && 'label' in def.arrayOf;
+        debugger;
+        let bump = def.fields && 'label' in def.fields[Object.keys(def.fields)[0]];
         let layout = _resolve_field_layout(host, def.fields, def.layout);
         let template = $('<div class="itemlist-item">');
         if (_eval(host, def.allow_remove, true, item_data, def.name)) {
             template.append($('<div class="itemlist-item-rm">').html([
-                bump ? $('<label>').html('&nbsp;').addClass(host.settings.styleClasses.label) : '',
+                def.allow_edit === true && bump ? $('<label>').html('&nbsp;').addClass(host.settings.styleClasses.label) : '',
                 $('<button type="button" class="btn btn-danger btn-sm">').html($('<i class="fa fa-minus">'))
             ]));
         }
