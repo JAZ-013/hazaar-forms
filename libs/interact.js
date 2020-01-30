@@ -1308,7 +1308,7 @@ Date.getLocalDateFormat = function () {
             var input;
             def.nolabel = false;
             if (host.viewmode === true) {
-                input = $('<span>').html(item_data.toString());
+                input = $('<span>').attr('data-bind', def.name).html(item_data.toString());
             } else if ('options' in def) {
                 input = def.type === 'array' ? _input_select_multi(host, def) : _input_select(host, def, populate);
             } else if ('lookup' in def && def.type !== 'array') {
