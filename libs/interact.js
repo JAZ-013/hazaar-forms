@@ -1364,6 +1364,14 @@ Date.getLocalDateFormat = function () {
         }
         if (host.settings.viewmode === true) return field;
         field.data('def', def).data('item', item_data ? item_data : null);
+        if ('width' in def) field.width(def.width);
+        if ('html' in def) {
+            let html = def.html;
+            if ('label' in def && field.children().length === 0) field.append($('<label>').addClass(host.settings.styleClasses.label).html(def.label));
+            field.append($('<div>').html(_match_replace(host, html, null, true, true)));
+        }
+        if ('show' in def && apply_rules !== false) _make_showable(host, def, field);
+        if ('watch' in def) for (let x in def.watch) host.data.watch(def.watch[x], function (field) { _input_event_update(host, field); });
         if ('tip' in def) {
             field.children('label.control-label').append($('<i class="fa fa-question-circle form-tip">')
                 .attr('data-title', def.tip)
@@ -1376,14 +1384,6 @@ Date.getLocalDateFormat = function () {
         if ('required' in def && apply_rules !== false) _make_required(host, def, field);
         if ('disabled' in def && apply_rules !== false) _make_disabled(host, def, field);
         if ('invalid' in def) field.append($('<div class="invalid-feedback">').html(def.invalid));
-        if ('width' in def) field.width(def.width);
-        if ('html' in def) {
-            let html = def.html;
-            if ('label' in def && field.children().length === 0) field.append($('<label>').addClass(host.settings.styleClasses.label).html(def.label));
-            field.append($('<div>').html(_match_replace(host, html, null, true, true)));
-        }
-        if ('show' in def && apply_rules !== false) _make_showable(host, def, field);
-        if ('watch' in def) for (let x in def.watch) host.data.watch(def.watch[x], function (field) { _input_event_update(host, field); });
         return field;
     }
 
@@ -1946,12 +1946,19 @@ Date.getLocalDateFormat = function () {
         }).fail(_error);
     }
 
+    function _fix_booleans(data) {
+        for (x in data) {
+            if (typeof data[x] === 'object' && !('__hz_value' in data[x])) _fix_booleans(data[x]);
+            else if (typeof data[x] === 'boolean') data[x] = { '__hz_value': data[x], '__hz_label': data[x] ? 'Yes' : 'No' };
+        }
+        return data;
+    }
     //Load all the dynamic bits
     function _load(host) {
         let p = function (response) {
             if (!response.ok) return;
             if ('horizontal' in host.def) host.settings.horizontal = host.def.horizontal;
-            host.data.extend(response.form);
+            host.data.extend(_fix_booleans(response.form));
             $(host).trigger('data', [host.data.save()]);
             _nav(host, 0);
         };
