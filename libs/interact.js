@@ -1307,7 +1307,7 @@ Date.getLocalDateFormat = function () {
         } else {
             var input;
             def.nolabel = false;
-            if (host.settings.viewmode === true) {
+            if (host.viewmode === true) {
                 input = $('<span>').html(item_data.toString());
             } else if ('options' in def) {
                 input = def.type === 'array' ? _input_select_multi(host, def) : _input_select(host, def, populate);
@@ -1362,7 +1362,6 @@ Date.getLocalDateFormat = function () {
             if ('hint' in def) col.append($('<small class="form-text text-muted">').html(_match_replace(host, def.hint, null, true, true)));
             field.append(col);
         }
-        if (host.settings.viewmode === true) return field;
         field.data('def', def).data('item', item_data ? item_data : null);
         if ('width' in def) field.width(def.width);
         if ('html' in def) {
@@ -1372,6 +1371,7 @@ Date.getLocalDateFormat = function () {
         }
         if ('show' in def && apply_rules !== false) _make_showable(host, def, field);
         if ('watch' in def) for (let x in def.watch) host.data.watch(def.watch[x], function (field) { _input_event_update(host, field); });
+        if (host.viewmode === true) return field;
         if ('tip' in def) {
             field.children('label.control-label').append($('<i class="fa fa-question-circle form-tip">')
                 .attr('data-title', def.tip)
@@ -1986,6 +1986,7 @@ Date.getLocalDateFormat = function () {
             change: {}
         };
         host.posts = {};
+        host.viewmode = false;
         host.page = null;
         host.working = false;
         host.validate = true;
@@ -2004,6 +2005,7 @@ Date.getLocalDateFormat = function () {
         //Define the default object properties
         _get_empty_host(host);
         host.settings = $.extend({}, $.fn.hzForm.defaults, settings);
+        host.viewmode = host.settings.viewmode;
         if (host.settings.concurrentUploads < 1) host.settings.concurrentUploads = 1;
         $(host).trigger('init');
         _registerEvents(host);
@@ -2054,7 +2056,12 @@ Date.getLocalDateFormat = function () {
                             _nav(host, host.page + 1);
                         break;
                     case 'save':
-                        _save(host, args[1], args[2]);
+                        _save(host, args[1], args[2]).done(function () {
+                            if (host.settings.viewmode === true) {
+                                host.viewmode = true;
+                                _nav(host, host.page, null, true);
+                            }
+                        });
                         break;
                     case 'single':
                         host.settings.singlePage = Boolean(args[1]);
@@ -2069,15 +2076,15 @@ Date.getLocalDateFormat = function () {
                         });
                         break;
                     case 'edit':
-                        host.settings.viewmode = false;
+                        host.viewmode = false;
                         _nav(host, host.page, null, true);
                         break;
                     case 'view':
-                        host.settings.viewmode = true;
+                        host.viewmode = true;
                         _nav(host, host.page, null, true);
                         break;
                     case 'toggleEdit':
-                        host.settings.viewmode = !host.settings.viewmode;
+                        host.viewmode = !host.viewmode;
                         _nav(host, host.page, null, true);
                         break;
                     case 'monitor':
@@ -2100,7 +2107,7 @@ Date.getLocalDateFormat = function () {
         "encode": true,
         "singlePage": false,
         "horizontal": false,
-        "viewmode": true,
+        "viewmode": false,
         "hz": { "left": 3, "right": 9 },
         "placeholder": "Please select...",
         "loaderClass": "forms-loader",
