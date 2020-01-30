@@ -1300,15 +1300,18 @@ Date.getLocalDateFormat = function () {
             for (let x in fields) {
                 let item = 'name' in fields[x] ? (item_data instanceof dataBinder ? item_data[fields[x].name] : undefined) : item_data;
                 let field_width = col_width, child_field = _form_field(host, fields[x], !p, populate, apply_rules, item, hidden);
-                if (fields[x] instanceof Object && 'weight' in fields[x])
-                    field_width = Math.round(field_width * fields[x].weight);
+                if (fields[x] instanceof Object && 'weight' in fields[x]) field_width = Math.round(field_width * fields[x].weight);
                 field.append(child_field.toggleClass('col-lg-' + field_width, p));
             }
         } else {
             var input;
             def.nolabel = false;
             if (host.viewmode === true) {
-                input = $('<span>').attr('data-bind', def.name).html(item_data.toString());
+                if (item_data instanceof dataBinderArray) {
+                    let item_def = { "fields": $.extend(true, {}, def.fields) };
+                    input = $('<div>');
+                    item_data.each(function (i, item) { input.append(_form_field(host, item_def, p, populate, apply_rules, item, hidden)); });
+                } else input = $('<span>').attr('data-bind', def.name).html(item_data ? item_data.toString() : '');
             } else if ('options' in def) {
                 input = def.type === 'array' ? _input_select_multi(host, def) : _input_select(host, def, populate);
             } else if ('lookup' in def && def.type !== 'array') {
