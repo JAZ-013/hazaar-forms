@@ -454,7 +454,7 @@ Date.getLocalDateFormat = function () {
                 btn.click(function () { _eval_code(host, action, null, def.name); });
                 break;
         }
-        def.label = def.title;
+        def.nolabel = true;
         return group;
     }
 
@@ -766,7 +766,7 @@ Date.getLocalDateFormat = function () {
             .appendTo(group);
         if ('css' in def) input.css(def.css);
         if ('cssClass' in def) input.addClass(def.cssClass);
-        def.label = def.title;
+        def.nolabel = true;
         return group;
     }
 
@@ -1100,20 +1100,20 @@ Date.getLocalDateFormat = function () {
         let group = $('<div class="itemlist">').addClass(host.settings.styleClasses.group);
         if (!(item_data instanceof dataBinderArray)) return group;
         $('<h4>').addClass(host.settings.styleClasses.label).html(_match_replace(host, def.label, null, true, true)).appendTo(group);
+        def.nolabel = true;
         if ('arrayOf' in def && !('fields' in def)) def.fields = {
             "__list_value": $.extend(true, {}, { "required": def.required, "disabled": def.disabled }, (typeof def.arrayOf === 'object' ? def.arrayOf : { "type": def.arrayOf }))
         };
-        debugger;
         let bump = def.fields && 'label' in def.fields[Object.keys(def.fields)[0]];
         let layout = _resolve_field_layout(host, def.fields, def.layout);
         let template = $('<div class="itemlist-item">');
-        if (_eval(host, def.allow_remove, true, item_data, def.name)) {
+        if (host.viewmode !== true && _eval(host, def.allow_remove, true, item_data, def.name)) {
             template.append($('<div class="itemlist-item-rm">').html([
                 def.allow_edit === true && bump ? $('<label>').html('&nbsp;').addClass(host.settings.styleClasses.label) : '',
                 $('<button type="button" class="btn btn-danger btn-sm">').html($('<i class="fa fa-minus">'))
             ]));
         }
-        if (_eval(host, def.allow_add, true, item_data, def.name)) {
+        if (host.viewmode !== true && _eval(host, def.allow_add, true, item_data, def.name)) {
             let sub_host = _get_empty_host(), new_item = new dataBinder(_define(def.fields), def.name, null, def.name);
             sub_host.settings = $.extend({}, $.fn.hzForm.defaults, host.settings);
             sub_host.validate = false;
@@ -1166,7 +1166,7 @@ Date.getLocalDateFormat = function () {
                 sub_host.data.empty();
             });
         }
-        if (_eval(host, def.allow_edit, false, item_data, def.name) !== true) layout = _field_to_html(layout);
+        if (host.viewmode === true || _eval(host, def.allow_edit, false, item_data, def.name) !== true) layout = _field_to_html(layout);
         template.append(_form_field(host, { fields: layout }, true, false, false, ud, true));
         item_data.watch(function (item) {
             let item_name = item.attr('data-bind'), item_data = _get_data_item(host.data, item_name);
@@ -1211,7 +1211,6 @@ Date.getLocalDateFormat = function () {
                     input.parent().data('item', input.attr('data-bind'));
                 });
             });
-        delete def.label;
         return group;
     }
 
@@ -1301,13 +1300,16 @@ Date.getLocalDateFormat = function () {
             for (let x in fields) {
                 let item = 'name' in fields[x] ? (item_data instanceof dataBinder ? item_data[fields[x].name] : undefined) : item_data;
                 let field_width = col_width, child_field = _form_field(host, fields[x], !p, populate, apply_rules, item, hidden);
-                if (fields[x] instanceof Object && 'weight' in fields[x])
-                    field_width = Math.round(field_width * fields[x].weight);
+                if (fields[x] instanceof Object && 'weight' in fields[x]) field_width = Math.round(field_width * fields[x].weight);
                 field.append(child_field.toggleClass('col-lg-' + field_width, p));
             }
         } else {
             var input;
-            if ('options' in def) {
+            def.nolabel = false;
+            if (host.viewmode === true) {
+                if (item_data instanceof dataBinderArray) input = _input_list(host, def);
+                else input = $('<span>').attr('data-bind', item_data ? item_data.attrName : '').html(item_data ? item_data.toString() : '');
+            } else if ('options' in def) {
                 input = def.type === 'array' ? _input_select_multi(host, def) : _input_select(host, def, populate);
             } else if ('lookup' in def && def.type !== 'array') {
                 if (typeof def.lookup === 'string') def.lookup = { url: def.lookup };
@@ -1347,11 +1349,11 @@ Date.getLocalDateFormat = function () {
             }
             if (hidden !== true) host.pageInputs.push(input);
             field = $('<div>').addClass(host.settings.styleClasses.group).toggleClass('row', host.settings.horizontal).data('def', def);
-            if (def.label) field.append($('<label>')
+            if (def.title || (def.nolabel !== true && def.label)) field.append($('<label>')
                 .addClass(host.settings.styleClasses.label)
                 .toggleClass('col-sm-' + host.settings.hz.left, host.settings.horizontal)
                 .attr('for', '__hz_field_' + def.name)
-                .html(_match_replace(host, def.label, null, true, true)));
+                .html(_match_replace(host, 'title' in def ? def.title : def.label, null, true, true)));
             let col = $('<div>').html(input);
             if (host.settings.horizontal) {
                 if (def.label) col.addClass('col-sm-' + host.settings.hz.right);
@@ -1361,6 +1363,15 @@ Date.getLocalDateFormat = function () {
             field.append(col);
         }
         field.data('def', def).data('item', item_data ? item_data : null);
+        if ('width' in def) field.width(def.width);
+        if ('html' in def) {
+            let html = def.html;
+            if ('label' in def && field.children().length === 0) field.append($('<label>').addClass(host.settings.styleClasses.label).html(def.label));
+            field.append($('<div>').html(_match_replace(host, html, null, true, true)));
+        }
+        if ('show' in def && apply_rules !== false) _make_showable(host, def, field);
+        if ('watch' in def) for (let x in def.watch) host.data.watch(def.watch[x], function (field) { _input_event_update(host, field); });
+        if (host.viewmode === true) return field;
         if ('tip' in def) {
             field.children('label.control-label').append($('<i class="fa fa-question-circle form-tip">')
                 .attr('data-title', def.tip)
@@ -1373,14 +1384,6 @@ Date.getLocalDateFormat = function () {
         if ('required' in def && apply_rules !== false) _make_required(host, def, field);
         if ('disabled' in def && apply_rules !== false) _make_disabled(host, def, field);
         if ('invalid' in def) field.append($('<div class="invalid-feedback">').html(def.invalid));
-        if ('width' in def) field.width(def.width);
-        if ('html' in def) {
-            let html = def.html;
-            if ('label' in def && field.children().length === 0) field.append($('<label>').addClass(host.settings.styleClasses.label).html(def.label));
-            field.append($('<div>').html(_match_replace(host, html, null, true, true)));
-        }
-        if ('show' in def && apply_rules !== false) _make_showable(host, def, field);
-        if ('watch' in def) for (let x in def.watch) host.data.watch(def.watch[x], function (field) { _input_event_update(host, field); });
         return field;
     }
 
@@ -1943,12 +1946,19 @@ Date.getLocalDateFormat = function () {
         }).fail(_error);
     }
 
+    function _fix_booleans(data) {
+        for (x in data) {
+            if (data[x] !== null && typeof data[x] === 'object' && !('__hz_value' in data[x])) _fix_booleans(data[x]);
+            else if (typeof data[x] === 'boolean') data[x] = { '__hz_value': data[x], '__hz_label': data[x] ? 'Yes' : 'No' };
+        }
+        return data;
+    }
     //Load all the dynamic bits
     function _load(host) {
         let p = function (response) {
             if (!response.ok) return;
             if ('horizontal' in host.def) host.settings.horizontal = host.def.horizontal;
-            host.data.extend(response.form);
+            host.data.extend(_fix_booleans(response.form));
             $(host).trigger('data', [host.data.save()]);
             _nav(host, 0);
         };
@@ -1976,6 +1986,7 @@ Date.getLocalDateFormat = function () {
             change: {}
         };
         host.posts = {};
+        host.viewmode = false;
         host.page = null;
         host.working = false;
         host.validate = true;
@@ -1994,6 +2005,7 @@ Date.getLocalDateFormat = function () {
         //Define the default object properties
         _get_empty_host(host);
         host.settings = $.extend({}, $.fn.hzForm.defaults, settings);
+        host.viewmode = host.settings.viewmode;
         if (host.settings.concurrentUploads < 1) host.settings.concurrentUploads = 1;
         $(host).trigger('init');
         _registerEvents(host);
@@ -2044,7 +2056,12 @@ Date.getLocalDateFormat = function () {
                             _nav(host, host.page + 1);
                         break;
                     case 'save':
-                        _save(host, args[1], args[2]);
+                        _save(host, args[1], args[2]).done(function () {
+                            if (host.settings.viewmode === true) {
+                                host.viewmode = true;
+                                _nav(host, host.page, null, true);
+                            }
+                        });
                         break;
                     case 'single':
                         host.settings.singlePage = Boolean(args[1]);
@@ -2057,6 +2074,18 @@ Date.getLocalDateFormat = function () {
                                 || args[1] !== false)
                                 && !result) _validate_nav(host, errors);
                         });
+                        break;
+                    case 'edit':
+                        host.viewmode = false;
+                        _nav(host, host.page, null, true);
+                        break;
+                    case 'view':
+                        host.viewmode = true;
+                        _nav(host, host.page, null, true);
+                        break;
+                    case 'toggleEdit':
+                        host.viewmode = !host.viewmode;
+                        _nav(host, host.page, null, true);
                         break;
                     case 'monitor':
                         if (typeof args[2] === 'function') {
@@ -2078,6 +2107,7 @@ Date.getLocalDateFormat = function () {
         "encode": true,
         "singlePage": false,
         "horizontal": false,
+        "viewmode": false,
         "hz": { "left": 3, "right": 9 },
         "placeholder": "Please select...",
         "loaderClass": "forms-loader",
