@@ -1948,7 +1948,7 @@ Date.getLocalDateFormat = function () {
 
     function _fix_booleans(data) {
         for (x in data) {
-            if (typeof data[x] === 'object' && !('__hz_value' in data[x])) _fix_booleans(data[x]);
+            if (data[x] !== null && typeof data[x] === 'object' && !('__hz_value' in data[x])) _fix_booleans(data[x]);
             else if (typeof data[x] === 'boolean') data[x] = { '__hz_value': data[x], '__hz_label': data[x] ? 'Yes' : 'No' };
         }
         return data;
