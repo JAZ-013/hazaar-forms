@@ -1107,13 +1107,13 @@ Date.getLocalDateFormat = function () {
         let bump = def.fields && 'label' in def.fields[Object.keys(def.fields)[0]];
         let layout = _resolve_field_layout(host, def.fields, def.layout);
         let template = $('<div class="itemlist-item">');
-        if (_eval(host, def.allow_remove, true, item_data, def.name)) {
+        if (host.viewmode !== true && _eval(host, def.allow_remove, true, item_data, def.name)) {
             template.append($('<div class="itemlist-item-rm">').html([
                 def.allow_edit === true && bump ? $('<label>').html('&nbsp;').addClass(host.settings.styleClasses.label) : '',
                 $('<button type="button" class="btn btn-danger btn-sm">').html($('<i class="fa fa-minus">'))
             ]));
         }
-        if (_eval(host, def.allow_add, true, item_data, def.name)) {
+        if (host.viewmode !== true && _eval(host, def.allow_add, true, item_data, def.name)) {
             let sub_host = _get_empty_host(), new_item = new dataBinder(_define(def.fields), def.name, null, def.name);
             sub_host.settings = $.extend({}, $.fn.hzForm.defaults, host.settings);
             sub_host.validate = false;
@@ -1166,7 +1166,7 @@ Date.getLocalDateFormat = function () {
                 sub_host.data.empty();
             });
         }
-        if (_eval(host, def.allow_edit, false, item_data, def.name) !== true) layout = _field_to_html(layout);
+        if (host.viewmode === true || _eval(host, def.allow_edit, false, item_data, def.name) !== true) layout = _field_to_html(layout);
         template.append(_form_field(host, { fields: layout }, true, false, false, ud, true));
         item_data.watch(function (item) {
             let item_name = item.attr('data-bind'), item_data = _get_data_item(host.data, item_name);
@@ -1307,11 +1307,8 @@ Date.getLocalDateFormat = function () {
             var input;
             def.nolabel = false;
             if (host.viewmode === true) {
-                if (item_data instanceof dataBinderArray) {
-                    let item_def = { "fields": $.extend(true, {}, def.fields) };
-                    input = $('<div>');
-                    item_data.each(function (i, item) { input.append(_form_field(host, item_def, p, populate, apply_rules, item, hidden)); });
-                } else input = $('<span>').attr('data-bind', def.name).html(item_data ? item_data.toString() : '');
+                if (item_data instanceof dataBinderArray) input = _input_list(host, def);
+                else input = $('<span>').attr('data-bind', item_data ? item_data.attrName : '').html(item_data ? item_data.toString() : '');
             } else if ('options' in def) {
                 input = def.type === 'array' ? _input_select_multi(host, def) : _input_select(host, def, populate);
             } else if ('lookup' in def && def.type !== 'array') {
