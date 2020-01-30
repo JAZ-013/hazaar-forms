@@ -454,7 +454,7 @@ Date.getLocalDateFormat = function () {
                 btn.click(function () { _eval_code(host, action, null, def.name); });
                 break;
         }
-        def.label = def.title;
+        def.nolabel = true;
         return group;
     }
 
@@ -766,7 +766,7 @@ Date.getLocalDateFormat = function () {
             .appendTo(group);
         if ('css' in def) input.css(def.css);
         if ('cssClass' in def) input.addClass(def.cssClass);
-        def.label = def.title;
+        def.nolabel = true;
         return group;
     }
 
@@ -1100,10 +1100,10 @@ Date.getLocalDateFormat = function () {
         let group = $('<div class="itemlist">').addClass(host.settings.styleClasses.group);
         if (!(item_data instanceof dataBinderArray)) return group;
         $('<h4>').addClass(host.settings.styleClasses.label).html(_match_replace(host, def.label, null, true, true)).appendTo(group);
+        def.nolabel = true;
         if ('arrayOf' in def && !('fields' in def)) def.fields = {
             "__list_value": $.extend(true, {}, { "required": def.required, "disabled": def.disabled }, (typeof def.arrayOf === 'object' ? def.arrayOf : { "type": def.arrayOf }))
         };
-        debugger;
         let bump = def.fields && 'label' in def.fields[Object.keys(def.fields)[0]];
         let layout = _resolve_field_layout(host, def.fields, def.layout);
         let template = $('<div class="itemlist-item">');
@@ -1211,7 +1211,6 @@ Date.getLocalDateFormat = function () {
                     input.parent().data('item', input.attr('data-bind'));
                 });
             });
-        delete def.label;
         return group;
     }
 
@@ -1307,6 +1306,7 @@ Date.getLocalDateFormat = function () {
             }
         } else {
             var input;
+            def.nolabel = false;
             if (host.settings.viewmode === true) {
                 input = $('<span>').html(item_data.toString());
             } else if ('options' in def) {
@@ -1349,11 +1349,11 @@ Date.getLocalDateFormat = function () {
             }
             if (hidden !== true) host.pageInputs.push(input);
             field = $('<div>').addClass(host.settings.styleClasses.group).toggleClass('row', host.settings.horizontal).data('def', def);
-            if (def.label) field.append($('<label>')
+            if (def.title || (def.nolabel !== true && def.label)) field.append($('<label>')
                 .addClass(host.settings.styleClasses.label)
                 .toggleClass('col-sm-' + host.settings.hz.left, host.settings.horizontal)
                 .attr('for', '__hz_field_' + def.name)
-                .html(_match_replace(host, def.label, null, true, true)));
+                .html(_match_replace(host, 'title' in def ? def.title : def.label, null, true, true)));
             let col = $('<div>').html(input);
             if (host.settings.horizontal) {
                 if (def.label) col.addClass('col-sm-' + host.settings.hz.right);
