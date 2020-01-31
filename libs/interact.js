@@ -1308,6 +1308,7 @@ Date.getLocalDateFormat = function () {
             def.nolabel = false;
             if (host.viewmode === true) {
                 if (item_data instanceof dataBinderArray) input = _input_list(host, def);
+                else if (def.type === 'button') return;
                 else input = $('<span>').attr('data-bind', item_data ? item_data.attrName : '').html(item_data ? item_data.toString() : '');
             } else if ('options' in def) {
                 input = def.type === 'array' ? _input_select_multi(host, def) : _input_select(host, def, populate);
