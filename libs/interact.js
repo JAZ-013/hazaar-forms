@@ -68,6 +68,46 @@ Date.getLocalDateFormat = function () {
     return format.join(sep);
 };
 
+dataBinder.prototype._commit = dataBinderArray.prototype._commit = function (items) {
+    this._default = {};
+    for (let x in items) {
+        let value = items[x];
+        if (value instanceof dataBinder || value instanceof dataBinderArray)
+            value = items[x].commit();
+        else if (value instanceof dataBinderValue)
+            value = value.save();
+        this._default[x] = value;
+    }
+    return this._default;
+};
+
+dataBinder.prototype.commit = function () {
+    return this._commit(this._attributes);
+};
+
+dataBinderArray.prototype.commit = function () {
+    return this._commit(this._elements);
+};
+
+dataBinder.prototype._reset = dataBinderArray.prototype._reset = function (items) {
+    if (!this._default) return false;
+    //for (let x in items) if (!(x in this._default)) this.remove(x);
+    for (let x in this._default) {
+        if (items[x] instanceof dataBinder || items[x] instanceof dataBinderArray)
+            items[x].reset();
+        else this[x] = this._default[x];
+    }
+    return true;
+};
+
+dataBinder.prototype.reset = function () {
+    return this._reset(this._attributes);
+};
+
+dataBinderArray.prototype.reset = function () {
+    return this._reset(this._elements);
+};
+
 (function ($) {
 
     //Error capture method
@@ -1959,6 +1999,7 @@ Date.getLocalDateFormat = function () {
             if (!response.ok) return;
             if ('horizontal' in host.def) host.settings.horizontal = host.def.horizontal;
             host.data.extend(_fix_booleans(response.form));
+            host.data.commit();
             $(host).trigger('data', [host.data.save()]);
             _nav(host, 0);
         };
