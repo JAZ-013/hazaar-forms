@@ -1264,7 +1264,7 @@ Date.getLocalDateFormat = function () {
                 if (!(parts[x] in def)) return null;
                 def = def[parts[x]];
             }
-            def = $.extend(def, raw_mode === true ? {} : { name: info });
+            if (raw_mode !== true) def = $.extend(true, def, { name: info });
         }
         return def;
     }
@@ -1582,7 +1582,7 @@ Date.getLocalDateFormat = function () {
             let def = typeof name === 'object' ? name : _form_field_lookup(host.def, name);
             if (def) {
                 let item = _get_data_item(host.data, def.name);
-                if (!item) return;
+                if (!item) def.disabled = true;
                 if (def.protected || 'disabled' in def && _eval(host, def.disabled, false, item, def.name)) {
                     for (let x in callbacks) callbacks[x](def.name, true, extra);
                 } else if ('fields' in def) {
@@ -1596,16 +1596,15 @@ Date.getLocalDateFormat = function () {
                                 if (!('name' in def.fields[x])) def.fields[x].name = x;
                                 let fullName = def.name + '[' + i + '].' + x;
                                 childQueue.push(fullName);
-                                _validate_field({ data: item[i], def: def.fields, monitor: {} }, def.fields[x], fullName)
-                                    .done(function (childName, result, fullName) {
-                                        let index = childQueue.indexOf(fullName);
-                                        if (index >= 0) childQueue.splice(index, 1);
-                                        itemResult.push({ name: fullName, result: result });
-                                        $('[data-bind="' + fullName + '"]')
-                                            .toggleClass('is-invalid', result !== true)
-                                            .toggleClass('border-warning', result === true && typeof fullName === 'object' && fullName.warning === true);
-                                        if (childQueue.length === 0) for (let x in callbacks) callbacks[x](def.name, itemResult, extra);
-                                    });
+                                _validate_field(host, fullName).done(function (fullName, result) {
+                                    let index = childQueue.indexOf(fullName);
+                                    if (index >= 0) childQueue.splice(index, 1);
+                                    itemResult.push({ name: fullName, result: result });
+                                    $('[data-bind="' + fullName + '"]')
+                                        .toggleClass('is-invalid', result !== true)
+                                        .toggleClass('border-warning', result === true && typeof fullName === 'object' && fullName.warning === true);
+                                    if (childQueue.length === 0) for (let x in callbacks) callbacks[x](def.name, itemResult, extra);
+                                });
                             }
                         }
                     }
