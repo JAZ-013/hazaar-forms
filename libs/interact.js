@@ -398,7 +398,7 @@ dataBinderArray.prototype.reset = function () {
             } else item_data.set(_convert_data_type(def, value));
         } else if (def.type === 'date' && 'format' in def) {
             let date = input.datepicker('getDate');
-            item_data.set(date.getFullYear() + '-' + (date.getMonth() + 1) + '-' + date.getDate(), input.datepicker('getFormattedDate'));
+            item_data.set(date ? date.getFullYear() + '-' + (date.getMonth() + 1) + '-' + date.getDate() : null, input.datepicker('getFormattedDate'));
         } else if (def.other === true) item_data.other = input.val();
         else item_data.value = _convert_data_type(def, input.val());
         if (item_data.enabled() === false) return false;
