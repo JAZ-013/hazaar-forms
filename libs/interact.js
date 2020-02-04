@@ -1761,6 +1761,7 @@ dataBinderArray.prototype.reset = function () {
             let params = host.standalone ? data : { params: extra || {}, form: data };
             if ('saveURL' in host.settings) params.url = host.settings.saveURL;
             $(host).trigger('saving', [data, params]);
+            host.data.commit();
             _post(host, 'save', params, false).done(function (response) {
                 if (!response.ok) {
                     return $(host).trigger('saverror', [{
