@@ -2116,6 +2116,9 @@ dataBinderArray.prototype.reset = function () {
                                 && !result) _validate_nav(host, errors);
                         });
                         break;
+                    case 'reset':
+                        host.data.reset();
+                        break;
                     case 'edit':
                         host.viewmode = false;
                         _nav(host, host.page, null, true);
