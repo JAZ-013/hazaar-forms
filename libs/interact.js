@@ -472,11 +472,15 @@ dataBinderArray.prototype.reset = function () {
     }
 
     function _input_button(host, def) {
-        let group = $('<div>').addClass(host.settings.styleClasses.buttonGroup);
+        if ('buttons' in def) {
+            let group = $('<div>').addClass(host.settings.styleClasses.buttonGroup), defaults = Object.assign({}, def);
+            delete defaults.buttons;
+            for (x in def.buttons) group.append(_input_button(host, $.extend({}, defaults, def.buttons[x])));
+            return group;
+        }
         let btn = $('<button type="button">').addClass(host.settings.styleClasses.button)
             .addClass(def.class || 'btn-default')
-            .data('def', def)
-            .appendTo(group);
+            .data('def', def);
         if (!('label' in def)) def.label = 'Button';
         btn.html(_match_replace(host, def.label, null, true, true));
         switch (def.action) {
@@ -492,7 +496,7 @@ dataBinderArray.prototype.reset = function () {
                 break;
         }
         def.nolabel = true;
-        return group;
+        return btn;
     }
 
     function _input_select_multi_items(host, data, container) {
@@ -2171,7 +2175,7 @@ dataBinderArray.prototype.reset = function () {
             "chkInput": "custom-control-input",
             "chkLabel": "custom-control-label",
             "button": "btn",
-            "buttonGroup": "btn-toolbar"
+            "buttonGroup": "btn-group"
         },
         "endpoints": {}
     };
