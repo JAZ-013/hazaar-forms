@@ -68,6 +68,46 @@ Date.getLocalDateFormat = function () {
     return format.join(sep);
 };
 
+dataBinder.prototype._commit = dataBinderArray.prototype._commit = function (items) {
+    this._default = {};
+    for (let x in items) {
+        let value = items[x];
+        if (value instanceof dataBinder || value instanceof dataBinderArray)
+            value = items[x].commit();
+        else if (value instanceof dataBinderValue)
+            value = value.save();
+        this._default[x] = value;
+    }
+    return this._default;
+};
+
+dataBinder.prototype.commit = function () {
+    return this._commit(this._attributes);
+};
+
+dataBinderArray.prototype.commit = function () {
+    return this._commit(this._elements);
+};
+
+dataBinder.prototype.reset = function () {
+    if (!this._default) return false;
+    for (let x in this._attributes) if (!(x in this._default)) this.remove(x);
+    for (let x in this._default) {
+        if (this._attributes[x] instanceof dataBinder || this._attributes[x] instanceof dataBinderArray)
+            this._attributes[x].reset();
+        else this[x] = this._default[x];
+    }
+    return true;
+};
+
+dataBinderArray.prototype.reset = function () {
+    if (!this._default) return false;
+    this._elements = [];
+    for (let x in this._default) this._elements[x] = this.__convert_type(x, this._default[x]);
+    this.resync();
+    return true;
+};
+
 (function ($) {
 
     //Error capture method
@@ -358,7 +398,7 @@ Date.getLocalDateFormat = function () {
             } else item_data.set(_convert_data_type(def, value));
         } else if (def.type === 'date' && 'format' in def) {
             let date = input.datepicker('getDate');
-            item_data.set(date.getFullYear() + '-' + (date.getMonth() + 1) + '-' + date.getDate(), input.datepicker('getFormattedDate'));
+            item_data.set(date ? date.getFullYear() + '-' + (date.getMonth() + 1) + '-' + date.getDate() : null, input.datepicker('getFormattedDate'));
         } else if (def.other === true) item_data.other = input.val();
         else item_data.value = _convert_data_type(def, input.val());
         if (item_data.enabled() === false) return false;
@@ -1228,7 +1268,7 @@ Date.getLocalDateFormat = function () {
                 if (!(parts[x] in def)) return null;
                 def = def[parts[x]];
             }
-            def = $.extend(def, raw_mode === true ? {} : { name: info });
+            if (raw_mode !== true) def = $.extend(true, def, { name: info });
         }
         return def;
     }
@@ -1564,7 +1604,7 @@ Date.getLocalDateFormat = function () {
             let def = typeof name === 'object' ? name : _form_field_lookup(host.def, name);
             if (def) {
                 let item = _get_data_item(host.data, def.name);
-                if (!item) return;
+                if (!item) def.disabled = true;
                 if (def.protected || 'disabled' in def && _eval(host, def.disabled, false, item, def.name)) {
                     for (let x in callbacks) callbacks[x](def.name, true, extra);
                 } else if ('fields' in def) {
@@ -1578,16 +1618,15 @@ Date.getLocalDateFormat = function () {
                                 if (!('name' in def.fields[x])) def.fields[x].name = x;
                                 let fullName = def.name + '[' + i + '].' + x;
                                 childQueue.push(fullName);
-                                _validate_field({ data: item[i], def: def.fields, monitor: {} }, def.fields[x], fullName)
-                                    .done(function (childName, result, fullName) {
-                                        let index = childQueue.indexOf(fullName);
-                                        if (index >= 0) childQueue.splice(index, 1);
-                                        itemResult.push({ name: fullName, result: result });
-                                        $('[data-bind="' + fullName + '"]')
-                                            .toggleClass('is-invalid', result !== true)
-                                            .toggleClass('border-warning', result === true && typeof fullName === 'object' && fullName.warning === true);
-                                        if (childQueue.length === 0) for (let x in callbacks) callbacks[x](def.name, itemResult, extra);
-                                    });
+                                _validate_field(host, fullName).done(function (fullName, result) {
+                                    let index = childQueue.indexOf(fullName);
+                                    if (index >= 0) childQueue.splice(index, 1);
+                                    itemResult.push({ name: fullName, result: result });
+                                    $('[data-bind="' + fullName + '"]')
+                                        .toggleClass('is-invalid', result !== true)
+                                        .toggleClass('border-warning', result === true && typeof fullName === 'object' && fullName.warning === true);
+                                    if (childQueue.length === 0) for (let x in callbacks) callbacks[x](def.name, itemResult, extra);
+                                });
                             }
                         }
                     }
@@ -1723,6 +1762,7 @@ Date.getLocalDateFormat = function () {
             let params = host.standalone ? data : { params: extra || {}, form: data };
             if ('saveURL' in host.settings) params.url = host.settings.saveURL;
             $(host).trigger('saving', [data, params]);
+            host.data.commit();
             _post(host, 'save', params, false).done(function (response) {
                 if (!response.ok) {
                     return $(host).trigger('saverror', [{
@@ -1960,6 +2000,7 @@ Date.getLocalDateFormat = function () {
             if (!response.ok) return;
             if ('horizontal' in host.def) host.settings.horizontal = host.def.horizontal;
             host.data.extend(_fix_booleans(response.form));
+            host.data.commit();
             $(host).trigger('data', [host.data.save()]);
             _nav(host, 0);
         };
@@ -2075,6 +2116,9 @@ Date.getLocalDateFormat = function () {
                                 || args[1] !== false)
                                 && !result) _validate_nav(host, errors);
                         });
+                        break;
+                    case 'reset':
+                        host.data.reset();
                         break;
                     case 'edit':
                         host.viewmode = false;
