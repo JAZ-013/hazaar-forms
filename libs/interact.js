@@ -89,23 +89,23 @@ dataBinderArray.prototype.commit = function () {
     return this._commit(this._elements);
 };
 
-dataBinder.prototype._reset = dataBinderArray.prototype._reset = function (items) {
+dataBinder.prototype.reset = function () {
     if (!this._default) return false;
-    //for (let x in items) if (!(x in this._default)) this.remove(x);
+    for (let x in this._attributes) if (!(x in this._default)) this.remove(x);
     for (let x in this._default) {
-        if (items[x] instanceof dataBinder || items[x] instanceof dataBinderArray)
-            items[x].reset();
+        if (this._attributes[x] instanceof dataBinder || this._attributes[x] instanceof dataBinderArray)
+            this._attributes[x].reset();
         else this[x] = this._default[x];
     }
     return true;
 };
 
-dataBinder.prototype.reset = function () {
-    return this._reset(this._attributes);
-};
-
 dataBinderArray.prototype.reset = function () {
-    return this._reset(this._elements);
+    if (!this._default) return false;
+    this._elements = [];
+    for (let x in this._default) this._elements[x] = this.__convert_type(x, this._default[x]);
+    this.resync();
+    return true;
 };
 
 (function ($) {
