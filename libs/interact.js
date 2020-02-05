@@ -290,17 +290,14 @@ Date.getLocalDateFormat = function () {
         return _eval_disabled(host, input, func);
     }
 
-    function _eval_disabled(host, input, func) {
+    function _eval_disabled(host, input, default_disabled) {
         let def = input.data('def');
         if (!def) return false;
         let item_data = _get_data_item(host.data, input.data('item'));
-        let disabled = _eval(host, def.disabled, false, item_data, def.name);
-        if (typeof func !== 'function') func = input.data('disabled_func');
-        if (typeof func !== 'function') func = function (result, field) {
-            if (result !== true) result = false;
-            field.find('input,textarea,select,button').prop('disabled', result);
-        };
-        return func(disabled, input);
+        let ac = host.actual_disabled[item_data.attrName] = _eval(host, def.disabled, typeof default_disabled === 'undefined' ? false : default_disabled, item_data, def.name);
+        input.find('input,textarea,select,button').prop('disabled', ac);
+        if ('fields' in def) input.children('div.form-section,div.form-group').each(function (index, item) { _eval_disabled(host, $(item), ac); });
+        return ac;
     }
 
     function _make_showable(host, def, input) {
@@ -2006,6 +2003,7 @@ Date.getLocalDateFormat = function () {
         host.monitor = {};
         host.apiCache = {};
         host.actual_required = {};
+        host.actual_disabled = {};
         return host;
     }
 
