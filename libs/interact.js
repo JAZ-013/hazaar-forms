@@ -132,6 +132,13 @@ dataBinderArray.prototype.reset = function () {
         });
     }
 
+    function _guid() {
+        return 'yxxx-yxxx-yxxx'.replace(/[xy]/g, function (c) {
+            var r = Math.random() * 16 | 0, v = c === 'x' ? r : r & 0x3 | 0x8;
+            return v.toString(16);
+        });
+    }
+
     function _kv(obj, key) {
         return key.split('.').reduce(function (o, i) { return o[i]; }, obj);
     }
@@ -554,19 +561,19 @@ dataBinderArray.prototype.reset = function () {
         for (let col = 0; col < def.columns; col++)
             items.push($('<div>').addClass('col-md-' + col_width).toggleClass('custom-controls-stacked', def.inline));
         for (let x in data) {
-            let iv = _convert_data_type(def, data[x][valueKey]), il = data[x][labelKey];
+            let iv = _convert_data_type(def, data[x][valueKey]), il = data[x][labelKey], id = _guid();
             let active = value instanceof dataBinderArray && value.indexOf(iv) > -1, name = def.name + '_' + iv;
             let label = $('<div>').addClass(host.settings.styleClasses.chkDiv).html([
                 $('<input type="checkbox">')
                     .addClass(host.settings.styleClasses.chkInput)
-                    .attr('id', '__field_' + name)
+                    .attr('id', id)
                     .attr('value', iv)
                     .prop('checked', active)
                     .prop('disabled', disabled)
                     .data('def', def),
                 $('<label>').addClass(host.settings.styleClasses.chkLabel)
                     .html(il)
-                    .attr('for', '__field_' + name)
+                    .attr('for', id)
             ]).attr('data-bind-value', iv).change(fChange);
             if ('css' in def) label.css(def.css);
             items[column].append(label);
@@ -642,8 +649,7 @@ dataBinderArray.prototype.reset = function () {
                 delete data[x];
                 continue;
             }
-            let id = def.name + '_' + data[x][valueKey];
-            let radio = $('<input type="radio" class="custom-control-input">')
+            let id = _guid(), radio = $('<input type="radio" class="custom-control-input">')
                 .attr('id', id)
                 .attr('name', def.name)
                 .attr('value', data[x][valueKey])
@@ -821,11 +827,10 @@ dataBinderArray.prototype.reset = function () {
     }
 
     function _input_checkbox(host, def) {
-        let item_data = _get_data_item(host.data, def.name);
-        let group = $('<div>').addClass(host.settings.styleClasses.chkDiv);
+        let item_data = _get_data_item(host.data, def.name), group = $('<div>').addClass(host.settings.styleClasses.chkDiv), id = _guid();
         let input = $('<input type="checkbox">').addClass(host.settings.styleClasses.chkInput)
             .attr('name', def.name)
-            .attr('id', '__hz_field_' + def.name)
+            .attr('id', id)
             .attr('data-bind', def.name)
             .attr('checked', item_data ? item_data.value : false)
             .data('def', def)
@@ -837,7 +842,7 @@ dataBinderArray.prototype.reset = function () {
             .on('update', function (event, key, value, item_data) { return _input_event_update(host, $(event.target), false, item_data); });
         $('<label>').addClass(host.settings.styleClasses.chkLabel)
             .html(_match_replace(host, def.label, null, true, true))
-            .attr('for', '__hz_field_' + def.name)
+            .attr('for', id)
             .appendTo(group);
         if ('css' in def) input.css(def.css);
         if ('cssClass' in def) input.addClass(def.cssClass);
@@ -851,7 +856,6 @@ dataBinderArray.prototype.reset = function () {
         let input = $('<input>').addClass(host.settings.styleClasses.input)
             .attr('type', def.type === 'datetime' ? 'datetime-local' : 'date')
             .attr('name', def.name)
-            .attr('id', '__hz_field_' + def.name)
             .attr('data-bind', def.name)
             .data('def', def)
             .val(item_data)
@@ -951,7 +955,6 @@ dataBinderArray.prototype.reset = function () {
             .attr('data-bind', def.name)
             .attr('data-bind-label', true)
             .data('def', def)
-            .attr('id', '__hz_field_' + def.name)
             .attr('autocomplete', 'off')
             .appendTo(group);
         if (def.protected)
@@ -1090,7 +1093,6 @@ dataBinderArray.prototype.reset = function () {
         let prefixDIV = $('<div>').addClass(host.settings.styleClasses.inputGroupPrepend);
         let suffixDIV = $('<div>').addClass(host.settings.styleClasses.inputGroupAppend);
         input.attr('name', def.name)
-            .attr('id', '__hz_field_' + def.name)
             .attr('data-bind', def.name + '.amt')
             .data('def', def)
             .val(item_data.amt)
@@ -1136,7 +1138,6 @@ dataBinderArray.prototype.reset = function () {
             if ('height' in def) input.css('height', def.height);
         } else input = $('<input>').addClass(host.settings.styleClasses.input).attr('type', type);
         input.attr('name', def.name)
-            .attr('id', '__hz_field_' + def.name)
             .attr('data-bind', def.name)
             .data('def', def)
             .val(item_data instanceof dataBinderValue ? item_data.value : item_data);
