@@ -635,9 +635,7 @@ dataBinderArray.prototype.reset = function () {
     }
 
     function _input_radio_items(host, options, data, group, no_nullify) {
-        let item_data = _get_data_item(host.data, group.attr('data-bind')), def = group.data('def');
-        let default_item = item_data && item_data.value === null && 'default' in options ? options.default : null;
-        let valueKey = options.value || 'value', labelKey = options.label || 'label';
+        let def = group.data('def'), valueKey = options.value || 'value', labelKey = options.label || 'label';
         data = _convert_data(data, valueKey, labelKey, def);
         for (x in data) {
             if (('filter' in options && options.filter.indexOf(data[x][labelKey]) === -1) || data[x][valueKey] === '__spacer__') {
@@ -645,13 +643,19 @@ dataBinderArray.prototype.reset = function () {
                 continue;
             }
             let id = def.name + '_' + data[x][valueKey];
+            let radio = $('<input type="radio" class="custom-control-input">')
+                .attr('id', id)
+                .attr('name', def.name)
+                .attr('value', data[x][valueKey])
+                .attr('data-bind', def.name)
+                .data('def', def);
             let option = $('<div class="custom-control custom-radio">').html([
-                $('<input type="radio" class="custom-control-input">').attr('id', id).attr('name', def.name).attr('value', data[x][valueKey]),
+                radio,
                 $('<label class="custom-control-label">').attr('for', id).html(labelKey.indexOf('{{') > -1 ? _match_replace(null, labelKey, data[x], true) : data[x][labelKey])
             ]).appendTo(group);
             if (def.horizontal === true) option.addClass('custom-control-inline');
-            if (default_item !== null && data[x][labelKey] === default_item)
-                item_data.set(data[x][valueKey], data[x][labelKey], data[x][options.other]);
+            radio.change(function (event) { return _input_event_change(host, $(event.target)); })
+                .on('update', function (event, key, value, item_data) { return _input_event_update(host, $(event.target), false, item_data); });
         }
         return group;
     }
