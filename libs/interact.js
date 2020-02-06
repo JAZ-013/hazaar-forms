@@ -628,9 +628,35 @@ dataBinderArray.prototype.reset = function () {
                 def.options = _get_data_item(host.data, match[1]);
             } else def.options = { url: def.options };
         }
-        _input_select_options(host, def, group, null, function (select, options) {
+        _input_options(host, def, group, null, function (select, options) {
             _input_select_multi_populate(host, options, select, true);
         });
+        return group;
+    }
+
+    function _input_radio_items(host, options, data, group, no_nullify) {
+        let def = group.data('def'), valueKey = options.value || 'value', labelKey = options.label || 'label';
+        data = _convert_data(data, valueKey, labelKey, def);
+        for (x in data) {
+            if (('filter' in options && options.filter.indexOf(data[x][labelKey]) === -1) || data[x][valueKey] === '__spacer__') {
+                delete data[x];
+                continue;
+            }
+            let id = def.name + '_' + data[x][valueKey];
+            let radio = $('<input type="radio" class="custom-control-input">')
+                .attr('id', id)
+                .attr('name', def.name)
+                .attr('value', data[x][valueKey])
+                .attr('data-bind', def.name)
+                .data('def', def);
+            let option = $('<div class="custom-control custom-radio">').html([
+                radio,
+                $('<label class="custom-control-label">').attr('for', id).html(labelKey.indexOf('{{') > -1 ? _match_replace(null, labelKey, data[x], true) : data[x][labelKey])
+            ]).appendTo(group);
+            if (def.horizontal === true) option.addClass('custom-control-inline');
+            radio.change(function (event) { return _input_event_change(host, $(event.target)); })
+                .on('update', function (event, key, value, item_data) { return _input_event_update(host, $(event.target), false, item_data); });
+        }
         return group;
     }
 
@@ -695,48 +721,49 @@ dataBinderArray.prototype.reset = function () {
         return select;
     }
 
-    function _input_select_populate_ajax(host, options, select, track, item_data) {
+    function _input_options_populate_ajax(host, options, select, track, item_data, callback) {
         let postops = {};
         Object.assign(postops, options);
         if ((postops.url = _match_replace(host, postops.url, item_data)) === false)
-            return _input_select_items(host, options, null, select);
+            return callback(host, options, null, select);
         if (track !== false) select.prop('disabled', true).html($('<option value selected>').html('Loading...'));
         postops.url = _url(host, postops.url);
         return $.ajax(postops).done(function (data) {
             if (typeof select.data('def') !== 'object') return;
-            _input_select_items(host, options, data, select);
+            callback(host, options, data, select);
         }).fail(_error);
     }
 
-    function _input_select_populate(host, options, select, track, item_data) {
+    function _input_options_populate(host, options, select, track, item_data, callback) {
         if (typeof options === 'string') {
             let match = options.match(/^\{\{([\w\.]+)\}\}$/);
             if (match !== null) {
                 host.data.watch(match[1], function (key, item, select) {
-                    _input_select_populate(host, item, select, track, item_data);
+                    _input_options_populate(host, item, select, track, item_data);
                 }, select);
                 options = _get_data_item(host.data, match[1]);
             } else options = { url: options };
         }
+        if (typeof callback !== 'function') callback = _input_select_items;
         if (options instanceof dataBinderValue) {
             let o = typeof options.value === 'object' ? options.value : typeof options.other === 'object' ? options.other : null;
-            return _input_select_items(host, {}, o, select, o ? false : true);
+            return callback(host, {}, o, select, o ? false : true);
         }
         if (!(options !== null && typeof options === 'object' && 'url' in options))
-            return _input_select_items(host, options, options, select);
+            return callback(host, options, options, select);
         let matches = options.url.match(/\{\{[\w\.]+\}\}/g), def = select.data('def');
         for (let x in matches) {
             let match = matches[x].substr(2, matches[x].length - 4);
             if (!(match in def.watchers)) def.watchers[match] = [];
             if (typeof item_data === 'undefined') item_data = host.data;
             def.watchers[match].push(item_data.watch(match, function (key, value, select) {
-                _input_select_populate_ajax(host, options, select, true, item_data);
+                _input_options_populate_ajax(host, options, select, true, item_data, callback);
             }, select));
         }
-        return _input_select_populate_ajax(host, options, select, track, item_data);
+        return _input_options_populate_ajax(host, options, select, track, item_data, callback);
     }
 
-    function _input_select_options(host, def, select, item_data, cb) {
+    function _input_options(host, def, select, item_data, cb) {
         if (!('options' in def)) return false;
         let options = {};
         if (Array.isArray(def.options)) {
@@ -750,7 +777,7 @@ dataBinderArray.prototype.reset = function () {
             if (select && 'watch' in def) {
                 let watch_func = function (key, value, args) {
                     _get_data_item(item_data, def.name).value = null;
-                    if (typeof cb === 'function') cb(select, _input_select_options(host, def, null, value));
+                    if (typeof cb === 'function') cb(select, _input_options(host, def, null, value));
                 };
                 for (x in def.watch) {
                     if (def.watch[x].substr(0, 5) === 'item.' && item_data) item_data.watch(def.watch[x].substr(5), watch_func);
@@ -766,6 +793,13 @@ dataBinderArray.prototype.reset = function () {
     }
 
     function _input_select(host, def, populate) {
+        if (def.radios === true) {
+            let group = $('<div class="form-group">').data('def', def);
+            if (populate !== false) _input_options(host, def, group, ud, function (group, options) {
+                _input_options_populate(host, options, group, ud, ud, _input_radio_items);
+            });
+            return group;
+        }
         let select = $('<select>').addClass(host.settings.styleClasses.input)
             .attr('name', def.name)
             .data('def', def)
@@ -780,8 +814,8 @@ dataBinderArray.prototype.reset = function () {
         if (!("placeholder" in def)) def.placeholder = host.settings.placeholder;
         if ('css' in def) select.css(def.css);
         if ('cssClass' in def) select.addClass(def.cssClass);
-        if (populate !== false) _input_select_options(host, def, select, null, function (select, options) {
-            _input_select_populate(host, options, select);
+        if (populate !== false) _input_options(host, def, select, null, function (select, options) {
+            _input_options_populate(host, options, select);
         });
         return select;
     }
@@ -1174,8 +1208,8 @@ dataBinderArray.prototype.reset = function () {
                 }).off('update').on('update', function (event, key, value, item_data) {
                     return _input_event_update(sub_host, $(this), false, item_data);
                 });
-                if ('options' in def) _input_select_options(sub_host, def, select, new_item, function (select, options) {
-                    _input_select_populate(sub_host, options, select);
+                if ('options' in def) _input_options(sub_host, def, select, new_item, function (select, options) {
+                    _input_options_populate(sub_host, options, select);
                 });
             });
             group.append($('<div class="itemlist-newitems">').html([$('<div class="itemlist-newitem-add">').html([
@@ -1214,8 +1248,8 @@ dataBinderArray.prototype.reset = function () {
             item.find('select,input').each(function (index, item) {
                 let input = $(item), def = input.data('def');
                 if (input.is('select')) {
-                    if ('options' in def) _input_select_options(host, def, input, item_data, function (select, options) {
-                        _input_select_populate(host, options, select, false, item_data);
+                    if ('options' in def) _input_options(host, def, input, item_data, function (select, options) {
+                        _input_options_populate(host, options, select, false, item_data);
                     });
                 } else if (def.type === 'date' && 'format' in def) {
                     let child_item_data = item_data[def.name];
