@@ -276,7 +276,7 @@ Date.getLocalDateFormat = function () {
         if (!def) return false;
         let label = input.children('label.control-label'), i = label.children('i.form-required');
         let item_data = _get_data_item(host.data, input.data('item'));
-        let ac = host.actual_required[item_data.attrName] = _eval(host, def.required, typeof default_required === 'undefined' ? false : default_required, item_data, def.name);
+        let ac = host.required[item_data.attrName] = _eval(host, def.required, typeof default_required === 'undefined' ? false : default_required, item_data, def.name);
         if (ac !== true) i.remove();
         else if (i.length === 0) label.append($('<i class="fa fa-exclamation-circle form-required" title="Required">'));
         if ('fields' in def) input.children('div.form-section,div.form-group').each(function (index, item) { _eval_required(host, $(item), ac); });
@@ -1184,7 +1184,7 @@ Date.getLocalDateFormat = function () {
                     let input = $(item), value = null, def = input.data('def'), item_data = _get_data_item(sub_host.data, input.attr('data-bind'));
                     if (input.is('[type=checkbox]')) value = input.is(':checked');
                     else value = input.val();
-                    if (item_data && item_data.attrName in sub_host.actual_required && sub_host.actual_required[item_data.attrName] === true && !value) {
+                    if (item_data && item_data.attrName in sub_host.required && sub_host.required[item_data.attrName] === true && !value) {
                         input.toggleClass('is-invalid', true);
                         valid = false;
                         return;
@@ -1528,8 +1528,8 @@ Date.getLocalDateFormat = function () {
         if (!(item && def) || host.validate !== true) return true;
         if ('show' in def) if (!_eval(host, def.show, true, item, def.name)) return true;
         let value = item instanceof dataBinderArray ? item.length > 0 ? item : null : def.other && !item.value ? item.other : item.value;
-        if (!(name in host.actual_required)) host.actual_required[name] = _eval(host, def.required, d.required, item, name);
-        d.required = host.actual_required[name];
+        if (!(name in host.required)) host.required[name] = _eval(host, def.required, d.required, item, name);
+        d.required = host.required[name];
         if (d.required && value === null) return _validation_error(name, def, "required");
         if (typeof value === 'undefined' || value === null) return true; //Return now if there is no value and the field is not required!
         if ('format' in def && value && def.type !== 'date') {
@@ -1662,7 +1662,7 @@ Date.getLocalDateFormat = function () {
     function _validate(host, fields) {
         let callbacks = [];
         host.queue = [];
-        host.actual_required = [];
+        host.required = [];
         setTimeout(function () {
             let errors = [];
             if (typeof fields === 'undefined') {
@@ -1991,7 +1991,7 @@ Date.getLocalDateFormat = function () {
         host.deloads = [];
         host.monitor = {};
         host.apiCache = {};
-        host.actual_required = {};
+        host.required = {};
         return host;
     }
 
