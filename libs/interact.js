@@ -1511,10 +1511,10 @@ Date.getLocalDateFormat = function () {
             return input.children('input,select,textarea').each(function (index, item) { _validate_input(host, $(item), remove_only); });
         let name = input.attr('data-bind');
         if (!name) return;
-        return _validate_field(host, name).done(function (event, result, response) {
+        return _validate_field(host, name, null, { required: false }).done(function (event, result, response) {
             if (result !== true && remove_only === true) return;
             input.toggleClass('is-invalid', result !== true)
-                .toggleClass('border-warning', result === true && typeof response === 'object' && response.warning === true);
+                .toggleClass('border-warning', result === true && response !== null && typeof response === 'object' && response.warning === true);
             $(host).trigger('validate_field', [name, result === true, result]);
         });
     }
@@ -1524,12 +1524,13 @@ Date.getLocalDateFormat = function () {
         return error;
     }
 
-    function _validate_rule(host, name, item, def) {
+    function _validate_rule(host, name, item, def, d) {
         if (!(item && def) || host.validate !== true) return true;
         if ('show' in def) if (!_eval(host, def.show, true, item, def.name)) return true;
-        let required = name in host.actual_required ? host.actual_required[name] : false;
         let value = item instanceof dataBinderArray ? item.length > 0 ? item : null : def.other && !item.value ? item.other : item.value;
-        if (required && value === null) return _validation_error(name, def, "required");
+        if (!(name in host.actual_required)) host.actual_required[name] = _eval(host, def.required, d.required, item, name);
+        d.required = host.actual_required[name];
+        if (d.required && value === null) return _validation_error(name, def, "required");
         if (typeof value === 'undefined' || value === null) return true; //Return now if there is no value and the field is not required!
         if ('format' in def && value && def.type !== 'date') {
             if (!Inputmask.isValid(String(value), def.format))
@@ -1576,7 +1577,7 @@ Date.getLocalDateFormat = function () {
         return true;
     }
 
-    function _validate_field(host, name, extra) {
+    function _validate_field(host, name, extra, d) {
         let callbacks = [];
         setTimeout(function () {
             let def = typeof name === 'object' ? name : _form_field_lookup(host.def, name);
@@ -1585,32 +1586,26 @@ Date.getLocalDateFormat = function () {
                 if (!item) def.disabled = true;
                 if (def.protected || 'disabled' in def && _eval(host, def.disabled, false, item, def.name)) {
                     for (let x in callbacks) callbacks[x](def.name, true, extra);
-                } else if ('fields' in def) {
-                    let childItems = def.type === 'array' ? item.save() : [item], childQueue = [], itemResult = [];
-                    let result = _validate_rule(host, def.name, item, def);
-                    if (result !== true || childItems.length === 0) {
-                        for (let x in callbacks) callbacks[x](def.name, result, extra);
-                    } else {
-                        for (let i in childItems) {
-                            for (let x in def.fields) {
-                                if (!('name' in def.fields[x])) def.fields[x].name = x;
-                                let fullName = def.name + '[' + i + '].' + x;
-                                childQueue.push(fullName);
-                                _validate_field(host, fullName).done(function (fullName, result) {
-                                    let index = childQueue.indexOf(fullName);
-                                    if (index >= 0) childQueue.splice(index, 1);
-                                    itemResult.push({ name: fullName, result: result });
-                                    $('[data-bind="' + fullName + '"]')
-                                        .toggleClass('is-invalid', result !== true)
-                                        .toggleClass('border-warning', result === true && typeof fullName === 'object' && fullName.warning === true);
-                                    if (childQueue.length === 0) for (let x in callbacks) callbacks[x](def.name, itemResult, extra);
-                                });
+                } else {
+                    let result = _validate_rule(host, def.name, item, def, d);
+                    if ('fields' in def) {
+                        let childItems = def.type === 'array' ? item.save() : [item];
+                        if (result !== true || childItems.length === 0) {
+                            for (let x in callbacks) callbacks[x](def.name, result, extra);
+                        } else {
+                            for (let i in childItems) {
+                                for (let x in def.fields) {
+                                    if (!('name' in def.fields[x])) def.fields[x].name = x;
+                                    let fullName = def.type === 'array' ? def.name + '[' + i + '].' + x : def.name + '.' + x;
+                                    host.queue.push(fullName);
+                                    _validate_field(host, fullName, extra, { required: d.required }).done(function (fullName, result) {
+                                        for (let x in callbacks) callbacks[x](fullName, result, extra);
+                                    });
+                                }
                             }
                         }
                     }
-                } else {
-                    let result = _validate_rule(host, def.name, item, def);
-                    if (item.value && result === true && 'validate' in def && 'url' in def.validate) {
+                    if (item && item.value && result === true && 'validate' in def && 'url' in def.validate) {
                         let url = _match_replace(host, def.validate.url, { "__input__": item.value }, true);
                         let request = { target: [url, { "name": def.name, "value": item.value }] };
                         let indexKey = JSON.stringify(request).hash();
@@ -1627,7 +1622,6 @@ Date.getLocalDateFormat = function () {
                             data: JSON.stringify(request.target[1])
                         }).done(apiDone).fail(_error);
                         else _post(host, 'api', request, false).done(apiDone).fail(_error);
-
                     } else if (callbacks.length > 0) for (let x in callbacks) callbacks[x](def.name, result, extra);
                     if (def.name in host.monitor) for (let x in host.monitor[def.name]) host.monitor[def.name][x](result);
                 }
@@ -1667,36 +1661,27 @@ Date.getLocalDateFormat = function () {
     //Run the data validation
     function _validate(host, fields) {
         let callbacks = [];
+        host.queue = [];
+        host.actual_required = [];
         setTimeout(function () {
-            let queue = [], errors = [];
+            let errors = [];
             if (typeof fields === 'undefined') {
                 if (!('def' in host && 'fields' in host.def)) return;
-                let _resolve_fields = function (def) {
-                    if (!('fields' in def)) return;
-                    let fields = [];
-                    for (let x in def.fields) {
-                        if ('fields' in def.fields[x] && def.fields[x].type !== 'array') {
-                            let child_fields = _resolve_fields(def.fields[x]);
-                            for (let y in child_fields) fields.push(x + '.' + child_fields[y]);
-                        } else fields.push(x);
-                    }
-                    return fields;
-                };
-                fields = _resolve_fields(host.def);
+                fields = Object.keys(host.def.fields);
             }
             for (let key in fields) {
-                queue.push(fields[key]);
-                _validate_field(host, fields[key]).done(function (name, result, response) {
-                    let index = queue.indexOf(name);
-                    if (index >= 0) queue.splice(index, 1);
+                host.queue.push(fields[key]);
+                _validate_field(host, fields[key], null, { required: false }).done(function (name, result, response) {
+                    let index = host.queue.indexOf(name);
+                    if (index >= 0) host.queue.splice(index, 1);
                     if (!Array.isArray(result)) result = [{ name: name, result: result }];
                     for (let x in result) {
                         if (result[x].result !== true) errors.push(result[x].result);
                         $('[data-bind="' + result[x].name + '"]')
                             .toggleClass('is-invalid', result[x].result !== true)
-                            .toggleClass('border-warning', result[x].result === true && typeof response === 'object' && response.warning === true);
+                            .toggleClass('border-warning', result[x].result === true && response !== null && typeof response === 'object' && response.warning === true);
                     }
-                    if (queue.length === 0) for (let x in callbacks) callbacks[x](errors.length === 0, errors);
+                    if (host.queue.length === 0) for (let x in callbacks) callbacks[x](errors.length === 0, errors);
                 });
             }
         });
@@ -2000,6 +1985,7 @@ Date.getLocalDateFormat = function () {
         host.validate = true;
         host.standalone = false;
         host.pageInputs = [];
+        host.queue = [];
         host.loading = 0;
         host.uploads = [];
         host.deloads = [];
