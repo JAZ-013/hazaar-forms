@@ -341,7 +341,7 @@ dataBinderArray.prototype.reset = function () {
         let def = input.data('def');
         if (!def) return false;
         let item_data = _get_data_item(host.data, input.data('item'));
-        let ac = host.actual_disabled[item_data.attrName] = _eval(host, def.disabled, typeof default_disabled === 'undefined' ? false : default_disabled, item_data, def.name);
+        let ac = host.disabled[item_data.attrName] = _eval(host, def.disabled, typeof default_disabled === 'undefined' ? false : default_disabled, item_data, def.name);
         input.find('input,textarea,select,button').prop('disabled', ac);
         if ('fields' in def) input.children('div.form-section,div.form-group').each(function (index, item) { _eval_disabled(host, $(item), ac); });
         return ac;
@@ -1569,7 +1569,7 @@ dataBinderArray.prototype.reset = function () {
             return input.children('input,select,textarea').each(function (index, item) { _validate_input(host, $(item), remove_only); });
         let name = input.attr('data-bind');
         if (!name) return;
-        return _validate_field(host, name, null, { required: false }).done(function (event, result, response) {
+        return _validate_field(host, name, { required: false, disabled: false }).done(function (event, result, response) {
             if (result !== true && remove_only === true) return;
             input.toggleClass('is-invalid', result !== true)
                 .toggleClass('border-warning', result === true && response !== null && typeof response === 'object' && response.warning === true);
@@ -1635,55 +1635,53 @@ dataBinderArray.prototype.reset = function () {
         return true;
     }
 
-    function _validate_field(host, name, extra, d) {
+    function _validate_field(host, name, d, extra) {
         let callbacks = [];
         setTimeout(function () {
             let def = typeof name === 'object' ? name : _form_field_lookup(host.def, name);
             if (def) {
                 let item = _get_data_item(host.data, def.name);
                 if (!item) def.disabled = true;
-                if (def.protected || 'disabled' in def && _eval(host, def.disabled, false, item, def.name)) {
-                    for (let x in callbacks) callbacks[x](def.name, true, extra);
-                } else {
-                    let result = _validate_rule(host, def.name, item, def, d);
-                    if ('fields' in def) {
-                        let childItems = def.type === 'array' ? item.save() : [item];
-                        if (result !== true || childItems.length === 0) {
-                            for (let x in callbacks) callbacks[x](def.name, result, extra);
-                        } else {
-                            for (let i in childItems) {
-                                for (let x in def.fields) {
-                                    if (!('name' in def.fields[x])) def.fields[x].name = x;
-                                    let fullName = def.type === 'array' ? def.name + '[' + i + '].' + x : def.name + '.' + x;
-                                    host.queue.push(fullName);
-                                    _validate_field(host, fullName, extra, { required: d.required }).done(function (fullName, result) {
-                                        for (let x in callbacks) callbacks[x](fullName, result, extra);
-                                    });
-                                }
+                if (!(def.name in host.disabled)) host.disabled[def.name] = 'disabled' in def ? _eval(host, def.disabled, d.disabled, item, def.name) : false;
+                d.disabled = host.disabled[def.name];
+                let result = (def.protected || d.disabled) ? true : _validate_rule(host, def.name, item, def, d);
+                if ('fields' in def) {
+                    let childItems = def.type === 'array' ? item.save() : [item];
+                    if (result !== true || childItems.length === 0) {
+                        for (let x in callbacks) callbacks[x](def.name, result, extra);
+                    } else {
+                        for (let i in childItems) {
+                            for (let x in def.fields) {
+                                if (!('name' in def.fields[x])) def.fields[x].name = x;
+                                let fullName = def.type === 'array' ? def.name + '[' + i + '].' + x : def.name + '.' + x;
+                                host.queue.push(fullName);
+                                _validate_field(host, fullName, { required: d.required, disabled: d.disabled }, extra).done(function (fullName, result) {
+                                    for (let x in callbacks) callbacks[x](fullName, result, extra);
+                                });
                             }
                         }
                     }
-                    if (item && item.value && result === true && 'validate' in def && 'url' in def.validate) {
-                        let url = _match_replace(host, def.validate.url, { "__input__": item.value }, true);
-                        let request = { target: [url, { "name": def.name, "value": item.value }] };
-                        let indexKey = JSON.stringify(request).hash();
-                        let apiDone = function (response) {
-                            if (!(indexKey in host.apiCache)) host.apiCache[indexKey] = response;
-                            let result = response.ok === true ? true : _validation_error(def.name, def, response.reason || "api_failed(" + def.validate.url + ")");
-                            if (callbacks.length > 0) for (let x in callbacks) callbacks[x](def.name, result, response);
-                        };
-                        if (indexKey in host.apiCache) apiDone(host.apiCache[indexKey]);
-                        else if (host.standalone === true) $.ajax({
-                            method: 'POST',
-                            url: def.validate.url,
-                            contentType: "application/json",
-                            data: JSON.stringify(request.target[1])
-                        }).done(apiDone).fail(_error);
-                        else _post(host, 'api', request, false).done(apiDone).fail(_error);
-                    } else if (callbacks.length > 0) for (let x in callbacks) callbacks[x](def.name, result, extra);
-                    if (def.name in host.monitor) for (let x in host.monitor[def.name]) host.monitor[def.name][x](result);
                 }
-            } else for (let x in callbacks) callbacks[x](name, false, extra);
+                if (item && item.value && result === true && 'validate' in def && 'url' in def.validate) {
+                    let url = _match_replace(host, def.validate.url, { "__input__": item.value }, true);
+                    let request = { target: [url, { "name": def.name, "value": item.value }] };
+                    let indexKey = JSON.stringify(request).hash();
+                    let apiDone = function (response) {
+                        if (!(indexKey in host.apiCache)) host.apiCache[indexKey] = response;
+                        let result = response.ok === true ? true : _validation_error(def.name, def, response.reason || "api_failed(" + def.validate.url + ")");
+                        if (callbacks.length > 0) for (let x in callbacks) callbacks[x](def.name, result, response);
+                    };
+                    if (indexKey in host.apiCache) apiDone(host.apiCache[indexKey]);
+                    else if (host.standalone === true) $.ajax({
+                        method: 'POST',
+                        url: def.validate.url,
+                        contentType: "application/json",
+                        data: JSON.stringify(request.target[1])
+                    }).done(apiDone).fail(_error);
+                    else _post(host, 'api', request, false).done(apiDone).fail(_error);
+                } else if (callbacks.length > 0) for (let x in callbacks) callbacks[x](def.name, result, extra);
+                if (def.name in host.monitor) for (let x in host.monitor[def.name]) host.monitor[def.name][x](result);
+            } else for (let x in callbacks) callbacks[x](def.name, false, extra);
         });
         return { done: function (callback) { if (typeof callback === 'function') callbacks.push(callback); return this; } };
     }
@@ -1729,7 +1727,7 @@ dataBinderArray.prototype.reset = function () {
             }
             for (let key in fields) {
                 host.queue.push(fields[key]);
-                _validate_field(host, fields[key], null, { required: false }).done(function (name, result, response) {
+                _validate_field(host, fields[key], { required: false, disabled: false }).done(function (name, result, response) {
                     let index = host.queue.indexOf(name);
                     if (index >= 0) host.queue.splice(index, 1);
                     if (!Array.isArray(result)) result = [{ name: name, result: result }];
@@ -2062,7 +2060,7 @@ dataBinderArray.prototype.reset = function () {
         host.monitor = {};
         host.apiCache = {};
         host.required = {};
-        host.actual_disabled = {};
+        host.disabled = {};
         return host;
     }
 
@@ -2158,7 +2156,7 @@ dataBinderArray.prototype.reset = function () {
                     case 'monitor':
                         if (typeof args[2] === 'function') {
                             host.monitor[args[1]] = [args[2]];
-                            _validate_field(host, args[1]);
+                            _validate_field(host, args[1], { required: false, disabled: false });
                         }
                         break;
                 }
