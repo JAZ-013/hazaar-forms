@@ -1424,20 +1424,22 @@ dataBinderArray.prototype.reset = function () {
                         break;
                 }
             }
-            if (hidden !== true) host.pageInputs.push(input);
             field = $('<div>').addClass(host.settings.styleClasses.group).toggleClass('row', host.settings.horizontal).data('def', def);
             if (def.title || (def.nolabel !== true && def.label)) field.append($('<label>')
                 .addClass(host.settings.styleClasses.label)
                 .toggleClass('col-sm-' + host.settings.hz.left, host.settings.horizontal)
                 .attr('for', '__hz_field_' + def.name)
                 .html(_match_replace(host, 'title' in def ? def.title : def.label, null, true, true)));
-            let col = $('<div>').html(input);
-            if (host.settings.horizontal) {
-                if (def.label) col.addClass('col-sm-' + host.settings.hz.right);
-                else col.addClass('col-sm-12');
+            if (input) {
+                let col = $('<div>').html(input);
+                if (host.settings.horizontal) {
+                    if (def.label) col.addClass('col-sm-' + host.settings.hz.right);
+                    else col.addClass('col-sm-12');
+                }
+                if ('hint' in def) col.append($('<small class="form-text text-muted">').html(_match_replace(host, def.hint, null, true, true)));
+                field.append(col);
+                if (hidden !== true) host.pageInputs.push(input);
             }
-            if ('hint' in def) col.append($('<small class="form-text text-muted">').html(_match_replace(host, def.hint, null, true, true)));
-            field.append(col);
         }
         field.data('def', def).data('item', item_data ? item_data : null);
         if ('width' in def) field.width(def.width);
