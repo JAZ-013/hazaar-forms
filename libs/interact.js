@@ -1356,7 +1356,7 @@ dataBinderArray.prototype.reset = function () {
         if ('render' in def) {
             field = _eval_code(host, def.render, item_data, def.name);
             if (!field) return;
-            if (hidden !== true) host.pageInputs.push(field);
+            if (hidden !== true && def.name) host.pageFields.push(def.name);
         } else if ('fields' in def && def.type !== 'array') {
             let layout = _resolve_field_layout(host, def.fields, 'layout' in def ? $.extend(true, [], def.layout) : null, def.name);
             let length = layout.length, fields = [], col_width;
@@ -1426,6 +1426,7 @@ dataBinderArray.prototype.reset = function () {
                         break;
                 }
             }
+            if (hidden !== true && def.name) host.pageFields.push(def.name);
             field = $('<div>').addClass(host.settings.styleClasses.group).toggleClass('row', host.settings.horizontal).data('def', def);
             if (def.title || (def.nolabel !== true && def.label)) field.append($('<label>')
                 .addClass(host.settings.styleClasses.label)
@@ -1440,7 +1441,6 @@ dataBinderArray.prototype.reset = function () {
                 }
                 if ('hint' in def) col.append($('<small class="form-text text-muted">').html(_match_replace(host, def.hint, null, true, true)));
                 field.append(col);
-                if (hidden !== true) host.pageInputs.push(input);
             }
         }
         field.data('def', def).data('item', item_data ? item_data : null);
@@ -1517,7 +1517,7 @@ dataBinderArray.prototype.reset = function () {
             change: {}
         };
         host.eval_cache = null;
-        host.pageInputs = [];
+        host.pageFields = [];
         host.data.unwatchAll();
     }
 
@@ -1749,13 +1749,7 @@ dataBinderArray.prototype.reset = function () {
     }
 
     function _validate_page(host) {
-        let fields = [];
-        for (let x in host.pageInputs) {
-            let def = host.pageInputs[x].data('def');
-            if (!def) continue;
-            fields.push(def.name);
-        }
-        return _validate(host, fields);
+        return _validate(host, host.pageFields);
     }
 
     //Signal that we're loading something and should show the loader.  MUST call _ready() when done.
@@ -2056,7 +2050,7 @@ dataBinderArray.prototype.reset = function () {
         host.working = false;
         host.validate = true;
         host.standalone = false;
-        host.pageInputs = [];
+        host.pageFields = [];
         host.queue = [];
         host.loading = 0;
         host.uploads = [];
