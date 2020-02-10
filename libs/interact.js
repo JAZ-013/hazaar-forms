@@ -68,6 +68,46 @@ Date.getLocalDateFormat = function () {
     return format.join(sep);
 };
 
+dataBinder.prototype._commit = dataBinderArray.prototype._commit = function (items) {
+    this._default = {};
+    for (let x in items) {
+        let value = items[x];
+        if (value instanceof dataBinder || value instanceof dataBinderArray)
+            value = items[x].commit();
+        else if (value instanceof dataBinderValue)
+            value = value.save();
+        this._default[x] = value;
+    }
+    return this._default;
+};
+
+dataBinder.prototype.commit = function () {
+    return this._commit(this._attributes);
+};
+
+dataBinderArray.prototype.commit = function () {
+    return this._commit(this._elements);
+};
+
+dataBinder.prototype.reset = function () {
+    if (!this._default) return false;
+    for (let x in this._attributes) if (!(x in this._default)) this.remove(x);
+    for (let x in this._default) {
+        if (this._attributes[x] instanceof dataBinder || this._attributes[x] instanceof dataBinderArray)
+            this._attributes[x].reset();
+        else this[x] = this._default[x];
+    }
+    return true;
+};
+
+dataBinderArray.prototype.reset = function () {
+    if (!this._default) return false;
+    this._elements = [];
+    for (let x in this._default) this._elements[x] = this.__convert_type(x, this._default[x]);
+    this.resync();
+    return true;
+};
+
 (function ($) {
 
     //Error capture method
@@ -89,6 +129,13 @@ Date.getLocalDateFormat = function () {
             buttons: [
                 { label: "OK", "class": "btn btn-default" }
             ]
+        });
+    }
+
+    function _guid() {
+        return 'yxxx-yxxx-yxxx'.replace(/[xy]/g, function (c) {
+            var r = Math.random() * 16 | 0, v = c === 'x' ? r : r & 0x3 | 0x8;
+            return v.toString(16);
         });
     }
 
@@ -279,7 +326,7 @@ Date.getLocalDateFormat = function () {
         let ac = host.required[item_data.attrName] = _eval(host, def.required, typeof default_required === 'undefined' ? false : default_required, item_data, def.name);
         if (ac !== true) i.remove();
         else if (i.length === 0) label.append($('<i class="fa fa-exclamation-circle form-required" title="Required">'));
-        if ('fields' in def) input.children('div.form-section,div.form-group').each(function (index, item) { _eval_required(host, $(item), ac); });
+        if ('fields' in def) input.children('div.form-section,div.form-group').each(function (index, item) { let o = $(item); if (o.data('item')) _eval_required(host, o, ac); });
         return ac;
     }
 
@@ -290,17 +337,14 @@ Date.getLocalDateFormat = function () {
         return _eval_disabled(host, input, func);
     }
 
-    function _eval_disabled(host, input, func) {
+    function _eval_disabled(host, input, default_disabled) {
         let def = input.data('def');
         if (!def) return false;
         let item_data = _get_data_item(host.data, input.data('item'));
-        let disabled = _eval(host, def.disabled, false, item_data, def.name);
-        if (typeof func !== 'function') func = input.data('disabled_func');
-        if (typeof func !== 'function') func = function (result, field) {
-            if (result !== true) result = false;
-            field.find('input,textarea,select,button').prop('disabled', result);
-        };
-        return func(disabled, input);
+        let ac = host.disabled[item_data.attrName] = _eval(host, def.disabled, typeof default_disabled === 'undefined' ? false : default_disabled, item_data, def.name);
+        input.find('input,textarea,select,button').prop('disabled', ac);
+        if ('fields' in def) input.children('div.form-section,div.form-group').each(function (index, item) { let o = $(item); if (o.data('item')) _eval_disabled(host, o, ac); });
+        return ac;
     }
 
     function _make_showable(host, def, input) {
@@ -435,11 +479,15 @@ Date.getLocalDateFormat = function () {
     }
 
     function _input_button(host, def) {
-        let group = $('<div class="no-label">').addClass(host.settings.styleClasses.group);
+        if ('buttons' in def) {
+            let group = $('<div>').addClass(host.settings.styleClasses.buttonGroup), defaults = Object.assign({}, def);
+            delete defaults.buttons;
+            for (x in def.buttons) group.append(_input_button(host, $.extend({}, defaults, def.buttons[x])));
+            return group;
+        }
         let btn = $('<button type="button">').addClass(host.settings.styleClasses.button)
             .addClass(def.class || 'btn-default')
-            .data('def', def)
-            .appendTo(group);
+            .data('def', def);
         if (!('label' in def)) def.label = 'Button';
         btn.html(_match_replace(host, def.label, null, true, true));
         switch (def.action) {
@@ -454,7 +502,8 @@ Date.getLocalDateFormat = function () {
                 btn.click(function () { _eval_code(host, action, null, def.name); });
                 break;
         }
-        return group;
+        def.nolabel = true;
+        return btn;
     }
 
     function _input_select_multi_items(host, data, container) {
@@ -503,7 +552,7 @@ Date.getLocalDateFormat = function () {
                         .data('def', def), label
                 ]).toggleClass('active', active).change(fChange));
             }
-            return container.addClass('btn-group').addClass('btn-group-toggle').html(items).parent().show();
+            return container.addClass('btn-group').addClass('btn-group-toggle').attr('role', 'group').attr('aria-label', def.label).html(items).parent().show();
         }
         if (!('columns' in def)) def.columns = 1;
         if (def.columns > 6) def.columns = 6;
@@ -512,19 +561,19 @@ Date.getLocalDateFormat = function () {
         for (let col = 0; col < def.columns; col++)
             items.push($('<div>').addClass('col-md-' + col_width).toggleClass('custom-controls-stacked', def.inline));
         for (let x in data) {
-            let iv = _convert_data_type(def, data[x][valueKey]), il = data[x][labelKey];
+            let iv = _convert_data_type(def, data[x][valueKey]), il = data[x][labelKey], id = _guid();
             let active = value instanceof dataBinderArray && value.indexOf(iv) > -1, name = def.name + '_' + iv;
             let label = $('<div>').addClass(host.settings.styleClasses.chkDiv).html([
                 $('<input type="checkbox">')
                     .addClass(host.settings.styleClasses.chkInput)
-                    .attr('id', '__field_' + name)
+                    .attr('id', id)
                     .attr('value', iv)
                     .prop('checked', active)
                     .prop('disabled', disabled)
                     .data('def', def),
                 $('<label>').addClass(host.settings.styleClasses.chkLabel)
                     .html(il)
-                    .attr('for', '__field_' + name)
+                    .attr('for', id)
             ]).attr('data-bind-value', iv).change(fChange);
             if ('css' in def) label.css(def.css);
             items[column].append(label);
@@ -573,34 +622,47 @@ Date.getLocalDateFormat = function () {
     }
 
     function _input_select_multi(host, def) {
-        let group = $('<div>').addClass(host.settings.styleClasses.group).data('def', def);
-        let label = $('<label>').addClass(host.settings.styleClasses.label)
-            .attr('for', def.name)
-            .html(_match_replace(host, def.label, null, true, true))
-            .appendTo(group);
-        let container = $('<div>').data('def', def).appendTo(group);
-        if (def.buttons === true) {
-            $('<div>').html(container.addClass('btn-group')
-                .attr('data-bind', def.name)
-                .attr('data-toggle', 'buttons')
-                .toggleClass('btn-group-justified', def.justified === true)
-            ).appendTo(group);
-        } else {
-            container.attr('data-bind', def.name).attr('data-toggle', 'checks');
-        }
+        let group = $('<div>').data('def', def);
+        if (def.buttons === true) group.addClass('btn-group').attr('data-bind', def.name).attr('data-toggle', 'buttons').toggleClass('btn-group-justified', def.justified === true);
+        else group.attr('data-bind', def.name).attr('data-toggle', 'checks');
         def.watchers = {};
         if (typeof def.options === 'string') {
             let match = def.options.match(/^\{\{([\w\.]+)\}\}$/);
             if (match !== null) {
-                host.data.watch(match[1], function (key, item, container) {
-                    _input_select_multi_populate(host, typeof item.value === 'object' ? item.value : typeof item.other === 'object' ? item.other : null, container);
-                }, container);
+                host.data.watch(match[1], function (key, item, group) {
+                    _input_select_multi_populate(host, typeof item.value === 'object' ? item.value : typeof item.other === 'object' ? item.other : null, group);
+                }, group);
                 def.options = _get_data_item(host.data, match[1]);
             } else def.options = { url: def.options };
         }
-        _input_select_options(host, def, container, null, function (select, options) {
+        _input_options(host, def, group, null, function (select, options) {
             _input_select_multi_populate(host, options, select, true);
         });
+        return group;
+    }
+
+    function _input_radio_items(host, options, data, group, no_nullify) {
+        let def = group.data('def'), valueKey = options.value || 'value', labelKey = options.label || 'label';
+        data = _convert_data(data, valueKey, labelKey, def);
+        for (x in data) {
+            if (('filter' in options && options.filter.indexOf(data[x][labelKey]) === -1) || data[x][valueKey] === '__spacer__') {
+                delete data[x];
+                continue;
+            }
+            let id = _guid(), radio = $('<input type="radio" class="custom-control-input">')
+                .attr('id', id)
+                .attr('name', def.name)
+                .attr('value', data[x][valueKey])
+                .attr('data-bind', def.name)
+                .data('def', def);
+            let option = $('<div class="custom-control custom-radio">').html([
+                radio,
+                $('<label class="custom-control-label">').attr('for', id).html(labelKey.indexOf('{{') > -1 ? _match_replace(null, labelKey, data[x], true) : data[x][labelKey])
+            ]).appendTo(group);
+            if (def.horizontal === true) option.addClass('custom-control-inline');
+            radio.change(function (event) { return _input_event_change(host, $(event.target)); })
+                .on('update', function (event, key, value, item_data) { return _input_event_update(host, $(event.target), false, item_data); });
+        }
         return group;
     }
 
@@ -665,48 +727,49 @@ Date.getLocalDateFormat = function () {
         return select;
     }
 
-    function _input_select_populate_ajax(host, options, select, track, item_data) {
+    function _input_options_populate_ajax(host, options, select, track, item_data, callback) {
         let postops = {};
         Object.assign(postops, options);
         if ((postops.url = _match_replace(host, postops.url, item_data)) === false)
-            return _input_select_items(host, options, null, select);
+            return callback(host, options, null, select);
         if (track !== false) select.prop('disabled', true).html($('<option value selected>').html('Loading...'));
         postops.url = _url(host, postops.url);
         return $.ajax(postops).done(function (data) {
             if (typeof select.data('def') !== 'object') return;
-            _input_select_items(host, options, data, select);
+            callback(host, options, data, select);
         }).fail(_error);
     }
 
-    function _input_select_populate(host, options, select, track, item_data) {
+    function _input_options_populate(host, options, select, track, item_data, callback) {
         if (typeof options === 'string') {
             let match = options.match(/^\{\{([\w\.]+)\}\}$/);
             if (match !== null) {
                 host.data.watch(match[1], function (key, item, select) {
-                    _input_select_populate(host, item, select, track, item_data);
+                    _input_options_populate(host, item, select, track, item_data);
                 }, select);
                 options = _get_data_item(host.data, match[1]);
             } else options = { url: options };
         }
+        if (typeof callback !== 'function') callback = _input_select_items;
         if (options instanceof dataBinderValue) {
             let o = typeof options.value === 'object' ? options.value : typeof options.other === 'object' ? options.other : null;
-            return _input_select_items(host, {}, o, select, o ? false : true);
+            return callback(host, {}, o, select, o ? false : true);
         }
         if (!(options !== null && typeof options === 'object' && 'url' in options))
-            return _input_select_items(host, options, options, select);
+            return callback(host, options, options, select);
         let matches = options.url.match(/\{\{[\w\.]+\}\}/g), def = select.data('def');
         for (let x in matches) {
             let match = matches[x].substr(2, matches[x].length - 4);
             if (!(match in def.watchers)) def.watchers[match] = [];
             if (typeof item_data === 'undefined') item_data = host.data;
             def.watchers[match].push(item_data.watch(match, function (key, value, select) {
-                _input_select_populate_ajax(host, options, select, true, item_data);
+                _input_options_populate_ajax(host, options, select, true, item_data, callback);
             }, select));
         }
-        return _input_select_populate_ajax(host, options, select, track, item_data);
+        return _input_options_populate_ajax(host, options, select, track, item_data, callback);
     }
 
-    function _input_select_options(host, def, select, item_data, cb) {
+    function _input_options(host, def, select, item_data, cb) {
         if (!('options' in def)) return false;
         let options = {};
         if (Array.isArray(def.options)) {
@@ -720,7 +783,7 @@ Date.getLocalDateFormat = function () {
             if (select && 'watch' in def) {
                 let watch_func = function (key, value, args) {
                     _get_data_item(item_data, def.name).value = null;
-                    if (typeof cb === 'function') cb(select, _input_select_options(host, def, null, value));
+                    if (typeof cb === 'function') cb(select, _input_options(host, def, null, value));
                 };
                 for (x in def.watch) {
                     if (def.watch[x].substr(0, 5) === 'item.' && item_data) item_data.watch(def.watch[x].substr(5), watch_func);
@@ -736,15 +799,16 @@ Date.getLocalDateFormat = function () {
     }
 
     function _input_select(host, def, populate) {
-        let group = $('<div>').addClass(host.settings.styleClasses.group).data('def', def);
-        let label = $('<label>').addClass(host.settings.styleClasses.label)
-            .attr('for', def.name)
-            .html(_match_replace(host, def.label, null, true, true))
-            .appendTo(group);
+        if (def.radios === true) {
+            let group = $('<div class="form-group">').data('def', def);
+            if (populate !== false) _input_options(host, def, group, ud, function (group, options) {
+                _input_options_populate(host, options, group, ud, ud, _input_radio_items);
+            });
+            return group;
+        }
         let select = $('<select>').addClass(host.settings.styleClasses.input)
             .attr('name', def.name)
             .data('def', def)
-            .appendTo(group)
             .attr('data-bind', def.name);
         if (def.protected)
             select.prop('disabled', true);
@@ -756,24 +820,21 @@ Date.getLocalDateFormat = function () {
         if (!("placeholder" in def)) def.placeholder = host.settings.placeholder;
         if ('css' in def) select.css(def.css);
         if ('cssClass' in def) select.addClass(def.cssClass);
-        if (populate !== false) _input_select_options(host, def, select, null, function (select, options) {
-            _input_select_populate(host, options, select);
+        if (populate !== false) _input_options(host, def, select, null, function (select, options) {
+            _input_options_populate(host, options, select);
         });
-        return group;
+        return select;
     }
 
     function _input_checkbox(host, def) {
-        let item_data = _get_data_item(host.data, def.name);
-        let group = $('<div>').addClass(host.settings.styleClasses.group);
-        if ('title' in def) $('<label>').html(def.title).appendTo(group);
-        let div = $('<div>').addClass(host.settings.styleClasses.chkDiv).appendTo(group);
+        let item_data = _get_data_item(host.data, def.name), group = $('<div>').addClass(host.settings.styleClasses.chkDiv), id = _guid();
         let input = $('<input type="checkbox">').addClass(host.settings.styleClasses.chkInput)
             .attr('name', def.name)
-            .attr('id', '__hz_field_' + def.name)
+            .attr('id', id)
             .attr('data-bind', def.name)
             .attr('checked', item_data ? item_data.value : false)
             .data('def', def)
-            .appendTo(div);
+            .appendTo(group);
         if (def.protected) input.prop('disabled', true);
         else input.focus(function (event) { return _input_event_focus(host, $(event.target)); })
             .blur(function (event) { return _input_event_blur(host, $(event.target)); })
@@ -781,29 +842,24 @@ Date.getLocalDateFormat = function () {
             .on('update', function (event, key, value, item_data) { return _input_event_update(host, $(event.target), false, item_data); });
         $('<label>').addClass(host.settings.styleClasses.chkLabel)
             .html(_match_replace(host, def.label, null, true, true))
-            .attr('for', '__hz_field_' + def.name)
-            .appendTo(div);
+            .attr('for', id)
+            .appendTo(group);
         if ('css' in def) input.css(def.css);
         if ('cssClass' in def) input.addClass(def.cssClass);
+        def.nolabel = true;
         return group;
     }
 
     function _input_datetime(host, def) {
         let item_data = _get_data_item(host.data, def.name);
-        let group = $('<div>').addClass(host.settings.styleClasses.group);
-        let label = $('<label>').addClass(host.settings.styleClasses.label)
-            .attr('for', '__hz_field_' + def.name)
-            .html(_match_replace(host, def.label, null, true, true))
-            .appendTo(group);
-        let input_group = $('<div class="date">').addClass(host.settings.styleClasses.inputGroup);
+        let group = $('<div class="date">').addClass(host.settings.styleClasses.inputGroup);
         let input = $('<input>').addClass(host.settings.styleClasses.input)
             .attr('type', def.type === 'datetime' ? 'datetime-local' : 'date')
             .attr('name', def.name)
-            .attr('id', '__hz_field_' + def.name)
             .attr('data-bind', def.name)
             .data('def', def)
             .val(item_data)
-            .appendTo(input_group);
+            .appendTo(group);
         if (def.protected) input.prop('disabled', true);
         else input.focus(function (event) { return _input_event_focus(host, $(event.target)); })
             .blur(function (event) { return _input_event_blur(host, $(event.target)); })
@@ -813,7 +869,7 @@ Date.getLocalDateFormat = function () {
             .html($('<span style="cursor: pointer;">').addClass(host.settings.styleClasses.inputGroupText)
                 .html($('<i class="fa fa-calendar">')
                     .click(function () { input.focus(); })))
-            .appendTo(input_group);
+            .appendTo(group);
         if (def.format) {
             if (def.format === 'local') def.format = Date.getLocalDateFormat();
             def.__datepicker_options = $.extend({
@@ -838,16 +894,11 @@ Date.getLocalDateFormat = function () {
         if (def.placeholder) input.attr('placeholder', def.placeholder);
         if ('css' in def) input.css(def.css);
         if ('cssClass' in def) input.addClass(def.cssClass);
-        return group.append(input_group);
+        return group;
     }
 
     function _input_file(host, def) {
         let item_data = _get_data_item(host.data, def.name);
-        let group = $('<div>').addClass(host.settings.styleClasses.group);
-        let label = $('<label>').addClass(host.settings.styleClasses.label)
-            .attr('for', '__hz_field_' + def.name)
-            .html(_match_replace(host, def.label, null, true, true))
-            .appendTo(group);
         let input = $('<div>').attr('data-bind', def.name).data('def', def).attr('name', def.name).fileUpload({
             name: def.name,
             multiple: def.multiple || false,
@@ -880,7 +931,7 @@ Date.getLocalDateFormat = function () {
                 _input_event_update(host, input);
                 return true;
             }
-        }).appendTo(group).on('push', function (event, field_name, value) {
+        }).on('push', function (event, field_name, value) {
             input.fileUpload('add', value.save());
         }).on('pop', function (event, field_name, value) {
             input.fileUpload('remove', value.save());
@@ -894,25 +945,18 @@ Date.getLocalDateFormat = function () {
             }) < 0) item_data.push(_objectify_file(response.files[x]));
             for (let x in host.uploads) if (host.uploads[x].field === response.field) item_data.push(_objectify_file(host.uploads[x].file));
         }).fail(_error);
-        return group;
+        return input;
     }
 
     function _input_lookup(host, def) {
         let item_data = _get_data_item(host.data, def.name);
-        let group = $('<div>').addClass(host.settings.styleClasses.group).data('def', def);
-        let label = $('<label>').addClass(host.settings.styleClasses.label)
-            .attr('for', '__hz_field_' + def.name)
-            .html(_match_replace(host, def.label, null, true, true))
-            .appendTo(group);
-        let input_group = $('<div>').addClass(host.settings.styleClasses.inputGroup)
-            .appendTo(group);
+        let group = $('<div>').addClass(host.settings.styleClasses.inputGroup);
         let input = $('<input type="text">').addClass(host.settings.styleClasses.input)
             .attr('data-bind', def.name)
             .attr('data-bind-label', true)
             .data('def', def)
-            .attr('id', '__hz_field_' + def.name)
             .attr('autocomplete', 'off')
-            .appendTo(input_group);
+            .appendTo(group);
         if (def.protected)
             input.prop('disabled', true);
         else input.focus(function (event) { _input_event_focus(host, $(event.target)); })
@@ -932,7 +976,7 @@ Date.getLocalDateFormat = function () {
             .attr('data-bind', def.name)
             .attr('name', def.name)
             .data('def', def)
-            .appendTo(input_group)
+            .appendTo(group)
             .on('update', function (event, key, value, item_data) { _input_event_update(host, $(event.target), false, item_data); });
         if ('css' in def) input.css(def.css);
         if ('cssClass' in def) input.addClass(def.cssClass);
@@ -1037,26 +1081,24 @@ Date.getLocalDateFormat = function () {
             });
         }
         if ('placeholder' in def) input.attr('placeholder', def.placeholder);
-        if (!def.protected) input_group.append($('<div>').addClass(host.settings.styleClasses.inputGroupAppend)
+        if (!def.protected) group.append($('<div>').addClass(host.settings.styleClasses.inputGroupAppend)
             .html($('<span>').addClass(host.settings.styleClasses.inputGroupText).html($('<i class="fa fa-search">'))));
         return group;
     }
 
     function _input_money(host, def) {
         let item_data = _get_data_item(host.data, def.name), symbol = '$';
-        let group = $('<div>').addClass(host.settings.styleClasses.group);
         let input = $('<input type="text">').addClass(host.settings.styleClasses.input);
-        let inputDIV = $('<div>').addClass(host.settings.styleClasses.inputGroup).appendTo(group);
+        let inputDIV = $('<div>').addClass(host.settings.styleClasses.inputGroup);
         let prefixDIV = $('<div>').addClass(host.settings.styleClasses.inputGroupPrepend);
         let suffixDIV = $('<div>').addClass(host.settings.styleClasses.inputGroupAppend);
         input.attr('name', def.name)
-            .attr('id', '__hz_field_' + def.name)
             .attr('data-bind', def.name + '.amt')
             .data('def', def)
             .val(item_data.amt)
             .inputmask('currency', { prefix: "" });
         if ('currencies' in def) {
-            let current = def.currencies.find(function (value, index, o) { if (value.code === item_data.currency.value) return true; });
+            let current = def.currencies.find(function (value, index, o) { if (value.currencycode === item_data.currency.value) return true; });
             symbol = current.symbol;
         }
         inputDIV.append([prefixDIV.html($('<span>').addClass(host.settings.styleClasses.inputGroupText).html(symbol)), input, suffixDIV]);
@@ -1085,22 +1127,17 @@ Date.getLocalDateFormat = function () {
             .blur(function (event) { return _input_event_blur(host, $(event.target)); })
             .change(function (event) { return _input_event_change(host, $(event.target)); })
             .on('update', function (event, key, value, item_data) { return _input_event_update(host, $(event.target), false, item_data); });
-        return group;
+        return inputDIV;
     }
 
     function _input_std(host, type, def) {
+        let group = $('<div>').addClass(host.settings.styleClasses.inputGroup);
         let input = null, item_data = _get_data_item(host.data, def.name);
-        let group = $('<div>').addClass(host.settings.styleClasses.group);
-        let label = $('<label>').addClass(host.settings.styleClasses.label)
-            .attr('for', '__hz_field_' + def.name)
-            .html(_match_replace(host, def.label, null, true, true))
-            .appendTo(group);
         if (def.multiline) {
             input = $('<textarea>').addClass(host.settings.styleClasses.input);
             if ('height' in def) input.css('height', def.height);
         } else input = $('<input>').addClass(host.settings.styleClasses.input).attr('type', type);
         input.attr('name', def.name)
-            .attr('id', '__hz_field_' + def.name)
             .attr('data-bind', def.name)
             .data('def', def)
             .val(item_data instanceof dataBinderValue ? item_data.value : item_data);
@@ -1114,18 +1151,11 @@ Date.getLocalDateFormat = function () {
         if ('placeholder' in def) input.attr('placeholder', def.placeholder);
         if ('css' in def) input.css(def.css);
         if ('cssClass' in def) input.addClass(def.cssClass);
-        if ('prefix' in def || 'suffix' in def) {
-            let inputDIV = $('<div>').addClass(host.settings.styleClasses.inputGroup)
-                .appendTo(group);
-            if (def.prefix) inputDIV.append($('<div>')
-                .addClass(host.settings.styleClasses.inputGroupPrepend)
-                .html($('<span>').addClass(host.settings.styleClasses.inputGroupText)
-                    .html(_match_replace(host, def.prefix, null, true, true))));
-            inputDIV.append(input);
-            if (def.suffix) inputDIV.append($('<div>').addClass(host.settings.styleClasses.inputGroupAppend)
-                .html($('<span>').addClass(host.settings.styleClasses.inputGroupText)
-                    .html(_match_replace(host, def.suffix, null, true, true))));
-        } else group.append(input);
+        if (def.prefix) group.append($('<div>').addClass(host.settings.styleClasses.inputGroupPrepend)
+            .html($('<span>').addClass(host.settings.styleClasses.inputGroupText).html(_match_replace(host, def.prefix, null, true, true))));
+        group.append(input);
+        if (def.suffix) group.append($('<div>').addClass(host.settings.styleClasses.inputGroupAppend)
+            .html($('<span>').addClass(host.settings.styleClasses.inputGroupText).html(_match_replace(host, def.suffix, null, true, true))));
         if (item_data && item_data.value) _validate_input(host, input);
         return group;
     }
@@ -1146,20 +1176,27 @@ Date.getLocalDateFormat = function () {
         let group = $('<div class="itemlist">').addClass(host.settings.styleClasses.group);
         if (!(item_data instanceof dataBinderArray)) return group;
         $('<h4>').addClass(host.settings.styleClasses.label).html(_match_replace(host, def.label, null, true, true)).appendTo(group);
+        def.nolabel = true;
+        if ('arrayOf' in def && !('fields' in def)) def.fields = {
+            "__list_value": $.extend(true, {}, { "required": def.required, "disabled": def.disabled }, (typeof def.arrayOf === 'object' ? def.arrayOf : { "type": def.arrayOf }))
+        };
+        let bump = def.fields && 'label' in def.fields[Object.keys(def.fields)[0]];
         let layout = _resolve_field_layout(host, def.fields, def.layout);
         let template = $('<div class="itemlist-item">');
-        if (_eval(host, def.allow_remove, true, item_data, def.name)) {
-            template.append($('<div class="itemlist-item-rm">')
-                .html($('<button type="button" class="btn btn-danger btn-sm">').html($('<i class="fa fa-minus">'))));
+        if (host.viewmode !== true && _eval(host, def.allow_remove, true, item_data, def.name)) {
+            template.append($('<div class="itemlist-item-rm">').html([
+                def.allow_edit === true && bump ? $('<label>').html('&nbsp;').addClass(host.settings.styleClasses.label) : '',
+                $('<button type="button" class="btn btn-danger btn-sm">').html($('<i class="fa fa-minus">'))
+            ]));
         }
-        if (_eval(host, def.allow_add, true, item_data, def.name)) {
+        if (host.viewmode !== true && _eval(host, def.allow_add, true, item_data, def.name)) {
             let sub_host = _get_empty_host(), new_item = new dataBinder(_define(def.fields), def.name, null, def.name);
             sub_host.settings = $.extend({}, $.fn.hzForm.defaults, host.settings);
             sub_host.validate = false;
             sub_host.data = new_item;
             sub_host.def = { fields: def.fields };
             let btn = $('<button type="button" class="btn btn-success btn-sm">').html($('<i class="fa fa-plus">'));
-            let fieldDIV = _form_field(sub_host, { fields: layout }, ud, ud, ud, ud, true)
+            let fieldDIV = _form_field(sub_host, { fields: layout }, true, ud, ud, ud, true)
                 .addClass('itemlist-newitem')
                 .attr('data-field', def.name);
             fieldDIV.find('input,textarea,select').attr('data-bind-ns', def.name).keypress(function (event) {
@@ -1172,11 +1209,14 @@ Date.getLocalDateFormat = function () {
                 }).off('update').on('update', function (event, key, value, item_data) {
                     return _input_event_update(sub_host, $(this), false, item_data);
                 });
-                if ('options' in def) _input_select_options(sub_host, def, select, new_item, function (select, options) {
-                    _input_select_populate(sub_host, options, select);
+                if ('options' in def) _input_options(sub_host, def, select, new_item, function (select, options) {
+                    _input_options_populate(sub_host, options, select);
                 });
             });
-            group.append($('<div class="itemlist-newitems">').html([$('<div class="itemlist-newitem-add">').html(btn), fieldDIV]));
+            group.append($('<div class="itemlist-newitems">').html([$('<div class="itemlist-newitem-add">').html([
+                bump ? $('<label>').html('&nbsp;').addClass(host.settings.styleClasses.label) : '',
+                btn
+            ]), fieldDIV]));
             btn.click(function () {
                 let valid = true;
                 fieldDIV.find('input,select,textarea').each(function (index, item) {
@@ -1202,15 +1242,15 @@ Date.getLocalDateFormat = function () {
                 sub_host.data.empty();
             });
         }
-        if (_eval(host, def.allow_edit, false, item_data, def.name) !== true) layout = _field_to_html(layout);
-        template.append(_form_field(host, { fields: layout }, null, false, false, ud, true));
+        if (host.viewmode === true || _eval(host, def.allow_edit, false, item_data, def.name) !== true) layout = _field_to_html(layout);
+        template.append(_form_field(host, { fields: layout }, true, false, false, ud, true));
         item_data.watch(function (item) {
             let item_name = item.attr('data-bind'), item_data = _get_data_item(host.data, item_name);
             item.find('select,input').each(function (index, item) {
                 let input = $(item), def = input.data('def');
                 if (input.is('select')) {
-                    if ('options' in def) _input_select_options(host, def, input, item_data, function (select, options) {
-                        _input_select_populate(host, options, select, false, item_data);
+                    if ('options' in def) _input_options(host, def, input, item_data, function (select, options) {
+                        _input_options_populate(host, options, select, false, item_data);
                     });
                 } else if (def.type === 'date' && 'format' in def) {
                     let child_item_data = item_data[def.name];
@@ -1318,7 +1358,7 @@ Date.getLocalDateFormat = function () {
         } else if ('fields' in def && def.type !== 'array') {
             let layout = _resolve_field_layout(host, def.fields, 'layout' in def ? $.extend(true, [], def.layout) : null, def.name);
             let length = layout.length, fields = [], col_width;
-            if (typeof p === 'undefined' || p === null) p = !('layout' in def && def.layout);
+            if (typeof p === 'undefined' || p === null) p = host.settings.horizontal ? false : !('layout' in def && def.layout);
             for (let x in layout) {
                 let item = layout[x];
                 if (typeof item === 'string') item = _form_field_lookup(host.def, item);
@@ -1332,56 +1372,85 @@ Date.getLocalDateFormat = function () {
             }
             col_width = 12 / length;
             field = $('<div class="form-section">').toggleClass('row', p).data('def', def);
-            if ('label' in def) field.append($('<div class="col-md-12">').html($('<h5>').html(def.label)));
+            if ('label' in def) field.append($('<div>').toggleClass('col-md-12', p).html($('<h5>').html(def.label)));
             for (let x in fields) {
                 let item = 'name' in fields[x] ? (item_data instanceof dataBinder ? item_data[fields[x].name] : undefined) : item_data;
                 let field_width = col_width, child_field = _form_field(host, fields[x], !p, populate, apply_rules, item, hidden);
-                if (fields[x] instanceof Object && 'weight' in fields[x])
-                    field_width = Math.round(field_width * fields[x].weight);
+                if (fields[x] instanceof Object && 'weight' in fields[x]) field_width = Math.round(field_width * fields[x].weight);
                 field.append(child_field.toggleClass('col-lg-' + field_width, p));
             }
-        } else if ('options' in def) {
-            field = def.type === 'array' ? _input_select_multi(host, def) : _input_select(host, def, populate);
-            if (hidden !== true) host.pageInputs.push(field);
-        } else if ('lookup' in def && def.type !== 'array') {
-            if (typeof def.lookup === 'string') def.lookup = { url: def.lookup };
-            field = _input_lookup(host, def);
-            if (hidden !== true) host.pageInputs.push(field);
-        } else if (def.type) {
-            switch (def.type) {
-                case 'button':
-                    field = _input_button(host, def);
-                    break;
-                case 'array':
-                    field = _input_list(host, def);
-                    break;
-                case 'boolean':
-                    field = _input_checkbox(host, def);
-                    break;
-                case 'int':
-                case 'integer':
-                case 'number':
-                    field = _input_std(host, 'number', def);
-                    break;
-                case 'date':
-                case 'datetime':
-                    field = _input_datetime(host, def);
-                    break;
-                case 'file':
-                    field = _input_file(host, def);
-                    break;
-                case 'money':
-                    field = _input_money(host, def);
-                    break;
-                case 'text':
-                case 'string':
-                default:
-                    field = _input_std(host, def.type, def);
-                    break;
+        } else {
+            var input;
+            def.nolabel = false;
+            if (host.viewmode === true) {
+                if (item_data instanceof dataBinderArray) input = _input_list(host, def);
+                else if (def.type === 'button') return;
+                else input = $('<span>').attr('data-bind', item_data ? item_data.attrName : '').html(item_data ? item_data.toString() : '');
+            } else if ('options' in def) {
+                input = def.type === 'array' ? _input_select_multi(host, def) : _input_select(host, def, populate);
+            } else if ('lookup' in def && def.type !== 'array') {
+                if (typeof def.lookup === 'string') def.lookup = { url: def.lookup };
+                input = _input_lookup(host, def);
+            } else if (def.type) {
+                switch (def.type) {
+                    case 'button':
+                        input = _input_button(host, def);
+                        break;
+                    case 'array':
+                        input = _input_list(host, def);
+                        break;
+                    case 'boolean':
+                        input = _input_checkbox(host, def);
+                        break;
+                    case 'int':
+                    case 'integer':
+                    case 'number':
+                        input = _input_std(host, 'number', def);
+                        break;
+                    case 'date':
+                    case 'datetime':
+                        input = _input_datetime(host, def);
+                        break;
+                    case 'file':
+                        input = _input_file(host, def);
+                        break;
+                    case 'money':
+                        input = _input_money(host, def);
+                        break;
+                    case 'text':
+                    case 'string':
+                    default:
+                        input = _input_std(host, def.type, def);
+                        break;
+                }
             }
-            if (hidden !== true) host.pageInputs.push(field);
-        } else field = $('<div>');
+            field = $('<div>').addClass(host.settings.styleClasses.group).toggleClass('row', host.settings.horizontal).data('def', def);
+            if (def.title || (def.nolabel !== true && def.label)) field.append($('<label>')
+                .addClass(host.settings.styleClasses.label)
+                .toggleClass('col-sm-' + host.settings.hz.left, host.settings.horizontal)
+                .attr('for', '__hz_field_' + def.name)
+                .html(_match_replace(host, 'title' in def ? def.title : def.label, null, true, true)));
+            if (input) {
+                let col = $('<div>').html(input);
+                if (host.settings.horizontal) {
+                    if (def.label) col.addClass('col-sm-' + host.settings.hz.right);
+                    else col.addClass('col-sm-12');
+                }
+                if ('hint' in def) col.append($('<small class="form-text text-muted">').html(_match_replace(host, def.hint, null, true, true)));
+                field.append(col);
+                if (hidden !== true) host.pageInputs.push(input);
+            }
+        }
         field.data('def', def).data('item', item_data ? item_data : null);
+        if ('width' in def) field.width(def.width);
+        if ('html' in def) {
+            let html = def.html;
+            if ('label' in def && field.children().length === 0) field.append($('<label>').addClass(host.settings.styleClasses.label).html(def.label));
+            field.append($('<div>').html(_match_replace(host, html, null, true, true)));
+        }
+        if ('show' in def && apply_rules !== false) _make_showable(host, def, field);
+        if ('watch' in def) for (let x in def.watch) host.data.watch(def.watch[x], function (field) { _input_event_update(host, field); });
+        if (host.viewmode === true) return field;
         if ('tip' in def) {
             field.children('label.control-label').append($('<i class="fa fa-question-circle form-tip">')
                 .attr('data-title', def.tip)
@@ -1394,15 +1463,6 @@ Date.getLocalDateFormat = function () {
         if ('required' in def && apply_rules !== false) _make_required(host, def, field);
         if ('disabled' in def && apply_rules !== false) _make_disabled(host, def, field);
         if ('invalid' in def) field.append($('<div class="invalid-feedback">').html(def.invalid));
-        if ('width' in def) field.width(def.width);
-        if ('html' in def) {
-            let html = def.html;
-            if ('label' in def && field.children().length === 0) field.append($('<label>').addClass(host.settings.styleClasses.label).html(def.label));
-            field.append($('<div>').html(_match_replace(host, html, null, true, true)));
-        }
-        if ('show' in def && apply_rules !== false) _make_showable(host, def, field);
-        if ('hint' in def) field.append($('<small class="form-text text-muted">').html(_match_replace(host, def.hint, null, true, true)));
-        if ('watch' in def) for (let x in def.watch) host.data.watch(def.watch[x], function (field) { _input_event_update(host, field); });
         return field;
     }
 
@@ -1511,7 +1571,7 @@ Date.getLocalDateFormat = function () {
             return input.children('input,select,textarea').each(function (index, item) { _validate_input(host, $(item), remove_only); });
         let name = input.attr('data-bind');
         if (!name) return;
-        return _validate_field(host, name, null, { required: false }).done(function (event, result, response) {
+        return _validate_field(host, name, { required: false, disabled: false }).done(function (event, result, response) {
             if (result !== true && remove_only === true) return;
             input.toggleClass('is-invalid', result !== true)
                 .toggleClass('border-warning', result === true && response !== null && typeof response === 'object' && response.warning === true);
@@ -1577,55 +1637,53 @@ Date.getLocalDateFormat = function () {
         return true;
     }
 
-    function _validate_field(host, name, extra, d) {
+    function _validate_field(host, name, d, extra) {
         let callbacks = [];
         setTimeout(function () {
             let def = typeof name === 'object' ? name : _form_field_lookup(host.def, name);
             if (def) {
                 let item = _get_data_item(host.data, def.name);
                 if (!item) def.disabled = true;
-                if (def.protected || 'disabled' in def && _eval(host, def.disabled, false, item, def.name)) {
-                    for (let x in callbacks) callbacks[x](def.name, true, extra);
-                } else {
-                    let result = _validate_rule(host, def.name, item, def, d);
-                    if ('fields' in def) {
-                        let childItems = def.type === 'array' ? item.save() : [item];
-                        if (result !== true || childItems.length === 0) {
-                            for (let x in callbacks) callbacks[x](def.name, result, extra);
-                        } else {
-                            for (let i in childItems) {
-                                for (let x in def.fields) {
-                                    if (!('name' in def.fields[x])) def.fields[x].name = x;
-                                    let fullName = def.type === 'array' ? def.name + '[' + i + '].' + x : def.name + '.' + x;
-                                    host.queue.push(fullName);
-                                    _validate_field(host, fullName, extra, { required: d.required }).done(function (fullName, result) {
-                                        for (let x in callbacks) callbacks[x](fullName, result, extra);
-                                    });
-                                }
+                if (!(def.name in host.disabled)) host.disabled[def.name] = 'disabled' in def ? _eval(host, def.disabled, d.disabled, item, def.name) : false;
+                d.disabled = host.disabled[def.name];
+                let result = (def.protected || d.disabled) ? true : _validate_rule(host, def.name, item, def, d);
+                if ('fields' in def) {
+                    let childItems = def.type === 'array' ? item.save() : [item];
+                    if (result !== true || childItems.length === 0) {
+                        for (let x in callbacks) callbacks[x](def.name, result, extra);
+                    } else {
+                        for (let i in childItems) {
+                            for (let x in def.fields) {
+                                if (!('name' in def.fields[x])) def.fields[x].name = x;
+                                let fullName = def.type === 'array' ? def.name + '[' + i + '].' + x : def.name + '.' + x;
+                                host.queue.push(fullName);
+                                _validate_field(host, fullName, { required: d.required, disabled: d.disabled }, extra).done(function (fullName, result) {
+                                    for (let x in callbacks) callbacks[x](fullName, result, extra);
+                                });
                             }
                         }
                     }
-                    if (item && item.value && result === true && 'validate' in def && 'url' in def.validate) {
-                        let url = _match_replace(host, def.validate.url, { "__input__": item.value }, true);
-                        let request = { target: [url, { "name": def.name, "value": item.value }] };
-                        let indexKey = JSON.stringify(request).hash();
-                        let apiDone = function (response) {
-                            if (!(indexKey in host.apiCache)) host.apiCache[indexKey] = response;
-                            let result = response.ok === true ? true : _validation_error(def.name, def, response.reason || "api_failed(" + def.validate.url + ")");
-                            if (callbacks.length > 0) for (let x in callbacks) callbacks[x](def.name, result, response);
-                        };
-                        if (indexKey in host.apiCache) apiDone(host.apiCache[indexKey]);
-                        else if (host.standalone === true) $.ajax({
-                            method: 'POST',
-                            url: def.validate.url,
-                            contentType: "application/json",
-                            data: JSON.stringify(request.target[1])
-                        }).done(apiDone).fail(_error);
-                        else _post(host, 'api', request, false).done(apiDone).fail(_error);
-                    } else if (callbacks.length > 0) for (let x in callbacks) callbacks[x](def.name, result, extra);
-                    if (def.name in host.monitor) for (let x in host.monitor[def.name]) host.monitor[def.name][x](result);
                 }
-            } else for (let x in callbacks) callbacks[x](name, false, extra);
+                if (item && item.value && result === true && 'validate' in def && 'url' in def.validate) {
+                    let url = _match_replace(host, def.validate.url, { "__input__": item.value }, true);
+                    let request = { target: [url, { "name": def.name, "value": item.value }] };
+                    let indexKey = JSON.stringify(request).hash();
+                    let apiDone = function (response) {
+                        if (!(indexKey in host.apiCache)) host.apiCache[indexKey] = response;
+                        let result = response.ok === true ? true : _validation_error(def.name, def, response.reason || "api_failed(" + def.validate.url + ")");
+                        if (callbacks.length > 0) for (let x in callbacks) callbacks[x](def.name, result, response);
+                    };
+                    if (indexKey in host.apiCache) apiDone(host.apiCache[indexKey]);
+                    else if (host.standalone === true) $.ajax({
+                        method: 'POST',
+                        url: def.validate.url,
+                        contentType: "application/json",
+                        data: JSON.stringify(request.target[1])
+                    }).done(apiDone).fail(_error);
+                    else _post(host, 'api', request, false).done(apiDone).fail(_error);
+                } else if (callbacks.length > 0) for (let x in callbacks) callbacks[x](def.name, result, extra);
+                if (def.name in host.monitor) for (let x in host.monitor[def.name]) host.monitor[def.name][x](result);
+            } else for (let x in callbacks) callbacks[x](def.name, false, extra);
         });
         return { done: function (callback) { if (typeof callback === 'function') callbacks.push(callback); return this; } };
     }
@@ -1671,7 +1729,7 @@ Date.getLocalDateFormat = function () {
             }
             for (let key in fields) {
                 host.queue.push(fields[key]);
-                _validate_field(host, fields[key], null, { required: false }).done(function (name, result, response) {
+                _validate_field(host, fields[key], { required: false, disabled: false }).done(function (name, result, response) {
                     let index = host.queue.indexOf(name);
                     if (index >= 0) host.queue.splice(index, 1);
                     if (!Array.isArray(result)) result = [{ name: name, result: result }];
@@ -1725,6 +1783,7 @@ Date.getLocalDateFormat = function () {
             let params = host.standalone ? data : { params: extra || {}, form: data };
             if ('saveURL' in host.settings) params.url = host.settings.saveURL;
             $(host).trigger('saving', [data, params]);
+            host.data.commit();
             _post(host, 'save', params, false).done(function (response) {
                 if (!response.ok) {
                     return $(host).trigger('saverror', [{
@@ -1861,7 +1920,8 @@ Date.getLocalDateFormat = function () {
         if (track === true) _track(host);
         let params = {}, url = "";
         if (host.standalone === true) {
-            if (action in host.settings.endpoints) url = host.settings.endpoints[action];
+            if (!(action in host.settings.endpoints)) return $(host).trigger('error', ['Host endpoint ' + action + ' is unknown!']);
+            url = host.settings.endpoints[action];
             params = postdata;
         } else {
             url = hazaar.url(host.settings.controller, "interact/" + action);
@@ -1948,11 +2008,20 @@ Date.getLocalDateFormat = function () {
         }).fail(_error);
     }
 
+    function _fix_booleans(data) {
+        for (x in data) {
+            if (data[x] !== null && typeof data[x] === 'object' && !('__hz_value' in data[x])) _fix_booleans(data[x]);
+            else if (typeof data[x] === 'boolean') data[x] = { '__hz_value': data[x], '__hz_label': data[x] ? 'Yes' : 'No' };
+        }
+        return data;
+    }
     //Load all the dynamic bits
     function _load(host) {
         let p = function (response) {
             if (!response.ok) return;
-            host.data.extend(response.form);
+            if ('horizontal' in host.def) host.settings.horizontal = host.def.horizontal;
+            host.data.extend(_fix_booleans(response.form));
+            host.data.commit();
             $(host).trigger('data', [host.data.save()]);
             _nav(host, 0);
         };
@@ -1980,6 +2049,7 @@ Date.getLocalDateFormat = function () {
             change: {}
         };
         host.posts = {};
+        host.viewmode = false;
         host.page = null;
         host.working = false;
         host.validate = true;
@@ -1992,6 +2062,7 @@ Date.getLocalDateFormat = function () {
         host.monitor = {};
         host.apiCache = {};
         host.required = {};
+        host.disabled = {};
         return host;
     }
 
@@ -1999,6 +2070,7 @@ Date.getLocalDateFormat = function () {
         //Define the default object properties
         _get_empty_host(host);
         host.settings = $.extend({}, $.fn.hzForm.defaults, settings);
+        host.viewmode = host.settings.viewmode;
         if (host.settings.concurrentUploads < 1) host.settings.concurrentUploads = 1;
         $(host).trigger('init');
         _registerEvents(host);
@@ -2049,7 +2121,12 @@ Date.getLocalDateFormat = function () {
                             _nav(host, host.page + 1);
                         break;
                     case 'save':
-                        _save(host, args[1], args[2]);
+                        _save(host, args[1], args[2]).done(function () {
+                            if (host.settings.viewmode === true) {
+                                host.viewmode = true;
+                                _nav(host, host.page, null, true);
+                            }
+                        });
                         break;
                     case 'single':
                         host.settings.singlePage = Boolean(args[1]);
@@ -2063,10 +2140,25 @@ Date.getLocalDateFormat = function () {
                                 && !result) _validate_nav(host, errors);
                         });
                         break;
+                    case 'reset':
+                        host.data.reset();
+                        break;
+                    case 'edit':
+                        host.viewmode = false;
+                        _nav(host, host.page, null, true);
+                        break;
+                    case 'view':
+                        host.viewmode = true;
+                        _nav(host, host.page, null, true);
+                        break;
+                    case 'toggleEdit':
+                        host.viewmode = !host.viewmode;
+                        _nav(host, host.page, null, true);
+                        break;
                     case 'monitor':
                         if (typeof args[2] === 'function') {
                             host.monitor[args[1]] = [args[2]];
-                            _validate_field(host, args[1]);
+                            _validate_field(host, args[1], { required: false, disabled: false });
                         }
                         break;
                 }
@@ -2082,6 +2174,9 @@ Date.getLocalDateFormat = function () {
         "endpoint": "interact",
         "encode": true,
         "singlePage": false,
+        "horizontal": false,
+        "viewmode": false,
+        "hz": { "left": 3, "right": 9 },
         "placeholder": "Please select...",
         "loaderClass": "forms-loader",
         "validateNav": true,
@@ -2100,7 +2195,8 @@ Date.getLocalDateFormat = function () {
             "chkDiv": "custom-control custom-checkbox",
             "chkInput": "custom-control-input",
             "chkLabel": "custom-control-label",
-            "button": "btn"
+            "button": "btn",
+            "buttonGroup": "btn-group"
         },
         "endpoints": {}
     };
