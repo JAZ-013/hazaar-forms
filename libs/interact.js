@@ -375,7 +375,7 @@ dataBinderArray.prototype.reset = function () {
         } else if (input.is('select')) {
             let value = input.val();
             if (value === '__hz_other') {
-                item_data.set(null, null, item_data.other);
+                if (item_data && item_data.value !== null) item_data.set(null, null, item_data.other);
                 let group = $('<div>').addClass(host.settings.styleClasses.inputGroup);
                 let oInput = $('<input type="text" placeholder="Enter other option...">')
                     .addClass(host.settings.styleClasses.input)
@@ -396,7 +396,7 @@ dataBinderArray.prototype.reset = function () {
                         input.val('').show();
                     });
                 if ('format' in def) oInput.inputmask(def.format);
-                $('<span class="input-group-btn">').html(button).appendTo(group);
+                $('<span class="input-group-append">').html(button).appendTo(group);
                 input.hide().after(group);
                 oInput.focus();
             } else item_data.set(_convert_data_type(def, value));
@@ -806,10 +806,12 @@ dataBinderArray.prototype.reset = function () {
             });
             return group;
         }
+        let group = $('<div class="input-group">');
         let select = $('<select>').addClass(host.settings.styleClasses.input)
             .attr('name', def.name)
             .data('def', def)
-            .attr('data-bind', def.name);
+            .attr('data-bind', def.name)
+            .appendTo(group);
         if (def.protected)
             select.prop('disabled', true);
         else select.focus(function (event) { return _input_event_focus(host, $(event.target)); })
@@ -823,7 +825,7 @@ dataBinderArray.prototype.reset = function () {
         if (populate !== false) _input_options(host, def, select, null, function (select, options) {
             _input_options_populate(host, options, select);
         });
-        return select;
+        return group;
     }
 
     function _input_checkbox(host, def) {
@@ -1431,7 +1433,7 @@ dataBinderArray.prototype.reset = function () {
                 .attr('for', '__hz_field_' + def.name)
                 .html(_match_replace(host, 'title' in def ? def.title : def.label, null, true, true)));
             if (input) {
-                let col = $('<div>').html(input);
+                let col = $('<div class="form-field">').html(input);
                 if (host.settings.horizontal) {
                     if (def.label) col.addClass('col-sm-' + host.settings.hz.right);
                     else col.addClass('col-sm-12');
