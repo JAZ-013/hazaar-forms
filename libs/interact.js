@@ -326,7 +326,7 @@ dataBinderArray.prototype.reset = function () {
         let ac = host.required[item_data.attrName] = _eval(host, def.required, typeof default_required === 'undefined' ? false : default_required, item_data, def.name);
         if (ac !== true) i.remove();
         else if (i.length === 0) label.append($('<i class="fa fa-exclamation-circle form-required" title="Required">'));
-        if ('fields' in def) input.children('div.form-section,div.form-group').each(function (index, item) { _eval_required(host, $(item), ac); });
+        if ('fields' in def) input.children('div.form-section,div.form-group').each(function (index, item) { let o = $(item); if (o.data('item')) _eval_required(host, o, ac); });
         return ac;
     }
 
@@ -343,7 +343,7 @@ dataBinderArray.prototype.reset = function () {
         let item_data = _get_data_item(host.data, input.data('item'));
         let ac = host.disabled[item_data.attrName] = _eval(host, def.disabled, typeof default_disabled === 'undefined' ? false : default_disabled, item_data, def.name);
         input.find('input,textarea,select,button').prop('disabled', ac);
-        if ('fields' in def) input.children('div.form-section,div.form-group').each(function (index, item) { _eval_disabled(host, $(item), ac); });
+        if ('fields' in def) input.children('div.form-section,div.form-group').each(function (index, item) { let o = $(item); if (o.data('item')) _eval_disabled(host, o, ac); });
         return ac;
     }
 
