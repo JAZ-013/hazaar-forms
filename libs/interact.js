@@ -396,7 +396,7 @@ dataBinderArray.prototype.reset = function () {
                         input.val('').show();
                     });
                 if ('format' in def) oInput.inputmask(def.format);
-                $('<span class="input-group-append">').html(button).appendTo(group);
+                $('<span class="input-group-btn">').addClass(host.settings.styleClasses.inputGroupAppend).html(button).appendTo(group);
                 input.hide().after(group);
                 oInput.focus();
             } else item_data.set(_convert_data_type(def, value));
