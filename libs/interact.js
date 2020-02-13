@@ -243,8 +243,9 @@ dataBinderArray.prototype.reset = function () {
         if (inc_return === true) code += "return ( " + evaluate.replace(/[\;\s]+$/, '') + " );";
         else code += evaluate;
         try {
+            let eval_host = host.parent ? host.parent : host;
             return new Function('form', 'tags', 'formValue', 'formItem', 'key', code)
-                (host.data, host.tags, item_data ? item_data : null, item_data ? item_data.parent : null, key);
+                (eval_host.data, eval_host.tags, item_data ? item_data : null, item_data ? item_data.parent : null, key);
         } catch (e) {
             console.error('Failed to evaluate condition: ' + evaluate);
             console.error(e);
@@ -279,10 +280,11 @@ dataBinderArray.prototype.reset = function () {
 
     function _match_replace(host, str, extra, force, use_html) {
         if (!str) return null;
+        let mhost = host.parent ? host.parent : host;
         while ((match = str.match(/\{\{([\W]*)([\w\.]+)\}\}/)) !== null) {
-            let modifiers = match[1].split(''), value = host ? _get_data_item(host.data, match[2]) : null;
+            let modifiers = match[1].split(''), value = mhost ? _get_data_item(mhost.data, match[2]) : null;
             if (value === null) value = match[2].substr(0, 5) === 'this.'
-                ? _get_data_item(host.settings, match[2].substr(5))
+                ? _get_data_item(mhost.settings, match[2].substr(5))
                 : extra ? _get_data_item(extra, match[2]) : null;
             if (modifiers.indexOf('!') === -1
                 && (value instanceof dataBinderValue ? value.value : value) === null
@@ -1192,7 +1194,7 @@ dataBinderArray.prototype.reset = function () {
             ]));
         }
         if (host.viewmode !== true && _eval(host, def.allow_add, true, item_data, def.name)) {
-            let sub_host = _get_empty_host(), new_item = new dataBinder(_define(def.fields), def.name, null, def.name);
+            let sub_host = _get_empty_host(ud, host), new_item = new dataBinder(_define(def.fields), def.name, null, def.name);
             sub_host.settings = $.extend({}, $.fn.hzForm.defaults, host.settings);
             sub_host.validate = false;
             sub_host.data = new_item;
@@ -2036,7 +2038,7 @@ dataBinderArray.prototype.reset = function () {
         }
     }
 
-    function _get_empty_host(host) {
+    function _get_empty_host(host, parent_host) {
         if (typeof host === 'undefined') host = {};
         host.data = {};
         host.events = {
@@ -2060,6 +2062,7 @@ dataBinderArray.prototype.reset = function () {
         host.apiCache = {};
         host.required = {};
         host.disabled = {};
+        host.parent = parent_host;
         return host;
     }
 
