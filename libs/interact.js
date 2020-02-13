@@ -1685,7 +1685,7 @@ dataBinderArray.prototype.reset = function () {
                     else _post(host, 'api', request, false).done(apiDone).fail(_error);
                 } else if (callbacks.length > 0) for (let x in callbacks) callbacks[x](def.name, result, extra);
                 if (def.name in host.monitor) for (let x in host.monitor[def.name]) host.monitor[def.name][x](result);
-            } else for (let x in callbacks) callbacks[x](def.name, false, extra);
+            } else for (let x in callbacks) callbacks[x](name, true, extra);
         });
         return { done: function (callback) { if (typeof callback === 'function') callbacks.push(callback); return this; } };
     }
