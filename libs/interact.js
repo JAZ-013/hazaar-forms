@@ -1263,8 +1263,9 @@ dataBinderArray.prototype.reset = function () {
             });
             $(item).find('.form-group,.form-section').each(function (index, input) {
                 let group = $(input), def = group.data('def');
-                if (!def.name) return;
+                if (!(def && def.name)) return;
                 let sub_item_data = _get_data_item(item_data, def.name);
+                if (!sub_item_data) return;
                 group.data('name', item_name + '.' + def.name)
                     .data('item', sub_item_data.attrName);
                 group.find('label').each(function (index, item) {
