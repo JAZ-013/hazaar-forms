@@ -280,7 +280,7 @@ dataBinderArray.prototype.reset = function () {
 
     function _match_replace(host, str, extra, force, use_html) {
         if (!str) return null;
-        let mhost = host.parent ? host.parent : host;
+        let mhost = host && host.parent ? host.parent : host;
         while ((match = str.match(/\{\{([\W]*)([\w\.]+)\}\}/)) !== null) {
             let modifiers = match[1].split(''), value = mhost ? _get_data_item(mhost.data, match[2]) : null;
             if (value === null) value = match[2].substr(0, 5) === 'this.'
