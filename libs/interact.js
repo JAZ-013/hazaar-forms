@@ -1283,6 +1283,7 @@ dataBinderArray.prototype.reset = function () {
             .attr('data-bind', def.name)
             .data('template', template))
             .data('def', def)
+            .data('item', item_data)
             .on('click', '.btn-danger', function (event) {
                 let index = Array.from(this.parentNode.parentNode.parentNode.children).indexOf(this.parentNode.parentNode);
                 let list = $(event.currentTarget.parentNode.parentNode.parentNode);
