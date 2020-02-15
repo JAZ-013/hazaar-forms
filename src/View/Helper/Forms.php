@@ -24,8 +24,6 @@ class Forms extends \Hazaar\View\Helper {
 
         $this->requires('bootstrap');
 
-        $this->requires('fontawesome', array('version' => '4.7.0'));
-
     }
 
     function init(\Hazaar\View\Layout $view, $args = array()){

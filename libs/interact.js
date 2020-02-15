@@ -29,6 +29,16 @@ if (typeof Object.assign !== 'function') {
     });
 }
 
+var icons = {
+    "exclamation-circle": [512, 512, [], "f06a", "M504 256c0 136.997-111.043 248-248 248S8 392.997 8 256C8 119.083 119.043 8 256 8s248 111.083 248 248zm-248 50c-25.405 0-46 20.595-46 46s20.595 46 46 46 46-20.595 46-46-20.595-46-46-46zm-43.673-165.346l7.418 136c.347 6.364 5.609 11.346 11.982 11.346h48.546c6.373 0 11.635-4.982 11.982-11.346l7.418-136c.375-6.874-5.098-12.654-11.982-12.654h-63.383c-6.884 0-12.356 5.78-11.981 12.654z"],
+    "question-circle": [512, 512, [], "f059", "M504 256c0 136.997-111.043 248-248 248S8 392.997 8 256C8 119.083 119.043 8 256 8s248 111.083 248 248zM262.655 90c-54.497 0-89.255 22.957-116.549 63.758-3.536 5.286-2.353 12.415 2.715 16.258l34.699 26.31c5.205 3.947 12.621 3.008 16.665-2.122 17.864-22.658 30.113-35.797 57.303-35.797 20.429 0 45.698 13.148 45.698 32.958 0 14.976-12.363 22.667-32.534 33.976C247.128 238.528 216 254.941 216 296v4c0 6.627 5.373 12 12 12h56c6.627 0 12-5.373 12-12v-1.333c0-28.462 83.186-29.647 83.186-106.667 0-58.002-60.165-102-116.531-102zM256 338c-25.365 0-46 20.635-46 46 0 25.364 20.635 46 46 46s46-20.636 46-46c0-25.365-20.635-46-46-46z"],
+    "times": [352, 512, [], "f00d", "M242.72 256l100.07-100.07c12.28-12.28 12.28-32.19 0-44.48l-22.24-22.24c-12.28-12.28-32.19-12.28-44.48 0L176 189.28 75.93 89.21c-12.28-12.28-32.19-12.28-44.48 0L9.21 111.45c-12.28 12.28-12.28 32.19 0 44.48L109.28 256 9.21 356.07c-12.28 12.28-12.28 32.19 0 44.48l22.24 22.24c12.28 12.28 32.2 12.28 44.48 0L176 322.72l100.07 100.07c12.28 12.28 32.2 12.28 44.48 0l22.24-22.24c12.28-12.28 12.28-32.19 0-44.48L242.72 256z"],
+    "minus": [448, 512, [], "f068", "M416 208H32c-17.67 0-32 14.33-32 32v32c0 17.67 14.33 32 32 32h384c17.67 0 32-14.33 32-32v-32c0-17.67-14.33-32-32-32z"],
+    "plus": [448, 512, [], "f067", "M416 208H272V64c0-17.67-14.33-32-32-32h-32c-17.67 0-32 14.33-32 32v144H32c-17.67 0-32 14.33-32 32v32c0 17.67 14.33 32 32 32h144v144c0 17.67 14.33 32 32 32h32c17.67 0 32-14.33 32-32V304h144c17.67 0 32-14.33 32-32v-32c0-17.67-14.33-32-32-32z"],
+    "calendar": [448, 512, [], "f133", "M12 192h424c6.6 0 12 5.4 12 12v260c0 26.5-21.5 48-48 48H48c-26.5 0-48-21.5-48-48V204c0-6.6 5.4-12 12-12zm436-44v-36c0-26.5-21.5-48-48-48h-48V12c0-6.6-5.4-12-12-12h-40c-6.6 0-12 5.4-12 12v52H160V12c0-6.6-5.4-12-12-12h-40c-6.6 0-12 5.4-12 12v52H48C21.5 64 0 85.5 0 112v36c0 6.6 5.4 12 12 12h424c6.6 0 12-5.4 12-12z"],
+    "search": [512, 512, [], "f002", "M505 442.7L405.3 343c-4.5-4.5-10.6-7-17-7H372c27.6-35.3 44-79.7 44-128C416 93.1 322.9 0 208 0S0 93.1 0 208s93.1 208 208 208c48.3 0 92.7-16.4 128-44v16.3c0 6.4 2.5 12.5 7 17l99.7 99.7c9.4 9.4 24.6 9.4 33.9 0l28.3-28.3c9.4-9.4 9.4-24.6.1-34zM208 336c-70.7 0-128-57.2-128-128 0-70.7 57.2-128 128-128 70.7 0 128 57.2 128 128 0 70.7-57.2 128-128 128z"]
+};
+
 Array.fromObject = function (object) {
     if (typeof object !== 'object') return null;
     let array = [];
@@ -323,11 +333,11 @@ dataBinderArray.prototype.reset = function () {
     function _eval_required(host, input, default_required) {
         let def = input.data('def');
         if (!def) return false;
-        let label = input.children('label.control-label'), i = label.children('i.form-required');
+        let label = input.children('label.control-label'), i = label.children('svg.form-required');
         let item_data = _get_data_item(host.data, input.data('item'));
         let ac = host.required[item_data.attrName] = _eval(host, def.required, typeof default_required === 'undefined' ? false : default_required, item_data, def.name);
         if (ac !== true) i.remove();
-        else if (i.length === 0) label.append($('<i class="fa fa-exclamation-circle form-required" title="Required">'));
+        else if (i.length === 0) label.append(_icon('exclamation-circle', 'Required').addClass('form-required'));
         if ('fields' in def) input.children('div.form-section,div.form-group').each(function (index, item) { let o = $(item); if (o.data('item')) _eval_required(host, o, ac); });
         return ac;
     }
@@ -391,7 +401,7 @@ dataBinderArray.prototype.reset = function () {
                         group.remove();
                     }).appendTo(group);
                 let button = $('<button class="btn btn-secondary" type="button">')
-                    .html($('<i class="fa fa-times">'))
+                    .html(_icon('times'))
                     .click(function (e) {
                         group.remove();
                         item_data.other = null;
@@ -871,8 +881,7 @@ dataBinderArray.prototype.reset = function () {
             .on('update', function (event, key, value, item_data) { return _input_event_update(host, $(event.target), false, item_data); });
         let glyph = $('<div>').addClass(host.settings.styleClasses.inputGroupAppend)
             .html($('<span style="cursor: pointer;">').addClass(host.settings.styleClasses.inputGroupText)
-                .html($('<i class="fa fa-calendar">')
-                    .click(function () { input.focus(); })))
+                .html(_icon('calendar').click(function () { input.focus(); })))
             .appendTo(group);
         if (def.format) {
             if (def.format === 'local') def.format = Date.getLocalDateFormat();
@@ -1086,7 +1095,7 @@ dataBinderArray.prototype.reset = function () {
         }
         if ('placeholder' in def) input.attr('placeholder', def.placeholder);
         if (!def.protected) group.append($('<div>').addClass(host.settings.styleClasses.inputGroupAppend)
-            .html($('<span>').addClass(host.settings.styleClasses.inputGroupText).html($('<i class="fa fa-search">'))));
+            .html($('<span>').addClass(host.settings.styleClasses.inputGroupText).html(_icon('search'))));
         return group;
     }
 
@@ -1190,7 +1199,7 @@ dataBinderArray.prototype.reset = function () {
         if (host.viewmode !== true && _eval(host, def.allow_remove, true, item_data, def.name)) {
             template.append($('<div class="itemlist-item-rm">').html([
                 def.allow_edit === true && bump ? $('<label>').html('&nbsp;').addClass(host.settings.styleClasses.label) : '',
-                $('<button type="button" class="btn btn-danger btn-sm">').html($('<i class="fa fa-minus">'))
+                $('<button type="button" class="btn btn-danger btn-sm">').html(_icon('minus'))
             ]));
         }
         if (host.viewmode !== true && _eval(host, def.allow_add, true, item_data, def.name)) {
@@ -1199,7 +1208,7 @@ dataBinderArray.prototype.reset = function () {
             sub_host.validate = false;
             sub_host.data = new_item;
             sub_host.def = { fields: def.fields };
-            let btn = $('<button type="button" class="btn btn-success btn-sm">').html($('<i class="fa fa-plus">'));
+            let btn = $('<button type="button" class="btn btn-success btn-sm">').html(_icon('plus'));
             let fieldDIV = _form_field(sub_host, { fields: layout }, true, ud, ud, ud, true)
                 .addClass('itemlist-newitem')
                 .attr('data-field', def.name);
@@ -1458,7 +1467,8 @@ dataBinderArray.prototype.reset = function () {
         if ('watch' in def) for (let x in def.watch) host.data.watch(def.watch[x], function (field) { _input_event_update(host, field); });
         if (host.viewmode === true) return field;
         if ('tip' in def) {
-            field.children('label.control-label').append($('<i class="fa fa-question-circle form-tip">')
+            field.children('label.control-label').append(_icon('question-circle')
+                .addClass('form-tip')
                 .attr('data-title', def.tip)
                 .tooltip({ placement: 'auto', html: true }))
                 .on('show.bs.tooltip', function (e) {
@@ -1532,6 +1542,17 @@ dataBinderArray.prototype.reset = function () {
             container: $('<div>').addClass(host.settings.styleClasses.container).hide()
         };
         $(host).html([host.objects.loader, host.objects.container]);
+    }
+
+    function _icon(name, title) {
+        let svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+        svg.setAttribute("class", "forms-icon");
+        svg.setAttribute("viewBox", "0 0 512 512");
+        let path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+        path.setAttribute("fill", "currentColor");
+        path.setAttribute("d", icons[name][4]);
+        svg.appendChild(path);
+        return $(svg);
     }
 
     //Navigate to a page
@@ -2243,7 +2264,7 @@ $.fn.fileUpload = function () {
             host._preview(file),
             $('<div class="dz-size">').html(humanFileSize(file.size)),
             $('<div class="dz-detail">').html($('<a>').attr('href', file.url).attr('target', '_blank').html(file.name).attr('title', file.name)),
-            $('<div class="dz-remove">').html($('<i class="fa fa-times">')).click(function (e) {
+            $('<div class="dz-remove">').html(_icon('times')).click(function (e) {
                 let item = $(this).parent();
                 if (typeof host.options.remove === 'function') host.options.remove(file);
                 if (host.options.autoRemove) host._remove(item.data('file'));

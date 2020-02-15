@@ -52,7 +52,7 @@
     position: relative;
 }
 
-    .form-group label .fa {
+    .form-group label svg {
         margin-left: 5px;
     }
 
@@ -243,12 +243,9 @@
     }
 
 /* HTML5 Datepicker Fix */
-.input-group.date > .input-group-append {
+.input-group.date > .input-group-append > span > svg {
+    margin-left: 0;
 }
-
-    .input-group.date > .input-group-append > span > i.fa {
-        margin-left: 0;
-    }
 
 .input-group > input[type="date"].form-control {
     position: initial;
@@ -275,4 +272,14 @@
 .forms-container .form-page input[type="date"]::-webkit-clear-button {
     z-index: 1;
     cursor: pointer;
+}
+
+svg:not(:root).forms-icon{
+    overflow:visible;
+    display:inline-block;
+    font-size:inherit;
+    height:1em;
+    overflow:visible;
+    vertical-align:-.125em;
+    width:1em;
 }
