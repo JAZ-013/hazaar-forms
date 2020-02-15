@@ -35,12 +35,17 @@ class Forms extends \Hazaar\View\Helper {
 
         $this->cdnjs->load('jquery.inputmask');
 
-        //Link required stylesheets
-        $view->link($this->application->url('hazaar/forms', 'file/interact.css'));
+        $debug = $this->application->config->app->debug;
+
+        $css = 'interact' . (($debug === true) ? '' : '.min') . '.css';
+
+        $js =  'interact' . (($debug === true) ? '' : '.min') . '.js';
+
+        $view->link($this->application->url('hazaar/forms', 'file/' . $css));
+
+        $view->requires($this->application->url('hazaar/forms', 'file/' . $js));
 
         $view->link($this->application->url('hazaar', 'file/css/fileicons.css'));
-
-        $view->requires($this->application->url('hazaar/forms', 'file/interact.js'));
 
         $this->model = ake($args, 'model');
 
