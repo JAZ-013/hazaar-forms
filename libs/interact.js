@@ -812,7 +812,7 @@ dataBinderArray.prototype.reset = function () {
 
     function _input_select(host, def, populate) {
         if (def.radios === true) {
-            let group = $('<div class="form-group">').data('def', def);
+            let group = $('<div>').addClass(host.settings.styleClasses.group).data('def', def);
             if (populate !== false) _input_options(host, def, group, ud, function (group, options) {
                 _input_options_populate(host, options, group, ud, ud, _input_radio_items);
             });
@@ -1392,7 +1392,8 @@ dataBinderArray.prototype.reset = function () {
                 let item = 'name' in fields[x] ? (item_data instanceof dataBinder ? item_data[fields[x].name] : undefined) : item_data;
                 let field_width = col_width, child_field = _form_field(host, fields[x], !p, populate, apply_rules, item, hidden);
                 if (fields[x] instanceof Object && 'weight' in fields[x]) field_width = Math.round(field_width * fields[x].weight);
-                field.append(child_field.toggleClass('col-lg-' + field_width, p));
+                field.append(child_field.toggleClass('col-md-' + field_width, p));
+                if (p) child_field.removeClass('row');
             }
         } else {
             var input;
@@ -1499,7 +1500,7 @@ dataBinderArray.prototype.reset = function () {
                 col_width = 12 / length;
             }
             for (let x in section)
-                group.append($('<div>').toggleClass('col-lg-' + Math.round((section[x].weight || 1) * col_width), p).html(_section(host, section[x], !p)));
+                group.append($('<div>').toggleClass('col-md-' + Math.round((section[x].weight || 1) * col_width), p).html(_section(host, section[x], !p)));
             return group;
         }
         if (typeof section !== 'object') return null;
