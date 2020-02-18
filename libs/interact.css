@@ -251,6 +251,10 @@
     position: initial;
 }
 
+.form-control.is-different {
+    border-color: blue;
+}
+
 /* make the native arrow invisible and stretch it over the whole field so you can click anywhere in the input field to trigger the native datepicker*/
 .forms-container .form-page input[type="date"]::-webkit-calendar-picker-indicator {
     position: absolute;

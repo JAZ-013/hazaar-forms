@@ -107,6 +107,14 @@ dataBinder.prototype.commit = function () {
     return this._commit(this._attributes);
 };
 
+dataBinder.prototype.diff = function (data, callback) {
+    for (key in this._attributes) {
+        if (!(key in data)) data[key] = null;
+        if (this._attributes[key] instanceof dataBinder) this._attributes[key].diff(data[key], callback);
+        else if (this._attributes[key].value !== data[key]) callback(this._attributes[key]);
+    }
+};
+
 dataBinderArray.prototype.commit = function () {
     return this._commit(this._elements);
 };
@@ -1965,6 +1973,14 @@ dataBinderArray.prototype.reset = function () {
         });
     }
 
+    function _diff(host, data) {
+        if (typeof data === 'string') return $.get(data).done(function (response) { _diff(host, response) });
+        $(host).find('.is-different').removeClass('is-different');
+        host.data.diff(data, function (item) {
+            item.find().addClass('is-different');
+        });
+    }
+
     function _define(values) {
         if (!values) return;
         let data = {};
@@ -2184,6 +2200,9 @@ dataBinderArray.prototype.reset = function () {
                             host.monitor[args[1]] = [args[2]];
                             _validate_field(host, args[1], { required: false, disabled: false });
                         }
+                        break;
+                    case 'diff':
+                        _diff(host, args[1]);
                         break;
                 }
             } else {
