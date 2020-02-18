@@ -134,9 +134,10 @@ dataBinder.prototype.diff = function (data, callback) {
     if (!(data && typeof data === 'object')) return;
     for (key in this._attributes) {
         if (!(key in data)) data[key] = null;
+        else if (data[key] !== null && typeof data[key] === 'object' && 'date' in data[key] && 'timezone' in data[key]) data[key] = dateFormat(new Date(data[key].date), 'yyyy-mm-dd');
         if (this._attributes[key] instanceof dataBinder || this._attributes[key] instanceof dataBinderArray) this._attributes[key].diff(data[key], callback);
         else if ((this._attributes[key] instanceof dataBinderValue ? this._attributes[key].value : this._attributes[key]) !== data[key])
-            callback(this._attributes[key]);
+            callback(this._attributes[key], data[key]);
     }
 };
 
@@ -1986,10 +1987,7 @@ dataBinderArray.prototype.diff = function (data, callback) {
     function _diff(host, data) {
         if (typeof data === 'string') return $.get(data).done(function (response) { _diff(host, response) });
         $(host).find('.is-different').removeClass('is-different');
-        host.data.diff(data, function (item) {
-            console.log(item.attrName + ' has changed');
-            item.find().addClass('is-different');
-        });
+        host.data.diff(data, function (item) { item.find().addClass('is-different'); });
     }
 
     function _define(values) {
