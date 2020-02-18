@@ -107,14 +107,6 @@ dataBinder.prototype.commit = function () {
     return this._commit(this._attributes);
 };
 
-dataBinder.prototype.diff = function (data, callback) {
-    for (key in this._attributes) {
-        if (!(key in data)) data[key] = null;
-        if (this._attributes[key] instanceof dataBinder) this._attributes[key].diff(data[key], callback);
-        else if (this._attributes[key].value !== data[key]) callback(this._attributes[key]);
-    }
-};
-
 dataBinderArray.prototype.commit = function () {
     return this._commit(this._elements);
 };
@@ -136,6 +128,24 @@ dataBinderArray.prototype.reset = function () {
     for (let x in this._default) this._elements[x] = this.__convert_type(x, this._default[x]);
     this.resync();
     return true;
+};
+
+dataBinder.prototype.diff = function (data, callback) {
+    if (!(data && typeof data === 'object')) return;
+    for (key in this._attributes) {
+        if (!(key in data)) data[key] = null;
+        if (this._attributes[key] instanceof dataBinder || this._attributes[key] instanceof dataBinderArray) this._attributes[key].diff(data[key], callback);
+        else if ((this._attributes[key] instanceof dataBinderValue ? this._attributes[key].value : this._attributes[key]) !== data[key])
+            callback(this._attributes[key]);
+    }
+};
+
+dataBinderArray.prototype.diff = function (data, callback) {
+    if (!(data && typeof data === 'object')) return;
+    for (key in this._elements) {
+        if (!(key in data)) data[key] = null;
+        if (this._elements[key] instanceof dataBinder) this._elements[key].diff(data[key], callback);
+    }
 };
 
 (function ($) {
@@ -1977,6 +1987,7 @@ dataBinderArray.prototype.reset = function () {
         if (typeof data === 'string') return $.get(data).done(function (response) { _diff(host, response) });
         $(host).find('.is-different').removeClass('is-different');
         host.data.diff(data, function (item) {
+            console.log(item.attrName + ' has changed');
             item.find().addClass('is-different');
         });
     }

@@ -251,8 +251,13 @@
     position: initial;
 }
 
-.form-control.is-different {
+.form-control.is-different,
+.custom-control input[type="checkbox"].is-different + label::before {
     border-color: blue;
+}
+
+.custom-control input[type="checkbox"].is-different + label {
+    color: blue; 
 }
 
 /* make the native arrow invisible and stretch it over the whole field so you can click anywhere in the input field to trigger the native datepicker*/
