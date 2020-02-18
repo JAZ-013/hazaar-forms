@@ -251,6 +251,20 @@
     position: initial;
 }
 
+.form-control.is-different,
+.custom-control input[type="checkbox"].is-different + label::before {
+    border-color: #3995ff;
+}
+
+input.form-control.is-different{
+    background-color: #1272dfad;
+    color: white;
+}
+
+.custom-control input[type="checkbox"].is-different + label {
+    color: #1077ec; 
+}
+
 /* make the native arrow invisible and stretch it over the whole field so you can click anywhere in the input field to trigger the native datepicker*/
 .forms-container .form-page input[type="date"]::-webkit-calendar-picker-indicator {
     position: absolute;
