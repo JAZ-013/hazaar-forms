@@ -256,7 +256,7 @@
     border-color: #3995ff;
 }
 
-input.form-control.is-different{
+.form-control.is-different {
     background-color: #1272dfad;
     color: white;
 }

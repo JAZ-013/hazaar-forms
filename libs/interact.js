@@ -131,13 +131,12 @@ dataBinderArray.prototype.reset = function () {
 };
 
 dataBinder.prototype.diff = function (data, callback) {
-    if (!(data && typeof data === 'object')) return;
-    for (key in this._attributes) {
-        if (!(key in data)) data[key] = null;
-        else if (data[key] !== null && typeof data[key] === 'object' && 'date' in data[key] && 'timezone' in data[key]) data[key] = dateFormat(new Date(data[key].date), 'yyyy-mm-dd');
-        if (this._attributes[key] instanceof dataBinder || this._attributes[key] instanceof dataBinderArray) this._attributes[key].diff(data[key], callback);
-        else if ((this._attributes[key] instanceof dataBinderValue ? this._attributes[key].value : this._attributes[key]) !== data[key])
-            callback(this._attributes[key], data[key]);
+    if (data === null || typeof data !== 'object') return;
+    if (!(data instanceof dataBinder)) data = new dataBinder(data, null, null, 'form-differential-analysis');
+    for (let key in this._attributes) {
+        let value = (!(key in data)) ? null : data[key].value;
+        if (this._attributes[key] instanceof dataBinder || this._attributes[key] instanceof dataBinderArray) this._attributes[key].diff(value, callback);
+        else if (this._attributes[key] instanceof dataBinderValue && this._attributes[key].value !== value) callback(this._attributes[key], value);
     }
 };
 
