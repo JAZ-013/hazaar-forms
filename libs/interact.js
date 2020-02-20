@@ -2076,7 +2076,9 @@ dataBinderArray.prototype.diff = function (data, callback) {
             host.def = host.settings.def;
             _prepare_field_definitions(host, host.def.fields);
             host.data = new dataBinder(_define(host.def.fields));
-            p({ ok: true, form: host.settings.data });
+            if ('load' in host.settings.endpoints) _post(host, 'load').done(p).fail(_error);
+            else if (typeof host.settings.data === 'string') $.get(host.settings.data).done(function (r) { p({ ok: true, form: r }); }).fail(_error);
+            else p({ ok: true, form: host.settings.data });
             delete host.settings.def;
             delete host.settings.data;
         } else {
