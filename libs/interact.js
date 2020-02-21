@@ -621,7 +621,6 @@ dataBinderArray.prototype.diff = function (data, callback) {
             items[column].append(label);
             if (items[column].children().length >= per_col) column++;
         }
-        if ('cssClass' in def) cols.addClass(def.cssClass);
         item_data.enabled(true);
         _input_event_update(host, def.name, true);
         return container.html(cols.html(items)).parent().show();
@@ -862,8 +861,6 @@ dataBinderArray.prototype.diff = function (data, callback) {
             .on('update', function (event, key, value, item_data) { return _input_event_update(host, $(event.target), false, item_data); });
         def.watchers = {};
         if (!("placeholder" in def)) def.placeholder = host.settings.placeholder;
-        if ('css' in def) select.css(def.css);
-        if ('cssClass' in def) select.addClass(def.cssClass);
         if (populate !== false) _input_options(host, def, select, null, function (select, options) {
             _input_options_populate(host, options, select);
         });
@@ -888,8 +885,6 @@ dataBinderArray.prototype.diff = function (data, callback) {
             .html(_match_replace(host, def.label, null, true, true))
             .attr('for', id)
             .appendTo(group);
-        if ('css' in def) input.css(def.css);
-        if ('cssClass' in def) input.addClass(def.cssClass);
         def.nolabel = true;
         return group;
     }
@@ -935,8 +930,6 @@ dataBinderArray.prototype.diff = function (data, callback) {
             if (!def.placeholder) def.placeholder = def.format;
         }
         if (def.placeholder) input.attr('placeholder', def.placeholder);
-        if ('css' in def) input.css(def.css);
-        if ('cssClass' in def) input.addClass(def.cssClass);
         return group;
     }
 
@@ -1021,8 +1014,6 @@ dataBinderArray.prototype.diff = function (data, callback) {
             .data('def', def)
             .appendTo(group)
             .on('update', function (event, key, value, item_data) { _input_event_update(host, $(event.target), false, item_data); });
-        if ('css' in def) input.css(def.css);
-        if ('cssClass' in def) input.addClass(def.cssClass);
         if (def.lookup && 'url' in def.lookup) {
             input.on('keyup', function (event) {
                 if (event.keyCode === 32) return;
@@ -1192,8 +1183,6 @@ dataBinderArray.prototype.diff = function (data, callback) {
         if (type === 'text' && 'validate' in def && 'maxlen' in def.validate) input.attr('maxlength', def.validate.maxlen);
         if ('format' in def) input.attr('type', 'text').inputmask(def.format);
         if ('placeholder' in def) input.attr('placeholder', def.placeholder);
-        if ('css' in def) input.css(def.css);
-        if ('cssClass' in def) input.addClass(def.cssClass);
         if (def.prefix) group.append($('<div>').addClass(host.settings.styleClasses.inputGroupPrepend)
             .html($('<span>').addClass(host.settings.styleClasses.inputGroupText).html(_match_replace(host, def.prefix, null, true, true))));
         group.append(input);
@@ -1484,6 +1473,8 @@ dataBinderArray.prototype.diff = function (data, callback) {
                     else col.addClass('col-sm-12');
                 }
                 if ('hint' in def) col.append($('<small class="form-text text-muted">').html(_match_replace(host, def.hint, null, true, true)));
+                if ('css' in def) input.css(def.css);
+                if ('cssClass' in def) input.addClass(def.cssClass);
                 field.append(col);
             }
         }
