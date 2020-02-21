@@ -1230,7 +1230,7 @@ dataBinderArray.prototype.diff = function (data, callback) {
             sub_host.data = new_item;
             sub_host.def = { fields: def.fields };
             let btn = $('<button type="button" class="btn btn-success btn-sm">').html(_hz_icon('plus'));
-            let fieldDIV = _form_field(sub_host, { fields: layout }, true, ud, ud, ud, true)
+            let fieldDIV = _form_field(sub_host, { fields: layout, row: true }, true, ud, ud, ud, true)
                 .addClass('itemlist-newitem')
                 .attr('data-field', def.name);
             fieldDIV.find('input,textarea,select').attr('data-bind-ns', def.name).keypress(function (event) {
@@ -1277,7 +1277,7 @@ dataBinderArray.prototype.diff = function (data, callback) {
             });
         }
         if (host.viewmode === true || _eval(host, def.allow_edit, false, item_data, def.name) !== true) layout = _field_to_html(layout);
-        template.append(_form_field(host, { fields: layout }, true, false, false, ud, true));
+        template.append(_form_field(host, { fields: layout, row: true }, true, false, false, ud, true));
         item_data.watch(function (item) {
             let item_name = item.attr('data-bind'), item_data = _get_data_item(host.data, item_name);
             item.find('select,input').each(function (index, item) {
@@ -1414,66 +1414,69 @@ dataBinderArray.prototype.diff = function (data, callback) {
                 let field_width = col_width, child_field = _form_field(host, fields[x], !p, populate, apply_rules, item, hidden);
                 if (fields[x] instanceof Object && 'weight' in fields[x]) field_width = Math.round(field_width * fields[x].weight);
                 field.append(child_field.toggleClass('col-md-' + field_width, p));
-                if (p) child_field.removeClass('row');
+                if (p && def.row !== true) child_field.removeClass('row');
             }
         } else {
-            var input;
+            let input, col = $('<div class="form-field">');
             def.nolabel = false;
             if (host.viewmode === true) {
                 if (item_data instanceof dataBinderArray) input = _input_list(host, def);
                 else if (def.type === 'button') return;
                 else input = $('<span>').attr('data-bind', item_data ? item_data.attrName : '').html(item_data ? item_data.toString() : '');
-            } else if ('options' in def) {
-                input = def.type === 'array' ? _input_select_multi(host, def) : _input_select(host, def, populate);
-            } else if ('lookup' in def && def.type !== 'array') {
-                if (typeof def.lookup === 'string') def.lookup = { url: def.lookup };
-                input = _input_lookup(host, def);
+            } else if (def.type === 'array') {
+                input = _input_list(host, def);
             } else if (def.type) {
-                switch (def.type) {
-                    case 'button':
-                        input = _input_button(host, def);
-                        break;
-                    case 'array':
-                        input = _input_list(host, def);
-                        break;
-                    case 'boolean':
-                        input = _input_checkbox(host, def);
-                        break;
-                    case 'int':
-                    case 'integer':
-                    case 'number':
-                        input = _input_std(host, 'number', def);
-                        break;
-                    case 'date':
-                    case 'datetime':
-                        input = _input_datetime(host, def);
-                        break;
-                    case 'file':
-                        input = _input_file(host, def);
-                        break;
-                    case 'money':
-                        input = _input_money(host, def);
-                        break;
-                    case 'text':
-                    case 'string':
-                    default:
-                        input = _input_std(host, def.type, def);
-                        break;
+                if ('options' in def) {
+                    input = def.type === 'array' ? _input_select_multi(host, def) : _input_select(host, def, populate);
+                } else if ('lookup' in def && def.type !== 'array') {
+                    if (typeof def.lookup === 'string') def.lookup = { url: def.lookup };
+                    input = _input_lookup(host, def);
+                } else {
+                    switch (def.type) {
+                        case 'button':
+                            input = _input_button(host, def);
+                            break;
+                        case 'boolean':
+                            input = _input_checkbox(host, def);
+                            break;
+                        case 'int':
+                        case 'integer':
+                        case 'number':
+                            input = _input_std(host, 'number', def);
+                            break;
+                        case 'date':
+                        case 'datetime':
+                            input = _input_datetime(host, def);
+                            break;
+                        case 'file':
+                            input = _input_file(host, def);
+                            break;
+                        case 'money':
+                            input = _input_money(host, def);
+                            break;
+                        case 'text':
+                        case 'string':
+                        default:
+                            input = _input_std(host, def.type, def);
+                            break;
+                    }
+                }
+                if (host.settings.horizontal) {
+                    if (def.nolabel !== true && def.label) col.addClass('col-sm-' + host.settings.hz.right);
+                    else col.addClass('col-sm-12');
                 }
             }
             if (hidden !== true && def.name) host.pageFields.push(def.name);
-            field = $('<div>').addClass(host.settings.styleClasses.group).toggleClass('row', host.settings.horizontal).data('def', def);
+            field = $('<div>').addClass(host.settings.styleClasses.group)
+                .toggleClass('row', host.settings.horizontal)
+                .data('def', def);
             if (def.title || (def.nolabel !== true && def.label)) field.append($('<label>')
                 .addClass(host.settings.styleClasses.label)
                 .toggleClass('col-sm-' + host.settings.hz.left, host.settings.horizontal)
                 .attr('for', '__hz_field_' + def.name)
                 .html(_match_replace(host, 'title' in def ? def.title : def.label, null, true, true)));
             if (input) {
-                let col = $('<div class="form-field">').html(input);
-                if (host.settings.horizontal) {
-                    if (def.label) col.addClass('col-sm-' + host.settings.hz.right);
-                    else col.addClass('col-sm-12');
-                }
+                col.html(input);
                 if ('hint' in def) col.append($('<small class="form-text text-muted">').html(_match_replace(host, def.hint, null, true, true)));
                 if ('css' in def) input.css(def.css);
                 if ('cssClass' in def) input.addClass(def.cssClass);
