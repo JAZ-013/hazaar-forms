@@ -2051,10 +2051,22 @@ dataBinderArray.prototype.diff = function (data, callback) {
         }).fail(_error);
     }
 
-    function _fix_booleans(data) {
-        for (x in data) {
-            if (data[x] !== null && typeof data[x] === 'object' && !('__hz_value' in data[x])) _fix_booleans(data[x]);
+    function _fix_plain_data(host, data, p) {
+        for (let x in data) {
+            let key = (p ? p + '.' : '') + x, def = null;
+            if (data[x] !== null && typeof data[x] === 'object' && !('__hz_value' in data[x])) _fix_plain_data(host, data[x], key);
             else if (typeof data[x] === 'boolean') data[x] = { '__hz_value': data[x], '__hz_label': data[x] ? 'Yes' : 'No' };
+            else if ((def = _form_field_lookup(host.def, key)) !== null && 'options' in def) {
+                _input_options(host, def, $('<i>').data('def', def), null, function (s, options) {
+                    if (typeof options === 'object' && !('url' in options)) data[x] = { '__hz_value': data[x], '__hz_label': options[data[x]] };
+                    else {
+                        _input_options_populate(host, options, s, false, null, function (host, o, d, s) {
+                            let item_data = _get_data_item(host.data, key);
+                            if (item_data) item_data.label = d[data[x]];
+                        });
+                    }
+                });
+            }
         }
         return data;
     }
@@ -2063,7 +2075,7 @@ dataBinderArray.prototype.diff = function (data, callback) {
         let p = function (response) {
             if (!response.ok) return;
             if ('horizontal' in host.def) host.settings.horizontal = host.def.horizontal;
-            host.data.extend(_fix_booleans(response.form));
+            host.data.extend(_fix_plain_data(host, response.form));
             host.data.commit();
             $(host).trigger('data', [host.data.save()]);
             _nav(host, 0);
