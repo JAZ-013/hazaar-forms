@@ -218,11 +218,6 @@
     position: relative;
 }
 
-.itemlist-newitem,
-.itemlist-item.row {
-    margin-right: 70px;
-}
-
 .itemlist-newitems,
 .itemlist-item {
     box-sizing: border-box;
