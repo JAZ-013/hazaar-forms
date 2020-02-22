@@ -2052,13 +2052,19 @@ dataBinderArray.prototype.diff = function (data, callback) {
     }
 
     function _fix_plain_data(host, data, p) {
-        for (x in data) {
+        for (let x in data) {
             let key = (p ? p + '.' : '') + x, def = null;
             if (data[x] !== null && typeof data[x] === 'object' && !('__hz_value' in data[x])) _fix_plain_data(host, data[x], key);
             else if (typeof data[x] === 'boolean') data[x] = { '__hz_value': data[x], '__hz_label': data[x] ? 'Yes' : 'No' };
             else if ((def = _form_field_lookup(host.def, key)) !== null && 'options' in def) {
-                _input_options(host, def, null, null, function (s, options) {
-                    data[x] = { '__hz_value': data[x], '__hz_label': options[data[x]] };
+                _input_options(host, def, $('<i>').data('def', def), null, function (s, options) {
+                    if (typeof options === 'object' && !('url' in options)) data[x] = { '__hz_value': data[x], '__hz_label': options[data[x]] };
+                    else {
+                        _input_options_populate(host, options, s, false, null, function (host, o, d, s) {
+                            let item_data = _get_data_item(host.data, key);
+                            if (item_data) item_data.label = d[data[x]];
+                        });
+                    }
                 });
             }
         }
