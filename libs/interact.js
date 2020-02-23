@@ -2056,7 +2056,7 @@ dataBinderArray.prototype.diff = function (data, callback) {
             let key = (p ? p + '.' : '') + x, def = null;
             if (data[x] !== null && typeof data[x] === 'object' && !('__hz_value' in data[x])) _fix_plain_data(host, data[x], key);
             else if (typeof data[x] === 'boolean') data[x] = { '__hz_value': data[x], '__hz_label': data[x] ? 'Yes' : 'No' };
-            else if ((def = _form_field_lookup(host.def, key)) !== null && 'options' in def) {
+            else if (host.viewmode === true && (def = _form_field_lookup(host.def, key)) !== null && 'options' in def) {
                 _input_options(host, def, $('<i>').data('def', def), null, function (s, options) {
                     if (typeof options === 'object' && !('url' in options)) data[x] = { '__hz_value': data[x], '__hz_label': options[data[x]] };
                     else {
