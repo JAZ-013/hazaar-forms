@@ -298,8 +298,8 @@ dataBinderArray.prototype.diff = function (data, callback) {
         else code += evaluate;
         try {
             let eval_host = host.parent ? host.parent : host;
-            return new Function('form', 'tags', 'formValue', 'formItem', 'key', code)
-                (eval_host.data, eval_host.tags, item_data ? item_data : null, item_data ? item_data.parent : null, key);
+            return (new Function('form', 'tags', 'formValue', 'formItem', 'key', code))
+                .call(this, eval_host.data, eval_host.tags, item_data ? item_data : null, item_data ? item_data.parent : null, key);
         } catch (e) {
             console.error('Failed to evaluate condition: ' + evaluate);
             console.error(e);
@@ -555,7 +555,7 @@ dataBinderArray.prototype.diff = function (data, callback) {
                 break;
             default:
                 let action = def.action ? def.action : def.change ? def.change : def.click;
-                btn.click(function () { _eval_code(host, action, null, def.name); });
+                btn.click(function () { _eval_code.call(this, host, action, null, def.name); });
                 break;
         }
         def.nolabel = true;
