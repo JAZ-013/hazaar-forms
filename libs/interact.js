@@ -196,6 +196,20 @@ dataBinderArray.prototype.diff = function (data, callback) {
         return _strbool(value) === 'true' ? true : false;
     }
 
+    function _copy_to_clipboard(input, target) {
+        let i = input.get(0);
+        let o = document.createElement('INPUT');
+        o.style.position = 'absolute';
+        o.style.left = -999;
+        document.body.appendChild(o);
+        o.setAttribute('value', i.value);
+        o.select();
+        document.execCommand("copy");
+        o.parentNode.removeChild(o);
+        let tip = $(target).tooltip({ title: "Copied!", trigger: "manual" }).tooltip('show');
+        setTimeout(function () { tip.tooltip('dispose'); }, 3000);
+    }
+
     function _convert_data_type(def, value) {
         if (!('type' in def)) return value;
         let type = def.type.toLowerCase();
@@ -1186,8 +1200,12 @@ dataBinderArray.prototype.diff = function (data, callback) {
         if (def.prefix) group.append($('<div>').addClass(host.settings.styleClasses.inputGroupPrepend)
             .html($('<span>').addClass(host.settings.styleClasses.inputGroupText).html(_match_replace(host, def.prefix, null, true, true))));
         group.append(input);
-        if (def.suffix) group.append($('<div>').addClass(host.settings.styleClasses.inputGroupAppend)
-            .html($('<span>').addClass(host.settings.styleClasses.inputGroupText).html(_match_replace(host, def.suffix, null, true, true))));
+        if (def.suffix || def.copy === true) {
+            let suffix = $('<div>').addClass(host.settings.styleClasses.inputGroupAppend).appendTo(group);
+            if (def.suffix) suffix.append($('<span>').addClass(host.settings.styleClasses.inputGroupText).html(_match_replace(host, def.suffix, null, true, true)));
+            if (def.copy === true) suffix.append($('<span class="input-group-text">').click(function (event) { _copy_to_clipboard(input, this); })
+                .html($('<i class="fa fa-copy" title="Copy to clipboard">')));
+        }
         if (item_data && item_data.value) _validate_input(host, input);
         return group;
     }
