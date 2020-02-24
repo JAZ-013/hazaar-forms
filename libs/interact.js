@@ -1184,7 +1184,7 @@ dataBinderArray.prototype.diff = function (data, callback) {
         if (def.multiline) {
             input = $('<textarea>').addClass(host.settings.styleClasses.input);
             if ('height' in def) input.css('height', def.height);
-        } else input = $('<input>').addClass(host.settings.styleClasses.input).attr('type', type);
+        } else input = $('<input>').addClass(host.settings.styleClasses.input).attr('type', def.password ? 'password' : type);
         input.attr('name', def.name)
             .attr('data-bind', def.name)
             .data('def', def)
@@ -1200,9 +1200,15 @@ dataBinderArray.prototype.diff = function (data, callback) {
         if (def.prefix) group.append($('<div>').addClass(host.settings.styleClasses.inputGroupPrepend)
             .html($('<span>').addClass(host.settings.styleClasses.inputGroupText).html(_match_replace(host, def.prefix, null, true, true))));
         group.append(input);
-        if (def.suffix || def.copy === true) {
+        if (def.suffix || def.copy === true || def.reveal === true) {
             let suffix = $('<div>').addClass(host.settings.styleClasses.inputGroupAppend).appendTo(group);
             if (def.suffix) suffix.append($('<span>').addClass(host.settings.styleClasses.inputGroupText).html(_match_replace(host, def.suffix, null, true, true)));
+            if (def.password === true && def.reveal === true) suffix.append($('<span class="input-group-text">').click(function (event) {
+                var i = $(this).children('i'), r = false;
+                if (r = input.is('[type=password]')) input.attr('type', 'text');
+                else input.attr('type', 'password');
+                i.toggleClass('fa-eye-slash', r).toggleClass('fa-eye', !r);
+            }).html($('<i class="fa fa-eye"">').attr('title', 'Toggle ' + def.label.toLowerCase())));
             if (def.copy === true) suffix.append($('<span class="input-group-text">').click(function (event) { _copy_to_clipboard(input, this); })
                 .html($('<i class="fa fa-copy" title="Copy to clipboard">')));
         }
