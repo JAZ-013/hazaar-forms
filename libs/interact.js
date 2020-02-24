@@ -1566,11 +1566,20 @@ dataBinderArray.prototype.diff = function (data, callback) {
     //Render a page
     function _page(host, page) {
         if (typeof page !== 'object') return null;
-        let form = $('<div>').addClass(host.settings.styleClasses.page).data('def', page), sections = [];
-        if (page.label) form.append($('<h1>').html(_match_replace(host, page.label, null, true, true)));
+        let container = $('<div>'), sections = [];
         for (let x in page.sections) sections.push(_section(host, page.sections[x]));
         if (host.events.show.length > 0) for (let x in host.events.show) _toggle_show(host, host.events.show[x]);
-        return form.append(sections);
+        if (host.settings.cards === true) {
+            container.addClass('card');
+            if (page.label) container.append($('<div class="card-header">').html(_match_replace(host, page.label, null, true, true)));
+            container.append($('<div class="card-body">').addClass(host.settings.styleClasses.page).data('def', page).append(sections));
+            if (host.settings.singlePage === true) container.addClass('mb-5');
+        } else {
+            container.addClass(host.settings.styleClasses.page).data('def', page)
+            if (page.label) form.append($('<h1>').html(_match_replace(host, page.label, null, true, true)));
+            container.append(sections);
+        }
+        return container;
     }
 
     function _page_init(host, pageno) {
@@ -2259,6 +2268,7 @@ dataBinderArray.prototype.diff = function (data, callback) {
         "endpoint": "interact",
         "encode": true,
         "singlePage": false,
+        "cards": false,
         "horizontal": false,
         "viewmode": false,
         "hz": { "left": 3, "right": 9 },
