@@ -1577,7 +1577,7 @@ dataBinderArray.prototype.diff = function (data, callback) {
             if (host.settings.singlePage === true) container.addClass('mb-5');
         } else {
             container.addClass(host.settings.styleClasses.page).data('def', page)
-            if (page.label) form.append($('<h1>').html(_match_replace(host, page.label, null, true, true)));
+            if (page.label) container.append($('<h1>').html(_match_replace(host, page.label, null, true, true)));
             container.append(sections);
         }
         return container;
