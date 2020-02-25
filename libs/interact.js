@@ -1435,6 +1435,7 @@ dataBinderArray.prototype.diff = function (data, callback) {
             if ('label' in def) field.append($('<div>').toggleClass('col-md-12', p).html($('<h5>').html(def.label)));
             for (let x in fields) {
                 let item = 'name' in fields[x] ? (item_data instanceof dataBinder ? item_data[fields[x].name] : undefined) : item_data;
+                if (def.horizontal === true) fields[x].row = true;
                 let field_width = col_width, child_field = _form_field(host, fields[x], !p, populate, apply_rules, item, hidden);
                 if (fields[x] instanceof Object && 'weight' in fields[x]) field_width = Math.round(field_width * fields[x].weight);
                 field.append(child_field.toggleClass('col-md-' + field_width, p));
@@ -1487,7 +1488,7 @@ dataBinderArray.prototype.diff = function (data, callback) {
                 }
                 if (host.settings.horizontal) {
                     if (def.nolabel !== true && def.label) col.addClass('col-sm-' + host.settings.hz.right);
-                    else col.addClass('col-sm-12');
+                    else col.addClass('col-sm-12').toggleClass('row', def.row === true);
                 }
             }
             if (hidden !== true && def.name) host.pageFields.push(def.name);
