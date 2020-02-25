@@ -1437,6 +1437,7 @@ dataBinderArray.prototype.diff = function (data, callback) {
                 let item = 'name' in fields[x] ? (item_data instanceof dataBinder ? item_data[fields[x].name] : undefined) : item_data;
                 if (def.horizontal === true) fields[x].row = true;
                 let field_width = col_width, child_field = _form_field(host, fields[x], !p, populate, apply_rules, item, hidden);
+                if (!child_field) continue;
                 if (fields[x] instanceof Object && 'weight' in fields[x]) field_width = Math.round(field_width * fields[x].weight);
                 field.append(child_field.toggleClass('col-md-' + field_width, p));
                 if (p && def.row !== true) child_field.removeClass('row');
