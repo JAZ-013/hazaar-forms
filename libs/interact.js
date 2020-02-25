@@ -1577,11 +1577,11 @@ dataBinderArray.prototype.diff = function (data, callback) {
             container.append($('<div class="card-body">').addClass(host.settings.styleClasses.page).data('def', page).append(sections));
             if (host.settings.singlePage === true) container.addClass('mb-5');
         } else {
-            container.addClass(host.settings.styleClasses.page).data('def', page)
+            container.addClass(host.settings.styleClasses.page);
             if (page.label) container.append($('<h1>').html(_match_replace(host, page.label, null, true, true)));
             container.append(sections);
         }
-        return container;
+        return container.data('def', page);
     }
 
     function _page_init(host, pageno) {
