@@ -1448,7 +1448,7 @@ dataBinderArray.prototype.diff = function (data, callback) {
                 if (item_data instanceof dataBinderArray) input = _input_list(host, def);
                 else if (def.type === 'button') return;
                 else input = $('<span>').attr('data-bind', item_data ? item_data.attrName : '').html(item_data ? item_data.toString() : '');
-            } else if (def.type === 'array') {
+            } else if (def.type === 'array' && !('options' in def)) {
                 input = _input_list(host, def);
             } else if (def.type) {
                 if ('options' in def) {
