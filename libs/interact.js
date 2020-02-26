@@ -2245,7 +2245,7 @@ dataBinderArray.prototype.diff = function (data, callback) {
                         _nav(host, host.page, null, true);
                         break;
                     case 'toggleEdit':
-                        host.viewmode = !host.viewmode;
+                        host.viewmode = (1 in args && typeof args[1] === 'boolean') ? args[1] : !host.viewmode;
                         _nav(host, host.page, null, true);
                         break;
                     case 'monitor':
