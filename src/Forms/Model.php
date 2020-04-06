@@ -66,6 +66,9 @@ class Model extends \Hazaar\Model\Strict {
 
     public function load($form){
 
+        if(is_array($form))
+            $this->convertSimpleForm($form);
+
         $this->__form = $form;
 
         if(!property_exists($this->__form, 'name'))
@@ -119,6 +122,50 @@ class Model extends \Hazaar\Model\Strict {
         }
 
         return parent::__construct();
+
+    }
+
+    private function convertSimpleForm(&$form){
+
+        if(!is_array($form))
+            return false;
+
+        $fields = (object)[];
+
+        $this->convertSimpleFormFields($form, $fields);
+
+        $form = (object)[
+            'name' => '',
+            'pages' => [
+                (object)[
+                    'sections' => [
+                        (object)[
+                            'fields' => $form
+                        ]
+                    ]
+                ]
+            ],
+            'fields' => $fields
+        ];
+
+        return true;
+
+    }
+
+    private function convertSimpleFormFields(&$form, &$fields){
+
+        foreach($form as &$item){
+
+            if(is_array($item)) $this->convertSimpleFormFields($item, $fields);
+            elseif(\property_exists($item, 'name')){
+
+                $fields->{$item->name} = $item;
+
+                $item = $item->name;
+
+            }
+
+        }
 
     }
 

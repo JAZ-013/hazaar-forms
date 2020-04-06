@@ -2105,6 +2105,49 @@ dataBinderArray.prototype.diff = function (data, callback) {
         }
         return data;
     }
+
+    function _convert_simple_form(def) {
+
+        let _convert_simple_form_fields = function (def, fields) {
+
+            for (item of def) {
+
+                if (Array.isArray(item)) _convert_simple_form_fields(item, fields);
+                else if ('name' in item) {
+
+                    fields[item.name] = item;
+
+                    item = item.name;
+
+                }
+
+            }
+
+        }
+
+        if (!Array.isArray(def))
+            return false;
+
+        let fields = {};
+
+        _convert_simple_form_fields(def, fields);
+
+        return {
+            "name": "",
+            "pages": [
+                {
+                    "sections": [
+                        {
+                            "fields": def
+                        }
+                    ]
+                }
+            ],
+            "fields": fields
+        };
+
+    }
+
     //Load all the dynamic bits
     function _load(host) {
         let p = function (response) {
@@ -2118,6 +2161,7 @@ dataBinderArray.prototype.diff = function (data, callback) {
         if ((host.standalone = ('def' in host.settings)) === true) {
             let i = function (response) {
                 host.def = response;
+                if (Array.isArray(host.def)) host.def = _convert_simple_form(host.def);
                 _prepare_field_definitions(host, host.def.fields);
                 host.data = new dataBinder(_define(host.def.fields));
                 if ('load' in host.settings.endpoints) _post(host, 'load').done(p).fail(_error);
