@@ -722,7 +722,7 @@ dataBinderArray.prototype.diff = function (data, callback) {
     }
 
     function _input_select_items(host, options, data, select, no_nullify) {
-        let item_data = _get_data_item(host.data, select.attr('data-bind')), def = select.data('def');
+        let item_data = _get_data_item(host.data, select.attr('data-bind')), def = select.data('def'), grouped = false;
         select.prop('disabled', !(def.disabled !== true && def.protected !== true));
         if (data === null || typeof data !== 'object' || Array.isArray(data) && data.length === 0 || Object.keys(data).length === 0) {
             if (no_nullify !== true) _nullify(host, def);
@@ -732,29 +732,32 @@ dataBinderArray.prototype.diff = function (data, callback) {
         }
         let valueKey = options.value || 'value', labelKey = options.label || 'label';
         select.empty().append($('<option>').attr('value', '').html(_match_replace(host, def.placeholder, null, true, true)));
-        data = _convert_data(data, valueKey, labelKey, def);
-        if ('sort' in options) {
-            if (typeof options.sort === 'boolean') options.sort = labelKey;
-            data = _sort_data(data, options.sort, labelKey, valueKey);
-        }
-        let default_item = item_data && item_data.value === null && 'default' in options ? options.default : null;
-        for (let x in data) {
-            if ('filter' in options && options.filter.indexOf(data[x][labelKey]) === -1) {
-                delete data[x];
-                continue;
+        let do_ops = function (data, options, o) {
+            data = _convert_data(data, valueKey, labelKey, def, grouped);
+            if ('sort' in options) {
+                if (typeof options.sort === 'boolean') options.sort = labelKey;
+                data = _sort_data(data, options.sort, labelKey, valueKey);
             }
-            let option = $('<option>').attr('value', data[x][valueKey])
-                .html(labelKey.indexOf('{{') > -1
-                    ? _match_replace(null, labelKey, data[x], true)
-                    : data[x][labelKey]).appendTo(select);
-            if (data[x][valueKey] === '__spacer__') option.prop('disabled', true).addClass('form-select-spacer');
-            if ('other' in options && typeof options.other === 'string')
-                option.data('other', options.other.indexOf('{{') > -1
-                    ? _match_replace(null, options.other, data[x], true)
-                    : data[x][options.other]);
-            if (default_item !== null && data[x][labelKey] === default_item)
-                item_data.set(data[x][valueKey], data[x][labelKey], data[x][options.other]);
+            let default_item = item_data && item_data.value === null && 'default' in options ? options.default : null;
+            for (let x in data) {
+                if ('filter' in options && options.filter.indexOf(data[x][labelKey]) === -1) {
+                    delete data[x];
+                    continue;
+                }
+                let option = $('<option>').attr('value', data[x][valueKey])
+                    .html(labelKey.indexOf('{{') > -1 ? _match_replace(null, labelKey, data[x], true) : data[x][labelKey]).appendTo(o);
+                if (data[x][valueKey] === '__spacer__') option.prop('disabled', true).addClass('form-select-spacer');
+                if ('other' in options && typeof options.other === 'string')
+                    option.data('other', options.other.indexOf('{{') > -1
+                        ? _match_replace(null, options.other, data[x], true)
+                        : data[x][options.other]);
+                if (default_item !== null && data[x][labelKey] === default_item)
+                    item_data.set(data[x][valueKey], data[x][labelKey], data[x][options.other]);
+            }
         }
+        if (typeof data[Object.keys(data)[0]] === 'object' && !(valueKey in data[Object.keys(data)[0]])) {
+            for (group in data) do_ops(data[group], options, $('<optgroup>').attr('label', group).appendTo(select));
+        } else do_ops(data, options, select);
         if (item_data) {
             if ('other' in def && _eval(host, def.other, null, item_data, def.name) === true) {
                 select.append($('<option>').attr('value', '__hz_other').html("Other"));
