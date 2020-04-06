@@ -339,7 +339,7 @@ class HTML extends \Hazaar\Forms\Output {
         if($html = ake($field, 'html'))
             $group->add($this->model->matchReplace((string)$html, true));
 
-        if($class = ake(ake($field, 'output'), 'class'))
+        if($class = ake($field, 'output.class'))
             $group->addClass($class);
 
         return $group;

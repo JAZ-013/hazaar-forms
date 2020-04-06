@@ -112,6 +112,16 @@ class Forms extends \Hazaar\View\Helper {
 
     }
 
+    public function btnReset($label = 'Reset'){
+
+        $id = 'btn_' . md5(random_bytes(8));
+
+        $this->jquery->exec("$('#$id').click(function(){ hzForm.hzForm('reset'); });");
+
+        return $this->html->button($label)->id($id);
+
+    }
+
     public function controller($controller, $form, $params = array(), $tags = null){
 
         $controller = \Hazaar\Loader::getInstance()->loadController($controller);

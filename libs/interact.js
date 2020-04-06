@@ -2116,12 +2116,17 @@ dataBinderArray.prototype.diff = function (data, callback) {
             _nav(host, 0);
         };
         if ((host.standalone = ('def' in host.settings)) === true) {
-            host.def = host.settings.def;
-            _prepare_field_definitions(host, host.def.fields);
-            host.data = new dataBinder(_define(host.def.fields));
-            if ('load' in host.settings.endpoints) _post(host, 'load').done(p).fail(_error);
-            else if (typeof host.settings.data === 'string') $.get(host.settings.data).done(function (r) { p({ ok: true, form: r }); }).fail(_error);
-            else p({ ok: true, form: host.settings.data });
+            let i = function (response) {
+                host.def = response;
+                _prepare_field_definitions(host, host.def.fields);
+                host.data = new dataBinder(_define(host.def.fields));
+                if ('load' in host.settings.endpoints) _post(host, 'load').done(p).fail(_error);
+                else if (typeof host.settings.data === 'string') $.get(host.settings.data).done(function (r) { p({ ok: true, form: r }); }).fail(_error);
+                else p({ ok: true, form: host.settings.data });
+            };
+            if ('init' in host.settings.endpoints) {
+                _post(host, 'init').done(i).fail(_error);
+            } else i(host.settings.def);
             delete host.settings.def;
             delete host.settings.data;
         } else {
