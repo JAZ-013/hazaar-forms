@@ -733,7 +733,7 @@ dataBinderArray.prototype.diff = function (data, callback) {
         }
         let valueKey = options.value || 'value', labelKey = options.label || 'label';
         select.empty().append($('<option>').attr('value', '').html(_match_replace(host, def.placeholder, null, true, true)));
-        let do_ops = function (data) {
+        let do_ops = function (data, container) {
             data = _convert_data(data, valueKey, labelKey, def, grouped);
             if ('sort' in options) {
                 if (typeof options.sort === 'boolean') options.sort = labelKey;
@@ -747,7 +747,7 @@ dataBinderArray.prototype.diff = function (data, callback) {
                 }
                 let option = $('<option>').attr('value', data[x][valueKey])
                     .html(labelKey.indexOf('{{') > -1 ? _match_replace(null, labelKey, data[x], true) : data[x][labelKey])
-                    .appendTo(select);
+                    .appendTo(container);
                 if (data[x][valueKey] === '__spacer__') option.prop('disabled', true).addClass('form-select-spacer');
                 if ('other' in options && typeof options.other === 'string')
                     option.data('other', options.other.indexOf('{{') > -1
@@ -758,9 +758,9 @@ dataBinderArray.prototype.diff = function (data, callback) {
             }
             return data;
         };
-        if (typeof data[Object.keys(data)[0]] === 'object' && !(valueKey in data[Object.keys(data)[0]])) {
-            for (group in data) data[group] = do_ops(data[group], options, $('<optgroup>').attr('label', group).appendTo(select));
-        } else data = do_ops(data);
+        if (!Array.isArray(data) && typeof data[Object.keys(data)[0]] === 'object' && !(valueKey in data[Object.keys(data)[0]])) {
+            for (group in data) data[group] = do_ops(data[group], $('<optgroup>').attr('label', group).appendTo(select));
+        } else data = do_ops(data, select);
         if (item_data) {
             if ('other' in def && _eval(host, def.other, null, item_data, def.name) === true) {
                 select.append($('<option>').attr('value', '__hz_other').html("Other"));
