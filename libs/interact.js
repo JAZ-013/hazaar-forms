@@ -1861,6 +1861,7 @@ dataBinderArray.prototype.diff = function (data, callback) {
             let data = host.data.save((host.standalone === true));
             for (let x in host.def.fields) if (host.def.fields[x].protected === true) delete data[x];
             let params = host.standalone ? data : { params: extra || {}, form: data };
+            if ('submit' in jQuery._data(host, 'events') && $(host).triggerHandler('submit', [data, params]) !== true) return;
             if ('saveURL' in host.settings) params.url = host.settings.saveURL;
             $(host).trigger('saving', [data, params]);
             host.data.commit();
@@ -1899,15 +1900,6 @@ dataBinderArray.prototype.diff = function (data, callback) {
             });
         else save_data(host, extra);
         return { done: function (callback) { if (typeof callback === 'function') callbacks.done = callback; } };
-    }
-
-    //Register events that are used to control the form functions
-    function _registerEvents(host) {
-        let errors = [];
-        $(host).on('submit', function (e) {
-            e.preventDefault();
-            return false;
-        });
     }
 
     function _objectify_file(file) {
@@ -2115,45 +2107,19 @@ dataBinderArray.prototype.diff = function (data, callback) {
     }
 
     function _convert_simple_form(def) {
-
         let _convert_simple_form_fields = function (def, fields) {
-
             for (item of def) {
-
                 if (Array.isArray(item)) _convert_simple_form_fields(item, fields);
                 else if ('name' in item) {
-
                     fields[item.name] = item;
-
                     item = item.name;
-
                 }
-
             }
-
         }
-
-        if (!Array.isArray(def))
-            return false;
-
+        if (!Array.isArray(def)) return false;
         let fields = {};
-
         _convert_simple_form_fields(def, fields);
-
-        return {
-            "name": "",
-            "pages": [
-                {
-                    "sections": [
-                        {
-                            "fields": def
-                        }
-                    ]
-                }
-            ],
-            "fields": fields
-        };
-
+        return { "name": "", "pages": [{ "sections": [{ "fields": def }] }], "fields": fields };
     }
 
     //Load all the dynamic bits
@@ -2223,7 +2189,6 @@ dataBinderArray.prototype.diff = function (data, callback) {
         host.viewmode = host.settings.viewmode;
         if (host.settings.concurrentUploads < 1) host.settings.concurrentUploads = 1;
         $(host).trigger('init');
-        _registerEvents(host);
         _render(host);
         _load(host);
         form = host;
