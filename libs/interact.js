@@ -1186,7 +1186,7 @@ dataBinderArray.prototype.diff = function (data, callback) {
         return inputDIV;
     }
 
-    function _input_std(host, type, def) {
+    function _input_std(host, type, def, no_group) {
         let group = $('<div>').addClass(host.settings.styleClasses.inputGroup);
         let input = null, item_data = _get_data_item(host.data, def.name);
         if (def.multiline) {
@@ -1205,12 +1205,20 @@ dataBinderArray.prototype.diff = function (data, callback) {
         if (type === 'text' && 'validate' in def && 'maxlen' in def.validate) input.attr('maxlength', def.validate.maxlen);
         if ('format' in def) input.attr('type', 'text').inputmask(def.format);
         if ('placeholder' in def) input.attr('placeholder', def.placeholder);
-        if (def.prefix) group.append($('<div>').addClass(host.settings.styleClasses.inputGroupPrepend)
-            .html($('<span>').addClass(host.settings.styleClasses.inputGroupText).html(_match_replace(host, def.prefix, null, true, true))));
+        if (def.prefix) {
+            $('<div>').addClass(host.settings.styleClasses.inputGroupPrepend).appendTo(group)
+                .html(((def.type === 'text' && (sf = _form_field_lookup(host.def, def.prefix)) !== null && def.name !== sf.name)
+                    ? _input(host, sf, null, null, true).css('text-align', 'left')
+                    : $('<span>').html(_match_replace(host, def.prefix, null, true, true))).addClass(host.settings.styleClasses.inputGroupText));
+        }
         group.append(input);
         if (def.suffix || def.copy === true || def.reveal === true) {
-            let suffix = $('<div>').addClass(host.settings.styleClasses.inputGroupAppend).appendTo(group);
-            if (def.suffix) suffix.append($('<span>').addClass(host.settings.styleClasses.inputGroupText).html(_match_replace(host, def.suffix, null, true, true)));
+            if (def.suffix) {
+                $('<div>').addClass(host.settings.styleClasses.inputGroupAppend).appendTo(group)
+                    .html(((def.type === 'text' && (sf = _form_field_lookup(host.def, def.suffix)) !== null && def.name !== sf.name)
+                        ? _input(host, sf, null, null, true).css('text-align', 'left')
+                        : $('<span>').html(_match_replace(host, def.suffix, null, true, true))).addClass(host.settings.styleClasses.inputGroupText));
+            }
             if (def.password === true && def.reveal === true) suffix.append($('<span class="input-group-text">').click(function (event) {
                 let i = $(this).children('i'), r = false;
                 if (r = input.is('[type=password]')) input.attr('type', 'text');
@@ -1222,6 +1230,59 @@ dataBinderArray.prototype.diff = function (data, callback) {
         }
         if (item_data && item_data.value) _validate_input(host, input);
         return group;
+    }
+
+    function _input(host, def, populate, item_data, no_group) {
+        let input;
+        if (host.viewmode === true) {
+            if (item_data instanceof dataBinderArray) input = _input_list(host, def);
+            else if (def.type === 'button') return;
+            else input = $('<span>').attr('data-bind', item_data ? item_data.attrName : '').html(item_data ? item_data.toString() : '');
+        } else if (def.type === 'array' && !('options' in def)) {
+            input = _input_list(host, def);
+        } else if (def.type) {
+            if ('options' in def) {
+                input = def.type === 'array' ? _input_select_multi(host, def) : _input_select(host, def, populate);
+            } else if ('lookup' in def && def.type !== 'array') {
+                if (typeof def.lookup === 'string') def.lookup = { url: def.lookup };
+                input = _input_lookup(host, def);
+            } else {
+                switch (def.type) {
+                    case 'button':
+                        input = _input_button(host, def);
+                        break;
+                    case 'boolean':
+                        input = _input_checkbox(host, def);
+                        break;
+                    case 'int':
+                    case 'integer':
+                    case 'number':
+                        input = _input_std(host, 'number', def);
+                        break;
+                    case 'date':
+                    case 'datetime':
+                        input = _input_datetime(host, def);
+                        break;
+                    case 'file':
+                        input = _input_file(host, def);
+                        break;
+                    case 'money':
+                        input = _input_money(host, def);
+                        break;
+                    case 'text':
+                    case 'string':
+                    default:
+                        input = _input_std(host, def.type, def);
+                        break;
+                }
+            }
+            if (host.settings.horizontal) {
+                if (def.nolabel !== true && def.label) col.addClass('col-sm-' + host.settings.hz.right);
+                else col.addClass('col-sm-12').toggleClass('row', def.row === true);
+            }
+        }
+        if (no_group === true && input.is('.' + host.settings.styleClasses.inputGroup)) input = input.children();
+        return input;
     }
 
     function _field_to_html(layout, name) {
@@ -1451,55 +1512,8 @@ dataBinderArray.prototype.diff = function (data, callback) {
                 if (p && def.row !== true) child_field.removeClass('row');
             }
         } else {
-            let input, col = $('<div class="form-field">');
             def.nolabel = false;
-            if (host.viewmode === true) {
-                if (item_data instanceof dataBinderArray) input = _input_list(host, def);
-                else if (def.type === 'button') return;
-                else input = $('<span>').attr('data-bind', item_data ? item_data.attrName : '').html(item_data ? item_data.toString() : '');
-            } else if (def.type === 'array' && !('options' in def)) {
-                input = _input_list(host, def);
-            } else if (def.type) {
-                if ('options' in def) {
-                    input = def.type === 'array' ? _input_select_multi(host, def) : _input_select(host, def, populate);
-                } else if ('lookup' in def && def.type !== 'array') {
-                    if (typeof def.lookup === 'string') def.lookup = { url: def.lookup };
-                    input = _input_lookup(host, def);
-                } else {
-                    switch (def.type) {
-                        case 'button':
-                            input = _input_button(host, def);
-                            break;
-                        case 'boolean':
-                            input = _input_checkbox(host, def);
-                            break;
-                        case 'int':
-                        case 'integer':
-                        case 'number':
-                            input = _input_std(host, 'number', def);
-                            break;
-                        case 'date':
-                        case 'datetime':
-                            input = _input_datetime(host, def);
-                            break;
-                        case 'file':
-                            input = _input_file(host, def);
-                            break;
-                        case 'money':
-                            input = _input_money(host, def);
-                            break;
-                        case 'text':
-                        case 'string':
-                        default:
-                            input = _input_std(host, def.type, def);
-                            break;
-                    }
-                }
-                if (host.settings.horizontal) {
-                    if (def.nolabel !== true && def.label) col.addClass('col-sm-' + host.settings.hz.right);
-                    else col.addClass('col-sm-12').toggleClass('row', def.row === true);
-                }
-            }
+            let col = $('<div class="form-field">'), input = _input(host, def, populate, item_data);
             if (hidden !== true && def.name) host.pageFields.push(def.name);
             field = $('<div>').addClass(host.settings.styleClasses.group)
                 .toggleClass('row', host.settings.horizontal)
