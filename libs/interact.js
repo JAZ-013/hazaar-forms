@@ -2101,6 +2101,7 @@ dataBinderArray.prototype.diff = function (data, callback) {
     }
 
     function _fix_plain_data(host, data, p) {
+        if (!data) return {};
         for (let x in data) {
             let key = (p ? p + '.' : '') + x, def = null;
             if (data[x] !== null && typeof data[x] === 'object' && !('__hz_value' in data[x])) _fix_plain_data(host, data[x], key);
@@ -2137,16 +2138,17 @@ dataBinderArray.prototype.diff = function (data, callback) {
     }
 
     //Load all the dynamic bits
-    function _load(host) {
+    function _load(host, initUrl) {
         let p = function (response) {
             if (!response.ok) return;
             if ('horizontal' in host.def) host.settings.horizontal = host.def.horizontal;
             host.data.extend(_fix_plain_data(host, response.form));
             host.data.commit();
             $(host).trigger('data', [host.data.save()]);
-            _nav(host, 0);
+            _nav(host, host.page, null, true);
         };
-        if ((host.standalone = ('def' in host.settings)) === true) {
+        if (initUrl) host.settings.endpoints.init = initUrl;
+        if (host.standalone === true || (host.standalone = ('def' in host.settings)) === true) {
             let i = function (response) {
                 host.def = response;
                 if (Array.isArray(host.def)) host.def = _convert_simple_form(host.def);
@@ -2156,9 +2158,8 @@ dataBinderArray.prototype.diff = function (data, callback) {
                 else if (typeof host.settings.data === 'string') $.get(host.settings.data).done(function (r) { p({ ok: true, form: r }); }).fail(_error);
                 else p({ ok: true, form: host.settings.data });
             };
-            if ('init' in host.settings.endpoints) {
-                _post(host, 'init').done(i).fail(_error);
-            } else i(host.settings.def);
+            if ('init' in host.settings.endpoints) _post(host, 'init').done(i).fail(_error);
+            else i(host.settings.def);
             delete host.settings.def;
             delete host.settings.data;
         } else {
@@ -2179,7 +2180,7 @@ dataBinderArray.prototype.diff = function (data, callback) {
         };
         host.posts = {};
         host.viewmode = false;
-        host.page = null;
+        host.page = 0;
         host.working = false;
         host.validate = true;
         host.standalone = false;
@@ -2221,6 +2222,9 @@ dataBinderArray.prototype.diff = function (data, callback) {
                 return host.data;
             case 'def':
                 return host.def;
+            case 'load':
+                if (host.settings) _load(host, args[1]);
+                return;
         }
         return this.each(function (index, host) {
             if (host.settings) {
