@@ -1861,6 +1861,7 @@ dataBinderArray.prototype.diff = function (data, callback) {
             let data = host.data.save((host.standalone === true));
             for (let x in host.def.fields) if (host.def.fields[x].protected === true) delete data[x];
             let params = host.standalone ? data : { params: extra || {}, form: data };
+            if ('submit' in jQuery._data(host, 'events') && $(host).triggerHandler('submit', [data, params]) !== true) return;
             if ('saveURL' in host.settings) params.url = host.settings.saveURL;
             $(host).trigger('saving', [data, params]);
             host.data.commit();
