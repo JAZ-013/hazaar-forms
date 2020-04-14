@@ -2099,7 +2099,6 @@ dataBinderArray.prototype.diff = function (data, callback) {
             if ('scripts' in host.def) _load_scripts(host, host.def.scripts);
             _prepare_field_definitions(host, host.def.fields);
             host.data = new dataBinder(_define(host.def.fields));
-            $(host).trigger('load', [host.def]);
         }).fail(_error);
     }
 
@@ -2157,6 +2156,7 @@ dataBinderArray.prototype.diff = function (data, callback) {
                 if (Array.isArray(host.def)) host.def = _convert_simple_form(host.def);
                 _prepare_field_definitions(host, host.def.fields);
                 host.data = new dataBinder(_define(host.def.fields));
+                $(host).trigger('load', [host.def]);
                 if ('load' in host.settings.endpoints) _post(host, 'load').done(p).fail(_error);
                 else if (typeof host.settings.data === 'string') $.get(host.settings.data).done(function (r) { p({ ok: true, form: r }); }).fail(_error);
                 else p({ ok: true, form: host.settings.data });
@@ -2167,6 +2167,7 @@ dataBinderArray.prototype.diff = function (data, callback) {
             delete host.settings.data;
         } else {
             _load_definition(host).done(function (response) {
+                $(host).trigger('load', [host.def]);
                 _post(host, 'load').done(p).fail(_error);
             });
         }
