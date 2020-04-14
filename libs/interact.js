@@ -1281,7 +1281,10 @@ dataBinderArray.prototype.diff = function (data, callback) {
                 else col.addClass('col-sm-12').toggleClass('row', def.row === true);
             }
         }
-        if (no_group === true && input.is('.' + host.settings.styleClasses.inputGroup)) input = input.children();
+        if (no_group === true && input.is('.' + host.settings.styleClasses.inputGroup)) {
+            input = input.children();
+            if ('width' in def) input.css('width', def.width);
+        }
         return input;
     }
 
