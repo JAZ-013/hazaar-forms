@@ -1542,6 +1542,8 @@ dataBinderArray.prototype.diff = function (data, callback) {
             if ('label' in def && field.children().length === 0) field.append($('<label>').addClass(host.settings.styleClasses.label).html(def.label));
             field.append($('<div>').html(_match_replace(host, html, null, true, true)));
         }
+        if ('header' in def) field.prepend(def.header);
+        if ('footer' in def) field.append(def.footer);
         if ('show' in def && apply_rules !== false) _make_showable(host, def, field);
         if ('watch' in def) for (let x in def.watch) host.data.watch(def.watch[x], function (field) { _input_event_update(host, field); });
         if (host.viewmode === true) return field;
