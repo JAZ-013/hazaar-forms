@@ -926,10 +926,11 @@ dataBinderArray.prototype.diff = function (data, callback) {
             .blur(function (event) { return _input_event_blur(host, $(event.target)); })
             .change(function (event) { return _input_event_change(host, $(event.target)); })
             .on('update', function (event, key, value, item_data) { return _input_event_update(host, $(event.target), false, item_data); });
-        let glyph = $('<div>').addClass(host.settings.styleClasses.inputGroupAppend)
-            .html($('<span style="cursor: pointer;">').addClass(host.settings.styleClasses.inputGroupText)
-                .html(_hz_icon('calendar').click(function () { input.focus(); })))
-            .appendTo(group);
+        if (def.suffix !== false)
+            $('<div>').addClass(host.settings.styleClasses.inputGroupAppend)
+                .html($('<span style="cursor: pointer;">').addClass(host.settings.styleClasses.inputGroupText)
+                    .html(_hz_icon('calendar').click(function () { input.focus(); })))
+                .appendTo(group);
         if (def.format) {
             if (def.format === 'local') def.format = Date.getLocalDateFormat();
             def.__datepicker_options = $.extend({
