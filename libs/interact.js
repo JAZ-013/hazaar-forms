@@ -1637,6 +1637,7 @@ dataBinderArray.prototype.diff = function (data, callback) {
 
     //Navigate to a page
     function _nav(host, pageno, cbComplete, force) {
+        if (typeof pageno !== 'number') pageno = parseInt(pageno);
         if (force !== true && pageno === host.page) return false;
         let _page_nav = function (host, pageno) {
             _track(host);
