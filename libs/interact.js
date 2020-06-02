@@ -1596,7 +1596,7 @@ dataBinderArray.prototype.diff = function (data, callback) {
 
     //Render a page
     function _page(host, page) {
-        if (typeof page !== 'object') return null;
+        if (typeof page !== 'object' || ('show' in page && _eval(host, page.show, true) !== true)) return null;
         let container = $('<div>'), sections = [];
         for (let x in page.sections) sections.push(_section(host, page.sections[x]));
         if (host.events.show.length > 0) for (let x in host.events.show) _toggle_show(host, host.events.show[x]);
