@@ -523,6 +523,7 @@ dataBinderArray.prototype.diff = function (data, callback) {
         if (item_data) item_data.enabled(true);
         if ('save' in def && _eval(host, def.save, false, item_data, def.name)) _save(host, false).done(cb_done);
         else if (typeof cb_done === 'function') cb_done();
+        if (item_data && item_data.parent && item_data.parent.attrName) _input_event_update(host, item_data.parent.attrName, skip_validate, item_data.parent);
     }
 
     function _input_event_focus(host, input) {
@@ -2058,7 +2059,7 @@ dataBinderArray.prototype.diff = function (data, callback) {
     }
 
     function _prepare_field_definitions(host, fields, extra) {
-        let prop_fields = ["disabled", "protected", "change", "focus", "blur"]; //Fields that propagate
+        let prop_fields = ["disabled", "protected", "focus", "blur"]; //Fields that propagate
         for (let x in fields) {
             let itemExtra = extra ? $.extend(true, {}, extra) : null;
             if (typeof fields[x] === 'string') fields[x] = { type: fields[x], label: x };
