@@ -2146,15 +2146,17 @@ dataBinderArray.prototype.diff = function (data, callback) {
 
     //Evals the pages and returns true if something has changed, false if nothing has changed.
     function _eval_form_pages(host, pages) {
-        let changed = false;
+        let changed = false, pageno = 'pages' in host && host.pages[host.page] ? host.pages[host.page].id : host.page;
         host.pages = [];
         if (!('pstate' in host)) host.pstate = [];
         for (x in pages) {
             let state = ('show' in pages[x]) ? _eval(host, pages[x].show, true) : true;
+            pages[x].id = parseInt(x);
             if (changed !== true && host.pstate[x] !== state) changed = true;
             host.pstate[x] = state;
             if (host.pstate[x] !== true) continue;
-            host.pages.push(pages[x]);
+            let y = host.pages.push(pages[x]);
+            if (pages[x].id === pageno) host.page = y - 1; //Store the new page number
         }
         if (changed) {
             $(host)
@@ -2266,6 +2268,7 @@ dataBinderArray.prototype.diff = function (data, callback) {
                             _load_definition(host).done(function () {
                                 for (let x in values)
                                     host.data[x] = values[x];
+                                _eval_form_pages(host, host.def.pages);
                                 _nav(host, host.page, null, true);
                             });
                         }
