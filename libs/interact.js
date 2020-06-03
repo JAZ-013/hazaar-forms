@@ -511,9 +511,9 @@ dataBinderArray.prototype.diff = function (data, callback) {
             if (skip_validate !== true) _validate_input(host, input);
         }
         if (item_data && item_data.enabled() && def.change) _eval_code(host, def.change, item_data, def.name);
-        if (!host.working && host.events.show && host.events.show.length > 0) {
-            for (let x in host.events.show)
-                _toggle_show(host, host.events.show[x]);
+        if (!host.working) {
+            if (host.events.show && host.events.show.length > 0) for (let x in host.events.show) _toggle_show(host, host.events.show[x]);
+            if (_eval_form_pages(host, host.def.pages)) $(host).trigger('pages', [host.pages]);
         }
         if (host.events.required && host.events.required.length > 0)
             for (let x in host.events.required) _eval_required(host, host.events.required[x], false);
@@ -1596,7 +1596,7 @@ dataBinderArray.prototype.diff = function (data, callback) {
 
     //Render a page
     function _page(host, page) {
-        if (typeof page !== 'object') return null;
+        if (typeof page !== 'object' || ('show' in page && _eval(host, page.show, true) !== true)) return null;
         let container = $('<div>'), sections = [];
         for (let x in page.sections) sections.push(_section(host, page.sections[x]));
         if (host.events.show.length > 0) for (let x in host.events.show) _toggle_show(host, host.events.show[x]);
@@ -1637,24 +1637,25 @@ dataBinderArray.prototype.diff = function (data, callback) {
 
     //Navigate to a page
     function _nav(host, pageno, cbComplete, force) {
+        if (typeof pageno !== 'number') pageno = parseInt(pageno);
         if (force !== true && pageno === host.page) return false;
         let _page_nav = function (host, pageno) {
             _track(host);
             host.objects.container.empty();
             if (host.settings.singlePage) {
                 _page_init(host, 0);
-                for (let x in host.def.pages) host.objects.container.append(_page(host, host.def.pages[x]));
+                for (let x in host.pages) host.objects.container.append(_page(host, host.pages[x]));
             } else {
                 _page_init(host, pageno);
-                host.objects.container.append(_page(host, host.def.pages[pageno]));
-                $(host).trigger('nav', [host.page + 1, host.def.pages.length]);
+                host.objects.container.append(_page(host, host.pages[pageno]));
+                $(host).trigger('nav', [host.page + 1, host.pages.length]);
             }
             host.data.resync();
             _ready(host);
             if (typeof cbComplete === 'function') cbComplete();
         };
         if (host.page !== null && pageno > host.page) {
-            let page = host.def.pages[host.page];
+            let page = host.pages[host.page];
             if ('validate' in page) {
                 _validate_page(host).done(function (result, errors) {
                     if (result === true) {
@@ -2143,6 +2144,28 @@ dataBinderArray.prototype.diff = function (data, callback) {
         return { "name": "", "pages": [{ "sections": [{ "fields": def }] }], "fields": fields };
     }
 
+    //Evals the pages and returns true if something has changed, false if nothing has changed.
+    function _eval_form_pages(host, pages) {
+        let changed = false, pageno = 'pages' in host && host.pages[host.page] ? host.pages[host.page].id : host.page;
+        host.pages = [];
+        if (!('pstate' in host)) host.pstate = [];
+        for (x in pages) {
+            let state = ('show' in pages[x]) ? _eval(host, pages[x].show, true) : true;
+            pages[x].id = parseInt(x);
+            if (changed !== true && host.pstate[x] !== state) changed = true;
+            host.pstate[x] = state;
+            if (host.pstate[x] !== true) continue;
+            let y = host.pages.push(pages[x]);
+            if (pages[x].id === pageno) host.page = y - 1; //Store the new page number
+        }
+        if (changed) {
+            $(host)
+                .trigger('pages', [host.pages, host.page])
+                .trigger('nav', [host.page + 1, host.pages.length]);
+        }
+        return changed;
+    }
+
     //Load all the dynamic bits
     function _load(host, initUrl) {
         let p = function (response) {
@@ -2150,6 +2173,7 @@ dataBinderArray.prototype.diff = function (data, callback) {
             if ('horizontal' in host.def) host.settings.horizontal = host.def.horizontal;
             host.data.extend(_fix_plain_data(host, response.form));
             host.data.commit();
+            _eval_form_pages(host, host.def.pages);
             $(host).trigger('data', [host.data.save()]);
             _nav(host, host.page, null, true);
         };
@@ -2244,6 +2268,7 @@ dataBinderArray.prototype.diff = function (data, callback) {
                             _load_definition(host).done(function () {
                                 for (let x in values)
                                     host.data[x] = values[x];
+                                _eval_form_pages(host, host.def.pages);
                                 _nav(host, host.page, null, true);
                             });
                         }
@@ -2258,7 +2283,7 @@ dataBinderArray.prototype.diff = function (data, callback) {
                             _nav(host, host.page - 1);
                         break;
                     case 'next':
-                        if (host.page < host.def.pages.length - 1)
+                        if (host.page < host.pages.length - 1)
                             _nav(host, host.page + 1);
                         break;
                     case 'save':
