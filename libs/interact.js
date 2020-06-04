@@ -513,7 +513,7 @@ dataBinderArray.prototype.diff = function (data, callback) {
         if (item_data && item_data.enabled() && def.change) _eval_code(host, def.change, item_data, def.name);
         if (!host.working) {
             if (host.events.show && host.events.show.length > 0) for (let x in host.events.show) _toggle_show(host, host.events.show[x]);
-            if (_eval_form_pages(host, host.def.pages)) $(host).trigger('pages', [host.pages]);
+            _eval_form_pages(host, host.def.pages);
         }
         if (host.events.required && host.events.required.length > 0)
             for (let x in host.events.required) _eval_required(host, host.events.required[x], false);
