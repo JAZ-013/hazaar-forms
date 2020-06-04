@@ -78,7 +78,7 @@ Date.getLocalDateFormat = function () {
         format = ['yyyy', 'mm', 'dd'];
         sep = '-';
     } else {
-        for (x in parts) {
+        for (let x in parts) {
             let zp = false, value = parseInt(parts[x]);
             if (parts[x][0] === "0") zp = true;
             if (value === 9) format.push(zp ? 'dd' : 'd');
@@ -142,7 +142,7 @@ dataBinder.prototype.diff = function (data, callback) {
 
 dataBinderArray.prototype.diff = function (data, callback) {
     if (!(data && typeof data === 'object')) return;
-    for (key in this._elements) {
+    for (let key in this._elements) {
         if (!(key in data)) data[key] = null;
         if (this._elements[key] instanceof dataBinder) this._elements[key].diff(data[key], callback);
     }
@@ -540,7 +540,7 @@ dataBinderArray.prototype.diff = function (data, callback) {
         if ('buttons' in def) {
             let group = $('<div>').addClass(host.settings.styleClasses.buttonGroup), defaults = Object.assign({}, def);
             delete defaults.buttons;
-            for (x in def.buttons) group.append(_input_button(host, $.extend({}, defaults, def.buttons[x])));
+            for (let x in def.buttons) group.append(_input_button(host, $.extend({}, defaults, def.buttons[x])));
             return group;
         }
         let btn = $('<button type="button">').addClass(host.settings.styleClasses.button)
@@ -701,7 +701,7 @@ dataBinderArray.prototype.diff = function (data, callback) {
     function _input_radio_items(host, options, data, group, no_nullify) {
         let def = group.data('def'), valueKey = options.value || 'value', labelKey = options.label || 'label';
         data = _convert_data(data, valueKey, labelKey, def);
-        for (x in data) {
+        for (let x in data) {
             if (('filter' in options && options.filter.indexOf(data[x][labelKey]) === -1) || data[x][valueKey] === '__spacer__') {
                 delete data[x];
                 continue;
@@ -760,7 +760,7 @@ dataBinderArray.prototype.diff = function (data, callback) {
             return data;
         };
         if (!Array.isArray(data) && typeof data[Object.keys(data)[0]] === 'object' && !(valueKey in data[Object.keys(data)[0]])) {
-            for (group in data) data[group] = do_ops(data[group], $('<optgroup>').attr('label', group).appendTo(select));
+            for (let group in data) data[group] = do_ops(data[group], $('<optgroup>').attr('label', group).appendTo(select));
         } else data = do_ops(data, select);
         if (item_data) {
             if ('other' in def && _eval(host, def.other, null, item_data, def.name) === true) {
@@ -849,7 +849,7 @@ dataBinderArray.prototype.diff = function (data, callback) {
                     _get_data_item(item_data, def.name).value = null;
                     if (typeof cb === 'function') cb(select, _input_options(host, def, null, value));
                 };
-                for (x in def.watch) {
+                for (let x in def.watch) {
                     if (def.watch[x].substr(0, 5) === 'item.' && item_data) item_data.watch(def.watch[x].substr(5), watch_func);
                     else {
                         item_data = host.data;
@@ -1163,7 +1163,7 @@ dataBinderArray.prototype.diff = function (data, callback) {
         if ('currencies' in def && def.currencies.length > 1) {
             let currencySELECT = $('<div class="dropdown-menu">');
             def.currencies.sort(function (a, b) { return a.code === b.code ? 0 : a.code < b.code ? -1 : 1; });
-            for (x of def.currencies) currencySELECT.append($('<div class="dropdown-item">').html(x.code + ' - ' + x.name).attr('data-currency', x.code));
+            for (let x of def.currencies) currencySELECT.append($('<div class="dropdown-item">').html(x.code + ' - ' + x.name).attr('data-currency', x.code));
             suffixDIV.html([
                 $('<button class="btn btn-outline-secondary dropdown-toggle" type="button" data-toggle="dropdown">').html(item_data.currency.value),
                 currencySELECT
@@ -1934,7 +1934,7 @@ dataBinderArray.prototype.diff = function (data, callback) {
                 type: file.type,
                 url: URL.createObjectURL(file)
             };
-        } else if (Array.isArray(file)) for (x in file) file[x] = _objectify_file(file[x]);
+        } else if (Array.isArray(file)) for (let x in file) file[x] = _objectify_file(file[x]);
         else {
             let filename = /[^/]*$/.exec(file.url)[0];
             file.url = file.url.substr(0, file.url.length - filename.length) + encodeURIComponent(filename);
@@ -2073,7 +2073,7 @@ dataBinderArray.prototype.diff = function (data, callback) {
                 fields[x].horizontal = false;
                 //Propagate some field options
                 itemExtra = {};
-                for (i in prop_fields) if (prop_fields[i] in fields[x]) itemExtra[prop_fields[i]] = fields[x][prop_fields[i]];
+                for (let i in prop_fields) if (prop_fields[i] in fields[x]) itemExtra[prop_fields[i]] = fields[x][prop_fields[i]];
             } else if ('type' in fields[x] && fields[x].type === 'array') {
                 if ('arrayOf' in fields[x] && 'types' in host.def && fields[x].arrayOf in host.def.types) {
                     fields[x].fields = host.def.types[fields[x].arrayOf].fields;
@@ -2149,7 +2149,7 @@ dataBinderArray.prototype.diff = function (data, callback) {
         let changed = false, pageno = 'pages' in host && host.pages[host.page] ? host.pages[host.page].id : host.page;
         host.pages = [];
         if (!('pstate' in host)) host.pstate = [];
-        for (x in pages) {
+        for (let x in pages) {
             let state = ('show' in pages[x]) ? _eval(host, pages[x].show, true) : true;
             pages[x].id = parseInt(x);
             if (changed !== true && host.pstate[x] !== state) changed = true;
