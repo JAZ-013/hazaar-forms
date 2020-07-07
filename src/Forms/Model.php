@@ -955,7 +955,7 @@ class Model extends \Hazaar\Model\Strict {
 
         if(is_string($field)){
 
-            if(!(property_exists($form, 'fields') && array_key_exists($field, $form->fields)))
+            if(ake($form, 'fields.' . $field) === null)
                 return null;
 
             $name = $field;
