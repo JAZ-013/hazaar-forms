@@ -50,6 +50,7 @@
 
 .form-group {
     position: relative;
+    flex: 1;
 }
 
     .form-group label svg {
