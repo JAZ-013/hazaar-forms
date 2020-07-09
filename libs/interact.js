@@ -1215,11 +1215,11 @@ dataBinderArray.prototype.diff = function (data, callback) {
         }
         group.append(input);
         if (def.suffix || def.copy === true || def.reveal === true) {
+            let suffix = $('<div>').addClass(host.settings.styleClasses.inputGroupAppend).appendTo(group);
             if (def.suffix) {
-                $('<div>').addClass(host.settings.styleClasses.inputGroupAppend).appendTo(group)
-                    .html(((def.type === 'text' && (sf = _form_field_lookup(host.def, def.suffix)) !== null && def.name !== sf.name)
-                        ? _input(host, sf, null, null, true).css('text-align', 'left')
-                        : $('<span>').html(_match_replace(host, def.suffix, null, true, true))).addClass(host.settings.styleClasses.inputGroupText));
+                suffix.html(((def.type === 'text' && (sf = _form_field_lookup(host.def, def.suffix)) !== null && def.name !== sf.name)
+                    ? _input(host, sf, null, null, true).css('text-align', 'left')
+                    : $('<span>').html(_match_replace(host, def.suffix, null, true, true))).addClass(host.settings.styleClasses.inputGroupText));
             }
             if (def.password === true && def.reveal === true) suffix.append($('<span class="input-group-text">').click(function (event) {
                 let i = $(this).children('i'), r = false;
@@ -1277,10 +1277,6 @@ dataBinderArray.prototype.diff = function (data, callback) {
                         input = _input_std(host, def.type, def);
                         break;
                 }
-            }
-            if (host.settings.horizontal) {
-                if (def.nolabel !== true && def.label) col.addClass('col-sm-' + host.settings.hz.right);
-                else col.addClass('col-sm-12').toggleClass('row', def.row === true);
             }
         }
         if (no_group === true && input.is('.' + host.settings.styleClasses.inputGroup)) {
@@ -1519,6 +1515,10 @@ dataBinderArray.prototype.diff = function (data, callback) {
         } else {
             def.nolabel = false;
             let col = $('<div class="form-field">'), input = _input(host, def, populate, item_data);
+            if (host.settings.horizontal) {
+                if (def.nolabel !== true && def.label) col.addClass('col-sm-' + host.settings.hz.right);
+                else col.addClass('col-sm-12').toggleClass('row', def.row === true);
+            }
             if (hidden !== true && def.name) host.pageFields.push(def.name);
             field = $('<div>').addClass(host.settings.styleClasses.group)
                 .toggleClass('row', host.settings.horizontal)
