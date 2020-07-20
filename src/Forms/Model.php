@@ -1446,6 +1446,8 @@ class Model extends \Hazaar\Model\Strict {
 
     public function renderPDF($settings = array()){
 
+        if(!in_array('pdf', $this->__tags)) $this->__tags[] = 'pdf';
+
         $pdf = new \Hazaar\Forms\Output\PDF($this);
 
         return $pdf->render($settings);
