@@ -39,15 +39,17 @@ var hzIcons = {
     "search": [512, 512, "M505 442.7L405.3 343c-4.5-4.5-10.6-7-17-7H372c27.6-35.3 44-79.7 44-128C416 93.1 322.9 0 208 0S0 93.1 0 208s93.1 208 208 208c48.3 0 92.7-16.4 128-44v16.3c0 6.4 2.5 12.5 7 17l99.7 99.7c9.4 9.4 24.6 9.4 33.9 0l28.3-28.3c9.4-9.4 9.4-24.6.1-34zM208 336c-70.7 0-128-57.2-128-128 0-70.7 57.2-128 128-128 70.7 0 128 57.2 128 128 0 70.7-57.2 128-128 128z"]
 };
 
-function _hz_icon(name, title) {
-    if (!(name in hzIcons)) return null;
-    let icon = hzIcons[name], svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+function _hz_icon(name, title, icons) {
+    if (!icons) icons = hzIcons;
+    if (!(name in icons)) return null;
+    let icon = icons[name], svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
     svg.setAttribute("class", "forms-icon");
     svg.setAttribute("viewBox", "0 0 " + icon[0] + " " + icon[1]);
     let path = document.createElementNS("http://www.w3.org/2000/svg", "path");
     path.setAttribute("fill", "currentColor");
     path.setAttribute("d", icon[2]);
     svg.appendChild(path);
+    if (title) svg.setAttribute('title', title);
     return $(svg);
 }
 
@@ -208,6 +210,10 @@ dataBinderArray.prototype.diff = function (data, callback) {
         o.parentNode.removeChild(o);
         let tip = $(target).tooltip({ title: "Copied!", trigger: "manual" }).tooltip('show');
         setTimeout(function () { tip.tooltip('dispose'); }, 3000);
+    }
+
+    function _icon(host, name, title) {
+        return _hz_icon(name, title, host.settings.icons);
     }
 
     function _convert_data_type(def, value) {
@@ -382,7 +388,7 @@ dataBinderArray.prototype.diff = function (data, callback) {
         let item_data = _get_data_item(host.data, input.data('item'));
         let ac = host.required[item_data.attrName] = _eval(host, def.required, typeof default_required === 'undefined' ? false : default_required, item_data, def.name);
         if (ac !== true) i.remove();
-        else if (i.length === 0) label.append(_hz_icon('exclamation-circle', 'Required').addClass('form-required'));
+        else if (i.length === 0) label.append(_icon(host, 'exclamation-circle', 'Required').addClass('form-required'));
         if ('fields' in def) input.children('div.form-section,div.form-group').each(function (index, item) { let o = $(item); if (o.data('item')) _eval_required(host, o, ac); });
         return ac;
     }
@@ -446,7 +452,7 @@ dataBinderArray.prototype.diff = function (data, callback) {
                         group.remove();
                     }).appendTo(group);
                 let button = $('<button class="btn btn-secondary" type="button">')
-                    .html(_hz_icon('times'))
+                    .html(_icon(host, 'times'))
                     .click(function (e) {
                         group.remove();
                         item_data.other = null;
@@ -930,7 +936,7 @@ dataBinderArray.prototype.diff = function (data, callback) {
         if (def.suffix !== false)
             $('<div>').addClass(host.settings.styleClasses.inputGroupAppend)
                 .html($('<span style="cursor: pointer;">').addClass(host.settings.styleClasses.inputGroupText)
-                    .html(_hz_icon('calendar').click(function () { input.focus(); })))
+                    .html(_icon(host, 'calendar').click(function () { input.focus(); })))
                 .appendTo(group);
         if (def.format) {
             if (def.format === 'local') def.format = Date.getLocalDateFormat();
@@ -1140,7 +1146,7 @@ dataBinderArray.prototype.diff = function (data, callback) {
         }
         if ('placeholder' in def) input.attr('placeholder', def.placeholder);
         if (!def.protected) group.append($('<div>').addClass(host.settings.styleClasses.inputGroupAppend)
-            .html($('<span>').addClass(host.settings.styleClasses.inputGroupText).html(_hz_icon('search'))));
+            .html($('<span>').addClass(host.settings.styleClasses.inputGroupText).html(_icon(host, 'search'))));
         return group;
     }
 
@@ -1314,7 +1320,7 @@ dataBinderArray.prototype.diff = function (data, callback) {
         if (host.viewmode !== true && _eval(host, def.allow_remove, true, item_data, def.name)) {
             template.append($('<div class="itemlist-item-rm">').html([
                 def.allow_edit === true && bump ? $('<label>').html('&nbsp;').addClass(host.settings.styleClasses.label) : '',
-                $('<button type="button" class="btn btn-danger btn-sm">').html(_hz_icon('minus'))
+                $('<button type="button" class="btn btn-danger btn-sm">').html(_icon(host, 'minus'))
             ]));
         }
         if (host.viewmode !== true && _eval(host, def.allow_add, true, item_data, def.name)) {
@@ -1323,7 +1329,7 @@ dataBinderArray.prototype.diff = function (data, callback) {
             sub_host.validate = false;
             sub_host.data = new_item;
             sub_host.def = { fields: def.fields };
-            let btn = $('<button type="button" class="btn btn-success btn-sm">').html(_hz_icon('plus'));
+            let btn = $('<button type="button" class="btn btn-success btn-sm">').html(_icon(host, 'plus'));
             let fieldDIV = _form_field(sub_host, { fields: layout, row: true }, true, ud, ud, ud, true)
                 .addClass('itemlist-newitem')
                 .attr('data-field', def.name);
@@ -1549,7 +1555,7 @@ dataBinderArray.prototype.diff = function (data, callback) {
         if ('watch' in def) for (let x in def.watch) host.data.watch(def.watch[x], function (field) { _input_event_update(host, field); });
         if (host.viewmode === true) return field;
         if ('tip' in def) {
-            field.children('label.control-label').append(_hz_icon('question-circle')
+            field.children('label.control-label').append(_icon(host, 'question-circle')
                 .addClass('form-tip')
                 .attr('data-title', def.tip)
                 .tooltip({ placement: 'auto', html: true }))
@@ -2368,7 +2374,8 @@ dataBinderArray.prototype.diff = function (data, callback) {
             "button": "btn",
             "buttonGroup": "btn-group"
         },
-        "endpoints": {}
+        "endpoints": {},
+        "icons": hzIcons
     };
 
 })(jQuery);
