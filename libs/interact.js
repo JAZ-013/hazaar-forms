@@ -2238,7 +2238,7 @@ dataBinderArray.prototype.diff = function (data, callback) {
     function __initialise(host, settings) {
         //Define the default object properties
         _get_empty_host(host);
-        host.settings = $.extend({}, $.fn.hzForm.defaults, settings);
+        host.settings = $.extend(true, {}, $.fn.hzForm.defaults, settings);
         host.viewmode = host.settings.viewmode;
         if (host.settings.concurrentUploads < 1) host.settings.concurrentUploads = 1;
         $(host).trigger('init');
