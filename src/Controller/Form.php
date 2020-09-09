@@ -134,7 +134,10 @@ abstract class Form extends Action {
 
                         $out->ok = false;
 
-                        $out->reason = 'There was an unknown error saving to the custom save URL';
+                        if(!($reason = $this->form_model->lastAPIError()))
+                            $reason = 'There was an unknown error saving to the custom save URL';
+
+                        $out->reason = $reason;
 
                     }
 

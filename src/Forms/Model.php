@@ -44,6 +44,8 @@ class Model extends \Hazaar\Model\Strict {
 
     private $__script_server;
 
+    private $__last_api_error = null;
+
     function __construct($form_name, $form = null, $tags = null, \Hazaar\File\Dir $form_include_path = null){
 
         $this->__form_name = $form_name;
@@ -1418,6 +1420,8 @@ class Model extends \Hazaar\Model\Strict {
 
                 $result = false;
 
+                $this->__last_api_error = $e->getMessage();
+
             }
 
         }
@@ -1624,6 +1628,12 @@ class Model extends \Hazaar\Model\Strict {
 
         return array($name => array('field' => $def, 'status' => $status));
 
+    }
+
+    public function lastAPIError(){
+
+        return $this->__last_api_error;
+        
     }
 
 }
