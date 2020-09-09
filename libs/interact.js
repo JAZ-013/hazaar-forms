@@ -405,7 +405,7 @@ dataBinderArray.prototype.diff = function (data, callback) {
         if (!def) return false;
         let item_data = _get_data_item(host.data, input.data('item'));
         let ac = host.disabled[item_data.attrName] = _eval(host, def.disabled, typeof default_disabled === 'undefined' ? false : default_disabled, item_data, def.name);
-        input.find('input,textarea,select,button').prop('disabled', ac);
+        input.find('input,textarea,select,button').prop('disabled', ac).data('ed', ac);
         if ('fields' in def) input.children('div.form-section,div.form-group').each(function (index, item) { let o = $(item); if (o.data('item')) _eval_disabled(host, o, ac); });
         return ac;
     }
@@ -731,7 +731,7 @@ dataBinderArray.prototype.diff = function (data, callback) {
 
     function _input_select_items(host, options, data, select, no_nullify) {
         let item_data = _get_data_item(host.data, select.attr('data-bind')), def = select.data('def'), grouped = false;
-        select.prop('disabled', !(def.disabled !== true && def.protected !== true));
+        select.prop('disabled', !(def.disabled !== true && def.protected !== true && select.data('ed') !== true));
         if (data === null || typeof data !== 'object' || Array.isArray(data) && data.length === 0 || Object.keys(data).length === 0) {
             if (no_nullify !== true) _nullify(host, def);
             if (item_data) item_data.enabled(false);
