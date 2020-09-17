@@ -1142,6 +1142,12 @@ class Model extends \Hazaar\Model\Strict {
 
         }
 
+        if(property_exists($field, 'prefix') && ($sf = $this->getFormFieldDefinition($field->prefix)))
+            $field->prefix = $this->get($field->prefix);
+
+        if(property_exists($field, 'suffix') && ($sf = $this->getFormFieldDefinition($field->suffix)))
+            $field->suffix = $this->get($field->suffix);
+
         return $field;
 
     }
