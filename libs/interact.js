@@ -1320,7 +1320,7 @@ dataBinderArray.prototype.diff = function (data, callback) {
         if (host.viewmode !== true && _eval(host, def.allow_remove, true, item_data, def.name)) {
             template.append($('<div class="itemlist-item-rm">').html([
                 def.allow_edit === true && bump ? $('<label>').html('&nbsp;').addClass(host.settings.styleClasses.label) : '',
-                $('<button type="button" class="btn btn-danger btn-sm">').html(_icon(host, 'minus'))
+                $('<button type="button" class="btn btn-danger btn-sm">').html(("btnLabels" in def && "remove" in def.btnLabels ? def.btnLabels.remove : _icon(host, 'minus')))
             ]));
         }
         if (host.viewmode !== true && _eval(host, def.allow_add, true, item_data, def.name)) {
@@ -1329,7 +1329,7 @@ dataBinderArray.prototype.diff = function (data, callback) {
             sub_host.validate = false;
             sub_host.data = new_item;
             sub_host.def = { fields: def.fields };
-            let btn = $('<button type="button" class="btn btn-success btn-sm">').html(_icon(host, 'plus'));
+            let btn = $('<button type="button" class="btn btn-success btn-sm">').html(("btnLabels" in def && "add" in def.btnLabels ? def.btnLabels.add : _icon(host, 'plus')));
             let fieldDIV = _form_field(sub_host, { fields: layout, row: true }, true, ud, ud, ud, true)
                 .addClass('itemlist-newitem')
                 .attr('data-field', def.name);
