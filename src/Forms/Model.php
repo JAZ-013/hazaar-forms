@@ -913,12 +913,12 @@ class Model extends \Hazaar\Model\Strict {
 
                 $field = $this->__resolve_field_layout($name, $field, $fields);
 
-            }elseif(is_string($field) && array_key_exists($field, $fields)){
+            }elseif(is_string($field) && ($field_obj = ake($fields, $field)) && $field_obj instanceof \stdClass){
 
-                if (!property_exists($fields->$field, 'name'))
-                    $fields->$field->name = $name . '.' . $field;
+                if (!property_exists($field_obj, 'name'))
+                    $field_obj->name = $name . '.' . $field;
 
-                $field = ake($fields, $field);
+                $field = $field_obj;
 
             }elseif($field instanceof \stdClass){
 
