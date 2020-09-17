@@ -624,6 +624,25 @@ class Model extends \Hazaar\Model\Strict {
 
     }
 
+    public function getFormFieldDefinition($field, $secure = false){
+
+        $def = $this->getFormDefinition($secure);
+
+        $parts = explode('.', $field);
+
+        foreach($parts as $part){
+
+            if(!(($fields = ake($def, 'fields')) && ($sf = ake($fields, $part))))
+                return null;
+
+            $def = $sf;
+
+        }
+
+        return $def;
+
+    }
+
     /**
      * Return the form data to send to the client frontend
      *
