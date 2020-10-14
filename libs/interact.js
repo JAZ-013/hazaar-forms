@@ -224,7 +224,7 @@ dataBinderArray.prototype.diff = function (data, callback) {
         if (type === 'int' || type === 'integer')
             value = parseInt(value);
         else if (type === 'text' || type === 'string')
-            value = value.toString();
+            value = value.toString().trim();
         else if (type === 'bool' || type === 'boolean')
             value = _boolify(value);
         else if (type === 'float' || type === 'double' || type === 'money')
