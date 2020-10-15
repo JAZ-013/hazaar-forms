@@ -1002,15 +1002,17 @@ dataBinderArray.prototype.diff = function (data, callback) {
         }).on('pop', function (event, field_name, value) {
             input.fileUpload('remove', value.save());
         });
-        _post(host, 'fileinfo', { 'field': def.name }, true).done(function (response) {
-            if (!response.ok) return;
-            let item_data = _get_data_item(host.data, response.field);
-            item_data.empty();
-            for (let x in response.files) if (host.deloads.findIndex(function (e) {
-                return e.field === response.field && e.file === response.files[x].name;
-            }) < 0) item_data.push(_objectify_file(response.files[x]));
-            for (let x in host.uploads) if (host.uploads[x].field === response.field) item_data.push(_objectify_file(host.uploads[x].file));
-        }).fail(_error);
+        if (host.standalone !== true) {
+            _post(host, 'fileinfo', { 'field': def.name }, true).done(function (response) {
+                if (!response.ok) return;
+                let item_data = _get_data_item(host.data, response.field);
+                item_data.empty();
+                for (let x in response.files) if (host.deloads.findIndex(function (e) {
+                    return e.field === response.field && e.file === response.files[x].name;
+                }) < 0) item_data.push(_objectify_file(response.files[x]));
+                for (let x in host.uploads) if (host.uploads[x].field === response.field) item_data.push(_objectify_file(host.uploads[x].file));
+            }).fail(_error);
+        }
         return input;
     }
 
@@ -2400,7 +2402,7 @@ $.fn.fileUpload = function () {
         name: 'file',
         multiple: false,
         btnClass: 'btn btn-default',
-        maxSize: 0,
+        maxSize: null,
         autoAdd: true,
         autoRemove: true
     }, arguments[0]);
@@ -2459,7 +2461,7 @@ $.fn.fileUpload = function () {
         return false;
     };
     host._checksize = function (file) {
-        if (host.options.maxSize === 0 || file.size < host.options.maxSize)
+        if (typeof host.options.maxSize !== 'integer' || host.options.maxSize <= 0 || file.size < host.options.maxSize)
             return true;
         return false;
     };
