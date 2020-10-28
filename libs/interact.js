@@ -2441,17 +2441,18 @@ $.fn.fileUpload = function () {
     host._preview = function (file) {
         let o = $('<div class="dz-preview">');
         if (file.preview) o.append($('<img>').attr('src', file.preview));
-        else if (file.type.substr(0, 5) === 'image') {
-            if (file.url) o.append($('<img>').attr('src', file.url));
-            else if (file instanceof File && file.type.substr(0, 5) === 'image') {
-                let reader = new FileReader();
-                reader.onload = function (event) {
-                    o.append($('<img>').attr('src', event.target.result));
-                };
-                reader.readAsDataURL(file);
-            }
-        } else
-            o.addClass('fileicon').attr('data-type', file.type.replace(/\./g, '_').replace(/\//g, '-'));
+        else if (typeof file.type === 'string'){
+            if(file.type.substr(0, 5) === 'image') {
+                if (file.url) o.append($('<img>').attr('src', file.url));
+                else if (file instanceof File && file.type.substr(0, 5) === 'image') {
+                    let reader = new FileReader();
+                    reader.onload = function (event) {
+                        o.append($('<img>').attr('src', event.target.result));
+                    };
+                    reader.readAsDataURL(file);
+                }
+            } else o.addClass('fileicon').attr('data-type', file.type.replace(/\./g, '_').replace(/\//g, '-'));
+        }
         return o;
     };
     host._checkexists = function (file) {
