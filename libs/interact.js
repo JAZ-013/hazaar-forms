@@ -1090,7 +1090,7 @@ dataBinderArray.prototype.diff = function (data, callback) {
                                 if (def.lookup.autocomplete === true) listDIV.empty();
                                 for (let x in data) {
                                     listDIV.append($('<li class="list-group-item">')
-                                        .html(_kv(data[x], labelKey))
+                                        .html(labelKey.indexOf('{{') > -1 ? _match_replace(null, labelKey, data[x], true) : data[x][labelKey])
                                         .attr('data-value', _kv(data[x], valueKey))
                                         .data('lookup', data[x]));
                                 }
