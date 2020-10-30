@@ -46,6 +46,8 @@ class Model extends \Hazaar\Model\Strict {
 
     private $__last_api_error = null;
 
+    private $__initialised = false;
+
     function __construct($form_name, $form = null, $tags = null, \Hazaar\File\Dir $form_include_path = null){
 
         $this->__form_name = $form_name;
