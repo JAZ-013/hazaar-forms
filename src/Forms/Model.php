@@ -661,13 +661,13 @@ class Model extends \Hazaar\Model\Strict {
             $array = parent::toArray(false, null, true, true);
 
         if($fields === null)
-            $fields = $this->fields;
+            $fields = ake($this->getFormDefinition(true), 'fields');
 
         foreach($fields as $name => $field){
 
             $type = ake($field, 'type');
 
-            if($type === 'array' && is_array(ake($field, 'arrayOf'))){
+            if($type === 'array' && array_key_exists('arrayOf', $field)){
 
                 if(!ake($array, $name)) continue;
 
@@ -712,7 +712,7 @@ class Model extends \Hazaar\Model\Strict {
         if($field instanceof \stdClass)
             $field = (array)$field;
 
-        if(is_array($field)){
+        if(is_array($field) && $array[$name] !== null){
 
             //Look into sub-fields
             if(array_key_exists('items', $field)){
@@ -727,6 +727,23 @@ class Model extends \Hazaar\Model\Strict {
                         $array[$name] = array(); //Ensure list fields are always an array
 
                 }
+
+            }elseif((($options = ake($field, 'options')) || ($options = ake($field, 'lookup'))) 
+                && !(is_array($array[$name]) && array_key_exists('__hz_value', $array[$name]))){
+
+                if(is_string($options))
+                    $options = (object)array('url' => $options);
+
+                if($url = ake($options, 'url')){
+
+                    if(!($data = $this->api($this->matchReplace($url), $options)))
+                        return false;
+
+                    $options = $this->__convert_data($data, ake($options, 'value', 'value'), ake($options, 'label', 'label'));
+
+                }
+
+                $array[$name] = $value = ['__hz_value' => $array[$name], '__hz_label' => ake($options, $array[$name], $array[$name])];
 
             }
 
