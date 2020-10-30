@@ -1015,14 +1015,14 @@ class Model extends \Hazaar\Model\Strict {
         if($value && !($value instanceof \Hazaar\Model\Strict
             || $value instanceof \Hazaar\Model\ChildArray
             || $value instanceof \Hazaar\Model\DataBinderValue)
-            && ($options = ake($field, 'options'))){
+            && (($options = ake($field, 'options')) || ($options = ake($field, 'lookup')))){
 
             if(is_string($options))
                 $options = (object)array('url' => $options);
 
             if($options instanceof \stdClass && property_exists($options, 'url')){
 
-                if($data = $this->api($this->matchReplace($options->url)))
+                if($data = $this->api($this->matchReplace($options->url), $options))
                     $field->options = $this->__convert_data($data, ake($options, 'value', 'value'), ake($options, 'label', 'label'));
 
             }
@@ -1083,7 +1083,7 @@ class Model extends \Hazaar\Model\Strict {
 
                 if($options instanceof \stdClass && property_exists($options, 'url')){
 
-                    if($data = $this->api($this->matchReplace($options->url)))
+                    if($data = $this->api($this->matchReplace($options->url), $options))
                         $field->options = $this->__convert_data($data, ake($options, 'value', 'value'), ake($options, 'label', 'label'));
 
                 }
@@ -1166,7 +1166,7 @@ class Model extends \Hazaar\Model\Strict {
 
                 if(!is_int($k)) break;
 
-                $result[ake($v, $valueKey)] = ake($v, $labelKey);
+                $result[ake($v, $valueKey)] = (strpos($labelKey, '{{') !== false) ? $this->matchReplace($labelKey, false, null, null, $v) : ake($v, $labelKey);
 
             }
 
@@ -1338,7 +1338,7 @@ class Model extends \Hazaar\Model\Strict {
 
     }
 
-    public function matchReplace($string, $use_label = false, $params = array(), $default_value = null){
+    public function matchReplace($string, $use_label = false, $params = array(), $default_value = null, $data = null){
 
         $settings = array_to_dot_notation(array('params' => $params));
 
@@ -1348,7 +1348,7 @@ class Model extends \Hazaar\Model\Strict {
 
             if($default_value === null){
 
-                $value = $this->get($match[2]);
+                $value = (is_array($data) || $data instanceof \stdClass) ? ake($data, $match[2]) : $this->get($match[2]);
 
                 if (substr($match[2], 0, 5) === 'this.')
                     $value = ake($settings, substr($match[2], 5));
@@ -1377,20 +1377,17 @@ class Model extends \Hazaar\Model\Strict {
 
     public function api($target, $args = array()){
 
-        if(!is_array($args))
-            $args = array();
-
-        $args['form'] = $this->toArray();
-
-        $args['def'] = $this->getFormDefinition(true);
-
-        $args['name'] = $this->getName();
+        $params = array(
+            'form' => $this->toArray(),
+            'def' => $this->getFormDefinition(true),
+            'name' => $this->getName()
+        );
 
         if(strpos($target, ':') !== false){
 
             $url = new \Hazaar\Application\Url($target);
 
-            $url->setParams($args);
+            $url->setParams($params);
 
             if(!($result = json_decode(file_get_contents((string)$url), true)))
                 throw new \Exception('Form API call failed.  Invalid response!');
@@ -1399,13 +1396,13 @@ class Model extends \Hazaar\Model\Strict {
 
             $router = new \Hazaar\Application\Router(new \Hazaar\Application\Config);
 
-            $request = new \Hazaar\Application\Request\Http($args, false, 'POST');
+            $request = new \Hazaar\Application\Request\Http($params, false, ake($args, 'method', 'GET'));
 
             if($pos = strpos($target, '?')){
 
-                parse_str(substr($target, $pos + 1), $params);
+                parse_str(substr($target, $pos + 1), $url_params);
 
-                $request->setParams($params);
+                $request->setParams($url_params);
 
                 $target = substr($target, 0, $pos);
 
