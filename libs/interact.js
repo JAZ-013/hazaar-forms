@@ -1313,7 +1313,8 @@ dataBinderArray.prototype.diff = function (data, callback) {
         }
         if ('arrayOf' in def && !('fields' in def)) def.fields = {
             "__list_value": $.extend(true, {}, { "required": def.required, "disabled": def.disabled }, (typeof def.arrayOf === 'object' ? def.arrayOf : { "type": def.arrayOf }))
-        };
+        }
+        else if(!('fields' in def)) return group;
         let bump = def.fields && 'label' in def.fields[Object.keys(def.fields)[0]];
         let layout = _resolve_field_layout(host, def.fields, def.layout);
         let template = $('<div class="itemlist-item">');
