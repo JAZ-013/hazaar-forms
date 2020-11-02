@@ -304,7 +304,7 @@ dataBinderArray.prototype.diff = function (data, callback) {
         if (inc_return === true) code += "return ( " + evaluate.replace(/[\;\s]+$/, '') + " );";
         else code += evaluate;
         try {
-            let eval_host = host.parent ? host.parent : host;
+            let eval_host = host.formParent ? host.formParent : host;
             return (new Function('form', 'tags', 'formValue', 'formItem', 'key', code))
                 .call(this, eval_host.data, eval_host.tags, item_data ? item_data : null, item_data ? item_data.parent : null, key);
         } catch (e) {
@@ -341,7 +341,7 @@ dataBinderArray.prototype.diff = function (data, callback) {
 
     function _match_replace(host, str, extra, force, use_html) {
         if (!str) return null;
-        let mhost = host && host.parent ? host.parent : host;
+        let mhost = host && host.formParent ? host.formParent : host;
         while ((match = str.match(/\{\{([\W]*)([\w\.]+)\}\}/)) !== null) {
             let modifiers = match[1].split(''), value = mhost ? _get_data_item(mhost.data, match[2]) : null;
             if (value === null) value = match[2].substr(0, 5) === 'this.'
@@ -1314,7 +1314,7 @@ dataBinderArray.prototype.diff = function (data, callback) {
         if ('arrayOf' in def && !('fields' in def)) def.fields = {
             "__list_value": $.extend(true, {}, { "required": def.required, "disabled": def.disabled }, (typeof def.arrayOf === 'object' ? def.arrayOf : { "type": def.arrayOf }))
         }
-        else if(!('fields' in def)) return group;
+        else if (!('fields' in def)) return group;
         let bump = def.fields && 'label' in def.fields[Object.keys(def.fields)[0]];
         let layout = _resolve_field_layout(host, def.fields, def.layout);
         let template = $('<div class="itemlist-item">');
@@ -1867,6 +1867,7 @@ dataBinderArray.prototype.diff = function (data, callback) {
 
     //Signal that we're loading something and should show the loader.  MUST call _ready() when done.
     function _track(host) {
+        if ('formParent' in host && host.formParent) return _track(host.formParent);
         host.objects.container.hide();
         host.objects.loader.show();
         host.loading++;
@@ -1874,9 +1875,9 @@ dataBinderArray.prototype.diff = function (data, callback) {
 
     //Signal that everything is ready to go
     function _ready(host) {
+        if ('formParent' in host && host.formParent) return _ready(host.formParent);
         host.loading--;
-        if (host.loading > 0 || host.page === null)
-            return;
+        if (host.loading > 0 || host.page === null) return;
         host.objects.loader.hide();
         host.objects.container.show();
         $(host).trigger('ready', [host.def]);
@@ -2232,7 +2233,7 @@ dataBinderArray.prototype.diff = function (data, callback) {
         host.apiCache = {};
         host.required = {};
         host.disabled = {};
-        host.parent = parent_host;
+        host.formParent = parent_host;
         return host;
     }
 
@@ -2442,8 +2443,8 @@ $.fn.fileUpload = function () {
     host._preview = function (file) {
         let o = $('<div class="dz-preview">');
         if (file.preview) o.append($('<img>').attr('src', file.preview));
-        else if (typeof file.type === 'string'){
-            if(file.type.substr(0, 5) === 'image') {
+        else if (typeof file.type === 'string') {
+            if (file.type.substr(0, 5) === 'image') {
                 if (file.url) o.append($('<img>').attr('src', file.url));
                 else if (file instanceof File && file.type.substr(0, 5) === 'image') {
                     let reader = new FileReader();
