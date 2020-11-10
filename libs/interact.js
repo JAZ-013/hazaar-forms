@@ -467,7 +467,7 @@ dataBinderArray.prototype.diff = function (data, callback) {
             let date = input.datepicker('getDate');
             item_data.set(date ? date.getFullYear() + '-' + (date.getMonth() + 1) + '-' + date.getDate() : null, input.datepicker('getFormattedDate'));
         } else if (def.other === true) item_data.other = input.val();
-        else item_data.value = _convert_data_type(def, input.val());
+        else item_data.set(_convert_data_type(def, input.val()));
         if (item_data.enabled() === false) return false;
         $(host).trigger('change', [item_data]);
         return false;
@@ -485,6 +485,8 @@ dataBinderArray.prototype.diff = function (data, callback) {
                 let other = input.children('option[value="' + item_data.value + '"]').data('other') || null;
                 item_data.enabled(false);
                 item_data.set(item_data.value, input.children('option:selected').text(), other);
+            } else if (item_data && input.is('input[type="radio"]') && item_data.enabled() === true) {
+                item_data.set(item_data.value, input.next().text());
             } else if (typeof update === 'boolean' || update && ('url' in update || host.settings.update === true)) {
                 let options = {
                     originator: def.name,
