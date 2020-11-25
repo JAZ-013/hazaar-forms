@@ -661,7 +661,7 @@ class Model extends \Hazaar\Model\Strict {
             $array = parent::toArray(false, null, true, true);
 
         if($fields === null)
-            $fields = ake($this->getFormDefinition(true), 'fields', array());
+            $fields = $this->fields;
 
         foreach($fields as $name => $field){
 
