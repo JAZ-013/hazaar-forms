@@ -1383,6 +1383,7 @@ dataBinderArray.prototype.diff = function (data, callback) {
         template.append(_form_field(host, { fields: layout, row: true }, true, false, false, ud, true));
         item_data.watch(function (item) {
             let item_name = item.attr('data-bind'), item_data = _get_data_item(host.data, item_name);
+            item_data.extend(_define(def.fields), true);
             item.find('select,input').each(function (index, item) {
                 let input = $(item), def = input.data('def');
                 if (input.is('select')) {
