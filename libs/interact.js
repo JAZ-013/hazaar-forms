@@ -1429,7 +1429,6 @@ dataBinderArray.prototype.diff = function (data, callback) {
                     def = input.data('def');
                     def.name = item_data.attrName + '.' + input.attr('name');
                     def.headless = false;
-                    console.log(def);
                     input.replaceWith(_input_file(host, def));
                 }
             });
@@ -1457,6 +1456,13 @@ dataBinderArray.prototype.diff = function (data, callback) {
             .on('click', '.btn-danger', function (event) {
                 let index = Array.from(this.parentNode.parentNode.parentNode.children).indexOf(this.parentNode.parentNode);
                 let list = $(event.currentTarget.parentNode.parentNode.parentNode);
+                let uploads = $(event.currentTarget.parentNode.parentNode).find('.form-fileupload');
+                if (uploads.length > 0) {
+                    uploads.each(function (index, item) {
+                        let files = $(item).fileUpload('list');
+                        for (let f of files) host.deloads.push({ field: uploads.attr('name'), file: f.name });
+                    });
+                }
                 item_data.unset(index);
                 list.find('input,textarea,select').each(function (index, item) {
                     let input = $(item);
