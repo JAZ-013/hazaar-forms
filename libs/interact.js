@@ -375,6 +375,29 @@ dataBinderArray.prototype.diff = function (data, callback) {
         return item;
     }
 
+    function _field_to_html(layout, name) {
+        if (Array.isArray(layout)) {
+            for (let x in layout) layout[x] = _field_to_html(layout[x]);
+            return layout;
+        } else if ('fields' in layout) {
+            for (let x in layout.fields) layout.fields[x] = _field_to_html(layout.fields[x], (name || layout.name) + '.' + x);
+            return layout;
+        }
+        return { html: '<div data-bind="' + (name || layout.name) + '">', weight: layout.weight || 1 };
+    }
+
+    function _add_param_to_fields(layout, params) {
+        if (Array.isArray(layout)) {
+            for (let x in layout) layout[x] = _add_param_to_fields(layout[x], params);
+            return layout;
+        } else if ('fields' in layout) {
+            for (let x in layout.fields) layout.fields[x] = _add_param_to_fields(layout.fields[x], params);
+            return layout;
+        }
+        for (let x in params) layout[x] = params[x];
+        return layout;
+    }
+
     function _make_required(host, def, input) {
         if (!('required' in def)) return;
         if (typeof def.required !== 'boolean') host.events.required.push(input);
@@ -1004,6 +1027,7 @@ dataBinderArray.prototype.diff = function (data, callback) {
         }).on('pop', function (event, field_name, value) {
             input.fileUpload('remove', value.save());
         });
+        if (def.headless === true) return input;
         _post(host, 'fileinfo', { 'field': def.name }, true).done(function (response) {
             if (!response.ok) return;
             let item_data = _get_data_item(host.data, response.field);
@@ -1294,17 +1318,6 @@ dataBinderArray.prototype.diff = function (data, callback) {
         return input;
     }
 
-    function _field_to_html(layout, name) {
-        if (Array.isArray(layout)) {
-            for (let x in layout) layout[x] = _field_to_html(layout[x]);
-            return layout;
-        } else if ('fields' in layout) {
-            for (let x in layout.fields) layout.fields[x] = _field_to_html(layout.fields[x], (name || layout.name) + '.' + x);
-            return layout;
-        }
-        return { html: '<div data-bind="' + (name || layout.name) + '">', weight: layout.weight || 1 };
-    }
-
     function _input_list(host, def) {
         let item_data = _get_data_item(host.data, def.name);
         let group = $('<div class="itemlist">').addClass(host.settings.styleClasses.group);
@@ -1318,7 +1331,7 @@ dataBinderArray.prototype.diff = function (data, callback) {
         }
         else if (!('fields' in def)) return group;
         let bump = def.fields && 'label' in def.fields[Object.keys(def.fields)[0]];
-        let layout = _resolve_field_layout(host, def.fields, def.layout);
+        let layout = _add_param_to_fields(_resolve_field_layout(host, def.fields, def.layout), { headless: true });
         let template = $('<div class="itemlist-item">');
         if (host.viewmode !== true && _eval(host, def.allow_remove, true, item_data, def.name)) {
             template.append($('<div class="itemlist-item-rm">').html([
@@ -1330,14 +1343,19 @@ dataBinderArray.prototype.diff = function (data, callback) {
             let sub_host = _get_empty_host(ud, host), new_item = new dataBinder(_define(def.fields), def.name, null, def.name);
             sub_host.settings = $.extend({}, $.fn.hzForm.defaults, host.settings);
             sub_host.validate = false;
+            sub_host.headless = true;
             sub_host.data = new_item;
             sub_host.def = { fields: def.fields };
             let btn = $('<button type="button" class="btn btn-success btn-sm">').html(("btnLabels" in def && "add" in def.btnLabels ? def.btnLabels.add : _icon(host, 'plus')));
             let fieldDIV = _form_field(sub_host, { fields: layout, row: true }, true, ud, ud, ud, true)
                 .addClass('itemlist-newitem')
                 .attr('data-field', def.name);
-            fieldDIV.find('input,textarea,select').attr('data-bind-ns', def.name).keypress(function (event) {
-                if (event.which === 13) $(event.target).parent().parent().parent().children('.itemlist-newitem-add').children('button').click();
+            fieldDIV.find('input,textarea,select').each(function (index, item) {
+                let o = $(item);
+                if (o.parent().is('.form-fileupload')) o = o.parent();
+                o.attr('data-bind-ns', def.name).keypress(function (event) {
+                    if (event.which === 13) $(event.target).parent().parent().parent().children('.itemlist-newitem-add').children('button').click();
+                })
             });
             fieldDIV.find('select').each(function (index, item) {
                 let select = $(item), def = select.data('def');
@@ -1358,10 +1376,10 @@ dataBinderArray.prototype.diff = function (data, callback) {
                 let valid = true;
                 fieldDIV.find('input,select,textarea').each(function (index, item) {
                     if (!item.name) return;
-                    let input = $(item), value = null, def = input.data('def'), item_data = _get_data_item(sub_host.data, input.attr('data-bind'));
+                    let input = $(item), value = null, def = input.data('def'), sub_item_data = _get_data_item(sub_host.data, input.attr('data-bind'));
                     if (input.is('[type=checkbox]')) value = input.is(':checked');
                     else value = input.val();
-                    if (item_data && item_data.attrName in sub_host.required && sub_host.required[item_data.attrName] === true && !value) {
+                    if (sub_item_data && sub_item_data.attrName in sub_host.required && sub_host.required[sub_item_data.attrName] === true && !value) {
                         input.toggleClass('is-invalid', true);
                         valid = false;
                         return;
@@ -1371,11 +1389,20 @@ dataBinderArray.prototype.diff = function (data, callback) {
                         let date = input.datepicker('getDate');
                         value = date.getFullYear() + '-' + (date.getMonth() + 1) + '-' + date.getDate();
                     }
-                    let sub_item_data = _get_data_item(sub_host.data, item.name, false, value);
                     if (sub_item_data) sub_item_data.set(value, null, null, false);
                 });
                 if (valid !== true) return;
-                item_data.push(sub_host.data.save());
+                let new_index = item_data.push(sub_host.data.save());
+                if (sub_host.uploads.length > 0) {
+                    for (f of sub_host.uploads) {
+                        let new_item = item_data[new_index][f.field], d = def.fields[f.field];
+                        f.field = d.name = new_item.attrName;
+                        new_item.find().replaceWith(_input_file(host, d));
+                        new_item.push(_objectify_file(f.file));
+                        host.uploads.push(f);
+                    }
+
+                }
                 sub_host.data.empty();
             });
         }
@@ -1384,17 +1411,26 @@ dataBinderArray.prototype.diff = function (data, callback) {
         item_data.watch(function (item) {
             let item_name = item.attr('data-bind'), item_data = _get_data_item(host.data, item_name);
             item_data.extend(_define(def.fields), true);
-            item.find('select,input').each(function (index, item) {
+            item.find('select,input,textarea').each(function (index, item) {
                 let input = $(item), def = input.data('def');
-                if (input.is('select')) {
-                    if ('options' in def) _input_options(host, def, input, item_data, function (select, options) {
-                        _input_options_populate(host, options, select, false, item_data);
-                    });
-                } else if (def.type === 'date' && 'format' in def) {
-                    let child_item_data = item_data[def.name];
-                    input.data('datepicker', null);
-                    input.datepicker(def.__datepicker_options);
-                    if (child_item_data && child_item_data.value) input.datepicker('setDate', new Date(child_item_data.value));
+                if (def) {
+                    if (input.is('select')) {
+                        if ('options' in def) _input_options(host, def, input, item_data, function (select, options) {
+                            _input_options_populate(host, options, select, false, item_data);
+                        });
+                    } else if (def.type === 'date' && 'format' in def) {
+                        let child_item_data = item_data[def.name];
+                        input.data('datepicker', null);
+                        input.datepicker(def.__datepicker_options);
+                        if (child_item_data && child_item_data.value) input.datepicker('setDate', new Date(child_item_data.value));
+                    }
+                } else if (input.parent().is('.form-fileupload')) {
+                    input = input.parent();
+                    def = input.data('def');
+                    def.name = item_data.attrName + '.' + input.attr('name');
+                    def.headless = false;
+                    console.log(def);
+                    input.replaceWith(_input_file(host, def));
                 }
             });
             $(item).find('.form-group,.form-section').each(function (index, input) {

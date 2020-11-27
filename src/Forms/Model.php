@@ -663,6 +663,9 @@ class Model extends \Hazaar\Model\Strict {
         if($fields === null)
             $fields = $this->fields;
 
+        if(!is_array($fields))
+            return $array;
+            
         foreach($fields as $name => $field){
 
             $type = ake($field, 'type');
