@@ -1026,12 +1026,14 @@ dataBinderArray.prototype.diff = function (data, callback) {
             input.fileUpload('add', value.save());
         }).on('pop', function (event, field_name, value) {
             input.fileUpload('remove', value.save());
+        }).on('empty', function (event, field_name) {
+            $(this).fileUpload('reset');
         });
         if (def.headless === true) return input;
         _post(host, 'fileinfo', { 'field': def.name }, true).done(function (response) {
             if (!response.ok) return;
             let item_data = _get_data_item(host.data, response.field);
-            item_data.empty();
+            item_data.empty(true);
             for (let x in response.files) if (host.deloads.findIndex(function (e) {
                 return e.field === response.field && e.file === response.files[x].name;
             }) < 0) item_data.push(_objectify_file(response.files[x]));
@@ -2439,6 +2441,9 @@ $.fn.fileUpload = function () {
                 break;
             case 'list':
                 return host.files;
+            case 'reset':
+                host._reset();
+                break;
         }
         return this;
     }
@@ -2606,6 +2611,11 @@ $.fn.fileUpload = function () {
             host.o.dzwords = $('<button>').addClass(host.options.btnClass).html(host.options.btnLabel).appendTo($(host));
             this.o.list.appendTo($(host).addClass('single'));
         }
+    };
+    host._reset = function(){
+        this.o.list.empty();
+        this.files = [];
+        this.o.dzwords.show();
     };
     host._render(host);
     host._registerEvents();
