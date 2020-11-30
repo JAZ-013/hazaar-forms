@@ -1030,10 +1030,10 @@ dataBinderArray.prototype.diff = function (data, callback) {
             $(this).fileUpload('reset');
         });
         if (def.headless === true) return input;
-        _post(host, 'fileinfo', { 'field': def.name }, true).done(function (response) {
+        _post(host, 'fileinfo', { 'field': def.name }, host.running !== 1).done(function (response) {
             if (!response.ok) return;
             let item_data = _get_data_item(host.data, response.field);
-            item_data.empty(true);
+            item_data.empty();
             for (let x in response.files) if (host.deloads.findIndex(function (e) {
                 return e.field === response.field && e.file === response.files[x].name;
             }) < 0) item_data.push(_objectify_file(response.files[x]));
@@ -1397,13 +1397,12 @@ dataBinderArray.prototype.diff = function (data, callback) {
                 let new_index = item_data.push(sub_host.data.save());
                 if (sub_host.uploads.length > 0) {
                     for (f of sub_host.uploads) {
-                        let new_item = item_data[new_index][f.field], d = def.fields[f.field];
-                        f.field = d.name = new_item.attrName;
-                        new_item.find().replaceWith(_input_file(host, d));
+                        let new_item = item_data[new_index][f.field];
+                        f.field = new_item.attrName;
                         new_item.push(_objectify_file(f.file));
                         host.uploads.push(f);
                     }
-
+                    sub_host.uploads = [];
                 }
                 sub_host.data.empty();
             });
@@ -2230,7 +2229,7 @@ dataBinderArray.prototype.diff = function (data, callback) {
             host.data.commit();
             _eval_form_pages(host, host.def.pages);
             $(host).trigger('data', [host.data.save()]);
-            _nav(host, host.page, null, true);
+            _nav(host, host.page, function () { host.running = 1; }, true);
         };
         if (initUrl) host.settings.endpoints.init = initUrl;
         if (host.standalone === true || (host.standalone = ('def' in host.settings)) === true) {
@@ -2274,6 +2273,7 @@ dataBinderArray.prototype.diff = function (data, callback) {
         host.pageFields = [];
         host.queue = [];
         host.loading = 0;
+        host.running = 0;
         host.uploads = [];
         host.deloads = [];
         host.monitor = {};
@@ -2612,7 +2612,7 @@ $.fn.fileUpload = function () {
             this.o.list.appendTo($(host).addClass('single'));
         }
     };
-    host._reset = function(){
+    host._reset = function () {
         this.o.list.empty();
         this.files = [];
         this.o.dzwords.show();
