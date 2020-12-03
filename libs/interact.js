@@ -1316,7 +1316,7 @@ dataBinderArray.prototype.diff = function (data, callback) {
         if ('arrayOf' in def && !('fields' in def)) def.fields = {
             "__list_value": $.extend(true, {}, { "required": def.required, "disabled": def.disabled }, (typeof def.arrayOf === 'object' ? def.arrayOf : { "type": def.arrayOf }))
         }
-        else if(!('fields' in def)) return group;
+        else if (!('fields' in def)) return group;
         let bump = def.fields && 'label' in def.fields[Object.keys(def.fields)[0]];
         let layout = _resolve_field_layout(host, def.fields, def.layout);
         let template = $('<div class="itemlist-item">');
@@ -2140,11 +2140,19 @@ dataBinderArray.prototype.diff = function (data, callback) {
 
     function _convert_simple_form(def) {
         let _convert_simple_form_fields = function (def, fields) {
-            for (item of def) {
-                if (Array.isArray(item)) _convert_simple_form_fields(item, fields);
-                else if ('name' in item) {
-                    fields[item.name] = item;
-                    item = item.name;
+            if (Array.isArray(def)) for (let x in def) _convert_simple_form_fields(def[x], fields);
+            else if (typeof def === 'object') {
+                if ('sections' in def) _convert_simple_form_fields(def.sections, fields);
+                else if ('fields' in def) _convert_simple_form_fields(def.fields, fields);
+                else if ('name' in def) {
+                    let parts = def.name.split('.');
+                    for (let x = 1; x <= parts.length; x++) {
+                        let part = parts[x - 1];
+                        if (x < parts.length) {
+                            fields[part] = { fields: {} };
+                            fields = fields[part].fields;
+                        } else if (!(part in fields)) fields[part] = def;
+                    }
                 }
             }
         }
@@ -2445,8 +2453,8 @@ $.fn.fileUpload = function () {
     host._preview = function (file) {
         let o = $('<div class="dz-preview">');
         if (file.preview) o.append($('<img>').attr('src', file.preview));
-        else if (typeof file.type === 'string'){
-            if(file.type.substr(0, 5) === 'image') {
+        else if (typeof file.type === 'string') {
+            if (file.type.substr(0, 5) === 'image') {
                 if (file.url) o.append($('<img>').attr('src', file.url));
                 else if (file instanceof File && file.type.substr(0, 5) === 'image') {
                     let reader = new FileReader();
