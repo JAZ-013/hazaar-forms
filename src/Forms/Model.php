@@ -667,7 +667,7 @@ class Model extends \Hazaar\Model\Strict {
 
             $type = ake($field, 'type');
 
-            if($type === 'array' && array_key_exists('arrayOf', $field)){
+            if($type === 'array' && is_array(ake($field, 'arrayOf'))){
 
                 if(!ake($array, $name)) continue;
 
