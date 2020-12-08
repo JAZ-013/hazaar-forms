@@ -1899,7 +1899,7 @@ dataBinderArray.prototype.diff = function (data, callback) {
             host.data.commit();
             _post(host, 'save', params, false).done(function (response) {
                 if (!response.ok) {
-                    return $(host).trigger('saverror', [{
+                    return $(host).trigger('saverror', host.standalone ? response : [{
                         error: { str: response.reason || "An unknown error occurred while saving the form!" }
                     }, response.params]);
                 }
@@ -1914,7 +1914,7 @@ dataBinderArray.prototype.diff = function (data, callback) {
                         } else $(host).trigger('saverror', [{ error: { str: 'File upload failed' } }, response.params, queue]);
                     });
                 } else {
-                    $(host).trigger('save', [response.result, response.params]);
+                    $(host).trigger('save', host.standalone ? response : [response.result, response.params]);
                     if (callbacks.done) callbacks.done();
                 }
             }).fail(function (error) {
