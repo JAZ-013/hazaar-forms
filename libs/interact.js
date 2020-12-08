@@ -467,7 +467,11 @@ dataBinderArray.prototype.diff = function (data, callback) {
             let date = input.datepicker('getDate');
             item_data.set(date ? date.getFullYear() + '-' + (date.getMonth() + 1) + '-' + date.getDate() : null, input.datepicker('getFormattedDate'));
         } else if (def.other === true) item_data.other = input.val();
-        else item_data.set(_convert_data_type(def, input.val()));
+        else {
+            let value = _convert_data_type(def, input.val());
+            if (item_data instanceof dataBinder) item_data.populate(value);
+            else item_data.set(value);
+        }
         if (item_data.enabled() === false) return false;
         $(host).trigger('change', [item_data]);
         return false;
