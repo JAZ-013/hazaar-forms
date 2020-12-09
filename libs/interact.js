@@ -686,7 +686,7 @@ dataBinderArray.prototype.diff = function (data, callback) {
             let o = typeof options.value === 'object' ? options.value : typeof options.other === 'object' ? options.other : null;
             return _input_select_multi_items(host, o, container);
         }
-        _input_select_multi_items(host, options, container);
+        _input_select_multi_items(host, ('data' in options) ? options.data : options, container);
         return true;
     }
 
@@ -831,8 +831,8 @@ dataBinderArray.prototype.diff = function (data, callback) {
             let o = typeof options.value === 'object' ? options.value : typeof options.other === 'object' ? options.other : null;
             return callback(host, {}, o, select, o ? false : true);
         }
-        if (!(options !== null && typeof options === 'object' && 'url' in options))
-            return callback(host, options, options, select);
+        if (!(options !== null && typeof options === 'object' && ('url' in options)))
+            return callback(host, options, ('data' in options) ? options.data : options, select);
         let matches = options.url.match(/\{\{[\w\.]+\}\}/g), def = select.data('def');
         for (let x in matches) {
             let match = matches[x].substr(2, matches[x].length - 4);
