@@ -671,7 +671,8 @@ dataBinderArray.prototype.diff = function (data, callback) {
     }
 
     function _input_select_multi_populate(host, options, container, track) {
-        if (options !== null && typeof options === 'object' && 'url' in options) {
+        if (!options) return false;
+        if (typeof options === 'object' && 'url' in options) {
             let matches = options.url.match(/\{\{[\w\.]+\}\}/g), def = container.data('def');
             for (let x in matches) {
                 let match = matches[x].substr(2, matches[x].length - 4);
@@ -1465,6 +1466,7 @@ dataBinderArray.prototype.diff = function (data, callback) {
     }
 
     function _resolve_field_layout(host, fields, layout, name, a) {
+        if (!fields) return [];
         if (!layout) layout = Array.isArray(fields) ? $.extend(true, [], fields) : Object.keys(fields);
         for (let x in layout) {
             if (typeof layout[x] === 'string') layout[x] = { name: layout[x] };
