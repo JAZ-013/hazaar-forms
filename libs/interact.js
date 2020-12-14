@@ -1201,6 +1201,10 @@ dataBinderArray.prototype.diff = function (data, callback) {
         return inputDIV;
     }
 
+    function _input_multitext(host, def){
+        return $('<input type="text">');
+    }
+
     function _input_std(host, type, def, no_group) {
         let group = $('<div>').addClass(host.settings.styleClasses.inputGroup);
         let input = null, item_data = _get_data_item(host.data, def.name);
@@ -1254,7 +1258,7 @@ dataBinderArray.prototype.diff = function (data, callback) {
             else if (def.type === 'button') return;
             else input = $('<span>').attr('data-bind', item_data ? item_data.attrName : '').html(item_data ? item_data.toString() : '');
         } else if (def.type === 'array' && !('options' in def)) {
-            input = _input_list(host, def);
+            input = ('arrayOf' in def && def.arrayOf === 'text') ? _input_multitext(host, def) : _input_list(host, def);
         } else if (def.type) {
             if ('options' in def) {
                 input = def.type === 'array' ? _input_select_multi(host, def) : _input_select(host, def, populate);
