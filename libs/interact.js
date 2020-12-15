@@ -1213,7 +1213,7 @@ dataBinderArray.prototype.diff = function (data, callback) {
                 $('<div class="input-mt-item-rm">').html(_icon(host, 'times', 'Remove')).click(function (e) { _rm_multitext_item(e); })
             ]).data('item', item).appendTo(container);
         };
-        $('<input type="text" class="form-control">').appendTo(group).on('keypress', function (e) {
+        _input_std(host, 'text', { name: 'something' }, true).appendTo(group).on('keypress', function (e) {
             if (e.which !== 13) return;
             item_data.push($(this).val());
             $(this).val('');
@@ -1233,7 +1233,6 @@ dataBinderArray.prototype.diff = function (data, callback) {
     }
 
     function _input_std(host, type, def, no_group) {
-        let group = $('<div>').addClass(host.settings.styleClasses.inputGroup);
         let input = null, item_data = _get_data_item(host.data, def.name);
         if (def.multiline) {
             input = $('<textarea>').addClass(host.settings.styleClasses.input);
@@ -1257,7 +1256,8 @@ dataBinderArray.prototype.diff = function (data, callback) {
                     ? _input(host, sf, null, null, true).css('text-align', 'left')
                     : $('<span>').html(_match_replace(host, def.prefix, null, true, true))).addClass(host.settings.styleClasses.inputGroupText));
         }
-        group.append(input);
+        if (no_group === true) return input;
+        let group = $('<div>').addClass(host.settings.styleClasses.inputGroup);
         if (def.suffix || def.copy === true || def.reveal === true) {
             let suffix = $('<div>').addClass(host.settings.styleClasses.inputGroupAppend).appendTo(group);
             if (def.suffix) {
@@ -1275,7 +1275,7 @@ dataBinderArray.prototype.diff = function (data, callback) {
                 .html($('<i class="fa fa-copy" title="Copy to clipboard">')));
         }
         if (item_data && item_data.value) _validate_input(host, input);
-        return group;
+        return group.append(input);
     }
 
     function _input(host, def, populate, item_data, no_group) {
