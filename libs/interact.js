@@ -1201,8 +1201,35 @@ dataBinderArray.prototype.diff = function (data, callback) {
         return inputDIV;
     }
 
-    function _input_multitext(host, def){
-        return $('<input type="text">');
+    function _input_multitext(host, def) {
+        let group = $('<div class="form-group form-multi-text">'), item_data = _get_data_item(host.data, def.name), container;
+        let _rm_multitext_item = function (e) {
+            let o = $(e.currentTarget.parentNode);
+            item_data.remove(o.children('span').text());
+        };
+        let _add_multitext_item = function (item) {
+            $('<div class="input-mt-item">').html([
+                $('<span>').html(item.toString()),
+                $('<div class="input-mt-item-rm">').html(_icon(host, 'times', 'Remove')).click(function (e) { _rm_multitext_item(e); })
+            ]).data('item', item).appendTo(container);
+        };
+        $('<input type="text" class="form-control">').appendTo(group).on('keypress', function (e) {
+            if (e.which !== 13) return;
+            item_data.push($(this).val());
+            $(this).val('');
+        })
+        container = $('<div class="input-mt-items">')
+            .attr('data-bind', def.name)
+            .appendTo(group)
+            .on('push', function (e, name, item) { _add_multitext_item(item); })
+            .on('pop', function (e, name, item) {
+                console.log(this);
+                $(this).children().each(function (index, o) {
+                    if ($(o).data('item') === item) $(o).remove();
+                })
+            });
+        if (item_data.length > 0) for (x of item_data) _add_multitext_item(x);
+        return group;
     }
 
     function _input_std(host, type, def, no_group) {
