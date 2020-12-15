@@ -1213,9 +1213,11 @@ dataBinderArray.prototype.diff = function (data, callback) {
                 $('<div class="input-mt-item-rm">').html(_icon(host, 'times', 'Remove')).click(function (e) { _rm_multitext_item(e); })
             ]).data('item', item).appendTo(container);
         };
-        _input_std(host, 'text', { name: 'something' }, true).appendTo(group).on('keypress', function (e) {
+        let inputDef = Object.assign({}, def, { name: '__hz_input_mt_' + def.name, type: 'text' });
+        _input_std(_get_empty_host(ud, host), 'text', inputDef, true).appendTo(group).on('keypress', function (e) {
             if (e.which !== 13) return;
-            item_data.push($(this).val());
+            let value = $(this).val();
+            if (item_data.indexOf(value) < 0) item_data.push(value);
             $(this).val('');
         });
         container = $('<div class="input-mt-items">')
@@ -2281,7 +2283,10 @@ dataBinderArray.prototype.diff = function (data, callback) {
         host.apiCache = {};
         host.required = {};
         host.disabled = {};
-        host.parent = parent_host;
+        if (parent_host) {
+            host.parent = parent_host;
+            host.settings = parent_host.settings;
+        }
         return host;
     }
 
