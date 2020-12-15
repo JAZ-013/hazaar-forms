@@ -1217,7 +1217,7 @@ dataBinderArray.prototype.diff = function (data, callback) {
             if (e.which !== 13) return;
             item_data.push($(this).val());
             $(this).val('');
-        })
+        });
         container = $('<div class="input-mt-items">')
             .attr('data-bind', def.name)
             .appendTo(group)

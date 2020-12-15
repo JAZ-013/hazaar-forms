@@ -296,18 +296,28 @@ svg:not(:root).forms-icon{
 .form-multi-text {
     border: 1px solid #ced4da;
     border-radius: .25rem;
-    float: left;
     width: 100%;
 }
 
-.form-multi-text .form-control {
+.form-multi-text input.form-control {
     border: none;
 }
 
+.form-multi-text input.form-control[type=text]:focus {
+    border: none;
+    box-shadow: none;
+}
+
 .form-multi-text .input-mt-items {
-    float: left;
     width: 100%;
 }
+
+.form-multi-text .input-mt-items::after {
+    content: "";
+    display: table;
+    clear: both;
+}
+
 .form-multi-text .input-mt-item {
     float: left;
     border: 1px solid #ddd;
