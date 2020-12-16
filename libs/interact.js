@@ -1230,7 +1230,7 @@ dataBinderArray.prototype.diff = function (data, callback) {
             .on('pop', function (e, name, item) {
                 $(this).children().each(function (index, o) { if ($(o).data('item') === item) $(o).remove(); })
             });
-        if (item_data.length > 0) for (x of item_data) _add_multitext_item(x);
+        if (item_data.length > 0) for (let x of item_data) _add_multitext_item(x);
         return group;
     }
 
