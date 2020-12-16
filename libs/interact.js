@@ -227,7 +227,7 @@ dataBinderArray.prototype.diff = function (data, callback) {
             value = value.toString().trim();
         else if (type === 'bool' || type === 'boolean')
             value = _boolify(value);
-        else if (type === 'float' || type === 'double' || type === 'money')
+        else if (type === 'float' || type === 'number' || type === 'double' || type === 'money')
             value = parseFloat(value.replace(/\,/g, ''));
         return value;
     }
@@ -1202,10 +1202,10 @@ dataBinderArray.prototype.diff = function (data, callback) {
     }
 
     function _input_multitext(host, def) {
-        let group = $('<div class="form-group form-multi-text">'), item_data = _get_data_item(host.data, def.name), container;
+        let group = $('<div class="form-multi-text">'), item_data = _get_data_item(host.data, def.name), container;
         let _rm_multitext_item = function (e) {
-            let o = $(e.currentTarget.parentNode);
-            item_data.remove(o.children('span').text());
+            let value = $(e.currentTarget.parentNode).children('span').text();
+            item_data.remove(_convert_data_type(def, value));
         };
         let _add_multitext_item = function (item) {
             $('<div class="input-mt-item">').html([
@@ -1213,11 +1213,12 @@ dataBinderArray.prototype.diff = function (data, callback) {
                 $('<div class="input-mt-item-rm">').html(_icon(host, 'times', 'Remove')).click(function (e) { _rm_multitext_item(e); })
             ]).data('item', item).appendTo(container);
         };
-        let inputDef = Object.assign({}, def, { name: '__hz_input_mt_' + def.name, type: 'text' });
-        _input_std(_get_empty_host(ud, host), 'text', inputDef, true).appendTo(group).on('keypress', function (e) {
+        let inputDef = Object.assign({}, def, { name: '__hz_input_mt_' + def.name, type: def.arrayOf });
+        if (!('hint' in def) || def.hint === true) def.hint = 'Press ENTER to add item to list.';
+        _input_std(_get_empty_host(ud, host), def.arrayOf, inputDef, true).appendTo(group).on('keypress', function (e) {
             if (e.which !== 13) return;
             let value = $(this).val();
-            if (item_data.indexOf(value) < 0) item_data.push(value);
+            if (item_data.indexOf(value) < 0) item_data.push(_convert_data_type(def, value));
             $(this).val('');
         });
         container = $('<div class="input-mt-items">')
@@ -1225,10 +1226,7 @@ dataBinderArray.prototype.diff = function (data, callback) {
             .appendTo(group)
             .on('push', function (e, name, item) { _add_multitext_item(item); })
             .on('pop', function (e, name, item) {
-                console.log(this);
-                $(this).children().each(function (index, o) {
-                    if ($(o).data('item') === item) $(o).remove();
-                })
+                $(this).children().each(function (index, o) { if ($(o).data('item') === item) $(o).remove(); })
             });
         if (item_data.length > 0) for (x of item_data) _add_multitext_item(x);
         return group;
@@ -1236,6 +1234,7 @@ dataBinderArray.prototype.diff = function (data, callback) {
 
     function _input_std(host, type, def, no_group) {
         let input = null, item_data = _get_data_item(host.data, def.name);
+        if (type === 'int' || type === 'integer') type = 'number';
         if (def.multiline) {
             input = $('<textarea>').addClass(host.settings.styleClasses.input);
             if ('height' in def) input.css('height', def.height);
@@ -1252,14 +1251,14 @@ dataBinderArray.prototype.diff = function (data, callback) {
         if (type === 'text' && 'validate' in def && 'maxlen' in def.validate) input.attr('maxlength', def.validate.maxlen);
         if ('format' in def) input.attr('type', 'text').inputmask(def.format);
         if ('placeholder' in def) input.attr('placeholder', def.placeholder);
+        if (no_group === true) return input;
+        let group = $('<div>').addClass(host.settings.styleClasses.inputGroup);
         if (def.prefix) {
             $('<div>').addClass(host.settings.styleClasses.inputGroupPrepend).appendTo(group)
                 .html(((def.type === 'text' && (sf = _form_field_lookup(host.def, def.prefix)) !== null && def.name !== sf.name)
                     ? _input(host, sf, null, null, true).css('text-align', 'left')
                     : $('<span>').html(_match_replace(host, def.prefix, null, true, true))).addClass(host.settings.styleClasses.inputGroupText));
         }
-        if (no_group === true) return input;
-        let group = $('<div>').addClass(host.settings.styleClasses.inputGroup);
         if (def.suffix || def.copy === true || def.reveal === true) {
             let suffix = $('<div>').addClass(host.settings.styleClasses.inputGroupAppend).appendTo(group);
             if (def.suffix) {
@@ -1287,7 +1286,7 @@ dataBinderArray.prototype.diff = function (data, callback) {
             else if (def.type === 'button') return;
             else input = $('<span>').attr('data-bind', item_data ? item_data.attrName : '').html(item_data ? item_data.toString() : '');
         } else if (def.type === 'array' && !('options' in def)) {
-            input = ('arrayOf' in def && def.arrayOf === 'text') ? _input_multitext(host, def) : _input_list(host, def);
+            input = ('arrayOf' in def) ? _input_multitext(host, def) : _input_list(host, def);
         } else if (def.type) {
             if ('options' in def) {
                 input = def.type === 'array' ? _input_select_multi(host, def) : _input_select(host, def, populate);
@@ -1301,11 +1300,6 @@ dataBinderArray.prototype.diff = function (data, callback) {
                         break;
                     case 'boolean':
                         input = _input_checkbox(host, def);
-                        break;
-                    case 'int':
-                    case 'integer':
-                    case 'number':
-                        input = _input_std(host, 'number', def);
                         break;
                     case 'date':
                     case 'datetime':
@@ -1351,10 +1345,7 @@ dataBinderArray.prototype.diff = function (data, callback) {
             $('<h4>').addClass(host.settings.styleClasses.label).html(_match_replace(host, def.label, null, true, true)).appendTo(group);
             def.nolabel = true;
         }
-        if ('arrayOf' in def && !('fields' in def)) def.fields = {
-            "__list_value": $.extend(true, {}, { "required": def.required, "disabled": def.disabled }, (typeof def.arrayOf === 'object' ? def.arrayOf : { "type": def.arrayOf }))
-        }
-        else if (!('fields' in def)) return group;
+        if (!('fields' in def)) return group;
         let bump = def.fields && 'label' in def.fields[Object.keys(def.fields)[0]];
         let layout = _resolve_field_layout(host, def.fields, def.layout);
         let template = $('<div class="itemlist-item">');
