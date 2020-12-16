@@ -227,7 +227,7 @@ dataBinderArray.prototype.diff = function (data, callback) {
             value = value.toString().trim();
         else if (type === 'bool' || type === 'boolean')
             value = _boolify(value);
-        else if (type === 'float' || type === 'double' || type === 'money')
+        else if (type === 'float' || type === 'number' || type === 'double' || type === 'money')
             value = parseFloat(value.replace(/\,/g, ''));
         return value;
     }
@@ -1201,9 +1201,42 @@ dataBinderArray.prototype.diff = function (data, callback) {
         return inputDIV;
     }
 
+    function _input_multitext(host, def) {
+        let group = $('<div class="form-multi-text">'), item_data = _get_data_item(host.data, def.name), container;
+        let _rm_multitext_item = function (e) {
+            let value = $(e.currentTarget.parentNode).children('span').text();
+            item_data.remove(_convert_data_type(def, value));
+        };
+        let _add_multitext_item = function (item) {
+            $('<div class="input-mt-item">').html([
+                $('<span>').html(item.toString()),
+                $('<div class="input-mt-item-rm">').html(_icon(host, 'times', 'Remove')).click(function (e) { _rm_multitext_item(e); })
+            ]).data('item', item).appendTo(container);
+        };
+        let inputDef = Object.assign({}, def, { name: '__hz_input_mt_' + def.name, type: def.arrayOf });
+        if ('format' in def && 'validate' in def) { delete inputDef.validate.minlen; delete inputDef.validate.maxlen; }
+        if (!('hint' in def) || def.hint === true) def.hint = 'Press ENTER to add item to list.';
+        _input_std(_get_empty_host(ud, host), def.arrayOf, inputDef, true).appendTo(group).on('keypress', function (e) {
+            if (e.which !== 13) return;
+            let value = _convert_data_type(def, $(this).val());
+            if (!value || item_data.indexOf(value) >= 0 || _validate_rule(host, inputDef.name, item_data, inputDef, def, value) !== true) return;
+            item_data.push(value);
+            $(this).val('');
+        });
+        container = $('<div class="input-mt-items">')
+            .attr('data-bind', def.name)
+            .appendTo(group)
+            .on('push', function (e, name, item) { _add_multitext_item(item); })
+            .on('pop', function (e, name, item) {
+                $(this).children().each(function (index, o) { if ($(o).data('item') === item) $(o).remove(); })
+            });
+        if (item_data.length > 0) for (x of item_data) _add_multitext_item(x);
+        return group;
+    }
+
     function _input_std(host, type, def, no_group) {
-        let group = $('<div>').addClass(host.settings.styleClasses.inputGroup);
         let input = null, item_data = _get_data_item(host.data, def.name);
+        if (type === 'int' || type === 'integer') type = 'number';
         if (def.multiline) {
             input = $('<textarea>').addClass(host.settings.styleClasses.input);
             if ('height' in def) input.css('height', def.height);
@@ -1220,13 +1253,14 @@ dataBinderArray.prototype.diff = function (data, callback) {
         if (type === 'text' && 'validate' in def && 'maxlen' in def.validate) input.attr('maxlength', def.validate.maxlen);
         if ('format' in def) input.attr('type', 'text').inputmask(def.format);
         if ('placeholder' in def) input.attr('placeholder', def.placeholder);
+        if (no_group === true) return input;
+        let group = $('<div>').addClass(host.settings.styleClasses.inputGroup);
         if (def.prefix) {
             $('<div>').addClass(host.settings.styleClasses.inputGroupPrepend).appendTo(group)
                 .html(((def.type === 'text' && (sf = _form_field_lookup(host.def, def.prefix)) !== null && def.name !== sf.name)
                     ? _input(host, sf, null, null, true).css('text-align', 'left')
                     : $('<span>').html(_match_replace(host, def.prefix, null, true, true))).addClass(host.settings.styleClasses.inputGroupText));
         }
-        group.append(input);
         if (def.suffix || def.copy === true || def.reveal === true) {
             let suffix = $('<div>').addClass(host.settings.styleClasses.inputGroupAppend).appendTo(group);
             if (def.suffix) {
@@ -1244,7 +1278,7 @@ dataBinderArray.prototype.diff = function (data, callback) {
                 .html($('<i class="fa fa-copy" title="Copy to clipboard">')));
         }
         if (item_data && item_data.value) _validate_input(host, input);
-        return group;
+        return group.append(input);
     }
 
     function _input(host, def, populate, item_data, no_group) {
@@ -1254,7 +1288,7 @@ dataBinderArray.prototype.diff = function (data, callback) {
             else if (def.type === 'button') return;
             else input = $('<span>').attr('data-bind', item_data ? item_data.attrName : '').html(item_data ? item_data.toString() : '');
         } else if (def.type === 'array' && !('options' in def)) {
-            input = _input_list(host, def);
+            input = ('arrayOf' in def) ? _input_multitext(host, def) : _input_list(host, def);
         } else if (def.type) {
             if ('options' in def) {
                 input = def.type === 'array' ? _input_select_multi(host, def) : _input_select(host, def, populate);
@@ -1268,11 +1302,6 @@ dataBinderArray.prototype.diff = function (data, callback) {
                         break;
                     case 'boolean':
                         input = _input_checkbox(host, def);
-                        break;
-                    case 'int':
-                    case 'integer':
-                    case 'number':
-                        input = _input_std(host, 'number', def);
                         break;
                     case 'date':
                     case 'datetime':
@@ -1318,10 +1347,7 @@ dataBinderArray.prototype.diff = function (data, callback) {
             $('<h4>').addClass(host.settings.styleClasses.label).html(_match_replace(host, def.label, null, true, true)).appendTo(group);
             def.nolabel = true;
         }
-        if ('arrayOf' in def && !('fields' in def)) def.fields = {
-            "__list_value": $.extend(true, {}, { "required": def.required, "disabled": def.disabled }, (typeof def.arrayOf === 'object' ? def.arrayOf : { "type": def.arrayOf }))
-        }
-        else if (!('fields' in def)) return group;
+        if (!('fields' in def)) return group;
         let bump = def.fields && 'label' in def.fields[Object.keys(def.fields)[0]];
         let layout = _resolve_field_layout(host, def.fields, def.layout);
         let template = $('<div class="itemlist-item">');
@@ -1709,15 +1735,15 @@ dataBinderArray.prototype.diff = function (data, callback) {
         return error;
     }
 
-    function _validate_rule(host, name, item, def, d) {
+    function _validate_rule(host, name, item, def, d, value) {
         if (!(item && def) || host.validate !== true) return true;
         if ('show' in def) if (!_eval(host, def.show, true, item, def.name)) return true;
-        let value = item instanceof dataBinderArray ? item.length > 0 ? item : null : def.other && !item.value ? item.other : item.value;
+        if (typeof value === 'undefined') value = item instanceof dataBinderArray ? item.length > 0 ? item : null : def.other && !item.value ? item.other : item.value;
         if (!(name in host.required)) host.required[name] = _eval(host, def.required, d.required, item, name);
         d.required = host.required[name];
         if (d.required && value === null) return _validation_error(name, def, "required");
         if (typeof value === 'undefined' || value === null) return true; //Return now if there is no value and the field is not required!
-        if ('format' in def && value && def.type !== 'date') {
+        if ('format' in def && value instanceof dataBinderValue && def.type !== 'date') {
             if (!Inputmask.isValid(String(value), def.format))
                 return _validation_error(name, def, "bad_format");
         }
@@ -1772,7 +1798,7 @@ dataBinderArray.prototype.diff = function (data, callback) {
                 if (!(def.name in host.disabled)) host.disabled[def.name] = 'disabled' in def ? _eval(host, def.disabled, d.disabled, item, def.name) : false;
                 d.disabled = host.disabled[def.name];
                 let result = (def.protected || d.disabled) ? true : _validate_rule(host, def.name, item, def, d);
-                if ('fields' in def) {
+                if ('fields' in def && item instanceof dataBinder) {
                     let childItems = def.type === 'array' ? item.save() : [item];
                     if (result !== true || childItems.length === 0) {
                         for (let x in callbacks) callbacks[x](def.name, result, extra);
@@ -1789,7 +1815,7 @@ dataBinderArray.prototype.diff = function (data, callback) {
                         }
                     }
                 }
-                if (item && item.value && result === true && 'validate' in def && 'url' in def.validate) {
+                if (item && item instanceof dataBinderValue && item.value && result === true && 'validate' in def && 'url' in def.validate) {
                     let url = _match_replace(host, def.validate.url, { "__input__": item.value }, true);
                     let request = { target: [url, { "name": def.name, "value": item.value }] };
                     let indexKey = JSON.stringify(request).hash();
@@ -2250,7 +2276,10 @@ dataBinderArray.prototype.diff = function (data, callback) {
         host.apiCache = {};
         host.required = {};
         host.disabled = {};
-        host.parent = parent_host;
+        if (parent_host) {
+            host.parent = parent_host;
+            host.settings = parent_host.settings;
+        }
         return host;
     }
 
