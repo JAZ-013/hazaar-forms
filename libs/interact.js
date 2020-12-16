@@ -1217,8 +1217,9 @@ dataBinderArray.prototype.diff = function (data, callback) {
         if (!('hint' in def) || def.hint === true) def.hint = 'Press ENTER to add item to list.';
         _input_std(_get_empty_host(ud, host), def.arrayOf, inputDef, true).appendTo(group).on('keypress', function (e) {
             if (e.which !== 13) return;
-            let value = $(this).val();
-            if (item_data.indexOf(value) < 0) item_data.push(_convert_data_type(def, value));
+            let value = _convert_data_type(def, $(this).val());
+            if (!value || item_data.indexOf(value) >= 0 || _validate_rule(host, inputDef.name, item_data, inputDef, def, value) !== true) return;
+            item_data.push(value);
             $(this).val('');
         });
         container = $('<div class="input-mt-items">')
@@ -1733,10 +1734,10 @@ dataBinderArray.prototype.diff = function (data, callback) {
         return error;
     }
 
-    function _validate_rule(host, name, item, def, d) {
+    function _validate_rule(host, name, item, def, d, value) {
         if (!(item && def) || host.validate !== true) return true;
         if ('show' in def) if (!_eval(host, def.show, true, item, def.name)) return true;
-        let value = item instanceof dataBinderArray ? item.length > 0 ? item : null : def.other && !item.value ? item.other : item.value;
+        if (typeof value === 'undefined') value = item instanceof dataBinderArray ? item.length > 0 ? item : null : def.other && !item.value ? item.other : item.value;
         if (!(name in host.required)) host.required[name] = _eval(host, def.required, d.required, item, name);
         d.required = host.required[name];
         if (d.required && value === null) return _validation_error(name, def, "required");

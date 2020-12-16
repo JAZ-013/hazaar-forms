@@ -303,7 +303,7 @@ svg:not(:root).forms-icon{
     border: none;
 }
 
-.form-multi-text input.form-control[type=text]:focus {
+.form-multi-text input.form-control:focus {
     border: none;
     box-shadow: none;
 }
