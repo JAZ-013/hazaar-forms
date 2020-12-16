@@ -1214,6 +1214,7 @@ dataBinderArray.prototype.diff = function (data, callback) {
             ]).data('item', item).appendTo(container);
         };
         let inputDef = Object.assign({}, def, { name: '__hz_input_mt_' + def.name, type: def.arrayOf });
+        if ('format' in def && 'validate' in def) { delete inputDef.validate.minlen; delete inputDef.validate.maxlen; }
         if (!('hint' in def) || def.hint === true) def.hint = 'Press ENTER to add item to list.';
         _input_std(_get_empty_host(ud, host), def.arrayOf, inputDef, true).appendTo(group).on('keypress', function (e) {
             if (e.which !== 13) return;
