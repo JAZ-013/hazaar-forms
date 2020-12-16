@@ -1742,7 +1742,7 @@ dataBinderArray.prototype.diff = function (data, callback) {
         d.required = host.required[name];
         if (d.required && value === null) return _validation_error(name, def, "required");
         if (typeof value === 'undefined' || value === null) return true; //Return now if there is no value and the field is not required!
-        if ('format' in def && value && def.type !== 'date') {
+        if ('format' in def && value instanceof dataBinderValue && def.type !== 'date') {
             if (!Inputmask.isValid(String(value), def.format))
                 return _validation_error(name, def, "bad_format");
         }
@@ -1797,7 +1797,7 @@ dataBinderArray.prototype.diff = function (data, callback) {
                 if (!(def.name in host.disabled)) host.disabled[def.name] = 'disabled' in def ? _eval(host, def.disabled, d.disabled, item, def.name) : false;
                 d.disabled = host.disabled[def.name];
                 let result = (def.protected || d.disabled) ? true : _validate_rule(host, def.name, item, def, d);
-                if ('fields' in def) {
+                if ('fields' in def && item instanceof dataBinder) {
                     let childItems = def.type === 'array' ? item.save() : [item];
                     if (result !== true || childItems.length === 0) {
                         for (let x in callbacks) callbacks[x](def.name, result, extra);
@@ -1814,7 +1814,7 @@ dataBinderArray.prototype.diff = function (data, callback) {
                         }
                     }
                 }
-                if (item && item.value && result === true && 'validate' in def && 'url' in def.validate) {
+                if (item && item instanceof dataBinderValue && item.value && result === true && 'validate' in def && 'url' in def.validate) {
                     let url = _match_replace(host, def.validate.url, { "__input__": item.value }, true);
                     let request = { target: [url, { "name": def.name, "value": item.value }] };
                     let indexKey = JSON.stringify(request).hash();
