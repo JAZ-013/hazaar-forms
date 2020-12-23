@@ -1,4 +1,4 @@
-var ud = undefined;
+﻿var ud = undefined;
 
 //Object.assign() Polyfill
 if (typeof Object.assign !== 'function') {
@@ -488,7 +488,9 @@ dataBinderArray.prototype.diff = function (data, callback) {
             if (item_data && input.is('select') && item_data.enabled() === true && input.val() !== '__hz_other') {
                 let other = input.children('option[value="' + item_data.value + '"]').data('other') || null;
                 item_data.enabled(false);
-                item_data.set(item_data.value, input.children('option:selected').text(), other, false);
+                item_data.set(item_data.value, input.children('option:selected').text(), other);
+                item_data.enabled(true);
+                return;
             } else if (item_data && input.is('input[type="radio"]') && item_data.enabled() === true) {
                 item_data.set(item_data.value, input.next().text());
             } else if (typeof update === 'boolean' || update && ('url' in update || host.settings.update === true)) {
@@ -532,7 +534,6 @@ dataBinderArray.prototype.diff = function (data, callback) {
         if (host.events.disabled && host.events.disabled.length > 0) {
             for (let x in host.events.disabled) _eval_disabled(host, host.events.disabled[x]);
         }
-        if (item_data) item_data.enabled(true);
         if ('save' in def && _eval(host, def.save, false, item_data, def.name)) _save(host, false).done(cb_done);
         else if (typeof cb_done === 'function') cb_done();
         if (item_data && item_data.parent && item_data.parent.attrName) _input_event_update(host, item_data.parent.attrName, skip_validate, item_data.parent);
@@ -682,6 +683,7 @@ dataBinderArray.prototype.diff = function (data, callback) {
                 let match = matches[x].substr(2, matches[x].length - 4);
                 if (!(match in def.watchers)) def.watchers[match] = [];
                 def.watchers[match].push(host.data.watch(match, function (key, value, container) {
+                    if (item_data[key].enabled() === false) return;
                     _input_select_multi_populate_ajax(host, options, container, false);
                 }, container));
             }
@@ -776,7 +778,7 @@ dataBinderArray.prototype.diff = function (data, callback) {
             }
             return data;
         };
-        if (!Array.isArray(data) && typeof data[Object.keys(data)[0]] === 'object' && !(valueKey in data[Object.keys(data)[0]])) {
+        if (!Array.isArray(data) && typeof data[Object.keys(data)[0]] === 'object' && !(data[Object.keys(data)[0]] && valueKey in data[Object.keys(data)[0]])) {
             for (let group in data) data[group] = do_ops(data[group], $('<optgroup>').attr('label', group).appendTo(select));
         } else data = do_ops(data, select);
         if (item_data) {
@@ -844,6 +846,7 @@ dataBinderArray.prototype.diff = function (data, callback) {
             if (!(match in def.watchers)) def.watchers[match] = [];
             if (typeof item_data === 'undefined') item_data = host.data;
             def.watchers[match].push(item_data.watch(match, function (key, value, select) {
+                if (item_data[key].enabled() === false) return;
                 _input_options_populate_ajax(host, options, select, true, item_data, callback);
             }, select));
         }
