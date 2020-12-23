@@ -271,7 +271,7 @@ dataBinderArray.prototype.diff = function (data, callback) {
     function _convert_data(dataIn, valueKey, labelKey, def) {
         let dataOut = [];
         for (let x in dataIn) {
-            if (typeof dataIn[x] === 'object') dataOut.push(dataIn[x]);
+            if (dataIn[x] && typeof dataIn[x] === 'object') dataOut.push(dataIn[x]);
             else {
                 let newitem = {};
                 newitem[valueKey] = _convert_data_type(def, x);
