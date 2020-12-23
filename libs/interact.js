@@ -488,7 +488,7 @@ dataBinderArray.prototype.diff = function (data, callback) {
             if (item_data && input.is('select') && item_data.enabled() === true && input.val() !== '__hz_other') {
                 let other = input.children('option[value="' + item_data.value + '"]').data('other') || null;
                 item_data.enabled(false);
-                item_data.set(item_data.value, input.children('option:selected').text(), other);
+                item_data.set(item_data.value, input.children('option:selected').text(), other, false);
             } else if (item_data && input.is('input[type="radio"]') && item_data.enabled() === true) {
                 item_data.set(item_data.value, input.next().text());
             } else if (typeof update === 'boolean' || update && ('url' in update || host.settings.update === true)) {
