@@ -1520,8 +1520,8 @@ dataBinderArray.prototype.diff = function (data, callback) {
         if (info instanceof Array)
             info = { fields: info };
         if (!(def = _form_field_lookup(host.def, info))) return;
-        if (!('type' in def)) def.type = 'text';
         if (!item_data && 'name' in def && def.name) item_data = _get_data_item(host.data, def.name);
+        if (!('type' in def || 'fields' in def) && (item_data && !host.standalone)) def.type = 'text';
         if ('name' in def && 'default' in def && item_data instanceof dataBinderArray && item_data.value === null) item_data.value = def.default;
         if ('horizontal' in def) p = def.horizontal;
         if ('render' in def) {
