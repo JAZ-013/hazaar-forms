@@ -351,7 +351,8 @@ dataBinderArray.prototype.diff = function (data, callback) {
                 && (value instanceof dataBinderValue ? value.value : value) === null
                 && force !== true) return false;
             if (modifiers.indexOf('>') !== -1) use_html = false;
-            let text = value instanceof dataBinderValue ? use_html === true && modifiers.indexOf(':') === -1 ? value : value.value : value;
+            let text = (value instanceof dataBinder || value instanceof dataBinderArray) ? JSON.stringify(value.save(true))
+                : value instanceof dataBinderValue ? use_html === true && modifiers.indexOf(':') === -1 ? value : value.value : value;
             let out = use_html ? '<span data-bind="' + match[2] + '" data-bind-label="' + (modifiers.indexOf(':') === -1 ? 'true' : 'false') + '">' + text + '</span>' : text || '';
             str = str.replace(match[0], out);
         }
