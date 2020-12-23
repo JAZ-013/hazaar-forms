@@ -340,7 +340,7 @@ dataBinderArray.prototype.diff = function (data, callback) {
     }
 
     function _match_replace(host, str, extra, force, use_html) {
-        if (!str) return null;
+        if (typeof str !== 'string') return str;
         let mhost = host && host.parent ? host.parent : host;
         while ((match = str.match(/\{\{([\W]*)([\w\.]+)\}\}/)) !== null) {
             let modifiers = match[1].split(''), value = mhost ? _get_data_item(mhost.data, match[2]) : null;
@@ -661,13 +661,13 @@ dataBinderArray.prototype.diff = function (data, callback) {
     }
 
     function _input_select_multi_populate_ajax(host, options, container, track) {
-        let postops = {};
-        Object.assign(postops, options);
+        let postops = $.extend(true, {}, options);
         if ((postops.url = _match_replace(host, postops.url, { "site_url": hazaar.url() })) === false) {
             return _input_select_multi_items(host, null, container);
         }
         if (track === true) _track(host);
         postops.url = _url(host, postops.url);
+        if ('data' in postops) for (let x in postops.data) postops.data[x] = _match_replace(host, postops.data[x]);
         $.ajax(postops).done(function (data) {
             if (typeof container.data('def') !== 'object') return _ready(host);
             _input_select_multi_items(host, data, container);
@@ -812,12 +812,12 @@ dataBinderArray.prototype.diff = function (data, callback) {
     }
 
     function _input_options_populate_ajax(host, options, select, track, item_data, callback) {
-        let postops = {};
-        Object.assign(postops, options);
+        let postops = $.extend(true, {}, options);
         if ((postops.url = _match_replace(host, postops.url, item_data)) === false)
             return callback(host, options, null, select);
         if (track !== false) select.prop('disabled', true).html($('<option value selected>').html('Loading...'));
         postops.url = _url(host, postops.url);
+        if ('data' in postops) for (let x in postops.data) postops.data[x] = _match_replace(host, postops.data[x]);
         return $.ajax(postops).done(function (data) {
             if (typeof select.data('def') !== 'object') return;
             callback(host, options, data, select);
