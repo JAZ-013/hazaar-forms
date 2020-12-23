@@ -1415,7 +1415,7 @@ class Model extends \Hazaar\Model\Strict {
 
             $router = new \Hazaar\Application\Router(new \Hazaar\Application\Config);
 
-            $request = new \Hazaar\Application\Request\Http($params, false, ake($args, 'method', 'POST'));
+            $request = new \Hazaar\Application\Request\Http($params, false, ake($args, 'method', strtoupper(ake($args, 'method', 'GET'))));
 
             if($pos = strpos($target, '?')){
 
