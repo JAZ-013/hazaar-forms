@@ -631,6 +631,10 @@ dataBinderArray.prototype.diff = function (data, callback) {
         for (let col = 0; col < def.columns; col++)
             items.push($('<div>').addClass('col-md-' + col_width).toggleClass('custom-controls-stacked', def.inline));
         for (let x in data) {
+            if ('filter' in def.options && def.options.filter.indexOf(data[x][labelKey]) === -1) {
+                delete data[x];
+                continue;
+            }
             let iv = _convert_data_type(def, data[x][valueKey]), il = data[x][labelKey], id = _guid();
             let active = value instanceof dataBinderArray && value.indexOf(iv) > -1, name = def.name + '_' + iv;
             let label = $('<div>').addClass(host.settings.styleClasses.chkDiv).html([
