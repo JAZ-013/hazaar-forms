@@ -683,8 +683,8 @@ dataBinderArray.prototype.diff = function (data, callback) {
             for (let x in matches) {
                 let match = matches[x].substr(2, matches[x].length - 4);
                 if (!(match in def.watchers)) def.watchers[match] = [];
-                def.watchers[match].push(host.data.watch(match, function (key, value, container) {
-                    if (item_data[key].enabled() === false) return;
+                def.watchers[match].push(host.data.watch(match, function (key, item_data, container) {
+                    if (item_data.enabled() === false) return;
                     _input_select_multi_populate_ajax(host, options, container, false);
                 }, container));
             }
