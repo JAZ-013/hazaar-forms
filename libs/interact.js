@@ -699,7 +699,7 @@ dataBinderArray.prototype.diff = function (data, callback) {
     }
 
     function _input_select_multi(host, def) {
-        let group = $('<div>').data('def', def);
+        let group = $('<div>').data('def', def), item_data = _get_data_item(host.data, def.name);
         if (def.buttons === true) group.addClass('btn-group').attr('data-bind', def.name).attr('data-toggle', 'buttons').toggleClass('btn-group-justified', def.justified === true);
         else group.attr('data-bind', def.name).attr('data-toggle', 'checks');
         def.watchers = {};
@@ -715,6 +715,7 @@ dataBinderArray.prototype.diff = function (data, callback) {
         _input_options(host, def, group, null, function (select, options) {
             _input_select_multi_populate(host, options, select, true);
         });
+        if (item_data) console.log(item_data.watch(function (item) { return _input_event_update(host, group, false, item); }));
         return group;
     }
 
@@ -1420,10 +1421,11 @@ dataBinderArray.prototype.diff = function (data, callback) {
         }
         if (host.viewmode === true || _eval(host, def.allow_edit, false, item_data, def.name) !== true) layout = _field_to_html(layout);
         template.append(_form_field(host, { fields: layout, row: true }, true, false, false, ud, true));
-        item_data.watch(function (item) {
-            let item_name = item.attr('data-bind'), item_data = _get_data_item(host.data, item_name);
+        item_data.watch(function (item_data, o) {
+            if (!item_data) return;
+            let item_name = item_data.attrName;
             item_data.extend(_define(def.fields), true);
-            item.find('select,input').each(function (index, item) {
+            o.find('select,input').each(function (index, item) {
                 let input = $(item), def = input.data('def');
                 if (input.is('select')) {
                     if ('options' in def) _input_options(host, def, input, item_data, function (select, options) {
@@ -1436,7 +1438,7 @@ dataBinderArray.prototype.diff = function (data, callback) {
                     if (child_item_data && child_item_data.value) input.datepicker('setDate', new Date(child_item_data.value));
                 }
             });
-            $(item).find('.form-group,.form-section').each(function (index, input) {
+            $(o).find('.form-group,.form-section').each(function (index, input) {
                 let group = $(input), def = group.data('def');
                 if (!(def && def.name)) return;
                 let sub_item_data = _get_data_item(item_data, def.name);
@@ -1450,7 +1452,7 @@ dataBinderArray.prototype.diff = function (data, callback) {
                 if ('required' in def) _make_required(host, def, group);
                 if ('show' in def) _make_showable(host, def, group);
             });
-            if ('disabled' in def) _make_disabled(host, def, $(item).parent().parent());
+            if ('disabled' in def) _make_disabled(host, def, $(o).parent().parent());
         });
         group.append($('<div class="itemlist-items" data-bind-template="o">')
             .attr('data-bind', def.name)
