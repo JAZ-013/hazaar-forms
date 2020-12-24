@@ -1,4 +1,4 @@
-var ud = undefined;
+﻿var ud = undefined;
 
 //Object.assign() Polyfill
 if (typeof Object.assign !== 'function') {
@@ -271,7 +271,7 @@ dataBinderArray.prototype.diff = function (data, callback) {
     function _convert_data(dataIn, valueKey, labelKey, def) {
         let dataOut = [];
         for (let x in dataIn) {
-            if (typeof dataIn[x] === 'object') dataOut.push(dataIn[x]);
+            if (dataIn[x] && typeof dataIn[x] === 'object') dataOut.push(dataIn[x]);
             else {
                 let newitem = {};
                 newitem[valueKey] = _convert_data_type(def, x);
@@ -340,7 +340,7 @@ dataBinderArray.prototype.diff = function (data, callback) {
     }
 
     function _match_replace(host, str, extra, force, use_html) {
-        if (!str) return null;
+        if (typeof str !== 'string') return str;
         let mhost = host && host.parent ? host.parent : host;
         while ((match = str.match(/\{\{([\W]*)([\w\.]+)\}\}/)) !== null) {
             let modifiers = match[1].split(''), value = mhost ? _get_data_item(mhost.data, match[2]) : null;
@@ -351,7 +351,8 @@ dataBinderArray.prototype.diff = function (data, callback) {
                 && (value instanceof dataBinderValue ? value.value : value) === null
                 && force !== true) return false;
             if (modifiers.indexOf('>') !== -1) use_html = false;
-            let text = value instanceof dataBinderValue ? use_html === true && modifiers.indexOf(':') === -1 ? value : value.value : value;
+            let text = (value instanceof dataBinder || value instanceof dataBinderArray) ? JSON.stringify(value.save(true))
+                : value instanceof dataBinderValue ? use_html === true && modifiers.indexOf(':') === -1 ? value : value.value : value;
             let out = use_html ? '<span data-bind="' + match[2] + '" data-bind-label="' + (modifiers.indexOf(':') === -1 ? 'true' : 'false') + '">' + text + '</span>' : text || '';
             str = str.replace(match[0], out);
         }
@@ -489,6 +490,8 @@ dataBinderArray.prototype.diff = function (data, callback) {
                 let other = input.children('option[value="' + item_data.value + '"]').data('other') || null;
                 item_data.enabled(false);
                 item_data.set(item_data.value, input.children('option:selected').text(), other);
+                item_data.enabled(true);
+                return;
             } else if (item_data && input.is('input[type="radio"]') && item_data.enabled() === true) {
                 item_data.set(item_data.value, input.next().text());
             } else if (typeof update === 'boolean' || update && ('url' in update || host.settings.update === true)) {
@@ -532,7 +535,6 @@ dataBinderArray.prototype.diff = function (data, callback) {
         if (host.events.disabled && host.events.disabled.length > 0) {
             for (let x in host.events.disabled) _eval_disabled(host, host.events.disabled[x]);
         }
-        if (item_data) item_data.enabled(true);
         if ('save' in def && _eval(host, def.save, false, item_data, def.name)) _save(host, false).done(cb_done);
         else if (typeof cb_done === 'function') cb_done();
         if (item_data && item_data.parent && item_data.parent.attrName) _input_event_update(host, item_data.parent.attrName, skip_validate, item_data.parent);
@@ -631,6 +633,10 @@ dataBinderArray.prototype.diff = function (data, callback) {
         for (let col = 0; col < def.columns; col++)
             items.push($('<div>').addClass('col-md-' + col_width).toggleClass('custom-controls-stacked', def.inline));
         for (let x in data) {
+            if ('filter' in def.options && def.options.filter.indexOf(data[x][labelKey]) === -1) {
+                delete data[x];
+                continue;
+            }
             let iv = _convert_data_type(def, data[x][valueKey]), il = data[x][labelKey], id = _guid();
             let active = value instanceof dataBinderArray && value.indexOf(iv) > -1, name = def.name + '_' + iv;
             let label = $('<div>').addClass(host.settings.styleClasses.chkDiv).html([
@@ -655,13 +661,13 @@ dataBinderArray.prototype.diff = function (data, callback) {
     }
 
     function _input_select_multi_populate_ajax(host, options, container, track) {
-        let postops = {};
-        Object.assign(postops, options);
+        let postops = $.extend(true, {}, options);
         if ((postops.url = _match_replace(host, postops.url, { "site_url": hazaar.url() })) === false) {
             return _input_select_multi_items(host, null, container);
         }
         if (track === true) _track(host);
         postops.url = _url(host, postops.url);
+        if ('data' in postops) for (let x in postops.data) postops.data[x] = _match_replace(host, postops.data[x]);
         $.ajax(postops).done(function (data) {
             if (typeof container.data('def') !== 'object') return _ready(host);
             _input_select_multi_items(host, data, container);
@@ -677,7 +683,8 @@ dataBinderArray.prototype.diff = function (data, callback) {
             for (let x in matches) {
                 let match = matches[x].substr(2, matches[x].length - 4);
                 if (!(match in def.watchers)) def.watchers[match] = [];
-                def.watchers[match].push(host.data.watch(match, function (key, value, container) {
+                def.watchers[match].push(host.data.watch(match, function (key, item_data, container) {
+                    if (item_data.enabled() === false) return;
                     _input_select_multi_populate_ajax(host, options, container, false);
                 }, container));
             }
@@ -692,7 +699,7 @@ dataBinderArray.prototype.diff = function (data, callback) {
     }
 
     function _input_select_multi(host, def) {
-        let group = $('<div>').data('def', def);
+        let group = $('<div>').data('def', def), item_data = _get_data_item(host.data, def.name);
         if (def.buttons === true) group.addClass('btn-group').attr('data-bind', def.name).attr('data-toggle', 'buttons').toggleClass('btn-group-justified', def.justified === true);
         else group.attr('data-bind', def.name).attr('data-toggle', 'checks');
         def.watchers = {};
@@ -708,6 +715,7 @@ dataBinderArray.prototype.diff = function (data, callback) {
         _input_options(host, def, group, null, function (select, options) {
             _input_select_multi_populate(host, options, select, true);
         });
+        if (item_data) console.log(item_data.watch(function (item) { return _input_event_update(host, group, false, item); }));
         return group;
     }
 
@@ -772,7 +780,7 @@ dataBinderArray.prototype.diff = function (data, callback) {
             }
             return data;
         };
-        if (!Array.isArray(data) && typeof data[Object.keys(data)[0]] === 'object' && !(valueKey in data[Object.keys(data)[0]])) {
+        if (!Array.isArray(data) && typeof data[Object.keys(data)[0]] === 'object' && !(data[Object.keys(data)[0]] && valueKey in data[Object.keys(data)[0]])) {
             for (let group in data) data[group] = do_ops(data[group], $('<optgroup>').attr('label', group).appendTo(select));
         } else data = do_ops(data, select);
         if (item_data) {
@@ -805,12 +813,12 @@ dataBinderArray.prototype.diff = function (data, callback) {
     }
 
     function _input_options_populate_ajax(host, options, select, track, item_data, callback) {
-        let postops = {};
-        Object.assign(postops, options);
+        let postops = $.extend(true, {}, options);
         if ((postops.url = _match_replace(host, postops.url, item_data)) === false)
             return callback(host, options, null, select);
         if (track !== false) select.prop('disabled', true).html($('<option value selected>').html('Loading...'));
         postops.url = _url(host, postops.url);
+        if ('data' in postops) for (let x in postops.data) postops.data[x] = _match_replace(host, postops.data[x]);
         return $.ajax(postops).done(function (data) {
             if (typeof select.data('def') !== 'object') return;
             callback(host, options, data, select);
@@ -839,7 +847,8 @@ dataBinderArray.prototype.diff = function (data, callback) {
             let match = matches[x].substr(2, matches[x].length - 4);
             if (!(match in def.watchers)) def.watchers[match] = [];
             if (typeof item_data === 'undefined') item_data = host.data;
-            def.watchers[match].push(item_data.watch(match, function (key, value, select) {
+            def.watchers[match].push(item_data.watch(match, function (key, item_data, select) {
+                if (item_data.enabled() === false) return;
                 _input_options_populate_ajax(host, options, select, true, item_data, callback);
             }, select));
         }
@@ -1412,10 +1421,11 @@ dataBinderArray.prototype.diff = function (data, callback) {
         }
         if (host.viewmode === true || _eval(host, def.allow_edit, false, item_data, def.name) !== true) layout = _field_to_html(layout);
         template.append(_form_field(host, { fields: layout, row: true }, true, false, false, ud, true));
-        item_data.watch(function (item) {
-            let item_name = item.attr('data-bind'), item_data = _get_data_item(host.data, item_name);
+        item_data.watch(function (item_data, o) {
+            if (!item_data) return;
+            let item_name = item_data.attrName;
             item_data.extend(_define(def.fields), true);
-            item.find('select,input').each(function (index, item) {
+            o.find('select,input').each(function (index, item) {
                 let input = $(item), def = input.data('def');
                 if (input.is('select')) {
                     if ('options' in def) _input_options(host, def, input, item_data, function (select, options) {
@@ -1428,7 +1438,7 @@ dataBinderArray.prototype.diff = function (data, callback) {
                     if (child_item_data && child_item_data.value) input.datepicker('setDate', new Date(child_item_data.value));
                 }
             });
-            $(item).find('.form-group,.form-section').each(function (index, input) {
+            $(o).find('.form-group,.form-section').each(function (index, input) {
                 let group = $(input), def = group.data('def');
                 if (!(def && def.name)) return;
                 let sub_item_data = _get_data_item(item_data, def.name);
@@ -1442,7 +1452,7 @@ dataBinderArray.prototype.diff = function (data, callback) {
                 if ('required' in def) _make_required(host, def, group);
                 if ('show' in def) _make_showable(host, def, group);
             });
-            if ('disabled' in def) _make_disabled(host, def, $(item).parent().parent());
+            if ('disabled' in def) _make_disabled(host, def, $(o).parent().parent());
         });
         group.append($('<div class="itemlist-items" data-bind-template="o">')
             .attr('data-bind', def.name)
