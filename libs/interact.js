@@ -1,4 +1,4 @@
-var ud = undefined;
+﻿var ud = undefined;
 
 //Object.assign() Polyfill
 if (typeof Object.assign !== 'function') {
@@ -227,7 +227,7 @@ dataBinderArray.prototype.diff = function (data, callback) {
             value = value.toString().trim();
         else if (type === 'bool' || type === 'boolean')
             value = _boolify(value);
-        else if (type === 'float' || type === 'double' || type === 'money')
+        else if (type === 'float' || type === 'number' || type === 'double' || type === 'money')
             value = parseFloat(value.replace(/\,/g, ''));
         return value;
     }
@@ -271,7 +271,7 @@ dataBinderArray.prototype.diff = function (data, callback) {
     function _convert_data(dataIn, valueKey, labelKey, def) {
         let dataOut = [];
         for (let x in dataIn) {
-            if (typeof dataIn[x] === 'object') dataOut.push(dataIn[x]);
+            if (dataIn[x] && typeof dataIn[x] === 'object') dataOut.push(dataIn[x]);
             else {
                 let newitem = {};
                 newitem[valueKey] = _convert_data_type(def, x);
@@ -340,7 +340,7 @@ dataBinderArray.prototype.diff = function (data, callback) {
     }
 
     function _match_replace(host, str, extra, force, use_html) {
-        if (!str) return null;
+        if (typeof str !== 'string') return str;
         let mhost = host && host.formParent ? host.formParent : host;
         while ((match = str.match(/\{\{([\W]*)([\w\.]+)\}\}/)) !== null) {
             let modifiers = match[1].split(''), value = mhost ? _get_data_item(mhost.data, match[2]) : null;
@@ -351,7 +351,8 @@ dataBinderArray.prototype.diff = function (data, callback) {
                 && (value instanceof dataBinderValue ? value.value : value) === null
                 && force !== true) return false;
             if (modifiers.indexOf('>') !== -1) use_html = false;
-            let text = value instanceof dataBinderValue ? use_html === true && modifiers.indexOf(':') === -1 ? value : value.value : value;
+            let text = (value instanceof dataBinder || value instanceof dataBinderArray) ? JSON.stringify(value.save(true))
+                : value instanceof dataBinderValue ? use_html === true && modifiers.indexOf(':') === -1 ? value : value.value : value;
             let out = use_html ? '<span data-bind="' + match[2] + '" data-bind-label="' + (modifiers.indexOf(':') === -1 ? 'true' : 'false') + '">' + text + '</span>' : text || '';
             str = str.replace(match[0], out);
         }
@@ -490,7 +491,11 @@ dataBinderArray.prototype.diff = function (data, callback) {
             let date = input.datepicker('getDate');
             item_data.set(date ? date.getFullYear() + '-' + (date.getMonth() + 1) + '-' + date.getDate() : null, input.datepicker('getFormattedDate'));
         } else if (def.other === true) item_data.other = input.val();
-        else item_data.set(_convert_data_type(def, input.val()));
+        else {
+            let value = _convert_data_type(def, input.val());
+            if (item_data instanceof dataBinder) item_data.populate(value);
+            else item_data.set(value);
+        }
         if (item_data.enabled() === false) return false;
         $(host).trigger('change', [item_data]);
         return false;
@@ -508,6 +513,8 @@ dataBinderArray.prototype.diff = function (data, callback) {
                 let other = input.children('option[value="' + item_data.value + '"]').data('other') || null;
                 item_data.enabled(false);
                 item_data.set(item_data.value, input.children('option:selected').text(), other);
+                item_data.enabled(true);
+                return;
             } else if (item_data && input.is('input[type="radio"]') && item_data.enabled() === true) {
                 item_data.set(item_data.value, input.next().text());
             } else if (typeof update === 'boolean' || update && ('url' in update || host.settings.update === true)) {
@@ -551,7 +558,6 @@ dataBinderArray.prototype.diff = function (data, callback) {
         if (host.events.disabled && host.events.disabled.length > 0) {
             for (let x in host.events.disabled) _eval_disabled(host, host.events.disabled[x]);
         }
-        if (item_data) item_data.enabled(true);
         if ('save' in def && _eval(host, def.save, false, item_data, def.name)) _save(host, false).done(cb_done);
         else if (typeof cb_done === 'function') cb_done();
         if (item_data && item_data.parent && item_data.parent.attrName) _input_event_update(host, item_data.parent.attrName, skip_validate, item_data.parent);
@@ -650,6 +656,10 @@ dataBinderArray.prototype.diff = function (data, callback) {
         for (let col = 0; col < def.columns; col++)
             items.push($('<div>').addClass('col-md-' + col_width).toggleClass('custom-controls-stacked', def.inline));
         for (let x in data) {
+            if ('filter' in def.options && def.options.filter.indexOf(data[x][labelKey]) === -1) {
+                delete data[x];
+                continue;
+            }
             let iv = _convert_data_type(def, data[x][valueKey]), il = data[x][labelKey], id = _guid();
             let active = value instanceof dataBinderArray && value.indexOf(iv) > -1, name = def.name + '_' + iv;
             let label = $('<div>').addClass(host.settings.styleClasses.chkDiv).html([
@@ -674,13 +684,13 @@ dataBinderArray.prototype.diff = function (data, callback) {
     }
 
     function _input_select_multi_populate_ajax(host, options, container, track) {
-        let postops = {};
-        Object.assign(postops, options);
+        let postops = $.extend(true, {}, options);
         if ((postops.url = _match_replace(host, postops.url, { "site_url": hazaar.url() })) === false) {
             return _input_select_multi_items(host, null, container);
         }
         if (track === true) _track(host);
         postops.url = _url(host, postops.url);
+        if ('data' in postops) for (let x in postops.data) postops.data[x] = _match_replace(host, postops.data[x]);
         $.ajax(postops).done(function (data) {
             if (typeof container.data('def') !== 'object') return _ready(host);
             _input_select_multi_items(host, data, container);
@@ -690,12 +700,14 @@ dataBinderArray.prototype.diff = function (data, callback) {
     }
 
     function _input_select_multi_populate(host, options, container, track) {
-        if (options !== null && typeof options === 'object' && 'url' in options) {
+        if (!options) return false;
+        if (typeof options === 'object' && 'url' in options) {
             let matches = options.url.match(/\{\{[\w\.]+\}\}/g), def = container.data('def');
             for (let x in matches) {
                 let match = matches[x].substr(2, matches[x].length - 4);
                 if (!(match in def.watchers)) def.watchers[match] = [];
-                def.watchers[match].push(host.data.watch(match, function (key, value, container) {
+                def.watchers[match].push(host.data.watch(match, function (key, item_data, container) {
+                    if (item_data.enabled() === false) return;
                     _input_select_multi_populate_ajax(host, options, container, false);
                 }, container));
             }
@@ -705,12 +717,12 @@ dataBinderArray.prototype.diff = function (data, callback) {
             let o = typeof options.value === 'object' ? options.value : typeof options.other === 'object' ? options.other : null;
             return _input_select_multi_items(host, o, container);
         }
-        _input_select_multi_items(host, options, container);
+        _input_select_multi_items(host, ('data' in options) ? options.data : options, container);
         return true;
     }
 
     function _input_select_multi(host, def) {
-        let group = $('<div>').data('def', def);
+        let group = $('<div>').data('def', def), item_data = _get_data_item(host.data, def.name);
         if (def.buttons === true) group.addClass('btn-group').attr('data-bind', def.name).attr('data-toggle', 'buttons').toggleClass('btn-group-justified', def.justified === true);
         else group.attr('data-bind', def.name).attr('data-toggle', 'checks');
         def.watchers = {};
@@ -726,6 +738,7 @@ dataBinderArray.prototype.diff = function (data, callback) {
         _input_options(host, def, group, null, function (select, options) {
             _input_select_multi_populate(host, options, select, true);
         });
+        if (item_data) console.log(item_data.watch(function (item) { return _input_event_update(host, group, false, item); }));
         return group;
     }
 
@@ -790,7 +803,7 @@ dataBinderArray.prototype.diff = function (data, callback) {
             }
             return data;
         };
-        if (!Array.isArray(data) && typeof data[Object.keys(data)[0]] === 'object' && !(valueKey in data[Object.keys(data)[0]])) {
+        if (!Array.isArray(data) && typeof data[Object.keys(data)[0]] === 'object' && !(data[Object.keys(data)[0]] && valueKey in data[Object.keys(data)[0]])) {
             for (let group in data) data[group] = do_ops(data[group], $('<optgroup>').attr('label', group).appendTo(select));
         } else data = do_ops(data, select);
         if (item_data) {
@@ -823,12 +836,12 @@ dataBinderArray.prototype.diff = function (data, callback) {
     }
 
     function _input_options_populate_ajax(host, options, select, track, item_data, callback) {
-        let postops = {};
-        Object.assign(postops, options);
+        let postops = $.extend(true, {}, options);
         if ((postops.url = _match_replace(host, postops.url, item_data)) === false)
             return callback(host, options, null, select);
         if (track !== false) select.prop('disabled', true).html($('<option value selected>').html('Loading...'));
         postops.url = _url(host, postops.url);
+        if ('data' in postops) for (let x in postops.data) postops.data[x] = _match_replace(host, postops.data[x]);
         return $.ajax(postops).done(function (data) {
             if (typeof select.data('def') !== 'object') return;
             callback(host, options, data, select);
@@ -850,14 +863,15 @@ dataBinderArray.prototype.diff = function (data, callback) {
             let o = typeof options.value === 'object' ? options.value : typeof options.other === 'object' ? options.other : null;
             return callback(host, {}, o, select, o ? false : true);
         }
-        if (!(options !== null && typeof options === 'object' && 'url' in options))
-            return callback(host, options, options, select);
+        if (!(options !== null && typeof options === 'object' && ('url' in options)))
+            return callback(host, options, ('data' in options) ? options.data : options, select);
         let matches = options.url.match(/\{\{[\w\.]+\}\}/g), def = select.data('def');
         for (let x in matches) {
             let match = matches[x].substr(2, matches[x].length - 4);
             if (!(match in def.watchers)) def.watchers[match] = [];
             if (typeof item_data === 'undefined') item_data = host.data;
-            def.watchers[match].push(item_data.watch(match, function (key, value, select) {
+            def.watchers[match].push(item_data.watch(match, function (key, item_data, select) {
+                if (item_data.enabled() === false) return;
                 _input_options_populate_ajax(host, options, select, true, item_data, callback);
             }, select));
         }
@@ -1222,9 +1236,42 @@ dataBinderArray.prototype.diff = function (data, callback) {
         return inputDIV;
     }
 
+    function _input_multitext(host, def) {
+        let group = $('<div class="form-multi-text">'), item_data = _get_data_item(host.data, def.name), container;
+        let _rm_multitext_item = function (e) {
+            let value = $(e.currentTarget.parentNode).children('span').text();
+            item_data.remove(_convert_data_type(def, value));
+        };
+        let _add_multitext_item = function (item) {
+            $('<div class="input-mt-item">').html([
+                $('<span>').html(item.toString()),
+                $('<div class="input-mt-item-rm">').html(_icon(host, 'times', 'Remove')).click(function (e) { _rm_multitext_item(e); })
+            ]).data('item', item).appendTo(container);
+        };
+        let inputDef = Object.assign({}, def, { name: '__hz_input_mt_' + def.name, type: def.arrayOf });
+        if ('format' in def && 'validate' in def) { delete inputDef.validate.minlen; delete inputDef.validate.maxlen; }
+        if (!('hint' in def) || def.hint === true) def.hint = 'Press ENTER to add item to list.';
+        _input_std(_get_empty_host(ud, host), def.arrayOf, inputDef, true).appendTo(group).on('keypress', function (e) {
+            if (e.which !== 13) return;
+            let value = _convert_data_type(def, $(this).val());
+            if (!value || item_data.indexOf(value) >= 0 || _validate_rule(host, inputDef.name, item_data, inputDef, def, value) !== true) return;
+            item_data.push(value);
+            $(this).val('');
+        });
+        container = $('<div class="input-mt-items">')
+            .attr('data-bind', def.name)
+            .appendTo(group)
+            .on('push', function (e, name, item) { _add_multitext_item(item); })
+            .on('pop', function (e, name, item) {
+                $(this).children().each(function (index, o) { if ($(o).data('item') === item) $(o).remove(); })
+            });
+        if (item_data.length > 0) for (let x of item_data) _add_multitext_item(x);
+        return group;
+    }
+
     function _input_std(host, type, def, no_group) {
-        let group = $('<div>').addClass(host.settings.styleClasses.inputGroup);
         let input = null, item_data = _get_data_item(host.data, def.name);
+        if (type === 'int' || type === 'integer') type = 'number';
         if (def.multiline) {
             input = $('<textarea>').addClass(host.settings.styleClasses.input);
             if ('height' in def) input.css('height', def.height);
@@ -1241,13 +1288,14 @@ dataBinderArray.prototype.diff = function (data, callback) {
         if (type === 'text' && 'validate' in def && 'maxlen' in def.validate) input.attr('maxlength', def.validate.maxlen);
         if ('format' in def) input.attr('type', 'text').inputmask(def.format);
         if ('placeholder' in def) input.attr('placeholder', def.placeholder);
+        if (no_group === true) return input;
+        let group = $('<div>').addClass(host.settings.styleClasses.inputGroup);
         if (def.prefix) {
             $('<div>').addClass(host.settings.styleClasses.inputGroupPrepend).appendTo(group)
                 .html(((def.type === 'text' && (sf = _form_field_lookup(host.def, def.prefix)) !== null && def.name !== sf.name)
                     ? _input(host, sf, null, null, true).css('text-align', 'left')
                     : $('<span>').html(_match_replace(host, def.prefix, null, true, true))).addClass(host.settings.styleClasses.inputGroupText));
         }
-        group.append(input);
         if (def.suffix || def.copy === true || def.reveal === true) {
             let suffix = $('<div>').addClass(host.settings.styleClasses.inputGroupAppend).appendTo(group);
             if (def.suffix) {
@@ -1265,7 +1313,7 @@ dataBinderArray.prototype.diff = function (data, callback) {
                 .html($('<i class="fa fa-copy" title="Copy to clipboard">')));
         }
         if (item_data && item_data.value) _validate_input(host, input);
-        return group;
+        return group.append(input);
     }
 
     function _input(host, def, populate, item_data, no_group) {
@@ -1275,7 +1323,7 @@ dataBinderArray.prototype.diff = function (data, callback) {
             else if (def.type === 'button') return;
             else input = $('<span>').attr('data-bind', item_data ? item_data.attrName : '').html(item_data ? item_data.toString() : '');
         } else if (def.type === 'array' && !('options' in def)) {
-            input = _input_list(host, def);
+            input = ('arrayOf' in def) ? _input_multitext(host, def) : _input_list(host, def);
         } else if (def.type) {
             if ('options' in def) {
                 input = def.type === 'array' ? _input_select_multi(host, def) : _input_select(host, def, populate);
@@ -1289,11 +1337,6 @@ dataBinderArray.prototype.diff = function (data, callback) {
                         break;
                     case 'boolean':
                         input = _input_checkbox(host, def);
-                        break;
-                    case 'int':
-                    case 'integer':
-                    case 'number':
-                        input = _input_std(host, 'number', def);
                         break;
                     case 'date':
                     case 'datetime':
@@ -1409,10 +1452,11 @@ dataBinderArray.prototype.diff = function (data, callback) {
         }
         if (host.viewmode === true || _eval(host, def.allow_edit, false, item_data, def.name) !== true) layout = _field_to_html(layout);
         template.append(_form_field(host, { fields: layout, row: true }, true, false, false, ud, true));
-        item_data.watch(function (item) {
-            let item_name = item.attr('data-bind'), item_data = _get_data_item(host.data, item_name);
+        item_data.watch(function (item_data, o) {
+            if (!item_data) return;
+            let item_name = item_data.attrName;
             item_data.extend(_define(def.fields), true);
-            item.find('select,input,textarea').each(function (index, item) {
+            o.find('select,input,textarea').each(function (index, item) {
                 let input = $(item), def = input.data('def');
                 if (def) {
                     if (input.is('select')) {
@@ -1433,7 +1477,7 @@ dataBinderArray.prototype.diff = function (data, callback) {
                     input.replaceWith(_input_file(host, def));
                 }
             });
-            $(item).find('.form-group,.form-section').each(function (index, input) {
+            $(o).find('.form-group,.form-section').each(function (index, input) {
                 let group = $(input), def = group.data('def');
                 if (!(def && def.name)) return;
                 let sub_item_data = _get_data_item(item_data, def.name);
@@ -1447,7 +1491,7 @@ dataBinderArray.prototype.diff = function (data, callback) {
                 if ('required' in def) _make_required(host, def, group);
                 if ('show' in def) _make_showable(host, def, group);
             });
-            if ('disabled' in def) _make_disabled(host, def, $(item).parent().parent());
+            if ('disabled' in def) _make_disabled(host, def, $(o).parent().parent());
         });
         group.append($('<div class="itemlist-items" data-bind-template="o">')
             .attr('data-bind', def.name)
@@ -1504,6 +1548,7 @@ dataBinderArray.prototype.diff = function (data, callback) {
     }
 
     function _resolve_field_layout(host, fields, layout, name, a) {
+        if (!fields) return [];
         if (!layout) layout = Array.isArray(fields) ? $.extend(true, [], fields) : Object.keys(fields);
         for (let x in layout) {
             if (typeof layout[x] === 'string') layout[x] = { name: layout[x] };
@@ -1532,6 +1577,7 @@ dataBinderArray.prototype.diff = function (data, callback) {
             info = { fields: info };
         if (!(def = _form_field_lookup(host.def, info))) return;
         if (!item_data && 'name' in def && def.name) item_data = _get_data_item(host.data, def.name);
+        if (!('type' in def || 'fields' in def) && (item_data && !host.standalone)) def.type = 'text';
         if ('name' in def && 'default' in def && item_data instanceof dataBinderArray && item_data.value === null) item_data.value = def.default;
         if ('horizontal' in def) p = def.horizontal;
         if ('render' in def) {
@@ -1745,15 +1791,15 @@ dataBinderArray.prototype.diff = function (data, callback) {
         return error;
     }
 
-    function _validate_rule(host, name, item, def, d) {
+    function _validate_rule(host, name, item, def, d, value) {
         if (!(item && def) || host.validate !== true) return true;
         if ('show' in def) if (!_eval(host, def.show, true, item, def.name)) return true;
-        let value = item instanceof dataBinderArray ? item.length > 0 ? item : null : def.other && !item.value ? item.other : item.value;
+        if (typeof value === 'undefined') value = item instanceof dataBinderArray ? item.length > 0 ? item : null : def.other && !item.value ? item.other : item.value;
         if (!(name in host.required)) host.required[name] = _eval(host, def.required, d.required, item, name);
         d.required = host.required[name];
         if (d.required && value === null) return _validation_error(name, def, "required");
         if (typeof value === 'undefined' || value === null) return true; //Return now if there is no value and the field is not required!
-        if ('format' in def && value && def.type !== 'date') {
+        if ('format' in def && value instanceof dataBinderValue && def.type !== 'date') {
             if (!Inputmask.isValid(String(value), def.format))
                 return _validation_error(name, def, "bad_format");
         }
@@ -1808,7 +1854,7 @@ dataBinderArray.prototype.diff = function (data, callback) {
                 if (!(def.name in host.disabled)) host.disabled[def.name] = 'disabled' in def ? _eval(host, def.disabled, d.disabled, item, def.name) : false;
                 d.disabled = host.disabled[def.name];
                 let result = (def.protected || d.disabled) ? true : _validate_rule(host, def.name, item, def, d);
-                if ('fields' in def) {
+                if ('fields' in def && item instanceof dataBinder) {
                     let childItems = def.type === 'array' ? item.save() : [item];
                     if (result !== true || childItems.length === 0) {
                         for (let x in callbacks) callbacks[x](def.name, result, extra);
@@ -1825,7 +1871,7 @@ dataBinderArray.prototype.diff = function (data, callback) {
                         }
                     }
                 }
-                if (item && item.value && result === true && 'validate' in def && 'url' in def.validate) {
+                if (item && item instanceof dataBinderValue && item.value && result === true && 'validate' in def && 'url' in def.validate) {
                     let url = _match_replace(host, def.validate.url, { "__input__": item.value }, true);
                     let request = { target: [url, { "name": def.name, "value": item.value }] };
                     let indexKey = JSON.stringify(request).hash();
@@ -1943,7 +1989,7 @@ dataBinderArray.prototype.diff = function (data, callback) {
             host.data.commit();
             _post(host, 'save', params, false).done(function (response) {
                 if (!response.ok) {
-                    return $(host).trigger('saverror', [{
+                    return $(host).trigger('saverror', host.standalone ? response : [{
                         error: { str: response.reason || "An unknown error occurred while saving the form!" }
                     }, response.params]);
                 }
@@ -1958,7 +2004,7 @@ dataBinderArray.prototype.diff = function (data, callback) {
                         } else $(host).trigger('saverror', [{ error: { str: 'File upload failed' } }, response.params, queue]);
                     });
                 } else {
-                    $(host).trigger('save', [response.result, response.params]);
+                    $(host).trigger('save', host.standalone ? response : [response.result, response.params]);
                     if (callbacks.done) callbacks.done();
                 }
             }).fail(function (error) {
@@ -2184,11 +2230,19 @@ dataBinderArray.prototype.diff = function (data, callback) {
 
     function _convert_simple_form(def) {
         let _convert_simple_form_fields = function (def, fields) {
-            for (item of def) {
-                if (Array.isArray(item)) _convert_simple_form_fields(item, fields);
-                else if ('name' in item) {
-                    fields[item.name] = item;
-                    item = item.name;
+            if (Array.isArray(def)) for (let x in def) _convert_simple_form_fields(def[x], fields);
+            else if (typeof def === 'object') {
+                if ('sections' in def) _convert_simple_form_fields(def.sections, fields);
+                else if ('fields' in def) _convert_simple_form_fields(def.fields, fields);
+                else if ('name' in def) {
+                    let parts = def.name.split('.');
+                    for (let x = 1; x <= parts.length; x++) {
+                        let part = parts[x - 1];
+                        if (x < parts.length) {
+                            fields[part] = { fields: {} };
+                            fields = fields[part].fields;
+                        } else if (!(part in fields)) fields[part] = def;
+                    }
                 }
             }
         }
@@ -2280,7 +2334,10 @@ dataBinderArray.prototype.diff = function (data, callback) {
         host.apiCache = {};
         host.required = {};
         host.disabled = {};
-        host.formParent = parent_host;
+        if (parent_host) {
+            host.formParent = parent_host;
+            host.settings = parent_host.settings;
+        }
         return host;
     }
 

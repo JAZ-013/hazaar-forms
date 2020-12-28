@@ -670,7 +670,7 @@ class Model extends \Hazaar\Model\Strict {
 
             $type = ake($field, 'type');
 
-            if($type === 'array' && array_key_exists('arrayOf', $field)){
+            if($type === 'array' && is_array(ake($field, 'arrayOf'))){
 
                 if(!ake($array, $name)) continue;
 
@@ -1418,7 +1418,7 @@ class Model extends \Hazaar\Model\Strict {
 
             $router = new \Hazaar\Application\Router(new \Hazaar\Application\Config);
 
-            $request = new \Hazaar\Application\Request\Http($params, false, ake($args, 'method', 'POST'));
+            $request = new \Hazaar\Application\Request\Http($params, false, ake($args, 'method', strtoupper(ake($args, 'method', 'GET'))));
 
             if($pos = strpos($target, '?')){
 
