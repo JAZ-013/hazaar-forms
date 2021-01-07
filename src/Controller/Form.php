@@ -163,7 +163,9 @@ abstract class Form extends Action {
 
             case 'load':
 
-                $this->form_model->populate($this->form_load($this->request->get('params', array())));
+                $params = $this->request->get('params', array());
+
+                $this->form_model->populate($this->form_load($params));
 
                 $this->form_model->lock();
 
@@ -528,7 +530,7 @@ abstract class Form extends Action {
      * by the extending application controller class.
      */
 
-    protected function form_load($params = array()){
+    protected function form_load(&$params = array()){
 
         if(!class_exists('Hazaar\Cache'))
             throw new \Exception('To load form data you must override the form controller form_load() method or install the Hazaar\Cache library.');
@@ -554,7 +556,7 @@ abstract class Form extends Action {
 
     }
 
-    protected function form_get($name, $tags, $params = array()){
+    protected function form_get($name, $tags, &$params = array()){
 
         $file = $name . '.json';
 
