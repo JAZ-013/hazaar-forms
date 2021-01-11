@@ -585,12 +585,13 @@ dataBinderArray.prototype.diff = function (data, callback) {
 
     function _input_select_multi_items(host, data, container) {
         let def = container.data('def'), item_data = _get_data_item(host.data, def.name);
-        if (data === null || Array.isArray(data) && data.length === 0) {
+        let valueKey = def.options.value || 'value', labelKey = def.options.label || 'label';
+        if (data === null || (Array.isArray(data) && data.length === 0)) {
             item_data.empty();
             item_data.enabled(false);
             _input_event_update(host, def.name, true);
             return container.parent().hide();
-        }
+        } else if (Array.isArray(data)) data = data.reduce(function (obj, item) { return Object.assign(obj, { [item[valueKey]]: item[labelKey] }); }, {});
         let values = item_data.save(true);
         if (values) {
             let remove = values.filter(function (i) { return !(i in data); });
@@ -606,7 +607,6 @@ dataBinderArray.prototype.diff = function (data, callback) {
                 item_data.unset(index);
         };
         let value = _get_data_item(host.data, def.name, true), items = [];
-        let valueKey = def.options.value || 'value', labelKey = def.options.label || 'label';
         let disabled = def.protected === true || _eval(host, def.disabled, false, item_data, def.name);
         data = _convert_data(data, valueKey, labelKey, def);
         if ('sort' in def.options) {
