@@ -743,7 +743,20 @@ class Model extends \Hazaar\Model\Strict {
 
                 }
 
-                $array[$name] = $value = ['__hz_value' => $array[$name], '__hz_label' => ake($options, $array[$name], $array[$name])];
+                if(is_array($array[$name])){
+
+                    foreach($array[$name] as &$array_value){
+
+                        if(!array_key_exists('__hz_value', $array_value))
+                           $array_value = ['__hz_value' => $array_value, '__hz_label' => ake($options, $array_value, $array_value)];
+
+                    }
+
+                }else{
+
+                    $array[$name] = ['__hz_value' => $array[$name], '__hz_label' => ake($options, $array[$name], $array[$name])];
+
+                }
 
             }
 
