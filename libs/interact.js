@@ -351,8 +351,13 @@ dataBinderArray.prototype.diff = function (data, callback) {
                 && (value instanceof dataBinderValue ? value.value : value) === null
                 && force !== true) return false;
             if (modifiers.indexOf('>') !== -1) use_html = false;
-            let text = (value instanceof dataBinder || value instanceof dataBinderArray) ? JSON.stringify(value.save(true))
-                : value instanceof dataBinderValue ? use_html === true && modifiers.indexOf(':') === -1 ? value : value.value : value;
+            let filter = function (value) { if (Array.isArray(value)) { value.filter(filter); return value.length > 0; } return value !== null; };
+            let text = (function (o, m, h) {
+                if (o instanceof dataBinder) return JSON.stringify(o.save(true));
+                else if (o instanceof dataBinderArray) return JSON.stringify(o.save(true).filter(filter));
+                else if (o instanceof dataBinderValue) return h === true && m.indexOf(':') === -1 ? o : o.value;
+                return o;
+            })(value, modifiers, use_html);
             let out = use_html ? '<span data-bind="' + match[2] + '" data-bind-label="' + (modifiers.indexOf(':') === -1 ? 'true' : 'false') + '">' + text + '</span>' : text || '';
             str = str.replace(match[0], out);
         }
@@ -680,13 +685,15 @@ dataBinderArray.prototype.diff = function (data, callback) {
         if (!options) return false;
         if (typeof options === 'object' && 'url' in options) {
             let matches = options.url.match(/\{\{[\w\.]+\}\}/g), def = container.data('def');
-            for (let x in matches) {
-                let match = matches[x].substr(2, matches[x].length - 4);
-                if (!(match in def.watchers)) def.watchers[match] = [];
-                def.watchers[match].push(host.data.watch(match, function (key, item_data, container) {
-                    if (item_data.enabled() === false) return;
-                    _input_select_multi_populate_ajax(host, options, container, false);
-                }, container));
+            if (matches !== null) {
+                for (let x in matches) {
+                    let match = matches[x].substr(2, matches[x].length - 4);
+                    if (!(match in def.watchers)) def.watchers[match] = [];
+                    def.watchers[match].push(host.data.watch(match, function (key, item_data, container) {
+                        if (item_data.enabled() === false) return;
+                        _input_select_multi_populate_ajax(host, options, container, false);
+                    }, container));
+                }
             }
             return _input_select_multi_populate_ajax(host, options, container, track);
         }
