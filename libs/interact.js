@@ -2219,9 +2219,9 @@ dataBinderArray.prototype.diff = function (data, callback) {
             if (pages[x].id === pageno) host.page = y - 1; //Store the new page number
         }
         if (changed) {
-            $(host)
-                .trigger('pages', [host.pages, host.page])
-                .trigger('nav', [host.page + 1, host.pages.length]);
+            let pages = [];
+            for (num in host.pages) pages[num] = { label: _match_replace(host, host.pages[num].label, null, true, true) };
+            $(host).trigger('pages', [pages, host.page]).trigger('nav', [host.page + 1, host.pages.length]);
         }
         return changed;
     }
