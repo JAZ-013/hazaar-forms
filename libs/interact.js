@@ -472,8 +472,10 @@ dataBinderArray.prototype.diff = function (data, callback) {
         } else if (def.type === 'date' && 'format' in def) {
             let date = input.datepicker('getDate');
             item_data.set(date ? date.getFullYear() + '-' + (date.getMonth() + 1) + '-' + date.getDate() : null, input.datepicker('getFormattedDate'));
-        } else if (def.other === true) item_data.other = input.val();
-        else {
+        } else if (def.other === true) {
+            item_data.other = input.val();
+            _input_event_update(host, input, false, item_data);
+        } else {
             let value = _convert_data_type(def, input.val());
             if (item_data instanceof dataBinder) item_data.populate(value);
             else item_data.set(value);
@@ -491,15 +493,14 @@ dataBinderArray.prototype.diff = function (data, callback) {
         host.eval_cache = true;
         if (typeof update === 'string') update = { "url": update };
         if (typeof input === 'object') {
-            if (item_data && input.is('select') && item_data.enabled() === true && input.val() !== '__hz_other') {
+            if (item_data && input.is('select') && input.val() !== '__hz_other') {
                 let other = input.children('option[value="' + item_data.value + '"]').data('other') || null;
                 item_data.enabled(false);
-                item_data.set(item_data.value, input.children('option:selected').text(), other);
+                item_data.set(item_data.value, input.children('option:selected').text(), other, false);
                 item_data.enabled(true);
-                return;
-            } else if (item_data && input.is('input[type="radio"]') && item_data.enabled() === true) {
+            } else if (item_data && input.is('input[type="radio"]') && item_data.enabled() === true)
                 item_data.set(item_data.value, input.next().text());
-            } else if (typeof update === 'boolean' || update && ('url' in update || host.settings.update === true)) {
+            if (typeof update === 'boolean' || update && ('url' in update || host.settings.update === true)) {
                 let options = {
                     originator: def.name,
                     form: host.data.save()
