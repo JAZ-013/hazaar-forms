@@ -1,4 +1,4 @@
-var ud = undefined;
+﻿var ud = undefined;
 
 //Object.assign() Polyfill
 if (typeof Object.assign !== 'function') {
@@ -472,8 +472,10 @@ dataBinderArray.prototype.diff = function (data, callback) {
         } else if (def.type === 'date' && 'format' in def) {
             let date = input.datepicker('getDate');
             item_data.set(date ? date.getFullYear() + '-' + (date.getMonth() + 1) + '-' + date.getDate() : null, input.datepicker('getFormattedDate'));
-        } else if (def.other === true) item_data.other = input.val();
-        else {
+        } else if (def.other === true) {
+            item_data.other = input.val();
+            _input_event_update(host, input, false, item_data);
+        } else {
             let value = _convert_data_type(def, input.val());
             if (item_data instanceof dataBinder) item_data.populate(value);
             else item_data.set(value);
