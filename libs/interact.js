@@ -714,6 +714,9 @@ dataBinderArray.prototype.diff = function (data, callback) {
         _input_options(host, def, group, null, function (select, options) {
             _input_select_multi_populate(host, options, select, true);
         });
+        group.on('pop', function (e, name, item) {
+            group.find('div[data-bind-value="' + item.value + '"]').children('input[type=checkbox]').prop('checked', false);
+        });
         if (item_data) item_data.watch(function (item) {
             if (item) {
                 let o = group.find('div[data-bind-value="' + item.value + '"]');
