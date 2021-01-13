@@ -714,7 +714,14 @@ dataBinderArray.prototype.diff = function (data, callback) {
         _input_options(host, def, group, null, function (select, options) {
             _input_select_multi_populate(host, options, select, true);
         });
-        if (item_data) item_data.watch(function (item) { return _input_event_update(host, group, false, item); });
+        if (item_data) item_data.watch(function (item) {
+            if (item) {
+                let o = group.find('div[data-bind-value="' + item.value + '"]');
+                if (!item.label) item.label = o.children('label').html();
+                o.children('input[type=checkbox]').prop('checked', true);
+            }
+            return _input_event_update(host, group, false, item);
+        });
         return group;
     }
 
