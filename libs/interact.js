@@ -472,8 +472,10 @@ dataBinderArray.prototype.diff = function (data, callback) {
         } else if (def.type === 'date' && 'format' in def) {
             let date = input.datepicker('getDate');
             item_data.set(date ? date.getFullYear() + '-' + (date.getMonth() + 1) + '-' + date.getDate() : null, input.datepicker('getFormattedDate'));
-        } else if (def.other === true) item_data.other = input.val();
-        else {
+        } else if (def.other === true) {
+            item_data.other = input.val();
+            _input_event_update(host, input, false, item_data);
+        } else {
             let value = _convert_data_type(def, input.val());
             if (item_data instanceof dataBinder) item_data.populate(value);
             else item_data.set(value);
@@ -491,15 +493,14 @@ dataBinderArray.prototype.diff = function (data, callback) {
         host.eval_cache = true;
         if (typeof update === 'string') update = { "url": update };
         if (typeof input === 'object') {
-            if (item_data && input.is('select') && item_data.enabled() === true && input.val() !== '__hz_other') {
+            if (item_data && input.is('select') && input.val() !== '__hz_other') {
                 let other = input.children('option[value="' + item_data.value + '"]').data('other') || null;
                 item_data.enabled(false);
-                item_data.set(item_data.value, input.children('option:selected').text(), other);
+                item_data.set(item_data.value, input.children('option:selected').text(), other, false);
                 item_data.enabled(true);
-                return;
-            } else if (item_data && input.is('input[type="radio"]') && item_data.enabled() === true) {
+            } else if (item_data && input.is('input[type="radio"]') && item_data.enabled() === true)
                 item_data.set(item_data.value, input.next().text());
-            } else if (typeof update === 'boolean' || update && ('url' in update || host.settings.update === true)) {
+            if (typeof update === 'boolean' || update && ('url' in update || host.settings.update === true)) {
                 let options = {
                     originator: def.name,
                     form: host.data.save()
@@ -1540,7 +1541,6 @@ dataBinderArray.prototype.diff = function (data, callback) {
             info = { fields: info };
         if (!(def = _form_field_lookup(host.def, info))) return;
         if (!item_data && 'name' in def && def.name) item_data = _get_data_item(host.data, def.name);
-        if (!('type' in def || 'fields' in def) && (item_data && !host.standalone)) def.type = 'text';
         if ('name' in def && 'default' in def && item_data instanceof dataBinderArray && item_data.value === null) item_data.value = def.default;
         if ('horizontal' in def) p = def.horizontal;
         if ('render' in def) {
@@ -2229,9 +2229,9 @@ dataBinderArray.prototype.diff = function (data, callback) {
             if (pages[x].id === pageno) host.page = y - 1; //Store the new page number
         }
         if (changed) {
-            $(host)
-                .trigger('pages', [host.pages, host.page])
-                .trigger('nav', [host.page + 1, host.pages.length]);
+            let pages = [];
+            for (num in host.pages) pages[num] = { label: _match_replace(host, host.pages[num].label, null, true, true) };
+            $(host).trigger('pages', [pages, host.page]).trigger('nav', [host.page + 1, host.pages.length]);
         }
         return changed;
     }
