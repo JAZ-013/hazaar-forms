@@ -747,7 +747,7 @@ class Model extends \Hazaar\Model\Strict {
 
                     foreach($array[$name] as &$array_value){
 
-                        if(!array_key_exists('__hz_value', $array_value))
+                        if(!(is_array($array_value) && array_key_exists('__hz_value', $array_value)))
                            $array_value = ['__hz_value' => $array_value, '__hz_label' => ake($options, $array_value, $array_value)];
 
                     }
