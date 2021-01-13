@@ -626,7 +626,7 @@ dataBinderArray.prototype.diff = function (data, callback) {
                         .toggleClass('active', active)
                         .prop('disabled', disabled)
                         .attr('data-bind-value', x_value)
-                        .data('def', def), label
+                        .data('def', def), $('<span>').html(label)
                 ]).toggleClass('active', active).change(fChange));
             }
             return container.addClass('btn-group').addClass('btn-group-toggle').attr('role', 'group').attr('aria-label', def.label).html(items).parent().show();
@@ -719,9 +719,14 @@ dataBinderArray.prototype.diff = function (data, callback) {
         });
         if (item_data) item_data.watch(function (item) {
             if (item) {
-                let o = group.find('div[data-bind-value="' + item.value + '"]');
-                if (!item.label) item.label = o.children('label').html();
-                o.children('input[type=checkbox]').prop('checked', true);
+                let o = group.find('[data-bind-value="' + item.value + '"]');
+                if (o.is('input')) {
+                    if (!item.label) item.label = o.parent().children('span').html();
+                    o.prop('checked', true).parent().addClass('active');
+                } else if (o.is('div')) {
+                    if (!item.label) item.label = o.children('label').html();
+                    o.children('input[type=checkbox]').prop('checked', true);
+                }
             }
             return _input_event_update(host, group, false, item);
         });
