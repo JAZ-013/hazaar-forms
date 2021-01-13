@@ -602,10 +602,9 @@ dataBinderArray.prototype.diff = function (data, callback) {
             let def = $(this.childNodes[0]).data('def'), value = _convert_data_type(def, this.childNodes[0].value);
             let item_data = _get_data_item(host.data, def.name);
             let index = item_data.indexOf(value);
-            if (this.childNodes[0].checked && index === -1)
-                item_data.push({ '__hz_value': value, '__hz_label': this.childNodes[1].textContent });
-            else
-                item_data.unset(index);
+            if (this.childNodes[0].checked) {
+                if (index === -1) item_data.push({ '__hz_value': value, '__hz_label': this.childNodes[1].textContent });
+            } else item_data.unset(index);
         };
         let value = _get_data_item(host.data, def.name, true), items = [];
         let disabled = def.protected === true || _eval(host, def.disabled, false, item_data, def.name);
