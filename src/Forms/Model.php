@@ -728,36 +728,6 @@ class Model extends \Hazaar\Model\Strict {
 
                 }
 
-            }elseif((($options = ake($field, 'options')) || ($options = ake($field, 'lookup'))) 
-                && !(is_array($array[$name]) && array_key_exists('__hz_value', $array[$name]))){
-
-                if(is_string($options))
-                    $options = (object)array('url' => $options);
-
-                if($url = ake($options, 'url')){
-
-                    if(!($data = $this->api($this->matchReplace($url), $options)))
-                        return false;
-
-                    $options = $this->__convert_data($data, ake($options, 'value', 'value'), ake($options, 'label', 'label'));
-
-                }
-
-                if(is_array($array[$name])){
-
-                    foreach($array[$name] as &$array_value){
-
-                        if(!(is_array($array_value) && array_key_exists('__hz_value', $array_value)))
-                           $array_value = ['__hz_value' => $array_value, '__hz_label' => ake($options, $array_value, $array_value)];
-
-                    }
-
-                }else{
-
-                    $array[$name] = ['__hz_value' => $array[$name], '__hz_label' => ake($options, $array[$name], $array[$name])];
-
-                }
-
             }
 
             //Format date for output to the form
