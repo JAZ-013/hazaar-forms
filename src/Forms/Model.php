@@ -1417,7 +1417,7 @@ class Model extends \Hazaar\Model\Strict {
 
         if(strpos($target, ':') !== false){
 
-            $url = new \Hazaar\Application\Url($target);
+            $url = new \Hazaar\Http\Uri($target);
 
             $url->setParams($params);
 
