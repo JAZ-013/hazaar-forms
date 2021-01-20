@@ -728,8 +728,9 @@ class Model extends \Hazaar\Model\Strict {
 
                 }
 
-            }elseif((($options = ake($field, 'options')) || ($options = ake($field, 'lookup'))) 
-                && !(is_array($array[$name]) && array_key_exists('__hz_value', $array[$name]))){
+            }elseif(array_key_exists('default', $field)
+                && !(is_array($array[$name]) && array_key_exists('__hz_value', $array[$name]))
+                && ($options = ake($field, 'options'))){
 
                 if(is_string($options))
                     $options = (object)array('url' => $options);
@@ -1407,17 +1408,23 @@ class Model extends \Hazaar\Model\Strict {
 
     }
 
-    public function api($target, $args = array()){
+    public function api($target, $args = array(), $params = null, $merge_params = false){
 
-        $params = array(
-            'form' => $this->toArray(),
-            'def' => $this->getFormDefinition(true),
-            'name' => $this->getName()
-        );
+        if(!is_array($params) || $merge_params === true){
 
+            $form_params = array(
+                'form' => $this->toArray(),
+                'def' => $this->getFormDefinition(true),
+                'name' => $this->getName()
+            );
+
+            $params = $merge_params ? array_merge($form_params, $params) : $form_params;
+
+        }
+        
         if(strpos($target, ':') !== false){
 
-            $url = new \Hazaar\Application\Url($target);
+            $url = new \Hazaar\Http\Uri($target);
 
             $url->setParams($params);
 
@@ -1650,9 +1657,9 @@ class Model extends \Hazaar\Model\Strict {
                     if($value === null)
                         return true;
 
-                    $data = $this->matchReplace($data, false, array(), $value);
+                    $field['validate']['method'] = ake($field, 'validate.method', 'POST');
 
-                    $result = $this->api($data);
+                    $result = $this->api($this->matchReplace($data, false, array(), $value), $field['validate']);
 
                     if(ake($result, 'ok', false) !== true)
                         return $this->__validation_error($field['name'], $field, "api_failed($data)");

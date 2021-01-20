@@ -1849,7 +1849,7 @@ dataBinderArray.prototype.diff = function (data, callback) {
                     };
                     if (indexKey in host.apiCache) apiDone(host.apiCache[indexKey]);
                     else if (host.standalone === true) $.ajax({
-                        method: 'POST',
+                        method: def.validate.method || 'POST',
                         url: def.validate.url,
                         contentType: "application/json",
                         data: JSON.stringify(request.target[1])
