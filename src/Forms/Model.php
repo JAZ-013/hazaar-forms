@@ -728,8 +728,9 @@ class Model extends \Hazaar\Model\Strict {
 
                 }
 
-            }elseif((($options = ake($field, 'options')) || ($options = ake($field, 'lookup'))) 
-                && !(is_array($array[$name]) && array_key_exists('__hz_value', $array[$name]))){
+            }elseif(array_key_exists('default', $field)
+                && !(is_array($array[$name]) && array_key_exists('__hz_value', $array[$name]))
+                && ($options = ake($field, 'options'))){
 
                 if(is_string($options))
                     $options = (object)array('url' => $options);
