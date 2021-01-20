@@ -124,7 +124,7 @@ abstract class Form extends Action {
 
                     $args = array('params' => $params);
 
-                    if($result = $this->form_model->api($url, $args)){
+                    if($result = $this->form_model->api($url, array('method' => 'POST'), $args, true)){
 
                         $out->ok = true;
 
@@ -182,17 +182,21 @@ abstract class Form extends Action {
 
                 $args = array();
 
+                $params = null;
+
                 if($info = ake($target, 1, array())){
 
                     $name = ake($info, 'name');
 
+                    $args = array_merge(array('method' => 'POST'), (array)ake($this->form_model->getDefinition($name), 'validate', array()));
+
                     $this->form_model->set($name, ake($info, 'value'));
 
-                    $args = array_from_dot_notation(array($name => $this->form_model->get($name)));
+                    $params = array_from_dot_notation(array($name => $this->form_model->get($name)));
 
                 }
 
-                $result = $this->form_model->api($target[0], $args);
+                $result = $this->form_model->api($target[0], $args, $params);
 
                 if(!is_bool($result)){
 
@@ -224,7 +228,7 @@ abstract class Form extends Action {
 
                     $args = array('originator' => $this->request->get('originator'));
 
-                    $updates = $this->form_model->api($target, $args);
+                    $updates = $this->form_model->api($target, array('method' => 'POST'), $args, true);
 
                 }elseif(method_exists($this, 'form_update')){
 
