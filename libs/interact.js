@@ -498,9 +498,9 @@ dataBinderArray.prototype.diff = function (data, callback) {
                 item_data.enabled(false);
                 item_data.set(item_data.value, input.children('option:selected').text(), other, false);
                 item_data.enabled(true);
-            } else if (item_data && input.is('input[type="radio"]') && item_data.enabled() === true)
+            } else if (item_data && input.is('input[type="radio"]') && item_data.enabled() === true) {
                 item_data.set(item_data.value, input.next().text());
-            if (typeof update === 'boolean' || update && ('url' in update || host.settings.update === true)) {
+            } else if (typeof update === 'boolean' || update && ('url' in update || host.settings.update === true)) {
                 let options = {
                     originator: def.name,
                     form: host.data.save()
