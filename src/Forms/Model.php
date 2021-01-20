@@ -1408,14 +1408,20 @@ class Model extends \Hazaar\Model\Strict {
 
     }
 
-    public function api($target, $args = array()){
+    public function api($target, $args = array(), $params = null, $merge_params = false){
 
-        $params = array(
-            'form' => $this->toArray(),
-            'def' => $this->getFormDefinition(true),
-            'name' => $this->getName()
-        );
+        if(!is_array($params) || $merge_params === true){
 
+            $form_params = array(
+                'form' => $this->toArray(),
+                'def' => $this->getFormDefinition(true),
+                'name' => $this->getName()
+            );
+
+            $params = $merge_params ? array_merge($form_params, $params) : $form_params;
+
+        }
+        
         if(strpos($target, ':') !== false){
 
             $url = new \Hazaar\Http\Uri($target);
@@ -1651,9 +1657,9 @@ class Model extends \Hazaar\Model\Strict {
                     if($value === null)
                         return true;
 
-                    $data = $this->matchReplace($data, false, array(), $value);
+                    $field['validate']['method'] = ake($field, 'validate.method', 'POST');
 
-                    $result = $this->api($data);
+                    $result = $this->api($this->matchReplace($data, false, array(), $value), $field['validate']);
 
                     if(ake($result, 'ok', false) !== true)
                         return $this->__validation_error($field['name'], $field, "api_failed($data)");
