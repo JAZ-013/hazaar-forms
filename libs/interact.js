@@ -287,7 +287,7 @@ dataBinderArray.prototype.diff = function (data, callback) {
                 newitem[labelKey] = dataIn[x];
             }
             if (group) {
-                let key = 'data' in group && newitem[group.key] in group.data ? group.data[newitem[group.key]] : newitem[group.key];
+                let key = group.data && newitem[group.key] in group.data ? group.data[newitem[group.key]] : newitem[group.key];
                 if (!(key in dataOut)) dataOut[key] = [];
                 dataOut[key].push(newitem);
             } else dataOut.push(newitem);
