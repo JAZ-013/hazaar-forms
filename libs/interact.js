@@ -268,16 +268,17 @@ dataBinderArray.prototype.diff = function (data, callback) {
         return data;
     }
 
-    function _convert_data(dataIn, valueKey, labelKey, def) {
+    function _convert_data(dataIn, valueKey, labelKey, def, index) {
         let dataOut = [];
         for (let x in dataIn) {
-            if (dataIn[x] && typeof dataIn[x] === 'object') dataOut.push(dataIn[x]);
+            let newitem = {};
+            if (dataIn[x] && typeof dataIn[x] === 'object') newitem = dataIn[x];
             else {
-                let newitem = {};
                 newitem[valueKey] = _convert_data_type(def, x);
                 newitem[labelKey] = dataIn[x];
-                dataOut.push(newitem);
             }
+            dataOut.push(newitem);
+            if (typeof index === 'object') index[newitem[valueKey]] = newitem[labelKey];
         }
         return dataOut;
     }
@@ -585,17 +586,18 @@ dataBinderArray.prototype.diff = function (data, callback) {
     }
 
     function _input_select_multi_items(host, data, container) {
-        let def = container.data('def'), item_data = _get_data_item(host.data, def.name);
+        let def = container.data('def'), item_data = _get_data_item(host.data, def.name), data_index = {};
         let valueKey = def.options.value || 'value', labelKey = def.options.label || 'label';
+        data = _convert_data(data, valueKey, labelKey, def, data_index);
         if (data === null || (Array.isArray(data) && data.length === 0)) {
             item_data.empty();
             item_data.enabled(false);
             _input_event_update(host, def.name, true);
             return container.parent().hide();
-        } else if (Array.isArray(data)) data = data.reduce(function (obj, item) { return Object.assign(obj, { [item[valueKey]]: item[labelKey] }); }, {});
+        }
         let values = item_data.save(true);
         if (values) {
-            let remove = values.filter(function (i) { return !(i in data); });
+            let remove = values.filter(function (i) { return !(i in data_index); });
             for (let x in remove) item_data.remove(remove[x]);
         }
         let fChange = function () {
@@ -608,7 +610,6 @@ dataBinderArray.prototype.diff = function (data, callback) {
         };
         let value = _get_data_item(host.data, def.name, true), items = [];
         let disabled = def.protected === true || _eval(host, def.disabled, false, item_data, def.name);
-        data = _convert_data(data, valueKey, labelKey, def);
         if ('sort' in def.options) {
             if (typeof def.options.sort === 'boolean') def.options.sort = labelKey;
             data = _sort_data(data, def.options.sort, labelKey);
