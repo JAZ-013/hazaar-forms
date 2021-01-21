@@ -269,7 +269,16 @@ dataBinderArray.prototype.diff = function (data, callback) {
     }
 
     function _convert_data(dataIn, valueKey, labelKey, def, index) {
-        let dataOut = [];
+        if (typeof dataIn === 'object' && !Array.isArray(dataIn) && typeof dataIn[Object.keys(dataIn)[0]] !== 'string') {
+            let nd = [];
+            def.options = { data: dataIn, group: { key: 'group', data: {} } };
+            for (let g in dataIn) {
+                def.options.group.data[g] = g;
+                for (let x in dataIn[g]) nd.push({ [valueKey]: _convert_data_type(def, x), [labelKey]: dataIn[g][x], group: g });
+            }
+            dataIn = nd;
+        }
+        let group = ('options' in def && 'group' in def.options && 'key' in def.options.group) ? def.options.group : null, dataOut = group ? {} : [];
         for (let x in dataIn) {
             let newitem = {};
             if (dataIn[x] && typeof dataIn[x] === 'object') newitem = dataIn[x];
@@ -277,7 +286,11 @@ dataBinderArray.prototype.diff = function (data, callback) {
                 newitem[valueKey] = _convert_data_type(def, x);
                 newitem[labelKey] = dataIn[x];
             }
-            dataOut.push(newitem);
+            if (group) {
+                let key = 'data' in group && newitem[group.key] in group.data ? group.data[newitem[group.key]] : newitem[group.key];
+                if (!(key in dataOut)) dataOut[key] = [];
+                dataOut[key].push(newitem);
+            } else dataOut.push(newitem);
             if (typeof index === 'object') index[newitem[valueKey]] = newitem[labelKey];
         }
         return dataOut;
@@ -760,7 +773,9 @@ dataBinderArray.prototype.diff = function (data, callback) {
     }
 
     function _input_select_items(host, options, data, select, no_nullify) {
-        let item_data = _get_data_item(host.data, select.attr('data-bind')), def = select.data('def'), grouped = false;
+        let item_data = _get_data_item(host.data, select.attr('data-bind')), def = select.data('def');
+        let valueKey = options.value || 'value', labelKey = options.label || 'label';
+        data = _convert_data(data, valueKey, labelKey, def);
         select.prop('disabled', !(def.disabled !== true && def.protected !== true && select.data('ed') !== true));
         if (data === null || typeof data !== 'object' || Array.isArray(data) && data.length === 0 || Object.keys(data).length === 0) {
             if (no_nullify !== true) _nullify(host, def);
@@ -768,10 +783,8 @@ dataBinderArray.prototype.diff = function (data, callback) {
             _input_event_update(host, def.name, true);
             return select.empty().prop('disabled', true);
         }
-        let valueKey = options.value || 'value', labelKey = options.label || 'label';
         select.empty().append($('<option>').attr('value', '').html(_match_replace(host, def.placeholder, null, true, true)));
         let do_ops = function (data, container) {
-            data = _convert_data(data, valueKey, labelKey, def, grouped);
             if ('sort' in options) {
                 if (typeof options.sort === 'boolean') options.sort = labelKey;
                 data = _sort_data(data, options.sort, labelKey, valueKey);
