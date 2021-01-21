@@ -268,16 +268,30 @@ dataBinderArray.prototype.diff = function (data, callback) {
         return data;
     }
 
-    function _convert_data(dataIn, valueKey, labelKey, def) {
-        let dataOut = [];
+    function _convert_data(dataIn, valueKey, labelKey, def, index) {
+        if (typeof dataIn === 'object' && !Array.isArray(dataIn) && typeof dataIn[Object.keys(dataIn)[0]] !== 'string') {
+            let nd = [];
+            def.options = { data: dataIn, group: { key: 'group', data: {} } };
+            for (let g in dataIn) {
+                def.options.group.data[g] = g;
+                for (let x in dataIn[g]) nd.push({ [valueKey]: _convert_data_type(def, x), [labelKey]: dataIn[g][x], group: g });
+            }
+            dataIn = nd;
+        }
+        let group = ('options' in def && 'group' in def.options && 'key' in def.options.group) ? def.options.group : null, dataOut = group ? {} : [];
         for (let x in dataIn) {
-            if (dataIn[x] && typeof dataIn[x] === 'object') dataOut.push(dataIn[x]);
+            let newitem = {};
+            if (dataIn[x] && typeof dataIn[x] === 'object') newitem = dataIn[x];
             else {
-                let newitem = {};
                 newitem[valueKey] = _convert_data_type(def, x);
                 newitem[labelKey] = dataIn[x];
-                dataOut.push(newitem);
             }
+            if (group) {
+                let key = group.data && newitem[group.key] in group.data ? group.data[newitem[group.key]] : newitem[group.key];
+                if (!(key in dataOut)) dataOut[key] = [];
+                dataOut[key].push(newitem);
+            } else dataOut.push(newitem);
+            if (typeof index === 'object') index[newitem[valueKey]] = newitem[labelKey];
         }
         return dataOut;
     }
@@ -585,17 +599,18 @@ dataBinderArray.prototype.diff = function (data, callback) {
     }
 
     function _input_select_multi_items(host, data, container) {
-        let def = container.data('def'), item_data = _get_data_item(host.data, def.name);
+        let def = container.data('def'), item_data = _get_data_item(host.data, def.name), data_index = {};
         let valueKey = def.options.value || 'value', labelKey = def.options.label || 'label';
+        data = _convert_data(data, valueKey, labelKey, def, data_index);
         if (data === null || (Array.isArray(data) && data.length === 0)) {
             item_data.empty();
             item_data.enabled(false);
             _input_event_update(host, def.name, true);
             return container.parent().hide();
-        } else if (Array.isArray(data)) data = data.reduce(function (obj, item) { return Object.assign(obj, { [item[valueKey]]: item[labelKey] }); }, {});
+        }
         let values = item_data.save(true);
         if (values) {
-            let remove = values.filter(function (i) { return !(i in data); });
+            let remove = values.filter(function (i) { return !(i in data_index); });
             for (let x in remove) item_data.remove(remove[x]);
         }
         let fChange = function () {
@@ -606,15 +621,14 @@ dataBinderArray.prototype.diff = function (data, callback) {
                 if (index === -1) item_data.push({ '__hz_value': value, '__hz_label': this.childNodes[1].textContent });
             } else item_data.unset(index);
         };
-        let value = _get_data_item(host.data, def.name, true), items = [];
+        let value = _get_data_item(host.data, def.name, true);
         let disabled = def.protected === true || _eval(host, def.disabled, false, item_data, def.name);
-        data = _convert_data(data, valueKey, labelKey, def);
         if ('sort' in def.options) {
             if (typeof def.options.sort === 'boolean') def.options.sort = labelKey;
             data = _sort_data(data, def.options.sort, labelKey);
         }
         if (def.buttons === true) {
-            let btnClass = def.class || 'primary';
+            let btnClass = def.class || 'primary', items = [];
             for (let x in data) {
                 let x_value = _convert_data_type(def, data[x][valueKey]), label = data[x][labelKey];
                 let active = item_data.indexOf(x_value) > -1, name = def.name + '_' + x_value;
@@ -633,36 +647,42 @@ dataBinderArray.prototype.diff = function (data, callback) {
         }
         if (!('columns' in def)) def.columns = 1;
         if (def.columns > 6) def.columns = 6;
-        let col_width = Math.floor(12 / def.columns), per_col = Math.ceil(Object.keys(data).length / def.columns);
-        let cols = $('<div class="row">'), column = 0;
-        for (let col = 0; col < def.columns; col++)
-            items.push($('<div>').addClass('col-md-' + col_width).toggleClass('custom-controls-stacked', def.inline));
-        for (let x in data) {
-            if ('filter' in def.options && def.options.filter.indexOf(data[x][labelKey]) === -1) {
-                delete data[x];
-                continue;
+        let do_ops = function (data, c) {
+            let col_width = Math.floor(12 / def.columns), per_col = Math.ceil(Object.keys(data).length / def.columns);
+            let cols = $('<div class="row">').appendTo(c), column = 0, items = [];;
+            for (let col = 0; col < def.columns; col++)
+                items.push($('<div>').addClass('col-md-' + col_width).toggleClass('custom-controls-stacked', def.inline));
+            for (let x in data) {
+                if ('filter' in def.options && def.options.filter.indexOf(data[x][labelKey]) === -1) {
+                    delete data[x];
+                    continue;
+                }
+                let iv = _convert_data_type(def, data[x][valueKey]), il = data[x][labelKey], id = _guid();
+                let active = value instanceof dataBinderArray && value.indexOf(iv) > -1, name = def.name + '_' + iv;
+                let label = $('<div>').addClass(host.settings.styleClasses.chkDiv).html([
+                    $('<input type="checkbox">')
+                        .addClass(host.settings.styleClasses.chkInput)
+                        .attr('id', id)
+                        .attr('value', iv)
+                        .prop('checked', active)
+                        .prop('disabled', disabled)
+                        .data('def', def),
+                    $('<label>').addClass(host.settings.styleClasses.chkLabel)
+                        .html(il)
+                        .attr('for', id)
+                ]).attr('data-bind-value', iv).change(fChange);
+                if ('css' in def) label.css(def.css);
+                items[column].append(label);
+                if (items[column].children().length >= per_col) column++;
             }
-            let iv = _convert_data_type(def, data[x][valueKey]), il = data[x][labelKey], id = _guid();
-            let active = value instanceof dataBinderArray && value.indexOf(iv) > -1, name = def.name + '_' + iv;
-            let label = $('<div>').addClass(host.settings.styleClasses.chkDiv).html([
-                $('<input type="checkbox">')
-                    .addClass(host.settings.styleClasses.chkInput)
-                    .attr('id', id)
-                    .attr('value', iv)
-                    .prop('checked', active)
-                    .prop('disabled', disabled)
-                    .data('def', def),
-                $('<label>').addClass(host.settings.styleClasses.chkLabel)
-                    .html(il)
-                    .attr('for', id)
-            ]).attr('data-bind-value', iv).change(fChange);
-            if ('css' in def) label.css(def.css);
-            items[column].append(label);
-            if (items[column].children().length >= per_col) column++;
+            c.append(cols.html(items));
         }
+
+        if (!Array.isArray(data)) for (let g in data) do_ops(data[g], $('<div class="mb-1">').html($('<strong>').html(g)).appendTo(container));
+        else do_ops(data, container);
         item_data.enabled(true);
         _input_event_update(host, def.name, true);
-        return container.html(cols.html(items)).parent().show();
+        return container.parent().show();
     }
 
     function _input_select_multi_populate_ajax(host, options, container, track) {
@@ -759,7 +779,9 @@ dataBinderArray.prototype.diff = function (data, callback) {
     }
 
     function _input_select_items(host, options, data, select, no_nullify) {
-        let item_data = _get_data_item(host.data, select.attr('data-bind')), def = select.data('def'), grouped = false;
+        let item_data = _get_data_item(host.data, select.attr('data-bind')), def = select.data('def');
+        let valueKey = options.value || 'value', labelKey = options.label || 'label';
+        data = _convert_data(data, valueKey, labelKey, def);
         select.prop('disabled', !(def.disabled !== true && def.protected !== true && select.data('ed') !== true));
         if (data === null || typeof data !== 'object' || Array.isArray(data) && data.length === 0 || Object.keys(data).length === 0) {
             if (no_nullify !== true) _nullify(host, def);
@@ -767,10 +789,8 @@ dataBinderArray.prototype.diff = function (data, callback) {
             _input_event_update(host, def.name, true);
             return select.empty().prop('disabled', true);
         }
-        let valueKey = options.value || 'value', labelKey = options.label || 'label';
         select.empty().append($('<option>').attr('value', '').html(_match_replace(host, def.placeholder, null, true, true)));
         let do_ops = function (data, container) {
-            data = _convert_data(data, valueKey, labelKey, def, grouped);
             if ('sort' in options) {
                 if (typeof options.sort === 'boolean') options.sort = labelKey;
                 data = _sort_data(data, options.sort, labelKey, valueKey);
