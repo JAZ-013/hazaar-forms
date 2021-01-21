@@ -621,14 +621,14 @@ dataBinderArray.prototype.diff = function (data, callback) {
                 if (index === -1) item_data.push({ '__hz_value': value, '__hz_label': this.childNodes[1].textContent });
             } else item_data.unset(index);
         };
-        let value = _get_data_item(host.data, def.name, true), items = [];
+        let value = _get_data_item(host.data, def.name, true);
         let disabled = def.protected === true || _eval(host, def.disabled, false, item_data, def.name);
         if ('sort' in def.options) {
             if (typeof def.options.sort === 'boolean') def.options.sort = labelKey;
             data = _sort_data(data, def.options.sort, labelKey);
         }
         if (def.buttons === true) {
-            let btnClass = def.class || 'primary';
+            let btnClass = def.class || 'primary', items = [];
             for (let x in data) {
                 let x_value = _convert_data_type(def, data[x][valueKey]), label = data[x][labelKey];
                 let active = item_data.indexOf(x_value) > -1, name = def.name + '_' + x_value;
@@ -647,36 +647,42 @@ dataBinderArray.prototype.diff = function (data, callback) {
         }
         if (!('columns' in def)) def.columns = 1;
         if (def.columns > 6) def.columns = 6;
-        let col_width = Math.floor(12 / def.columns), per_col = Math.ceil(Object.keys(data).length / def.columns);
-        let cols = $('<div class="row">'), column = 0;
-        for (let col = 0; col < def.columns; col++)
-            items.push($('<div>').addClass('col-md-' + col_width).toggleClass('custom-controls-stacked', def.inline));
-        for (let x in data) {
-            if ('filter' in def.options && def.options.filter.indexOf(data[x][labelKey]) === -1) {
-                delete data[x];
-                continue;
+        let do_ops = function (data, c) {
+            let col_width = Math.floor(12 / def.columns), per_col = Math.ceil(Object.keys(data).length / def.columns);
+            let cols = $('<div class="row">').appendTo(c), column = 0, items = [];;
+            for (let col = 0; col < def.columns; col++)
+                items.push($('<div>').addClass('col-md-' + col_width).toggleClass('custom-controls-stacked', def.inline));
+            for (let x in data) {
+                if ('filter' in def.options && def.options.filter.indexOf(data[x][labelKey]) === -1) {
+                    delete data[x];
+                    continue;
+                }
+                let iv = _convert_data_type(def, data[x][valueKey]), il = data[x][labelKey], id = _guid();
+                let active = value instanceof dataBinderArray && value.indexOf(iv) > -1, name = def.name + '_' + iv;
+                let label = $('<div>').addClass(host.settings.styleClasses.chkDiv).html([
+                    $('<input type="checkbox">')
+                        .addClass(host.settings.styleClasses.chkInput)
+                        .attr('id', id)
+                        .attr('value', iv)
+                        .prop('checked', active)
+                        .prop('disabled', disabled)
+                        .data('def', def),
+                    $('<label>').addClass(host.settings.styleClasses.chkLabel)
+                        .html(il)
+                        .attr('for', id)
+                ]).attr('data-bind-value', iv).change(fChange);
+                if ('css' in def) label.css(def.css);
+                items[column].append(label);
+                if (items[column].children().length >= per_col) column++;
             }
-            let iv = _convert_data_type(def, data[x][valueKey]), il = data[x][labelKey], id = _guid();
-            let active = value instanceof dataBinderArray && value.indexOf(iv) > -1, name = def.name + '_' + iv;
-            let label = $('<div>').addClass(host.settings.styleClasses.chkDiv).html([
-                $('<input type="checkbox">')
-                    .addClass(host.settings.styleClasses.chkInput)
-                    .attr('id', id)
-                    .attr('value', iv)
-                    .prop('checked', active)
-                    .prop('disabled', disabled)
-                    .data('def', def),
-                $('<label>').addClass(host.settings.styleClasses.chkLabel)
-                    .html(il)
-                    .attr('for', id)
-            ]).attr('data-bind-value', iv).change(fChange);
-            if ('css' in def) label.css(def.css);
-            items[column].append(label);
-            if (items[column].children().length >= per_col) column++;
+            c.append(cols.html(items));
         }
+
+        if (!Array.isArray(data)) for (let g in data) do_ops(data[g], $('<div class="mb-1">').html($('<strong>').html(g)).appendTo(container));
+        else do_ops(data, container);
         item_data.enabled(true);
         _input_event_update(host, def.name, true);
-        return container.html(cols.html(items)).parent().show();
+        return container.parent().show();
     }
 
     function _input_select_multi_populate_ajax(host, options, container, track) {
