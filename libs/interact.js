@@ -727,6 +727,11 @@ dataBinderArray.prototype.diff = function (data, callback) {
 
     function _input_select_multi(host, def) {
         let group = $('<div>').data('def', def), item_data = _get_data_item(host.data, def.name);
+        if (def.selectAll === true) group.append($('<div class="mb-1">').html($('<a href="#" class="badge">').html('Select all').click(function () {
+            let cbs = $(this).parent().parent().find('input[type=checkbox]'), m = (cbs.length === cbs.filter(':checked').length);
+            cbs.each(function (index, item) { if ($(item).is(':checked') === m) $(item).click(); });
+            return false;
+        })));
         if (def.buttons === true) group.addClass('btn-group').attr('data-bind', def.name).attr('data-toggle', 'buttons').toggleClass('btn-group-justified', def.justified === true);
         else group.attr('data-bind', def.name).attr('data-toggle', 'checks');
         def.watchers = {};
