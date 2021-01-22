@@ -1841,7 +1841,7 @@ dataBinderArray.prototype.diff = function (data, callback) {
                 if (!(def.name in host.disabled)) host.disabled[def.name] = 'disabled' in def ? _eval(host, def.disabled, d.disabled, item, def.name) : false;
                 d.disabled = host.disabled[def.name];
                 let result = (def.protected || d.disabled) ? true : _validate_rule(host, def.name, item, def, d);
-                if ('fields' in def && item instanceof dataBinder) {
+                if ('fields' in def && (item instanceof dataBinder || item instanceof dataBinderArray)) {
                     let childItems = def.type === 'array' ? item.save() : [item];
                     if (result !== true || childItems.length === 0) {
                         for (let x in callbacks) callbacks[x](def.name, result, extra);
