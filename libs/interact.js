@@ -679,13 +679,14 @@ dataBinderArray.prototype.diff = function (data, callback) {
             c.append(cols.html(items));
         }
 
-        if (!Array.isArray(data)) for (let g in data) do_ops(data[g], $('<div class="mb-1">').html([$('<span class="mr-2">').html(g),
-            (def.selectAll === true) ? _icon(host, 'check-square').addClass('text-primary').click(function () {
-                let cbs = $(this).parent().find('input[type=checkbox]'), m = (cbs.length === cbs.filter(':checked').length);
-                cbs.each(function (index, item) { if ($(item).is(':checked') === m) $(item).click(); });
-                return false;
-            }) : ''
-        ]).appendTo(container));
+        if (!Array.isArray(data)) for (let g in data) do_ops(data[g], $('<div class="mb-1">').html($('<label class="group-label">').html([
+                $('<strong class="mr-1">').html(g),
+                (def.selectAll === true) ? _icon(host, 'check-square').addClass('text-primary').click(function () {
+                    let cbs = $(this).parent().parent().find('input[type=checkbox]'), m = (cbs.length === cbs.filter(':checked').length);
+                    cbs.each(function (index, item) { if ($(item).is(':checked') === m) $(item).click(); });
+                    return false;
+                }) : ''
+        ])).appendTo(container));
         else do_ops(data, container);
         item_data.enabled(true);
         _input_event_update(host, def.name, true);
