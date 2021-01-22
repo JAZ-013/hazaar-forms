@@ -679,13 +679,13 @@ dataBinderArray.prototype.diff = function (data, callback) {
             c.append(cols.html(items));
         }
 
-        if (!Array.isArray(data)) for (let g in data) do_ops(data[g], $('<div class="mb-1">').html($('<strong>').html([g,
-            (def.selectAll === true) ? $('<a href="#" class="badge">').html(_icon(host, 'check-square')).click(function () {
-                let cbs = $(this).parent().parent().find('input[type=checkbox]'), m = (cbs.length === cbs.filter(':checked').length);
+        if (!Array.isArray(data)) for (let g in data) do_ops(data[g], $('<div class="mb-1">').html([$('<span class="mr-2">').html(g),
+            (def.selectAll === true) ? _icon(host, 'check-square').addClass('text-primary').click(function () {
+                let cbs = $(this).parent().find('input[type=checkbox]'), m = (cbs.length === cbs.filter(':checked').length);
                 cbs.each(function (index, item) { if ($(item).is(':checked') === m) $(item).click(); });
                 return false;
             }) : ''
-        ])).appendTo(container));
+        ]).appendTo(container));
         else do_ops(data, container);
         item_data.enabled(true);
         _input_event_update(host, def.name, true);
@@ -734,7 +734,7 @@ dataBinderArray.prototype.diff = function (data, callback) {
 
     function _input_select_multi(host, def) {
         let group = $('<div>').data('def', def), item_data = _get_data_item(host.data, def.name);
-        if (def.selectAll === true) def.label = [def.label, $('<a href="#" class="badge">').html(_icon(host, 'check-square')).click(function () {
+        if (def.selectAll === true) def.label = [$('<span class="mr-1">').html(def.label), _icon(host, 'check-square').addClass('text-primary').click(function () {
             let cbs = $(this).parent().parent().find('input[type=checkbox]'), m = (cbs.length === cbs.filter(':checked').length);
             cbs.each(function (index, item) { if ($(item).is(':checked') === m) $(item).click(); });
             return false;
