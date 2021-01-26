@@ -680,12 +680,12 @@ dataBinderArray.prototype.diff = function (data, callback) {
         }
 
         if (!Array.isArray(data)) for (let g in data) do_ops(data[g], $('<div class="mb-1">').html($('<label class="group-label">').html([
-                $('<strong class="mr-1">').html(g),
-                (def.selectAll === true) ? _icon(host, 'check-square').addClass('text-primary').click(function () {
-                    let cbs = $(this).parent().parent().find('input[type=checkbox]'), m = (cbs.length === cbs.filter(':checked').length);
-                    cbs.each(function (index, item) { if ($(item).is(':checked') === m) $(item).click(); });
-                    return false;
-                }) : ''
+            $('<strong class="mr-1">').html(g),
+            (def.selectAll === true) ? _icon(host, 'check-square').addClass('text-primary').click(function () {
+                let cbs = $(this).parent().parent().find('input[type=checkbox]'), m = (cbs.length === cbs.filter(':checked').length);
+                cbs.each(function (index, item) { if ($(item).is(':checked') === m) $(item).click(); });
+                return false;
+            }) : ''
         ])).appendTo(container));
         else do_ops(data, container);
         item_data.enabled(true);
@@ -2231,11 +2231,15 @@ dataBinderArray.prototype.diff = function (data, callback) {
     }
 
     function _convert_simple_form(def) {
-        let _convert_simple_form_fields = function (def, fields) {
-            if (Array.isArray(def)) for (let x in def) _convert_simple_form_fields(def[x], fields);
+        let _convert_simple_form_fields = function (def, layout, fields) {
+            let i = null;
+            if (Array.isArray(def)){
+                i = [];
+                for (let x in def) _convert_simple_form_fields(def[x], i, fields);
+            } 
             else if (typeof def === 'object') {
-                if ('sections' in def) _convert_simple_form_fields(def.sections, fields);
-                else if ('fields' in def) _convert_simple_form_fields(def.fields, fields);
+                if ('sections' in def) _convert_simple_form_fields(def.sections, i = [], fields);
+                else if ('fields' in def) _convert_simple_form_fields(def.fields, i = [], fields);
                 else if ('name' in def) {
                     let parts = def.name.split('.');
                     for (let x = 1; x <= parts.length; x++) {
@@ -2245,13 +2249,15 @@ dataBinderArray.prototype.diff = function (data, callback) {
                             fields = fields[part].fields;
                         } else if (!(part in fields)) fields[part] = def;
                     }
+                    i = def.name;
                 }
             }
+            layout.push(i);
         }
         if (!Array.isArray(def)) return false;
-        let fields = {};
-        _convert_simple_form_fields(def, fields);
-        return { "name": "", "pages": [{ "sections": [{ "fields": def }] }], "fields": fields };
+        let layout = [], fields = {};
+        _convert_simple_form_fields(def, layout, fields);
+        return { "name": "Simple Form", "pages": [{ "sections": [{ "fields": layout }] }], "fields": fields };
     }
 
     //Evals the pages and returns true if something has changed, false if nothing has changed.
