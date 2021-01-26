@@ -331,6 +331,39 @@ class Model extends \Hazaar\Model\Strict {
 
                     break;
 
+                case 'bool':
+                case 'boolean':
+
+                    $def['type'] = 'boolean';
+
+                    break;
+
+                case 'int':
+                case 'integer':
+                case 'number':
+
+                    $def['type'] = 'integer';
+
+                    break;
+
+                case 'array':
+                case 'list':
+
+                    $def['type'] = 'array';
+
+                    break;
+
+                case 'text';
+                case 'string':
+                default:
+
+                    $def['type'] = 'text';
+
+                    if($def['type'] !== $def['org_type'])
+                        echo '';
+
+                    break;
+
             }
 
         }else{
