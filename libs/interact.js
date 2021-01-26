@@ -1,4 +1,4 @@
-﻿var ud = undefined;
+var ud = undefined;
 
 //Object.assign() Polyfill
 if (typeof Object.assign !== 'function') {
@@ -1637,6 +1637,9 @@ dataBinderArray.prototype.diff = function (data, callback) {
         }
         field.data('def', def).data('item', item_data ? item_data : null);
         if ('width' in def) field.width(def.width);
+        if ('max-width' in def) field.css('max-width', def['max-width']);
+        if ('height' in def) field.css('height', def.height);
+        if ('max-height' in def) field.css('max-height', def['max-height']);
         if ('html' in def) {
             let html = def.html;
             if ('label' in def && field.children().length === 0) field.append($('<label>').addClass(host.settings.styleClasses.label).html(def.label));
