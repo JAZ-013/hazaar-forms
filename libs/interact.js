@@ -1,4 +1,4 @@
-var ud = undefined;
+﻿var ud = undefined;
 
 //Object.assign() Polyfill
 if (typeof Object.assign !== 'function') {
@@ -270,7 +270,8 @@ dataBinderArray.prototype.diff = function (data, callback) {
     }
 
     function _convert_data(dataIn, valueKey, labelKey, def, index) {
-        if (typeof dataIn === 'object' && !Array.isArray(dataIn) && typeof dataIn[Object.keys(dataIn)[0]] !== 'string') {
+        if (dataIn === null || typeof dataIn !== 'object' || Array.isArray(dataIn) && dataIn.length === 0 || Object.keys(dataIn).length === 0) return null;
+        if (!Array.isArray(dataIn) && typeof dataIn[Object.keys(dataIn)[0]] !== 'string') {
             let nd = [];
             def.options = { data: dataIn, group: { key: 'group', data: {} } };
             for (let g in dataIn) {
@@ -794,9 +795,9 @@ dataBinderArray.prototype.diff = function (data, callback) {
     function _input_select_items(host, options, data, select, no_nullify) {
         let item_data = _get_data_item(host.data, select.attr('data-bind')), def = select.data('def');
         let valueKey = options.value || 'value', labelKey = options.label || 'label';
-        data = _convert_data(data, valueKey, labelKey, def);
         select.prop('disabled', !(def.disabled !== true && def.protected !== true && select.data('ed') !== true));
-        if (data === null || typeof data !== 'object' || Array.isArray(data) && data.length === 0 || Object.keys(data).length === 0) {
+        data = _convert_data(data, valueKey, labelKey, def);
+        if (!data) {
             if (no_nullify !== true) _nullify(host, def);
             if (item_data) item_data.enabled(false);
             _input_event_update(host, def.name, true);
@@ -2233,10 +2234,10 @@ dataBinderArray.prototype.diff = function (data, callback) {
     function _convert_simple_form(def) {
         let _convert_simple_form_fields = function (def, layout, fields) {
             let i = null;
-            if (Array.isArray(def)){
+            if (Array.isArray(def)) {
                 i = [];
                 for (let x in def) _convert_simple_form_fields(def[x], i, fields);
-            } 
+            }
             else if (typeof def === 'object') {
                 if ('sections' in def) _convert_simple_form_fields(def.sections, i = [], fields);
                 else if ('fields' in def) _convert_simple_form_fields(def.fields, i = [], fields);
