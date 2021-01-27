@@ -186,8 +186,12 @@ dataBinderArray.prototype.diff = function (data, callback) {
         return key.split('.').reduce(function (o, i) { return o[i]; }, obj);
     }
 
+    function _is_object(o) {
+        return o !== null && typeof o === 'object' && !Array.isArray(o);
+    }
+
     function _strbool(value) {
-        if (typeof value === 'object') return false;
+        if (_is_object(value)) return false;
         value = value.toString().trim().toLowerCase();
         if (value === 't' || value === 'true' || value === 'on' || value === 'yes' || value === 'y' || value === 'ok') return 'true';
         else if (RegExp('/^(\!|not)\s*null$/').test(value)) return 'true';
@@ -280,10 +284,10 @@ dataBinderArray.prototype.diff = function (data, callback) {
             }
             dataIn = nd;
         }
-        let group = ('options' in def && 'group' in def.options && 'key' in def.options.group) ? def.options.group : null, dataOut = group ? {} : [];
+        let group = ('options' in def && _is_object(def.options) && 'group' in def.options && 'key' in def.options.group) ? def.options.group : null, dataOut = group ? {} : [];
         for (let x in dataIn) {
             let newitem = {};
-            if (dataIn[x] && typeof dataIn[x] === 'object') newitem = dataIn[x];
+            if (dataIn[x] && _is_object(dataIn[x])) newitem = dataIn[x];
             else {
                 newitem[valueKey] = _convert_data_type(def, x);
                 newitem[labelKey] = dataIn[x];
@@ -293,7 +297,7 @@ dataBinderArray.prototype.diff = function (data, callback) {
                 if (!(key in dataOut)) dataOut[key] = [];
                 dataOut[key].push(newitem);
             } else dataOut.push(newitem);
-            if (typeof index === 'object') index[newitem[valueKey]] = newitem[labelKey];
+            if (_is_object(index)) index[newitem[valueKey]] = newitem[labelKey];
         }
         return dataOut;
     }
@@ -382,7 +386,7 @@ dataBinderArray.prototype.diff = function (data, callback) {
 
     function _get_data_item(data, name, isArray, value) {
         if (name instanceof dataBinder || name instanceof dataBinderArray || name instanceof dataBinderValue) return name;
-        else if (!(typeof name === 'string' && typeof data === 'object' && data)) return null;
+        else if (!(typeof name === 'string' && _is_object(data))) return null;
         let parts = name.split(/[\.\[]/), item = data;
         for (let x in parts) {
             let key = parts[x];
@@ -508,7 +512,7 @@ dataBinderArray.prototype.diff = function (data, callback) {
         if (!item_data) item_data = _get_data_item(host.data, def.name);
         host.eval_cache = true;
         if (typeof update === 'string') update = { "url": update };
-        if (typeof input === 'object') {
+        if (_is_object(input)) {
             if (item_data && input.is('select') && input.val() !== '__hz_other') {
                 let other = input.children('option[value="' + item_data.value + '"]').data('other') || null;
                 item_data.enabled(false);
@@ -712,7 +716,7 @@ dataBinderArray.prototype.diff = function (data, callback) {
 
     function _input_select_multi_populate(host, options, container, track) {
         if (!options) return false;
-        if (typeof options === 'object' && 'url' in options) {
+        if (_is_object(options) && 'url' in options) {
             let matches = options.url.match(/\{\{[\w\.]+\}\}/g), def = container.data('def');
             if (matches !== null) {
                 for (let x in matches) {
@@ -727,7 +731,7 @@ dataBinderArray.prototype.diff = function (data, callback) {
             return _input_select_multi_populate_ajax(host, options, container, track);
         }
         if (options instanceof dataBinderValue) {
-            let o = typeof options.value === 'object' ? options.value : typeof options.other === 'object' ? options.other : null;
+            let o = _is_object(options.value) ? options.value : _is_object(options.other) ? options.other : null;
             return _input_select_multi_items(host, o, container);
         }
         _input_select_multi_items(host, ('data' in options) ? options.data : options, container);
@@ -828,7 +832,8 @@ dataBinderArray.prototype.diff = function (data, callback) {
             }
             return data;
         };
-        if (!Array.isArray(data) && typeof data[Object.keys(data)[0]] === 'object' && !(data[Object.keys(data)[0]] && valueKey in data[Object.keys(data)[0]])) {
+        console.log(data);
+        if (!Array.isArray(data) && _is_object(data[Object.keys(data)[0]]) && !(data[Object.keys(data)[0]] && valueKey in data[Object.keys(data)[0]])) {
             for (let group in data) data[group] = do_ops(data[group], $('<optgroup>').attr('label', group).appendTo(select));
         } else data = do_ops(data, select);
         if (item_data) {
@@ -885,10 +890,10 @@ dataBinderArray.prototype.diff = function (data, callback) {
         }
         if (typeof callback !== 'function') callback = _input_select_items;
         if (options instanceof dataBinderValue) {
-            let o = typeof options.value === 'object' ? options.value : typeof options.other === 'object' ? options.other : null;
+            let o = _is_object(options.value) ? options.value : _is_object(options.other) ? options.other : null;
             return callback(host, {}, o, select, o ? false : true);
         }
-        if (!(options !== null && typeof options === 'object' && ('url' in options)))
+        if (!(_is_object(options) && ('url' in options)))
             return callback(host, options, ('data' in options) ? options.data : options, select);
         let matches = options.url.match(/\{\{[\w\.]+\}\}/g), def = select.data('def');
         for (let x in matches) {
@@ -908,7 +913,7 @@ dataBinderArray.prototype.diff = function (data, callback) {
         let options = {};
         if (Array.isArray(def.options)) {
             for (let x in def.options) {
-                if (!(typeof def.options[x] === 'object' && 'when' in def.options[x])) continue;
+                if (!(_is_object(def.options[x]) && 'when' in def.options[x])) continue;
                 if (_eval(host, def.options[x].when, null, item_data, def.name)) {
                     options = 'items' in def.options[x] ? def.options[x].items : def.options[x];
                     break;
@@ -1544,7 +1549,7 @@ dataBinderArray.prototype.diff = function (data, callback) {
         };
         if (Array.isArray(field.options))
             for (let x in field.options) _fix_subfield_options(name, field.options);
-        else if (typeof field.options === 'object' && 'url' in field.options)
+        else if (_is_object(field.options) && 'url' in field.options)
             field.options.url = field.options.url.replace(rx, replacer);
         else if (typeof field.options === 'string') field.options = field.options.replace(rx, replacer);
     }
@@ -1597,7 +1602,7 @@ dataBinderArray.prototype.diff = function (data, callback) {
                     if (!('weight' in item)) item.weight = 1;
                     length = length + (item.weight - 1);
                 }
-                if (info.protected === true && typeof item === 'object' && !Array.isArray(item)) item.protected = true;
+                if (info.protected === true && _is_object(item)) item.protected = true;
                 fields.push(item);
             }
             col_width = 12 / length;
@@ -1785,7 +1790,7 @@ dataBinderArray.prototype.diff = function (data, callback) {
         return _validate_field(host, name, { required: false, disabled: false }).done(function (event, result, response) {
             if (result !== true && remove_only === true) return;
             input.toggleClass('is-invalid', result !== true)
-                .toggleClass('border-warning', result === true && response !== null && typeof response === 'object' && response.warning === true);
+                .toggleClass('border-warning', result === true && _is_object(response) && response.warning === true);
             $(host).trigger('validate_field', [name, result === true, result]);
         });
     }
@@ -1851,7 +1856,7 @@ dataBinderArray.prototype.diff = function (data, callback) {
     function _validate_field(host, name, d, extra) {
         let callbacks = [];
         setTimeout(function () {
-            let def = typeof name === 'object' ? name : _form_field_lookup(host.def, name);
+            let def = _is_object(name) ? name : _form_field_lookup(host.def, name);
             if (def) {
                 let item = _get_data_item(host.data, def.name);
                 if (!item) def.disabled = true;
@@ -1948,7 +1953,7 @@ dataBinderArray.prototype.diff = function (data, callback) {
                         if (result[x].result !== true) errors.push(result[x].result);
                         $('[data-bind="' + result[x].name + '"]')
                             .toggleClass('is-invalid', result[x].result !== true)
-                            .toggleClass('border-warning', result[x].result === true && response !== null && typeof response === 'object' && response.warning === true);
+                            .toggleClass('border-warning', result[x].result === true && _is_object(response) && response.warning === true);
                     }
                     if (host.queue.length === 0) for (let x in callbacks) callbacks[x](errors.length === 0, errors);
                 });
@@ -2214,11 +2219,11 @@ dataBinderArray.prototype.diff = function (data, callback) {
         if (!data) return {};
         for (let x in data) {
             let key = (p ? p + '.' : '') + x, def = null;
-            if (data[x] !== null && typeof data[x] === 'object' && !('__hz_value' in data[x])) _fix_plain_data(host, data[x], key);
+            if (_is_object(data[x]) && !('__hz_value' in data[x])) _fix_plain_data(host, data[x], key);
             else if (typeof data[x] === 'boolean') data[x] = { '__hz_value': data[x], '__hz_label': data[x] ? 'Yes' : 'No' };
             else if (host.viewmode === true && (def = _form_field_lookup(host.def, key)) !== null && 'options' in def) {
                 _input_options(host, def, $('<i>').data('def', def), null, function (s, options) {
-                    if (typeof options === 'object' && !('url' in options)) data[x] = { '__hz_value': data[x], '__hz_label': options[data[x]] };
+                    if (_is_object(options) && !('url' in options)) data[x] = { '__hz_value': data[x], '__hz_label': options[data[x]] };
                     else {
                         _input_options_populate(host, options, s, false, null, function (host, o, d, s) {
                             let item_data = _get_data_item(host.data, key);
@@ -2238,7 +2243,7 @@ dataBinderArray.prototype.diff = function (data, callback) {
                 i = [];
                 for (let x in def) _convert_simple_form_fields(def[x], i, fields);
             }
-            else if (typeof def === 'object') {
+            else if (_is_object(def)) {
                 if ('sections' in def) _convert_simple_form_fields(def.sections, i = [], fields);
                 else if ('fields' in def) _convert_simple_form_fields(def.fields, i = [], fields);
                 else if ('name' in def) {
