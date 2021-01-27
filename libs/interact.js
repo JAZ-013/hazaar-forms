@@ -832,8 +832,7 @@ dataBinderArray.prototype.diff = function (data, callback) {
             }
             return data;
         };
-        console.log(data);
-        if (!Array.isArray(data) && _is_object(data[Object.keys(data)[0]]) && !(data[Object.keys(data)[0]] && valueKey in data[Object.keys(data)[0]])) {
+        if (!Array.isArray(data) && Array.isArray(data[Object.keys(data)[0]])) {
             for (let group in data) data[group] = do_ops(data[group], $('<optgroup>').attr('label', group).appendTo(select));
         } else data = do_ops(data, select);
         if (item_data) {
