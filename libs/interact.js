@@ -606,7 +606,7 @@ dataBinderArray.prototype.diff = function (data, callback) {
     }
 
     function _input_select_multi_items(host, data, container) {
-        let def = container.data('def'), item_data = _get_data_item(host.data, def.name), data_index = {};
+        let def = container.empty().data('def'), item_data = _get_data_item(host.data, def.name), data_index = {};
         let valueKey = def.options.value || 'value', labelKey = def.options.label || 'label';
         data = _convert_data(data, valueKey, labelKey, def, data_index);
         if (data === null || (Array.isArray(data) && data.length === 0)) {
@@ -682,9 +682,8 @@ dataBinderArray.prototype.diff = function (data, callback) {
                 items[column].append(label);
                 if (items[column].children().length >= per_col) column++;
             }
-            c.append(cols.html(items));
+            cols.html(items);
         }
-
         if (!Array.isArray(data)) for (let g in data) do_ops(data[g], $('<div class="mb-1">').html($('<label class="group-label">').html([
             $('<strong class="mr-1">').html(g),
             (def.selectAll === true) ? _icon(host, 'check-square').addClass('text-primary').click(function () {
