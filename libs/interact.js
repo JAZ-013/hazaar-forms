@@ -274,6 +274,7 @@ dataBinderArray.prototype.diff = function (data, callback) {
     }
 
     function _convert_data(dataIn, valueKey, labelKey, def, index) {
+        if ('options' in def && _is_object(def.options) && 'in' in def.options) dataIn = _get_data_item(dataIn, def.options.in);
         if (dataIn === null || typeof dataIn !== 'object' || Array.isArray(dataIn) && dataIn.length === 0 || Object.keys(dataIn).length === 0) return null;
         if (!Array.isArray(dataIn) && typeof dataIn[Object.keys(dataIn)[0]] !== 'string') {
             let nd = [];
