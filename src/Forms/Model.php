@@ -46,6 +46,8 @@ class Model extends \Hazaar\Model\Strict {
 
     private $__last_api_error = null;
 
+    private $__initialised = false;
+
     function __construct($form_name, $form = null, $tags = null, \Hazaar\File\Dir $form_include_path = null){
 
         $this->__form_name = $form_name;
@@ -326,6 +328,39 @@ class Model extends \Hazaar\Model\Strict {
                         foreach($items as &$item) if(is_string($item)) $item = array('name' => $item, 'type' => 'text/text');
                         return $items;
                     };
+
+                    break;
+
+                case 'bool':
+                case 'boolean':
+
+                    $def['type'] = 'boolean';
+
+                    break;
+
+                case 'int':
+                case 'integer':
+                case 'number':
+
+                    $def['type'] = 'integer';
+
+                    break;
+
+                case 'array':
+                case 'list':
+
+                    $def['type'] = 'array';
+
+                    break;
+
+                case 'text';
+                case 'string':
+                default:
+
+                    $def['type'] = 'text';
+
+                    if($def['type'] !== $def['org_type'])
+                        echo '';
 
                     break;
 
@@ -710,7 +745,7 @@ class Model extends \Hazaar\Model\Strict {
         if($field instanceof \stdClass)
             $field = (array)$field;
 
-        if(is_array($field)){
+        if(is_array($field) && $array[$name] !== null){
 
             //Look into sub-fields
             if(array_key_exists('items', $field)){
@@ -723,6 +758,37 @@ class Model extends \Hazaar\Model\Strict {
                         $this->exportField($sub_name, (array)$sub_field, $array[$name]);
                     else
                         $array[$name] = array(); //Ensure list fields are always an array
+
+                }
+
+            }elseif(array_key_exists('default', $field)
+                && !(is_array($array[$name]) && array_key_exists('__hz_value', $array[$name]))
+                && ($options = ake($field, 'options'))){
+
+                if(is_string($options))
+                    $options = (object)array('url' => $options);
+
+                if($url = ake($options, 'url')){
+
+                    if(!($data = $this->api($this->matchReplace($url), $options)))
+                        return false;
+
+                    $options = $this->__convert_data($data, ake($options, 'value', 'value'), ake($options, 'label', 'label'));
+
+                }
+
+                if(is_array($array[$name])){
+
+                    foreach($array[$name] as &$array_value){
+
+                        if(!(is_array($array_value) && array_key_exists('__hz_value', $array_value)))
+                           $array_value = ['__hz_value' => $array_value, '__hz_label' => ake($options, $array_value, $array_value)];
+
+                    }
+
+                }else{
+
+                    $array[$name] = ['__hz_value' => $array[$name], '__hz_label' => ake($options, $array[$name], $array[$name])];
 
                 }
 
@@ -1015,14 +1081,14 @@ class Model extends \Hazaar\Model\Strict {
         if($value && !($value instanceof \Hazaar\Model\Strict
             || $value instanceof \Hazaar\Model\ChildArray
             || $value instanceof \Hazaar\Model\DataBinderValue)
-            && ($options = ake($field, 'options'))){
+            && (($options = ake($field, 'options')) || ($options = ake($field, 'lookup')))){
 
             if(is_string($options))
                 $options = (object)array('url' => $options);
 
             if($options instanceof \stdClass && property_exists($options, 'url')){
 
-                if($data = $this->api($this->matchReplace($options->url)))
+                if($data = $this->api($this->matchReplace($options->url), $options))
                     $field->options = $this->__convert_data($data, ake($options, 'value', 'value'), ake($options, 'label', 'label'));
 
             }
@@ -1083,7 +1149,7 @@ class Model extends \Hazaar\Model\Strict {
 
                 if($options instanceof \stdClass && property_exists($options, 'url')){
 
-                    if($data = $this->api($this->matchReplace($options->url)))
+                    if($data = $this->api($this->matchReplace($options->url), $options))
                         $field->options = $this->__convert_data($data, ake($options, 'value', 'value'), ake($options, 'label', 'label'));
 
                 }
@@ -1166,7 +1232,7 @@ class Model extends \Hazaar\Model\Strict {
 
                 if(!is_int($k)) break;
 
-                $result[ake($v, $valueKey)] = ake($v, $labelKey);
+                $result[ake($v, $valueKey)] = (strpos($labelKey, '{{') !== false) ? $this->matchReplace($labelKey, false, null, null, $v) : ake($v, $labelKey);
 
             }
 
@@ -1338,7 +1404,7 @@ class Model extends \Hazaar\Model\Strict {
 
     }
 
-    public function matchReplace($string, $use_label = false, $params = array(), $default_value = null){
+    public function matchReplace($string, $use_label = false, $params = array(), $default_value = null, $data = null){
 
         $settings = array_to_dot_notation(array('params' => $params));
 
@@ -1348,7 +1414,7 @@ class Model extends \Hazaar\Model\Strict {
 
             if($default_value === null){
 
-                $value = $this->get($match[2]);
+                $value = (is_array($data) || $data instanceof \stdClass) ? ake($data, $match[2]) : $this->get($match[2]);
 
                 if (substr($match[2], 0, 5) === 'this.')
                     $value = ake($settings, substr($match[2], 5));
@@ -1375,22 +1441,25 @@ class Model extends \Hazaar\Model\Strict {
 
     }
 
-    public function api($target, $args = array()){
+    public function api($target, $args = array(), $params = null, $merge_params = false){
 
-        if(!is_array($args))
-            $args = array();
+        if(!is_array($params) || $merge_params === true){
 
-        $args['form'] = $this->toArray();
+            $form_params = array(
+                'form' => $this->toArray(),
+                'def' => $this->getFormDefinition(true),
+                'name' => $this->getName()
+            );
 
-        $args['def'] = $this->getFormDefinition(true);
+            $params = $merge_params ? array_merge($form_params, $params) : $form_params;
 
-        $args['name'] = $this->getName();
-
+        }
+        
         if(strpos($target, ':') !== false){
 
-            $url = new \Hazaar\Application\Url($target);
+            $url = new \Hazaar\Http\Uri($target);
 
-            $url->setParams($args);
+            $url->setParams($params);
 
             if(!($result = json_decode(file_get_contents((string)$url), true)))
                 throw new \Exception('Form API call failed.  Invalid response!');
@@ -1399,13 +1468,13 @@ class Model extends \Hazaar\Model\Strict {
 
             $router = new \Hazaar\Application\Router(new \Hazaar\Application\Config);
 
-            $request = new \Hazaar\Application\Request\Http($args, false, 'POST');
+            $request = new \Hazaar\Application\Request\Http($params, false, ake($args, 'method', strtoupper(ake($args, 'method', 'GET'))));
 
             if($pos = strpos($target, '?')){
 
-                parse_str(substr($target, $pos + 1), $params);
+                parse_str(substr($target, $pos + 1), $url_params);
 
-                $request->setParams($params);
+                $request->setParams($url_params);
 
                 $target = substr($target, 0, $pos);
 
@@ -1621,9 +1690,9 @@ class Model extends \Hazaar\Model\Strict {
                     if($value === null)
                         return true;
 
-                    $data = $this->matchReplace($data, false, array(), $value);
+                    $field['validate']['method'] = ake($field, 'validate.method', 'POST');
 
-                    $result = $this->api($data);
+                    $result = $this->api($this->matchReplace($data, false, array(), $value), $field['validate']);
 
                     if(ake($result, 'ok', false) !== true)
                         return $this->__validation_error($field['name'], $field, "api_failed($data)");

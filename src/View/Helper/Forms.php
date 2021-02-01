@@ -12,7 +12,7 @@ namespace Hazaar\View\Helper;
  */
 class Forms extends \Hazaar\View\Helper {
 
-    private $model;
+    public $model;
 
     function import(){
 

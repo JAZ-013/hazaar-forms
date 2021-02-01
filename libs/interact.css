@@ -118,7 +118,8 @@
         }
 
         .form-fileupload.single .dz-items .dz-item .dz-preview,
-        .form-fileupload.single .dz-items .dz-item .dz-remove {
+        .form-fileupload.single .dz-items .dz-item .dz-remove,
+        .form-fileupload.single .dz-items .dz-item .dz-preview img {
             width: 32px;
             height: 32px;
         }
@@ -291,4 +292,56 @@ svg:not(:root).forms-icon{
     overflow:visible;
     vertical-align:-.125em;
     width:1em;
+}
+
+.form-multi-text {
+    border: 1px solid #ced4da;
+    border-radius: .25rem;
+    width: 100%;
+}
+
+.form-multi-text input.form-control {
+    border: none;
+}
+
+.form-multi-text input.form-control:focus {
+    border: none;
+    box-shadow: none;
+}
+
+.form-multi-text .input-mt-items {
+    width: 100%;
+}
+
+.form-multi-text .input-mt-items::after {
+    content: "";
+    display: table;
+    clear: both;
+}
+
+.form-multi-text .input-mt-item {
+    float: left;
+    border: 1px solid #ddd;
+    background-color: #eaeaea;
+    border-radius: .25rem;
+    margin: .2rem;
+}
+
+.form-multi-text .input-mt-item:hover {
+    background-color: #e0e0e0;
+}
+
+.form-multi-text .input-mt-item > span {
+    float: left;
+    padding: 0.1rem 0.5rem;
+}
+
+.form-multi-text .input-mt-item > .input-mt-item-rm {
+    cursor: pointer;
+    float: right;
+    padding: 0.1rem 0.5rem;
+}
+
+.form-multi-text .input-mt-item > .input-mt-item-rm:hover {
+    color: red;
 }

@@ -124,7 +124,7 @@ abstract class Form extends Action {
 
                     $args = array('params' => $params);
 
-                    if($result = $this->form_model->api($url, $args)){
+                    if($result = $this->form_model->api($url, array('method' => 'POST'), $args, true)){
 
                         $out->ok = true;
 
@@ -163,7 +163,9 @@ abstract class Form extends Action {
 
             case 'load':
 
-                $this->form_model->populate($this->form_load($this->request->get('params', array())));
+                $params = $this->request->get('params', array());
+
+                $this->form_model->populate($this->form_load($params));
 
                 $this->form_model->lock();
 
@@ -180,17 +182,21 @@ abstract class Form extends Action {
 
                 $args = array();
 
+                $params = null;
+
                 if($info = ake($target, 1, array())){
 
                     $name = ake($info, 'name');
 
+                    $args = array_merge(array('method' => 'POST'), (array)ake($this->form_model->getDefinition($name), 'validate', array()));
+
                     $this->form_model->set($name, ake($info, 'value'));
 
-                    $args = array_from_dot_notation(array($name => $this->form_model->get($name)));
+                    $params = array_from_dot_notation(array($name => $this->form_model->get($name)));
 
                 }
 
-                $result = $this->form_model->api($target[0], $args);
+                $result = $this->form_model->api($target[0], $args, $params);
 
                 if(!is_bool($result)){
 
@@ -222,7 +228,7 @@ abstract class Form extends Action {
 
                     $args = array('originator' => $this->request->get('originator'));
 
-                    $updates = $this->form_model->api($target, $args);
+                    $updates = $this->form_model->api($target, array('method' => 'POST'), $args, true);
 
                 }elseif(method_exists($this, 'form_update')){
 
@@ -528,7 +534,7 @@ abstract class Form extends Action {
      * by the extending application controller class.
      */
 
-    protected function form_load($params = array()){
+    protected function form_load(&$params = array()){
 
         if(!class_exists('Hazaar\Cache'))
             throw new \Exception('To load form data you must override the form controller form_load() method or install the Hazaar\Cache library.');
@@ -554,7 +560,7 @@ abstract class Form extends Action {
 
     }
 
-    protected function form_get($name, $tags, $params = array()){
+    protected function form_get($name, $tags, &$params = array()){
 
         $file = $name . '.json';
 
