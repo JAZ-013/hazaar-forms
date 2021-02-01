@@ -1039,6 +1039,7 @@ dataBinderArray.prototype.diff = function (data, callback) {
             btnClass: def.btnClass || "btn btn-default",
             btnLabel: def.btnLabel || "Select",
             height: def.height || null,
+            thumbnail: def.thumbnail || (def.multiple ? 120 : 32),
             accept: def.accept || null,
             maxSize: def.maxSize || host.settings.maxUploadSize || null,
             autoAdd: false,
@@ -2520,6 +2521,7 @@ $.fn.fileUpload = function () {
         name: 'file',
         multiple: false,
         btnClass: 'btn btn-default',
+        thumbnail: 120,
         maxSize: null,
         autoAdd: true,
         autoRemove: true
@@ -2559,7 +2561,7 @@ $.fn.fileUpload = function () {
         return true;
     };
     host._preview = function (file) {
-        let o = $('<div class="dz-preview">');
+        let o = $('<div class="dz-preview">').css({ width: host.options.thumbnail, height: host.options.thumbnail });
         if (file.preview) o.append($('<img>').attr('src', file.preview));
         else if (typeof file.type === 'string') {
             if (file.type.substr(0, 5) === 'image') {

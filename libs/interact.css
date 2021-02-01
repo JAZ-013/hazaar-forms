@@ -118,10 +118,15 @@
         }
 
         .form-fileupload.single .dz-items .dz-item .dz-preview,
-        .form-fileupload.single .dz-items .dz-item .dz-remove,
-        .form-fileupload.single .dz-items .dz-item .dz-preview img {
+        .form-fileupload.single .dz-items .dz-item .dz-remove {
             width: 32px;
             height: 32px;
+        }
+
+        .form-fileupload.single .dz-items .dz-item .dz-preview img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
         }
 
         .form-fileupload.single .dz-items .dz-item .dz-detail {
@@ -160,8 +165,8 @@
 
             .form-fileupload.multiple .dz-items .dz-item .dz-preview > img {
                 object-fit: cover;
-                width: 120px;
-                height: 120px;
+                width: 100%;
+                height: 100%;
             }
 
         .form-fileupload.multiple .dz-items .dz-item .dz-size {
