@@ -118,7 +118,8 @@
         }
 
         .form-fileupload.single .dz-items .dz-item .dz-preview,
-        .form-fileupload.single .dz-items .dz-item .dz-remove {
+        .form-fileupload.single .dz-items .dz-item .dz-remove,
+        .form-fileupload.single .dz-items .dz-item .dz-preview img {
             width: 32px;
             height: 32px;
         }
