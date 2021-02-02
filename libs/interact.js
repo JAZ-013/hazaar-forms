@@ -1075,10 +1075,8 @@ dataBinderArray.prototype.diff = function (data, callback) {
                 return true;
             }
         }).on('push', function (event, field_name, value) {
-            debugger;
             input.fileUpload('add', value.save());
         }).on('pop', function (event, field_name, value) {
-            debugger;
             input.fileUpload('remove', value.save());
         });
         if (host.standalone) {
