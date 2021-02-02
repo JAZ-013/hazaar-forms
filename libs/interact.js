@@ -1045,33 +1045,45 @@ dataBinderArray.prototype.diff = function (data, callback) {
             autoAdd: false,
             autoRemove: false,
             select: function (files) {
-                for (let x in files) {
-                    host.deloads = host.deloads.filter(function (item) {
-                        if (!(item.field === def.name && item.file.name === files[x].name))
-                            return item;
-                    });
-                    host.uploads.push({ "field": def.name, "file": files[x] });
-                    item_data.push(_objectify_file(files[x]), true);
+                for (let f of files) {
+                    let index = item_data.push(_objectify_file(f), true);
+                    if (host.standalone) {
+                        let r = new FileReader();
+                        r.onload = function (event) { item_data[index].url = event.target.result; };
+                        r.readAsDataURL(f);
+                    } else {
+                        host.deloads = host.deloads.filter(function (item) {
+                            if (!(item.field === def.name && item.file.name === f.name))
+                                return item;
+                        });
+                        host.uploads.push({ "field": def.name, "file": f });
+                    }
                 }
                 _input_event_update(host, input);
             },
             remove: function (file) {
-                file = _objectify_file(file);
-                host.uploads = host.uploads.filter(function (item) {
-                    if (!(item.field === def.name && item.file.name === file.name))
-                        return item;
-                });
-                host.deloads.push({ "field": def.name, "file": file.name });
+                if (host.standalone) {
+                    file = _objectify_file(file);
+                    host.uploads = host.uploads.filter(function (item) {
+                        if (!(item.field === def.name && item.file.name === file.name))
+                            return item;
+                    });
+                    host.deloads.push({ "field": def.name, "file": file.name });
+                }
                 item_data.unset(item_data.indexOf(function (item) { return item.name.value === file.name; }), true);
                 _input_event_update(host, input);
                 return true;
             }
         }).on('push', function (event, field_name, value) {
+            debugger;
             input.fileUpload('add', value.save());
         }).on('pop', function (event, field_name, value) {
+            debugger;
             input.fileUpload('remove', value.save());
         });
-        if (host.standalone !== true) {
+        if (host.standalone) {
+            for (let f of item_data) input.fileUpload('add', f.save());
+        } else {
             _post(host, 'fileinfo', { 'field': def.name }, true).done(function (response) {
                 if (!response.ok) return;
                 let item_data = _get_data_item(host.data, response.field);
@@ -2004,7 +2016,7 @@ dataBinderArray.prototype.diff = function (data, callback) {
                     }, response.params]);
                 }
                 host.posts = {}; //Reset the post cache so we get clean data after 
-                if (host.uploads.length > 0 || host.deloads.length > 0) {
+                if (!host.standalone && (host.uploads.length > 0 || host.deloads.length > 0)) {
                     $(host).trigger('attachStart', [host.uploads, host.deloads]);
                     _upload_files(host, function (result, queue) {
                         $(host).trigger('attachDone', [queue]);
