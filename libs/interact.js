@@ -1602,6 +1602,7 @@ dataBinderArray.prototype.diff = function (data, callback) {
             field = _eval_code(host, def.render, item_data, def.name);
             if (!field) return;
             if (hidden !== true && def.name) host.pageFields.push(def.name);
+            field.attr('data-bind', def.name);
         } else if ('fields' in def && def.type !== 'array') {
             let layout = _resolve_field_layout(host, def.fields, 'layout' in def ? $.extend(true, [], def.layout) : null, def.name);
             let length = layout.length, fields = [], col_width;
@@ -1768,6 +1769,7 @@ dataBinderArray.prototype.diff = function (data, callback) {
             } else {
                 _page_init(host, pageno);
                 host.objects.container.append(_page(host, host.pages[pageno]));
+                if ('exec' in host.pages[pageno]) (new Function('change', host.pages[pageno].exec)).call(this, function (input) { return _input_event_change(host, input); });
                 $(host).trigger('nav', [host.page + 1, host.pages.length]);
             }
             host.data.resync();
