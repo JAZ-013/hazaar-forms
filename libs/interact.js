@@ -1602,6 +1602,7 @@ dataBinderArray.prototype.diff = function (data, callback) {
             field = _eval_code(host, def.render, item_data, def.name);
             if (!field) return;
             if (hidden !== true && def.name) host.pageFields.push(def.name);
+            field.attr('data-bind', def.name);
         } else if ('fields' in def && def.type !== 'array') {
             let layout = _resolve_field_layout(host, def.fields, 'layout' in def ? $.extend(true, [], def.layout) : null, def.name);
             let length = layout.length, fields = [], col_width;
@@ -1760,17 +1761,23 @@ dataBinderArray.prototype.diff = function (data, callback) {
         if (typeof pageno !== 'number') pageno = parseInt(pageno);
         if (force !== true && pageno === host.page) return false;
         let _page_nav = function (host, pageno) {
+            let execs = [];
             _track(host);
             host.objects.container.empty();
             if (host.settings.singlePage) {
                 _page_init(host, 0);
-                for (let x in host.pages) host.objects.container.append(_page(host, host.pages[x]));
+                for (let x in host.pages) {
+                    host.objects.container.append(_page(host, host.pages[x]));
+                    if ('exec' in host.pages[x]) execs.push(host.pages[x].exec);
+                }
             } else {
                 _page_init(host, pageno);
                 host.objects.container.append(_page(host, host.pages[pageno]));
+                if ('exec' in host.pages[pageno]) execs.push(host.pages[pageno].exec);
                 $(host).trigger('nav', [host.page + 1, host.pages.length]);
             }
             host.data.resync();
+            if (execs.length > 0) (new Function('change', execs.join("\n"))).call(this, function (input) { return _input_event_change(host, input); });
             _ready(host);
             if (typeof cbComplete === 'function') cbComplete();
         };
