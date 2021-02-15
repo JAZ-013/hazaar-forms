@@ -799,7 +799,7 @@ dataBinderArray.prototype.diff = function (data, callback) {
     function _input_select_items(host, options, data, select, no_nullify) {
         let item_data = _get_data_item(host.data, select.attr('data-bind')), def = select.data('def');
         let valueKey = options.value || 'value', labelKey = options.label || 'label';
-        select.prop('disabled', !(def.disabled !== true && def.protected !== true && select.data('ed') !== true));
+        select.prop('disabled', !(def.disabled !== true && def.protected !== true && select.data('ed') !== true)).empty();
         data = _convert_data(data, valueKey, labelKey, def);
         if (!data) {
             if (no_nullify !== true) _nullify(host, def);
@@ -807,8 +807,8 @@ dataBinderArray.prototype.diff = function (data, callback) {
             _input_event_update(host, def.name, true);
             return select.empty().prop('disabled', true);
         }
-        select.empty().append($('<option>').attr('value', '').html(_match_replace(host, def.placeholder, null, true, true)));
-        let do_ops = function (data, container) {
+        if (def.notnull !== true) select.append($('<option>').attr('value', '').html(_match_replace(host, def.placeholder, null, true, true)));
+        let do_ops = function (data, container, def) {
             if ('sort' in options) {
                 if (typeof options.sort === 'boolean') options.sort = labelKey;
                 data = _sort_data(data, options.sort, labelKey, valueKey);
@@ -829,12 +829,13 @@ dataBinderArray.prototype.diff = function (data, callback) {
                         : data[x][options.other]);
                 if (default_item !== null && data[x][labelKey] === default_item)
                     item_data.set(data[x][valueKey], data[x][labelKey], data[x][options.other]);
+                if (def.notnull === true && item_data.value === null) item_data.set(data[x][valueKey], data[x][labelKey]);
             }
             return data;
         };
         if (!Array.isArray(data) && Array.isArray(data[Object.keys(data)[0]])) {
-            for (let group in data) data[group] = do_ops(data[group], $('<optgroup>').attr('label', group).appendTo(select));
-        } else data = do_ops(data, select);
+            for (let group in data) data[group] = do_ops(data[group], $('<optgroup>').attr('label', group).appendTo(select), def);
+        } else data = do_ops(data, select, def);
         if (item_data) {
             if ('other' in def && _eval(host, def.other, null, item_data, def.name) === true) {
                 select.append($('<option>').attr('value', '__hz_other').html("Other"));
