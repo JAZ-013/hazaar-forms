@@ -1282,6 +1282,12 @@ dataBinderArray.prototype.diff = function (data, callback) {
             let value = $(e.currentTarget.parentNode).children('span').text();
             item_data.remove(_convert_data_type(def, value));
         };
+        let _update_multitext_item = function (o) {
+            let value = _convert_data_type(def, o.val().trim());
+            if (!value || item_data.indexOf(value) >= 0 || _validate_rule(host, inputDef.name, item_data, inputDef, def, value) !== true) return;
+            item_data.push(value);
+            o.val('');
+        };
         let _add_multitext_item = function (item) {
             $('<div class="input-mt-item">').html([
                 $('<span>').html(item.toString()),
@@ -1291,13 +1297,14 @@ dataBinderArray.prototype.diff = function (data, callback) {
         let inputDef = Object.assign({}, def, { name: '__hz_input_mt_' + def.name, type: def.arrayOf });
         if ('format' in def && 'validate' in def) { delete inputDef.validate.minlen; delete inputDef.validate.maxlen; }
         if (!('hint' in def) || def.hint === true) def.hint = 'Press ENTER to add item to list.';
-        _input_std(_get_empty_host(ud, host), def.arrayOf, inputDef, true).appendTo(group).on('keypress', function (e) {
-            if (e.which !== 13) return;
-            let value = _convert_data_type(def, $(this).val());
-            if (!value || item_data.indexOf(value) >= 0 || _validate_rule(host, inputDef.name, item_data, inputDef, def, value) !== true) return;
-            item_data.push(value);
-            $(this).val('');
-        });
+        _input_std(_get_empty_host(ud, host), def.arrayOf, inputDef, true).appendTo(group)
+            .on('keypress', function (e) {
+                if (e.which !== 13) return;
+                _update_multitext_item($(this));
+            }).on('blur', function (e) {
+                let o = $(this);
+                if (o.val().trim()) _update_multitext_item(o);
+            });
         container = $('<div class="input-mt-items">')
             .attr('data-bind', def.name)
             .appendTo(group)
