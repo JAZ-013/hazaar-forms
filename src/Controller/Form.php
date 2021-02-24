@@ -182,8 +182,6 @@ abstract class Form extends Action {
 
                 $args = array();
 
-                $params = null;
-
                 if($info = ake($target, 1, array())){
 
                     $name = ake($info, 'name');
@@ -192,11 +190,9 @@ abstract class Form extends Action {
 
                     $this->form_model->set($name, ake($info, 'value'));
 
-                    $params = array_from_dot_notation(array($name => $this->form_model->get($name)));
-
                 }
 
-                $result = $this->form_model->api($target[0], $args, $params);
+                $result = $this->form_model->api($target[0], $args, $params, true);
 
                 if(!is_bool($result)){
 
