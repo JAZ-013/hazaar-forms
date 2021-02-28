@@ -506,7 +506,7 @@ dataBinderArray.prototype.diff = function (data, callback) {
         return false;
     }
 
-    function _input_event_update(host, input, skip_validate, item_data) {
+    function _input_event_update(host, input, skip_validate, item_data, no_update) {
         let def = _form_field_lookup(host.def, typeof input === 'string' ? input : input.attr('data-bind'));
         if (!def) return;
         let update = def.update, cb_done = null;
@@ -522,7 +522,7 @@ dataBinderArray.prototype.diff = function (data, callback) {
             } else if (item_data && input.is('input[type="radio"]') && item_data.enabled() === true) {
                 item_data.set(item_data.value, input.next().text());
             }
-            if (typeof update === 'boolean' || update && ('url' in update || host.settings.update === true)) {
+            if (no_update !== true && (typeof update === 'boolean' || update && ('url' in update || host.settings.update === true))) {
                 let options = {
                     originator: def.name,
                     form: host.data.save()
@@ -850,7 +850,7 @@ dataBinderArray.prototype.diff = function (data, callback) {
             if (!Array.isArray(data)) data = Array.fromObject(data);
             if (value && data.find(findVal)) {
                 select.val(value);
-                _input_event_update(host, select);
+                _input_event_update(host, select, false, null, true);
             } else {
                 item_data.value = null;
                 if (Object.keys(data).length === 1 && options.single === true) {
