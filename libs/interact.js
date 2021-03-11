@@ -1,4 +1,4 @@
-﻿var ud = undefined;
+var ud = undefined;
 
 //Object.assign() Polyfill
 if (typeof Object.assign !== 'function') {
@@ -947,6 +947,7 @@ dataBinderArray.prototype.diff = function (data, callback) {
     }
 
     function _input_select(host, def, populate) {
+        def.watchers = {};
         if (def.radios === true) {
             let group = $('<div>').addClass(host.settings.styleClasses.group).data('def', def);
             if (populate !== false) _input_options(host, def, group, ud, function (group, options) {
@@ -966,7 +967,6 @@ dataBinderArray.prototype.diff = function (data, callback) {
             .blur(function (event) { return _input_event_blur(host, $(event.target)); })
             .change(function (event) { return _input_event_change(host, $(event.target)); })
             .on('update', function (event, key, value, item_data) { return _input_event_update(host, $(event.target), false, item_data); });
-        def.watchers = {};
         if (!("placeholder" in def)) def.placeholder = host.settings.placeholder;
         if (populate !== false) _input_options(host, def, select, null, function (select, options) {
             _input_options_populate(host, options, select);
