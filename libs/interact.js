@@ -1,4 +1,4 @@
-var ud = undefined;
+﻿var ud = undefined;
 
 //Object.assign() Polyfill
 if (typeof Object.assign !== 'function') {
@@ -781,7 +781,7 @@ dataBinderArray.prototype.diff = function (data, callback) {
     }
 
     function _input_radio_items(host, options, data, group, no_nullify) {
-        let def = group.data('def'), valueKey = options.value || 'value', labelKey = options.label || 'label';
+        let def = group.data('def'), valueKey = options.value || 'value', labelKey = options.label || 'label', items = [];
         data = _convert_data(data, valueKey, labelKey, def);
         for (let x in data) {
             if (('filter' in options && options.filter.indexOf(data[x][labelKey]) === -1) || data[x][valueKey] === '__spacer__') {
@@ -797,12 +797,13 @@ dataBinderArray.prototype.diff = function (data, callback) {
             let option = $('<div class="custom-control custom-radio">').html([
                 radio,
                 $('<label class="custom-control-label">').attr('for', id).html(labelKey.indexOf('{{') > -1 ? _match_replace(null, labelKey, data[x], true) : data[x][labelKey])
-            ]).appendTo(group);
+            ]);
             if (def.horizontal === true) option.addClass('custom-control-inline');
             radio.change(function (event) { return _input_event_change(host, $(event.target)); })
                 .on('update', function (event, key, value, item_data) { return _input_event_update(host, $(event.target), false, item_data); });
+            items.push(option);
         }
-        return group;
+        return group.html(items);
     }
 
     function _input_select_items(host, options, data, select, no_nullify) {
@@ -878,7 +879,10 @@ dataBinderArray.prototype.diff = function (data, callback) {
         let postops = $.extend(true, {}, options);
         if ((postops.url = _match_replace(host, postops.url, item_data)) === false)
             return callback(host, options, null, select);
-        if (track !== false) select.prop('disabled', true).html($('<option value selected>').html('Loading...'));
+        if (track !== false) {
+            select.prop('disabled', true);
+            if (select.children().length === 0) select.html($('<option value selected>').html('Loading...'));
+        }
         postops.url = _url(host, postops.url);
         if ('data' in postops) for (let x in postops.data) postops.data[x] = _match_replace(host, postops.data[x]);
         return $.ajax(postops).done(function (data) {
