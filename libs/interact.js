@@ -1,4 +1,4 @@
-var ud = undefined;
+﻿var ud = undefined;
 
 //Object.assign() Polyfill
 if (typeof Object.assign !== 'function') {
@@ -749,7 +749,15 @@ dataBinderArray.prototype.diff = function (data, callback) {
         if (def.buttons === true) group.addClass('btn-group').attr('data-bind', def.name).attr('data-toggle', 'buttons').toggleClass('btn-group-justified', def.justified === true);
         else group.attr('data-bind', def.name).attr('data-toggle', 'checks');
         def.watchers = {};
-        if (typeof def.options === 'string') def.options = { url: def.options };
+        if (typeof def.options === 'string') {
+            let match = def.options.match(/^\{\{([\w\.]+)\}\}$/);
+            if (match !== null) {
+                host.data.watch(match[1], function (key, item, container) {
+                    _input_select_multi_populate(host, typeof item.value === 'object' ? item.value : typeof item.other === 'object' ? item.other : null, container);
+                }, group);
+                def.options = _get_data_item(host.data, match[1]);
+            } else def.options = { url: def.options };
+        }
         _input_options(host, def, group, null, function (select, options) {
             _input_select_multi_populate(host, options, select, true);
         });
