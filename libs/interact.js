@@ -1064,7 +1064,7 @@ dataBinderArray.prototype.diff = function (data, callback) {
                 _input_event_update(host, input);
             },
             remove: function (file) {
-                if (host.standalone) {
+                if (!host.standalone) {
                     file = _objectify_file(file);
                     host.uploads = host.uploads.filter(function (item) {
                         if (!(item.field === def.name && item.file.name === file.name))
