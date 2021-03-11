@@ -1506,7 +1506,7 @@ dataBinderArray.prototype.diff = function (data, callback) {
         item_data.watch(function (item_data, o) {
             if (!item_data) return;
             let item_name = item_data.attrName;
-            item_data.extend(_define(def.fields), true);
+            item_data.extend(_define(def.fields, item_data), true);
             o.find('select,input').each(function (index, item) {
                 let input = $(item), def = input.data('def');
                 if (input.is('select')) {
@@ -2186,18 +2186,18 @@ dataBinderArray.prototype.diff = function (data, callback) {
         host.data.diff(data, function (item) { item.find().addClass('is-different'); });
     }
 
-    function _define(values) {
+    function _define(values, item) {
         if (!values) return;
         let data = {};
         for (let x in values) {
             if ("fields" in values[x] && values[x].type !== 'array') {
-                data[x] = _define(values[x].fields);
+                data[x] = _define(values[x].fields, item[x]);
             } else {
                 if (!values[x].default) {
                     if (values[x].type === 'array' || values[x].type === 'file')
                         values[x].default = [];
                 }
-                data[x] = values[x].default ? values[x].default : null;
+                data[x] = item && x in item ? item[x] : values[x].default ? values[x].default : null;
             }
         }
         return data;
