@@ -1,4 +1,4 @@
-﻿var ud = undefined;
+var ud = undefined;
 
 //Object.assign() Polyfill
 if (typeof Object.assign !== 'function') {
@@ -1169,7 +1169,7 @@ dataBinderArray.prototype.diff = function (data, callback) {
                             if ('dataKey' in def.lookup && def.lookup.dataKey in data) data = _form_field_lookup(data, def.lookup.dataKey, true);
                             data = _convert_data(data, valueKey, labelKey, def);
                             if ('extra' in def.lookup) $.merge(data, def.lookup.extra);
-                            if (Object.keys(data).length > 0) {
+                            if (data !== null && Object.keys(data).length > 0) {
                                 if (def.lookup.autocomplete === true) listDIV.empty();
                                 for (let x in data) {
                                     listDIV.append($('<li class="list-group-item">')
