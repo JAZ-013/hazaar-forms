@@ -781,7 +781,7 @@ dataBinderArray.prototype.diff = function (data, callback) {
     }
 
     function _input_radio_items(host, options, data, group, no_nullify) {
-        let def = group.data('def'), valueKey = options.value || 'value', labelKey = options.label || 'label', items = [];
+        let def = group.data('def'), valueKey = options.value || 'value', labelKey = options.label || 'label', items = [], item_data = _get_data_item(host.data, def.name);
         data = _convert_data(data, valueKey, labelKey, def);
         for (let x in data) {
             if (('filter' in options && options.filter.indexOf(data[x][labelKey]) === -1) || data[x][valueKey] === '__spacer__') {
@@ -798,6 +798,7 @@ dataBinderArray.prototype.diff = function (data, callback) {
                 radio,
                 $('<label class="custom-control-label">').attr('for', id).html(labelKey.indexOf('{{') > -1 ? _match_replace(null, labelKey, data[x], true) : data[x][labelKey])
             ]);
+            if (data[x][valueKey] === item_data.value) radio.prop('checked', true);
             if (def.horizontal === true) option.addClass('custom-control-inline');
             radio.change(function (event) { return _input_event_change(host, $(event.target)); })
                 .on('update', function (event, key, value, item_data) { return _input_event_update(host, $(event.target), false, item_data); });
