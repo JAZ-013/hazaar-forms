@@ -2196,7 +2196,7 @@ dataBinderArray.prototype.diff = function (data, callback) {
         let data = {};
         for (let x in values) {
             if ("fields" in values[x] && values[x].type !== 'array') {
-                data[x] = _define(values[x].fields, item[x]);
+                data[x] = _define(values[x].fields, item ? item[x] : ud);
             } else {
                 if (!values[x].default) {
                     if (values[x].type === 'array' || values[x].type === 'file')
