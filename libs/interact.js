@@ -826,7 +826,7 @@ dataBinderArray.prototype.diff = function (data, callback) {
             }
             let default_item = item_data && item_data.value === null && 'default' in options ? options.default : null;
             for (let x in data) {
-                if ('filter' in options && options.filter.indexOf(data[x][labelKey]) === -1) {
+                if (!Array.isArray(options) && 'filter' in options && options.filter.indexOf(data[x][labelKey]) === -1) {
                     delete data[x];
                     continue;
                 }
@@ -925,7 +925,7 @@ dataBinderArray.prototype.diff = function (data, callback) {
     function _input_options(host, def, select, item_data, cb) {
         if (!('options' in def)) return false;
         let options = {};
-        if (Array.isArray(def.options)) {
+        if (Array.isArray(def.options) && def.options.length > 0 && _is_object(def.options[0])) {
             for (let x in def.options) {
                 if (!(_is_object(def.options[x]) && 'when' in def.options[x])) continue;
                 if (_eval(host, def.options[x].when, null, item_data, def.name)) {
