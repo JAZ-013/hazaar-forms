@@ -661,7 +661,7 @@ dataBinderArray.prototype.diff = function (data, callback) {
             for (let col = 0; col < def.columns; col++)
                 items.push($('<div>').addClass('col-md-' + col_width).toggleClass('custom-controls-stacked', def.inline));
             for (let x in data) {
-                if ('filter' in def.options && def.options.filter.indexOf(data[x][labelKey]) === -1) {
+                if (!Array.isArray(def.options) && 'filter' in def.options && def.options.filter.indexOf(data[x][labelKey]) === -1) {
                     delete data[x];
                     continue;
                 }
