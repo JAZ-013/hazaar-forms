@@ -1336,6 +1336,8 @@ dataBinderArray.prototype.diff = function (data, callback) {
         if (def.multiline) {
             input = $('<textarea>').addClass(host.settings.styleClasses.input);
             if ('height' in def) input.css('height', def.height);
+            if ('rows' in def) input.attr('rows', def.rows)
+            if ('cols' in def) input.attr('cols', def.cols)
         } else input = $('<input>').addClass(host.settings.styleClasses.input).attr('type', def.password ? 'password' : type);
         input.attr('name', def.name)
             .attr('data-bind', def.name)
