@@ -273,7 +273,7 @@ dataBinderArray.prototype.diff = function (data, callback) {
         return data;
     }
 
-    function _convert_data(dataIn, valueKey, labelKey, def, index) {
+    function _convert_data(dataIn, valueKey, labelKey, def, index, combine) {
         if ('options' in def && _is_object(def.options) && 'in' in def.options) dataIn = _get_data_item(dataIn, def.options.in);
         if (dataIn === null || typeof dataIn !== 'object' || Array.isArray(dataIn) && dataIn.length === 0 || Object.keys(dataIn).length === 0) return null;
         if (!Array.isArray(dataIn) && typeof dataIn[Object.keys(dataIn)[0]] !== 'string') {
@@ -284,7 +284,7 @@ dataBinderArray.prototype.diff = function (data, callback) {
                 for (let x in dataIn[g]) nd.push({ [valueKey]: _convert_data_type(def, x), [labelKey]: dataIn[g][x], group: g });
             }
             dataIn = nd;
-        }
+        } else if (Array.isArray(dataIn) && combine === true) dataIn = (() => { let o = {}; for (x of dataIn) o[x] = x; return o; })();
         let group = ('options' in def && _is_object(def.options) && 'group' in def.options && 'key' in def.options.group) ? def.options.group : null, dataOut = group ? {} : [];
         for (let x in dataIn) {
             let newitem = {};
@@ -609,7 +609,7 @@ dataBinderArray.prototype.diff = function (data, callback) {
     function _input_select_multi_items(host, data, container) {
         let def = container.empty().data('def'), item_data = _get_data_item(host.data, def.name), data_index = {};
         let valueKey = def.options.value || 'value', labelKey = def.options.label || 'label';
-        data = _convert_data(data, valueKey, labelKey, def, data_index);
+        data = _convert_data(data, valueKey, labelKey, def, data_index, def.options.combine);
         if (data === null || (Array.isArray(data) && data.length === 0)) {
             item_data.empty();
             item_data.enabled(false);
@@ -782,9 +782,9 @@ dataBinderArray.prototype.diff = function (data, callback) {
 
     function _input_radio_items(host, options, data, group, no_nullify) {
         let def = group.data('def'), valueKey = options.value || 'value', labelKey = options.label || 'label', items = [], item_data = _get_data_item(host.data, def.name);
-        data = _convert_data(data, valueKey, labelKey, def);
+        data = _convert_data(data, valueKey, labelKey, def, null, options.combine);
         for (let x in data) {
-            if (('filter' in options && options.filter.indexOf(data[x][labelKey]) === -1) || data[x][valueKey] === '__spacer__') {
+            if ((!Array.isArray(options) && 'filter' in options && options.filter.indexOf(data[x][labelKey]) === -1) || data[x][valueKey] === '__spacer__') {
                 delete data[x];
                 continue;
             }
@@ -811,7 +811,7 @@ dataBinderArray.prototype.diff = function (data, callback) {
         let item_data = _get_data_item(host.data, select.attr('data-bind')), def = select.data('def');
         let valueKey = options.value || 'value', labelKey = options.label || 'label';
         select.prop('disabled', !(def.disabled !== true && def.protected !== true && select.data('ed') !== true)).empty();
-        data = _convert_data(data, valueKey, labelKey, def);
+        data = _convert_data(data, valueKey, labelKey, def, null, options.combine);
         if (!data) {
             if (no_nullify !== true) _nullify(host, def);
             if (item_data) item_data.enabled(false);
@@ -1180,7 +1180,7 @@ dataBinderArray.prototype.diff = function (data, callback) {
                             if (def.lookup.autocomplete !== true) listDIV.empty();
                         }).done(function (data) {
                             if ('dataKey' in def.lookup && def.lookup.dataKey in data) data = _form_field_lookup(data, def.lookup.dataKey, true);
-                            data = _convert_data(data, valueKey, labelKey, def);
+                            data = _convert_data(data, valueKey, labelKey, def, null, def.lookup.combine);
                             if ('extra' in def.lookup) $.merge(data, def.lookup.extra);
                             if (data !== null && Object.keys(data).length > 0) {
                                 if (def.lookup.autocomplete === true) listDIV.empty();
