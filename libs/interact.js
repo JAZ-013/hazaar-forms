@@ -1,4 +1,4 @@
-﻿var ud = undefined;
+var ud = undefined;
 
 //Object.assign() Polyfill
 if (typeof Object.assign !== 'function') {
@@ -1449,13 +1449,13 @@ dataBinderArray.prototype.diff = function (data, callback) {
         let bump = def.fields && 'label' in def.fields[Object.keys(def.fields)[0]];
         let layout = _resolve_field_layout(host, def.fields, def.layout);
         let template = $('<div class="itemlist-item">');
-        if (host.viewmode !== true && _eval(host, def.allow_remove, true, item_data, def.name)) {
+        if (host.viewmode !== true && _eval(host, def.allowRemove, true, item_data, def.name)) {
             template.append($('<div class="itemlist-item-rm">').html([
-                def.allow_edit === true && bump ? $('<label>').html('&nbsp;').addClass(host.settings.styleClasses.label) : '',
+                def.allowEdit === true && bump ? $('<label>').html('&nbsp;').addClass(host.settings.styleClasses.label) : '',
                 $('<button type="button" class="btn btn-danger btn-sm">').html(("btnLabels" in def && "remove" in def.btnLabels ? def.btnLabels.remove : _icon(host, 'minus')))
             ]));
         }
-        if (host.viewmode !== true && _eval(host, def.allow_add, true, item_data, def.name)) {
+        if (host.viewmode !== true && _eval(host, def.allowAdd, true, item_data, def.name)) {
             let sub_host = _get_empty_host(ud, host), new_item = new dataBinder(_define(def.fields), def.name, null, def.name);
             sub_host.settings = $.extend({}, $.fn.hzForm.defaults, host.settings);
             sub_host.validate = false;
@@ -1508,7 +1508,7 @@ dataBinderArray.prototype.diff = function (data, callback) {
                 sub_host.data.empty();
             });
         }
-        if (host.viewmode === true || _eval(host, def.allow_edit, false, item_data, def.name) !== true) layout = _field_to_html(layout);
+        if (host.viewmode === true || _eval(host, def.allowEdit, false, item_data, def.name) !== true) layout = _field_to_html(layout);
         template.append(_form_field(host, { fields: layout, row: true }, true, false, false, ud, true));
         item_data.watch(function (item_data, o) {
             if (!item_data) return;
