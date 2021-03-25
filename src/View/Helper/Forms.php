@@ -43,6 +43,8 @@ class Forms extends \Hazaar\View\Helper {
 
         $view->link($this->application->url('hazaar/forms', 'file/' . $css));
 
+        $view->requires($this->application->url('hazaar/forms', 'file/check.js'));
+
         $view->requires($this->application->url('hazaar/forms', 'file/' . $js));
 
         $view->link($this->application->url('hazaar', 'file/css/fileicons.css'));
