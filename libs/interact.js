@@ -517,7 +517,7 @@ dataBinderArray.prototype.diff = function (data, callback) {
             if (item_data && input.is('select') && input.val() !== '__hz_other') {
                 let other = input.children('option[value="' + item_data.value + '"]').data('other') || null;
                 item_data.enabled(false);
-                item_data.set(item_data.value, input.children('option:selected').text(), other, false);
+                item_data.set(item_data.value, input.children('option:selected').text(), other, true);
                 item_data.enabled(true);
             } else if (item_data && input.is('input[type="radio"]') && item_data.enabled() === true) {
                 item_data.set(item_data.value, input.next().text());
@@ -1501,7 +1501,7 @@ dataBinderArray.prototype.diff = function (data, callback) {
                         value = date.getFullYear() + '-' + (date.getMonth() + 1) + '-' + date.getDate();
                     }
                     let sub_item_data = _get_data_item(sub_host.data, item.name, false, value);
-                    if (sub_item_data) sub_item_data.set(value, null, null, false);
+                    if (sub_item_data) sub_item_data.set(value, null, null, true);
                 });
                 if (valid !== true) return;
                 item_data.push(sub_host.data.save());
