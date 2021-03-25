@@ -1,9 +1,13 @@
 (function ($) {
 
     function isES2015() {
-
-        return false;
-
+        try {
+            new Function("(a = 0) => a");
+            return true;
+        }
+        catch (err) {
+            return false;
+        }
     }
 
     if (!isES2015()) {
