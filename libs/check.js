@@ -18,6 +18,7 @@
             ' for details on how to upgrade.'
         ];
         $(document.body).html($('<div class="alert alert-danger text-center">').html(msg));
+        window.stop();
     }
 
 })(jQuery);
