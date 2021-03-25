@@ -1758,6 +1758,13 @@ dataBinderArray.prototype.diff = function (data, callback) {
         return container.data('def', page);
     }
 
+    function _label(host, label, default_label, def) {
+        let labelType = def && 'labelType' in def ? def.labelType : default_label ? default_label : 'label';
+        let o = $('<' + labelType + '>').html(_match_replace(host, label, null, true, true));
+        if ('labelClass' in def) o.addClass(def.labelClass);
+        return o;
+    }
+
     function _page_init(host, pageno) {
         host.page = pageno;
         host.events = {
