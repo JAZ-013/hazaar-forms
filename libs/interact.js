@@ -1608,7 +1608,7 @@ dataBinderArray.prototype.diff = function (data, callback) {
         return layout;
     }
 
-    function _form_field(host, info, p, populate, apply_rules, item_data, hidden) {
+    function _form_field(host, info, p, populate, apply_rules, item_data, hidden, grid) {
         let def = null, field = null;
         if (info instanceof Array)
             info = { fields: info };
@@ -1616,6 +1616,7 @@ dataBinderArray.prototype.diff = function (data, callback) {
         if (!item_data && 'name' in def && def.name) item_data = _get_data_item(host.data, def.name);
         if ('name' in def && 'default' in def && item_data instanceof dataBinderArray && item_data.value === null) item_data.value = def.default;
         if ('horizontal' in def) p = def.horizontal;
+        if (grid && !('grid' in def)) def.grid = grid;
         if ('render' in def) {
             field = _eval_code(host, def.render, item_data, def.name);
             if (!field) return;
@@ -1634,6 +1635,7 @@ dataBinderArray.prototype.diff = function (data, callback) {
                     length = length + (item.weight - 1);
                 }
                 if (info.protected === true && _is_object(item)) item.protected = true;
+                if ('grid' in def && !('grid' in item)) item.grid = def.grid;
                 fields.push(item);
             }
             col_width = 12 / length;
@@ -1646,12 +1648,12 @@ dataBinderArray.prototype.diff = function (data, callback) {
                 if (!child_field) continue;
                 if (fields[x] instanceof Object && 'weight' in fields[x]) field_width = Math.round(field_width * fields[x].weight);
                 field.append(child_field.toggleClass('col-md-' + field_width, p));
-                if (p && def.row !== true) child_field.removeClass('row');
+                if (p && !def.row && !fields[x].grid) child_field.removeClass('row');
             }
         } else {
             def.nolabel = false;
             let col = $('<div class="form-field">'), input = _input(host, def, populate, item_data);
-            if (host.settings.horizontal) {
+            if (def.grid || host.settings.horizontal) {
                 if (def.nolabel !== true && def.label) col.addClass('col-sm-' + host.settings.hz.right);
                 else col.addClass('col-sm-12').toggleClass('row', def.row === true);
             }
@@ -1659,7 +1661,7 @@ dataBinderArray.prototype.diff = function (data, callback) {
             field = $('<div class="form-group">').toggleClass('row', def.grid || host.settings.horizontal).data('def', def);
             if (def.title || (def.nolabel !== true && def.label))
                 field.append(_label(host, 'title' in def ? def.title : def.label, 'label', def)
-                    .toggleClass('col-sm-' + host.settings.hz.left, host.settings.horizontal)
+                    .toggleClass('col-sm-' + host.settings.hz.left, def.grid || host.settings.horizontal)
                     .attr('for', '__hz_field_' + def.name));
             if (input) {
                 col.html(input);
@@ -1716,14 +1718,15 @@ dataBinderArray.prototype.diff = function (data, callback) {
                 }
                 col_width = 12 / length;
             }
-            for (let x in section)
-                group.append($('<div>').toggleClass('col-md-' + Math.round((section[x].weight || 1) * col_width), p).html(_section(host, section[x], !p)));
+            for (let x in section) group.append($('<div>')
+                .toggleClass('col-md-' + Math.round((section[x].weight || 1) * col_width), p)
+                .html(_section(host, section[x], !p)));
             return group;
         }
         if (typeof section !== 'object') return null;
         let fieldset = $('<fieldset class="col col-12">').data('def', section).appendTo(group);
         if (section.label) fieldset.append(_label(host, section.label, 'legend', section));
-        for (let x in section.fields) fieldset.append(_form_field(host, section.fields[x]));
+        for (let field of section.fields) fieldset.append(_form_field(host, field, p, ud, ud, ud, ud, section.grid));
         if ('show' in section) _make_showable(host, section, fieldset);
         return group.addClass('row');
     }
@@ -1732,7 +1735,7 @@ dataBinderArray.prototype.diff = function (data, callback) {
     function _page(host, page) {
         if (typeof page !== 'object' || ('show' in page && _eval(host, page.show, true) !== true)) return null;
         let container = $('<div>'), sections = [];
-        for (let x in page.sections) sections.push(_section(host, page.sections[x]));
+        for (let x in page.sections) sections.push(_section(host, page.sections[x], true, page.grid));
         if (host.events.show.length > 0) for (let x in host.events.show) _toggle_show(host, host.events.show[x]);
         if (host.settings.cards === true || page.cards === true) {
             container.addClass('card');
