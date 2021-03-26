@@ -1,4 +1,4 @@
-var ud = undefined;
+﻿var ud = undefined;
 
 //Object.assign() Polyfill
 if (typeof Object.assign !== 'function') {
@@ -993,8 +993,8 @@ dataBinderArray.prototype.diff = function (data, callback) {
             .blur(function (event) { return _input_event_blur(host, $(event.target)); })
             .change(function (event) { return _input_event_change(host, $(event.target)); })
             .on('update', function (event, key, value, item_data) { return _input_event_update(host, $(event.target), false, item_data); });
-        $('<label>').addClass(host.settings.styleClasses.chkLabel)
-            .html(_match_replace(host, def.label, null, true, true))
+        _label(host, def.label, 'label', def)
+            .addClass(host.settings.styleClasses.chkLabel)
             .attr('for', id)
             .appendTo(group);
         def.nolabel = true;
@@ -1442,7 +1442,7 @@ dataBinderArray.prototype.diff = function (data, callback) {
         let group = $('<div class="itemlist">').addClass(host.settings.styleClasses.group);
         if (!(item_data instanceof dataBinderArray)) return group;
         if ('label' in def) {
-            $('<h4>').addClass(host.settings.styleClasses.label).html(_match_replace(host, def.label, null, true, true)).appendTo(group);
+            group.append(_label(host, def.label, 'h4', def));
             def.nolabel = true;
         }
         if (!('fields' in def)) return group;
@@ -1644,7 +1644,7 @@ dataBinderArray.prototype.diff = function (data, callback) {
             }
             col_width = 12 / length;
             field = $('<div class="form-section">').toggleClass('row', p).data('def', def);
-            if ('label' in def) field.append($('<div>').toggleClass('col-md-12', p).html($('<h5>').html(def.label)));
+            if ('label' in def) field.append($('<div>').toggleClass('col-md-12', p).html(_label(host, def.label, 'h5', def)));
             for (let x in fields) {
                 let item = 'name' in fields[x] ? (item_data instanceof dataBinder ? item_data[fields[x].name] : undefined) : item_data;
                 if (def.horizontal === true) fields[x].row = true;
@@ -1665,11 +1665,10 @@ dataBinderArray.prototype.diff = function (data, callback) {
             field = $('<div>').addClass(host.settings.styleClasses.group)
                 .toggleClass('row', host.settings.horizontal)
                 .data('def', def);
-            if (def.title || (def.nolabel !== true && def.label)) field.append($('<label>')
-                .addClass(host.settings.styleClasses.label)
-                .toggleClass('col-sm-' + host.settings.hz.left, host.settings.horizontal)
-                .attr('for', '__hz_field_' + def.name)
-                .html(_match_replace(host, 'title' in def ? def.title : def.label, null, true, true)));
+            if (def.title || (def.nolabel !== true && def.label))
+                field.append(_label(host, 'title' in def ? def.title : def.label, 'label', def)
+                    .toggleClass('col-sm-' + host.settings.hz.left, host.settings.horizontal)
+                    .attr('for', '__hz_field_' + def.name));
             if (input) {
                 col.html(input);
                 if ('hint' in def) col.append($('<small class="form-text text-muted">').html(_match_replace(host, def.hint, null, true, true)));
@@ -1685,7 +1684,7 @@ dataBinderArray.prototype.diff = function (data, callback) {
         if ('max-height' in def) field.css('max-height', def['max-height']);
         if ('html' in def) {
             let html = def.html;
-            if ('label' in def && field.children().length === 0) field.append($('<label>').addClass(host.settings.styleClasses.label).html(def.label));
+            if ('label' in def && field.children().length === 0) field.append(_label(host, def.label, 'label', def));
             field.append($('<div>').html(_match_replace(host, html, null, true, true)));
         }
         if ('header' in def) field.prepend(def.header);
@@ -1731,10 +1730,8 @@ dataBinderArray.prototype.diff = function (data, callback) {
         }
         if (typeof section !== 'object') return null;
         let fieldset = $('<fieldset class="col col-12">').data('def', section).appendTo(group);
-        if (section.label)
-            fieldset.append($('<legend>').html(_match_replace(host, section.label, null, true, true)));
-        for (let x in section.fields)
-            fieldset.append(_form_field(host, section.fields[x]));
+        if (section.label) fieldset.append(_label(host, section.label, 'legend', section));
+        for (let x in section.fields) fieldset.append(_form_field(host, section.fields[x]));
         if ('show' in section) _make_showable(host, section, fieldset);
         return group.addClass('row');
     }
@@ -1745,14 +1742,14 @@ dataBinderArray.prototype.diff = function (data, callback) {
         let container = $('<div>'), sections = [];
         for (let x in page.sections) sections.push(_section(host, page.sections[x]));
         if (host.events.show.length > 0) for (let x in host.events.show) _toggle_show(host, host.events.show[x]);
-        if (host.settings.cards === true) {
+        if (host.settings.cards === true || page.cards === true) {
             container.addClass('card');
-            if (page.label) container.append($('<div class="card-header">').html(_match_replace(host, page.label, null, true, true)));
+            if (page.label) container.append(_label(host, page.label, 'div', page).addClass('card-header'));
             container.append($('<div class="card-body">').addClass(host.settings.styleClasses.page).data('def', page).append(sections));
             if (host.settings.singlePage === true) container.addClass('mb-5');
         } else {
             container.addClass(host.settings.styleClasses.page);
-            if (page.label) container.append($('<h1>').html(_match_replace(host, page.label, null, true, true)));
+            if (page.label) container.append(_label(host, page.label, 'h1', page));
             container.append(sections);
         }
         return container.data('def', page);
@@ -1760,7 +1757,7 @@ dataBinderArray.prototype.diff = function (data, callback) {
 
     function _label(host, label, default_label, def) {
         let labelType = def && 'labelType' in def ? def.labelType : default_label ? default_label : 'label';
-        let o = $('<' + labelType + '>').html(_match_replace(host, label, null, true, true));
+        let o = $('<' + labelType + '>').html(_match_replace(host, label, null, true, true)).addClass(host.settings.styleClasses.label);
         if ('labelClass' in def) o.addClass(def.labelClass);
         return o;
     }
