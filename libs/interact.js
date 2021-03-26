@@ -466,9 +466,8 @@ dataBinderArray.prototype.diff = function (data, callback) {
             let value = input.val();
             if (value === '__hz_other') {
                 if (item_data && item_data.value !== null) item_data.set(null, null, item_data.other);
-                let group = $('<div>').addClass(host.settings.styleClasses.inputGroup);
-                let oInput = $('<input type="text" placeholder="Enter other option...">')
-                    .addClass(host.settings.styleClasses.input)
+                let group = $('<div class="input-group">');
+                let oInput = $('<input class="form-control" type="text" placeholder="Enter other option...">')
                     .data('def', def)
                     .val(item_data.other)
                     .attr('data-bind', input.attr('data-bind'))
@@ -486,7 +485,7 @@ dataBinderArray.prototype.diff = function (data, callback) {
                         input.val('').show();
                     });
                 if ('format' in def) oInput.inputmask(def.format);
-                $('<span class="input-group-btn">').addClass(host.settings.styleClasses.inputGroupAppend).html(button).appendTo(group);
+                $('<span class="input-group-append input-group-btn">').html(button).appendTo(group);
                 input.hide().after(group);
                 oInput.focus();
             } else item_data.set(_convert_data_type(def, value));
@@ -580,14 +579,12 @@ dataBinderArray.prototype.diff = function (data, callback) {
 
     function _input_button(host, def) {
         if ('buttons' in def) {
-            let group = $('<div>').addClass(host.settings.styleClasses.buttonGroup), defaults = Object.assign({}, def);
+            let group = $('<div class="btn-group">'), defaults = Object.assign({}, def);
             delete defaults.buttons;
             for (let x in def.buttons) group.append(_input_button(host, $.extend({}, defaults, def.buttons[x])));
             return group;
         }
-        let btn = $('<button type="button">').addClass(host.settings.styleClasses.button)
-            .addClass(def.class || 'btn-default')
-            .data('def', def);
+        let btn = $('<button class="btn" type="button">').addClass(def.class || 'btn-default').data('def', def);
         if (!('label' in def)) def.label = 'Button';
         btn.html(_match_replace(host, def.label, null, true, true));
         switch (def.action) {
@@ -667,17 +664,14 @@ dataBinderArray.prototype.diff = function (data, callback) {
                 }
                 let iv = _convert_data_type(def, data[x][valueKey]), il = data[x][labelKey], id = _guid();
                 let active = value instanceof dataBinderArray && value.indexOf(iv) > -1, name = def.name + '_' + iv;
-                let label = $('<div>').addClass(host.settings.styleClasses.chkDiv).html([
-                    $('<input type="checkbox">')
-                        .addClass(host.settings.styleClasses.chkInput)
+                let label = $('<div class="custom-control custom-checkbox">').html([
+                    $('<input class="custom-control-input" type="checkbox">')
                         .attr('id', id)
                         .attr('value', iv)
                         .prop('checked', active)
                         .prop('disabled', disabled)
                         .data('def', def),
-                    $('<label>').addClass(host.settings.styleClasses.chkLabel)
-                        .html(il)
-                        .attr('for', id)
+                    $('<label class="custom-control-label">').html(il).attr('for', id)
                 ]).attr('data-bind-value', iv).change(fChange);
                 if ('css' in def) label.css(def.css);
                 items[column].append(label);
@@ -954,14 +948,14 @@ dataBinderArray.prototype.diff = function (data, callback) {
     function _input_select(host, def, populate) {
         def.watchers = {};
         if (def.radios === true) {
-            let group = $('<div>').addClass(host.settings.styleClasses.group).data('def', def);
+            let group = $('<div class="form-group">').data('def', def);
             if (populate !== false) _input_options(host, def, group, ud, function (group, options) {
                 _input_options_populate(host, options, group, ud, ud, _input_radio_items);
             });
             return group;
         }
         let group = $('<div class="input-group">');
-        let select = $('<select>').addClass(host.settings.styleClasses.input)
+        let select = $('<select class="form-control">')
             .attr('name', def.name)
             .data('def', def)
             .attr('data-bind', def.name)
@@ -980,8 +974,8 @@ dataBinderArray.prototype.diff = function (data, callback) {
     }
 
     function _input_checkbox(host, def) {
-        let item_data = _get_data_item(host.data, def.name), group = $('<div>').addClass(host.settings.styleClasses.chkDiv), id = _guid();
-        let input = $('<input type="checkbox">').addClass(host.settings.styleClasses.chkInput)
+        let item_data = _get_data_item(host.data, def.name), group = $('<div class="custom-control custom-checkbox">'), id = _guid();
+        let input = $('<input class="custom-control-input" type="checkbox">')
             .attr('name', def.name)
             .attr('id', id)
             .attr('data-bind', def.name)
@@ -994,7 +988,7 @@ dataBinderArray.prototype.diff = function (data, callback) {
             .change(function (event) { return _input_event_change(host, $(event.target)); })
             .on('update', function (event, key, value, item_data) { return _input_event_update(host, $(event.target), false, item_data); });
         _label(host, def.label, 'label', def)
-            .addClass(host.settings.styleClasses.chkLabel)
+            .addClass('custom-control-label')
             .attr('for', id)
             .appendTo(group);
         def.nolabel = true;
@@ -1003,8 +997,8 @@ dataBinderArray.prototype.diff = function (data, callback) {
 
     function _input_datetime(host, def) {
         let item_data = _get_data_item(host.data, def.name);
-        let group = $('<div class="date">').addClass(host.settings.styleClasses.inputGroup);
-        let input = $('<input>').addClass(host.settings.styleClasses.input)
+        let group = $('<div class="input-group date">');
+        let input = $('<input class="form-control">')
             .attr('type', def.type === 'datetime' ? 'datetime-local' : 'date')
             .attr('name', def.name)
             .attr('data-bind', def.name)
@@ -1017,8 +1011,8 @@ dataBinderArray.prototype.diff = function (data, callback) {
             .change(function (event) { return _input_event_change(host, $(event.target)); })
             .on('update', function (event, key, value, item_data) { return _input_event_update(host, $(event.target), false, item_data); });
         if (def.suffix !== false)
-            $('<div>').addClass(host.settings.styleClasses.inputGroupAppend)
-                .html($('<span style="cursor: pointer;">').addClass(host.settings.styleClasses.inputGroupText)
+            $('<div class="input-group-append">')
+                .html($('<span class="input-group-text" style="cursor: pointer;">')
                     .html(_icon(host, 'calendar').click(function () { input.focus(); })))
                 .appendTo(group);
         if (def.format) {
@@ -1112,8 +1106,8 @@ dataBinderArray.prototype.diff = function (data, callback) {
 
     function _input_lookup(host, def) {
         let item_data = _get_data_item(host.data, def.name);
-        let group = $('<div>').addClass(host.settings.styleClasses.inputGroup);
-        let input = $('<input type="text">').addClass(host.settings.styleClasses.input)
+        let group = $('<div class="input-group">');
+        let input = $('<input class="form-control" type="text">')
             .attr('data-bind', def.name)
             .attr('data-bind-label', true)
             .data('def', def)
@@ -1241,17 +1235,17 @@ dataBinderArray.prototype.diff = function (data, callback) {
             });
         }
         if ('placeholder' in def) input.attr('placeholder', def.placeholder);
-        if (!def.protected) group.append($('<div>').addClass(host.settings.styleClasses.inputGroupAppend)
-            .html($('<span>').addClass(host.settings.styleClasses.inputGroupText).html(_icon(host, 'search'))));
+        if (!def.protected) group.append($('<div class="input-group-append">')
+            .html($('<span class="input-group-text">').html(_icon(host, 'search'))));
         return group;
     }
 
     function _input_money(host, def) {
         let item_data = _get_data_item(host.data, def.name), symbol = '$';
-        let input = $('<input type="text">').addClass(host.settings.styleClasses.input);
-        let inputDIV = $('<div>').addClass(host.settings.styleClasses.inputGroup);
-        let prefixDIV = $('<div>').addClass(host.settings.styleClasses.inputGroupPrepend);
-        let suffixDIV = $('<div>').addClass(host.settings.styleClasses.inputGroupAppend);
+        let input = $('<input class="form-control" type="text">');
+        let inputDIV = $('<div class="input-group">');
+        let prefixDIV = $('<div class="input-group-prepend">');
+        let suffixDIV = $('<div class="input-group-append">');
         input.attr('name', def.name)
             .attr('data-bind', def.name + '.amt')
             .data('def', def)
@@ -1261,7 +1255,7 @@ dataBinderArray.prototype.diff = function (data, callback) {
             let current = def.currencies.find(function (value, index, o) { if (value.currencycode === item_data.currency.value) return true; });
             symbol = current.symbol;
         }
-        inputDIV.append([prefixDIV.html($('<span>').addClass(host.settings.styleClasses.inputGroupText).html(symbol)), input, suffixDIV]);
+        inputDIV.append([prefixDIV.html($('<span class="input-group-text">').html(symbol)), input, suffixDIV]);
         if ('currencies' in def && def.currencies.length > 1) {
             let currencySELECT = $('<div class="dropdown-menu">');
             def.currencies.sort(function (a, b) { return a.code === b.code ? 0 : a.code < b.code ? -1 : 1; });
@@ -1281,7 +1275,7 @@ dataBinderArray.prototype.diff = function (data, callback) {
                 let info = def.currencies.find(function (value, index, o) { if (value.code === item_data.currency.value) return true; });
                 prefixDIV.children('span').html(info.symbol);
             });
-        } else suffixDIV.html($('<span>').addClass(host.settings.styleClasses.inputGroupText).html(item_data.currency.value));
+        } else suffixDIV.html($('<span class="input-group-text">').html(item_data.currency.value));
         if (def.protected) input.prop('disabled', true);
         else input.focus(function (event) { return _input_event_focus(host, $(event.target)); })
             .blur(function (event) { return _input_event_blur(host, $(event.target)); })
@@ -1334,11 +1328,11 @@ dataBinderArray.prototype.diff = function (data, callback) {
         let input = null, item_data = _get_data_item(host.data, def.name);
         if (type === 'int' || type === 'integer') type = 'number';
         if (def.multiline) {
-            input = $('<textarea>').addClass(host.settings.styleClasses.input);
+            input = $('<textarea class="form-control">');
             if ('height' in def) input.css('height', def.height);
             if ('rows' in def) input.attr('rows', def.rows)
             if ('cols' in def) input.attr('cols', def.cols)
-        } else input = $('<input>').addClass(host.settings.styleClasses.input).attr('type', def.password ? 'password' : type);
+        } else input = $('<input class="form-control">').attr('type', def.password ? 'password' : type);
         input.attr('name', def.name)
             .attr('data-bind', def.name)
             .data('def', def)
@@ -1352,19 +1346,19 @@ dataBinderArray.prototype.diff = function (data, callback) {
         if ('format' in def) input.attr('type', 'text').inputmask(def.format);
         if ('placeholder' in def) input.attr('placeholder', def.placeholder);
         if (no_group === true) return input;
-        let group = $('<div>').addClass(host.settings.styleClasses.inputGroup);
+        let group = $('<div class="input-group">');
         if (def.prefix) {
-            $('<div>').addClass(host.settings.styleClasses.inputGroupPrepend).appendTo(group)
+            $('<div class="input-group-prepend">').appendTo(group)
                 .html(((def.type === 'text' && (sf = _form_field_lookup(host.def, def.prefix)) !== null && def.name !== sf.name)
                     ? _input(host, sf, null, null, true).css('text-align', 'left')
-                    : $('<span>').html(_match_replace(host, def.prefix, null, true, true))).addClass(host.settings.styleClasses.inputGroupText));
+                    : $('<span class="input-group-text">').html(_match_replace(host, def.prefix, null, true, true))));
         }
         if (def.suffix || def.copy === true || def.reveal === true) {
-            let suffix = $('<div>').addClass(host.settings.styleClasses.inputGroupAppend).appendTo(group);
+            let suffix = $('<div class="input-group-append">').appendTo(group);
             if (def.suffix) {
                 suffix.html(((def.type === 'text' && (sf = _form_field_lookup(host.def, def.suffix)) !== null && def.name !== sf.name)
                     ? _input(host, sf, null, null, true).css('text-align', 'left')
-                    : $('<span>').html(_match_replace(host, def.suffix, null, true, true))).addClass(host.settings.styleClasses.inputGroupText));
+                    : $('<span class="input-group-text">').html(_match_replace(host, def.suffix, null, true, true))));
             }
             if (def.password === true && def.reveal === true) suffix.append($('<span class="input-group-text">').click(function (event) {
                 let i = $(this).children('i'), r = false;
@@ -1419,7 +1413,7 @@ dataBinderArray.prototype.diff = function (data, callback) {
                 }
             }
         }
-        if (no_group === true && input.is('.' + host.settings.styleClasses.inputGroup)) {
+        if (no_group === true && input.is('.input-group')) {
             input = input.children();
             if ('width' in def) input.css('width', def.width);
         }
@@ -1439,7 +1433,7 @@ dataBinderArray.prototype.diff = function (data, callback) {
 
     function _input_list(host, def) {
         let item_data = _get_data_item(host.data, def.name);
-        let group = $('<div class="itemlist">').addClass(host.settings.styleClasses.group);
+        let group = $('<div class="form-group itemlist">');
         if (!(item_data instanceof dataBinderArray)) return group;
         if ('label' in def) {
             group.append(_label(host, def.label, 'h4', def));
@@ -1451,7 +1445,7 @@ dataBinderArray.prototype.diff = function (data, callback) {
         let template = $('<div class="itemlist-item">');
         if (host.viewmode !== true && _eval(host, def.allowRemove, true, item_data, def.name)) {
             template.append($('<div class="itemlist-item-rm">').html([
-                def.allowEdit === true && bump ? $('<label>').html('&nbsp;').addClass(host.settings.styleClasses.label) : '',
+                def.allowEdit === true && bump ? $('<label class="control-label">').html('&nbsp;') : '',
                 $('<button type="button" class="btn btn-danger btn-sm">').html(("btnLabels" in def && "remove" in def.btnLabels ? def.btnLabels.remove : _icon(host, 'minus')))
             ]));
         }
@@ -1480,7 +1474,7 @@ dataBinderArray.prototype.diff = function (data, callback) {
                 });
             });
             group.append($('<div class="itemlist-newitems">').html([$('<div class="itemlist-newitem-add">').html([
-                bump ? $('<label>').html('&nbsp;').addClass(host.settings.styleClasses.label) : '',
+                bump ? $('<label class="control-label">').html('&nbsp;') : '',
                 btn
             ]), fieldDIV]));
             btn.click(function () {
@@ -1662,9 +1656,7 @@ dataBinderArray.prototype.diff = function (data, callback) {
                 else col.addClass('col-sm-12').toggleClass('row', def.row === true);
             }
             if (hidden !== true && def.name) host.pageFields.push(def.name);
-            field = $('<div>').addClass(host.settings.styleClasses.group)
-                .toggleClass('row', host.settings.horizontal)
-                .data('def', def);
+            field = $('<div class="form-group">').toggleClass('row', def.grid || host.settings.horizontal).data('def', def);
             if (def.title || (def.nolabel !== true && def.label))
                 field.append(_label(host, 'title' in def ? def.title : def.label, 'label', def)
                     .toggleClass('col-sm-' + host.settings.hz.left, host.settings.horizontal)
@@ -1745,19 +1737,18 @@ dataBinderArray.prototype.diff = function (data, callback) {
         if (host.settings.cards === true || page.cards === true) {
             container.addClass('card');
             if (page.label) container.append(_label(host, page.label, 'div', page).addClass('card-header'));
-            container.append($('<div class="card-body">').addClass(host.settings.styleClasses.page).data('def', page).append(sections));
+            container.append($('<div class="card-body form-page">').data('def', page).append(sections));
             if (host.settings.singlePage === true) container.addClass('mb-5');
         } else {
-            container.addClass(host.settings.styleClasses.page);
             if (page.label) container.append(_label(host, page.label, 'h1', page));
-            container.append(sections);
+            container.addClass('form-page').append(sections);
         }
         return container.data('def', page);
     }
 
     function _label(host, label, default_label, def) {
         let labelType = def && 'labelType' in def ? def.labelType : default_label ? default_label : 'label';
-        let o = $('<' + labelType + '>').html(_match_replace(host, label, null, true, true)).addClass(host.settings.styleClasses.label);
+        let o = $('<' + labelType + ' class="control-label">').html(_match_replace(host, label, null, true, true));
         if ('labelClass' in def) o.addClass(def.labelClass);
         return o;
     }
@@ -1779,7 +1770,7 @@ dataBinderArray.prototype.diff = function (data, callback) {
     function _render(host, data) {
         host.objects = {
             loader: $('<div class="forms-loader-container">').html($('<div>').addClass(host.settings.loaderClass)),
-            container: $('<div>').addClass(host.settings.styleClasses.container).hide()
+            container: $('<div class="forms-container">').hide()
         };
         $(host).html([host.objects.loader, host.objects.container]);
     }
@@ -2524,22 +2515,6 @@ dataBinderArray.prototype.diff = function (data, callback) {
         "validateNav": true,
         "lookup": { "delay": 300, "startlen": 0, "autocomplete": false },
         "concurrentUploads": 2,
-        "styleClasses": {
-            "container": "forms-container",
-            "page": "form-page",
-            "group": "form-group",
-            "label": "control-label",
-            "input": "form-control",
-            "inputGroup": "input-group",
-            "inputGroupPrepend": "input-group-prepend",
-            "inputGroupText": "input-group-text",
-            "inputGroupAppend": "input-group-append",
-            "chkDiv": "custom-control custom-checkbox",
-            "chkInput": "custom-control-input",
-            "chkLabel": "custom-control-label",
-            "button": "btn",
-            "buttonGroup": "btn-group"
-        },
         "endpoints": {},
         "icons": hzIcons
     };
