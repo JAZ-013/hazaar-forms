@@ -2333,7 +2333,9 @@ dataBinderArray.prototype.diff = function (data, callback) {
     function _load(host, initUrl) {
         let p = function (response) {
             if (!response.ok) return;
-            if ('horizontal' in host.def) host.settings.horizontal = host.def.horizontal;
+            if ('settings' in host.def) $.extend(true, host.settings, host.def.settings);
+            if (!host.settings.hz.right) host.settings.hz.right = 12 - host.settings.hz.left;
+            if (!host.settings.hz.left) host.settings.hz.left = 12 - host.settings.hz.right;
             host.data.extend(_fix_plain_data(host, response.form));
             host.data.commit();
             _eval_form_pages(host, host.def.pages);
@@ -2512,7 +2514,7 @@ dataBinderArray.prototype.diff = function (data, callback) {
         "cards": false,
         "horizontal": false,
         "viewmode": false,
-        "hz": { "left": 3, "right": 9 },
+        "hz": { "left": 3 },
         "placeholder": "Please select...",
         "loaderClass": "forms-loader",
         "validateNav": true,
