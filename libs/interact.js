@@ -342,6 +342,7 @@ dataBinderArray.prototype.diff = function (data, callback) {
     }
 
     function _nullify(host, def) {
+        if (typeof def === 'string') def = _form_field_lookup(host.def, def);
         if (typeof def !== 'object' || def.protected || def.keep) return;
         if (typeof def.name === 'string') {
             let item_data = _get_data_item(host.data, def.name);
@@ -352,11 +353,10 @@ dataBinderArray.prototype.diff = function (data, callback) {
                 let sdef = def.fields[x];
                 if (sdef instanceof Array) {
                     _nullify(host, { fields: sdef });
-                } else if (typeof sdef === 'string') {
-                    let item_data = _get_data_item(host.data, sdef);
-                    if (item_data instanceof dataBinderValue) item_data.set(def.default || null, def.placeholder || null);
-                }
+                } else _nullify(host, sdef);
             }
+        } else {
+            alert('Nullify object!?');
         }
     }
 
