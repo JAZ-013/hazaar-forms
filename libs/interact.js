@@ -511,7 +511,7 @@ dataBinderArray.prototype.diff = function (data, callback) {
         host.eval_cache = true;
         if (typeof update === 'string') update = { "url": update };
         if (_is_object(input)) {
-            if (item_data && input.is('select') && input.val() !== '__hz_other') {
+            if (item_data && input.is('select') && input.val() && input.val() !== '__hz_other') {
                 let other = input.children('option[value="' + item_data.value + '"]').data('other') || null;
                 item_data.enabled(false);
                 item_data.set(item_data.value, input.children('option:selected').text(), other, true);
