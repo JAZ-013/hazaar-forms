@@ -679,6 +679,17 @@ class Model extends \Hazaar\Model\Strict {
     }
 
     /**
+     * Return form data as an array but filter fields by tags
+     * 
+     * This is the secure form of Model::toArray() which has had all the tagged fields removed.
+     */
+    public function toSecureArray(){
+
+        return $this->toFormArray(null, null, true);
+
+    }
+
+    /**
      * Return the form data to send to the client frontend
      *
      * This method returns forms data with fields stripped if they are tagged and those tags are not set.
@@ -688,7 +699,7 @@ class Model extends \Hazaar\Model\Strict {
      * @param mixed $show_hidden
      * @return mixed
      */
-    public function toFormArray($array = null, $fields = null){
+    public function toFormArray($array = null, $fields = null, $export = false){
 
         if($array === null)
             $array = parent::toArray(false, null, true, true);
@@ -698,6 +709,21 @@ class Model extends \Hazaar\Model\Strict {
 
         foreach($fields as $name => $field){
 
+            if($tags = ake($field, 'tag')){
+
+                if(!is_array($tags))
+                    $tags = array($tags);
+
+                if(count(array_intersect($tags, $this->__tags)) === 0){
+
+                    unset($array[$name]);
+
+                    continue;
+
+                }
+
+            }
+
             $type = ake($field, 'type');
 
             if($type === 'array' && is_array(ake($field, 'arrayOf'))){
@@ -705,30 +731,15 @@ class Model extends \Hazaar\Model\Strict {
                 if(!ake($array, $name)) continue;
 
                 foreach($array[$name] as $index => $item)
-                    $array[$name][$index] = $this->toFormArray($array[$name][$index], ake($field, 'arrayOf'));
+                    $array[$name][$index] = $this->toFormArray($array[$name][$index], ake($field, 'arrayOf'), $export);
 
             }elseif($type === 'model'){
 
-                $array[$name] = $this->toFormArray($array[$name], ake($field, 'items'));
+                $array[$name] = $this->toFormArray($array[$name], ake($field, 'items'), $export);
 
             }else{
 
-                if($tags = ake($field, 'tag')){
-
-                    if(!is_array($tags))
-                        $tags = array($tags);
-
-                    if(count(array_intersect($tags, $this->__tags)) === 0){
-
-                        unset($array[$name]);
-
-                        continue;
-
-                    }
-
-                }
-
-                $this->exportField($name, $field, $array);
+                $this->exportField($name, $field, $array, $export);
 
             }
 
@@ -738,7 +749,7 @@ class Model extends \Hazaar\Model\Strict {
 
     }
 
-    private function exportField($name, $field, &$array){
+    private function exportField($name, $field, &$array, $export = false){
 
         if(!(is_array($array) && array_key_exists($name, $array))) return;
 
@@ -755,7 +766,7 @@ class Model extends \Hazaar\Model\Strict {
                 foreach($field['items'] as $sub_name => $sub_field){
 
                     if(is_array($array[$name]))
-                        $this->exportField($sub_name, (array)$sub_field, $array[$name]);
+                        $this->exportField($sub_name, (array)$sub_field, $array[$name], $export);
                     else
                         $array[$name] = array(); //Ensure list fields are always an array
 
@@ -782,7 +793,7 @@ class Model extends \Hazaar\Model\Strict {
                     foreach($array[$name] as &$array_value){
 
                         if(!(is_array($array_value) && array_key_exists('__hz_value', $array_value)))
-                           $array_value = ['__hz_value' => $array_value, '__hz_label' => ake($options, $array_value, $array_value)];
+                           $array_value = $export ? $array_value : ['__hz_value' => $array_value, '__hz_label' => ake($options, $array_value, $array_value)];
 
                     }
 
@@ -830,6 +841,9 @@ class Model extends \Hazaar\Model\Strict {
                 @$array[$name] = call_user_func_array('sprintf', $args); //If the format fails let it do so silently.
 
             }
+
+            if($export === true && is_array($array[$name]) && array_key_exists('__hz_value', $array[$name]))
+                $array[$name] = $array[$name]['__hz_value'];
 
         }
 
@@ -1446,7 +1460,7 @@ class Model extends \Hazaar\Model\Strict {
         if(!is_array($params) || $merge_params === true){
 
             $form_params = array(
-                'form' => $this->toArray(),
+                'form' => parent::toArray(),
                 'def' => $this->getFormDefinition(true),
                 'name' => $this->getName()
             );
