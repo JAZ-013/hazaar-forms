@@ -511,7 +511,7 @@ dataBinderArray.prototype.diff = function (data, callback) {
         host.eval_cache = true;
         if (typeof update === 'string') update = { "url": update };
         if (_is_object(input)) {
-            if (item_data && input.is('select') && input.val() !== '__hz_other') {
+            if (item_data && input.is('select') && input.val() && input.val() !== '__hz_other') {
                 let other = input.children('option[value="' + item_data.value + '"]').data('other') || null;
                 item_data.enabled(false);
                 item_data.set(item_data.value, input.children('option:selected').text(), other, true);
@@ -1482,7 +1482,10 @@ dataBinderArray.prototype.diff = function (data, callback) {
                     let input = $(item), value = null, def = input.data('def'), item_data = _get_data_item(sub_host.data, input.attr('data-bind'));
                     if (input.is('[type=checkbox]')) value = input.is(':checked');
                     else value = input.val();
-                    if (item_data && item_data.attrName in sub_host.required && sub_host.required[item_data.attrName] === true && !value) {
+                    if (item_data
+                        && item_data.attrName in sub_host.required
+                        && sub_host.required[item_data.attrName] === true
+                        && (!value || (value === '__hz_other' && !item_data.other))) {
                         input.toggleClass('is-invalid', true);
                         valid = false;
                         return;
