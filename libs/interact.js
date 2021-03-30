@@ -343,7 +343,7 @@ dataBinderArray.prototype.diff = function (data, callback) {
 
     function _nullify(host, def) {
         if (typeof def === 'string') def = _form_field_lookup(host.def, def);
-        if (typeof def !== 'object' || def.protected || def.keep) return;
+        if (!def || typeof def !== 'object' || def.protected || def.keep) return;
         if ('fields' in def && def.type !== 'array') {
             for (let x in def.fields) {
                 let sdef = def.fields[x];
