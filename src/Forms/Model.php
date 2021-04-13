@@ -844,6 +844,9 @@ class Model extends \Hazaar\Model\Strict {
 
             }
 
+            if(array_key_exists('exportLabel', $field))
+                $use_label = boolify($field['exportLabel']);
+
             if($export === true && is_array($array[$name]) && array_key_exists('__hz_value', $array[$name]))
                 $array[$name] = ake($array[$name], ($use_label ? '__hz_label' : '__hz_value'));
 
