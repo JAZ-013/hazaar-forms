@@ -682,10 +682,12 @@ class Model extends \Hazaar\Model\Strict {
      * Return form data as an array but filter fields by tags
      * 
      * This is the secure form of Model::toArray() which has had all the tagged fields removed.
+     * 
+     * @param bool $use_labels If TRUE, use labels if available instead of values.
      */
-    public function toSecureArray(){
+    public function toSecureArray($use_labels = false){
 
-        return $this->toFormArray(null, null, true);
+        return $this->toFormArray(null, null, true, $use_labels);
 
     }
 
@@ -699,7 +701,7 @@ class Model extends \Hazaar\Model\Strict {
      * @param mixed $show_hidden
      * @return mixed
      */
-    public function toFormArray($array = null, $fields = null, $export = false){
+    public function toFormArray($array = null, $fields = null, $export = false, $use_labels = false){
 
         if($array === null)
             $array = parent::toArray(false, null, true, true);
@@ -731,15 +733,15 @@ class Model extends \Hazaar\Model\Strict {
                 if(!ake($array, $name)) continue;
 
                 foreach($array[$name] as $index => $item)
-                    $array[$name][$index] = $this->toFormArray($array[$name][$index], ake($field, 'arrayOf'), $export);
+                    $array[$name][$index] = $this->toFormArray($array[$name][$index], ake($field, 'arrayOf'), $export, $use_labels);
 
             }elseif($type === 'model'){
 
-                $array[$name] = $this->toFormArray($array[$name], ake($field, 'items'), $export);
+                $array[$name] = $this->toFormArray($array[$name], ake($field, 'items'), $export, $use_labels);
 
             }else{
 
-                $this->exportField($name, $field, $array, $export);
+                $this->exportField($name, $field, $array, $export, $use_labels);
 
             }
 
@@ -749,7 +751,7 @@ class Model extends \Hazaar\Model\Strict {
 
     }
 
-    private function exportField($name, $field, &$array, $export = false){
+    private function exportField($name, $field, &$array, $export = false, $use_label = false){
 
         if(!(is_array($array) && array_key_exists($name, $array))) return;
 
@@ -843,7 +845,7 @@ class Model extends \Hazaar\Model\Strict {
             }
 
             if($export === true && is_array($array[$name]) && array_key_exists('__hz_value', $array[$name]))
-                $array[$name] = $array[$name]['__hz_value'];
+                $array[$name] = ake($array[$name], ($use_label ? '__hz_label' : '__hz_value'));
 
         }
 
