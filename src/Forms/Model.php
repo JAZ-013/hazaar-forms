@@ -645,7 +645,7 @@ class Model extends \Hazaar\Model\Strict {
 
     public function getFormDefinition($secure = false){
 
-        $form = clone $this->__form;
+        $form = (is_object($this->__form) ? clone $this->__form : $this->__form);
 
         if($secure === true){
 
