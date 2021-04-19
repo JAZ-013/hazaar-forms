@@ -409,6 +409,35 @@ class Model extends \Hazaar\Model\Strict {
 
         }
 
+        if(array_key_exists('exportLabel', $def)){
+
+            $def['prepare'] = function($value, $key, $def){
+
+                if(array_key_exists('options', $def)){
+
+                    $options = $def['options'];
+
+                    if(is_string($options))
+                        $options = ['url' => $options];
+                    
+                    if($url = ake($options, 'url')){
+
+                        if($data = $this->api($this->matchReplace($url), $options))
+                            $options = $this->__convert_data($data, ake($options, 'value', 'value'), ake($options, 'label', 'label'));
+    
+                    }
+
+                    if($v = array_search($value, $options, true))
+                        $value = $v;
+
+                }
+
+                return $value;
+
+            };
+
+        }
+
     }
 
     /**
