@@ -325,7 +325,7 @@ class Model extends \Hazaar\Model\Strict {
                     $def['file'] = true;
 
                     $def['prepare'] = function($items){
-                        foreach($items as &$item) if(is_string($item)) $item = array('name' => $item, 'type' => 'text/text');
+                        if($items) foreach($items as &$item) if(is_string($item)) $item = array('name' => $item, 'type' => 'text/text');
                         return $items;
                     };
 
