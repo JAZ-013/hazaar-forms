@@ -428,7 +428,7 @@ class Model extends \Hazaar\Model\Strict {
                     }
 
                     if($v = array_search($value, $options, true))
-                        $value = $v;
+                        $value = new \Hazaar\Model\DataBinderValue($v, ake($options, $v));
 
                 }
 
