@@ -260,7 +260,7 @@ class Model extends \Hazaar\Model\Strict {
 
         if($type = ake($def, 'type')){
 
-            if(property_exists($this->__form, 'types')){
+            if(isset($this->__form->types)){
 
                 if($type === 'array' && array_key_exists('arrayOf', $def)
                     && ($customType = ake($this->__form->types, $def['arrayOf']))){
@@ -372,7 +372,7 @@ class Model extends \Hazaar\Model\Strict {
 
         }
 
-        if(array_key_exists('fields', $def) && !array_key_exists('arrayOf', $def)){
+        if(isset($def['fields']) && !isset($def['arrayOf'])){
 
             if(ake($def, 'type') === 'array'){
 
@@ -401,7 +401,7 @@ class Model extends \Hazaar\Model\Strict {
 
         }
 
-        if(array_key_exists('value', $def) && !($def['type'] === 'array' || $def['type'] === 'object')
+        if(isset($def['value']) && !($def['type'] === 'array' || $def['type'] === 'object')
             && array_key_exists('value', $def)
             && is_array($def['value'])){
 
@@ -409,7 +409,7 @@ class Model extends \Hazaar\Model\Strict {
 
         }
 
-        if(array_key_exists('exportLabel', $def)){
+        if(isset($def['exportLabel'])){
 
             $def['prepare'] = function($value, $key, $def){
 
@@ -431,6 +431,22 @@ class Model extends \Hazaar\Model\Strict {
                         $value = new \Hazaar\Model\DataBinderValue($v, ake($options, $v));
 
                 }
+
+                return $value;
+
+            };
+
+        }
+
+        if(isset($def['options']) && !isset($def['options']->url)){
+
+            //Filter out any not-allowed values using the available options
+            $def['prepare'] = function($value, $key, $def){
+
+                $options = $this->__convert_data((isset($def['options']->data) ? $def['options']->data : $def['options']), ake($def['options'], 'value', 'value'), ake($def['options'], 'label', 'label'));
+
+                if(!isset($options[$value]))
+                    return null;
 
                 return $value;
 
@@ -1269,10 +1285,12 @@ class Model extends \Hazaar\Model\Strict {
     private function __convert_data($data, $valueKey, $labelKey){
 
         if(!is_array($data))
-            return array();
+            $data = (array)$data;
 
         //Convert multi-dimensional arrays to single dimension
-        if(is_array(reset($data)) || $data instanceof \stdClass){
+        $first = reset($data);
+
+        if(is_array($first) || $first instanceof \stdClass){
 
             $result = array();
 
