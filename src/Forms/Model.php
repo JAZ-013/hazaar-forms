@@ -438,7 +438,7 @@ class Model extends \Hazaar\Model\Strict {
 
         }
 
-        if(isset($def['options']) && !isset($def['options']->url)){
+        if(isset($def['options']) && !isset($def['options']->url) && ake($def, 'allowAny', false) !== true){
 
             //Filter out any not-allowed values using the available options
             $def['prepare'] = function($value, $key, $def){
