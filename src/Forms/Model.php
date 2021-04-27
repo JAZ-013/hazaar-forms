@@ -443,9 +443,16 @@ class Model extends \Hazaar\Model\Strict {
             //Filter out any not-allowed values using the available options
             $def['prepare'] = function($value, $key, $def){
 
+                if(is_array($value) && isset($value['__hz_value']))
+                    $sVal = $value['__hz_value'];
+                elseif($value instanceof \stdClass && isset($value->__hz_value))
+                    $sVal = $value->__hz_value;
+                else
+                    $sVal = $value;
+
                 $options = $this->__convert_data((isset($def['options']->data) ? $def['options']->data : $def['options']), ake($def['options'], 'value', 'value'), ake($def['options'], 'label', 'label'));
 
-                if(!isset($options[$value]))
+                if(!isset($options[$sVal]))
                     return null;
 
                 return $value;
