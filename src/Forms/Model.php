@@ -411,7 +411,9 @@ class Model extends \Hazaar\Model\Strict {
 
         if(isset($def['exportLabel'])){
 
-            $def['prepare'] = function($value, $key, $def){
+            if(!isset($def['prepare'])) $def['prepare'] = [];
+
+            $def['prepare'][] = function($value, $key, $def){
 
                 if(array_key_exists('options', $def)){
 
@@ -440,13 +442,17 @@ class Model extends \Hazaar\Model\Strict {
 
         if(isset($def['options']) && !isset($def['options']->url) && ake($def, 'allowAny', false) !== true){
 
+            if(!isset($def['prepare'])) $def['prepare'] = [];
+
             //Filter out any not-allowed values using the available options
-            $def['prepare'] = function($value, $key, $def){
+            $def['prepare'][] = function($value, $key, $def){
 
                 if(is_array($value) && isset($value['__hz_value']))
                     $sVal = $value['__hz_value'];
                 elseif($value instanceof \stdClass && isset($value->__hz_value))
                     $sVal = $value->__hz_value;
+                elseif($value instanceof \Hazaar\Model\DataBinderValue)
+                    $sVal = $value->value;
                 else
                     $sVal = $value;
 
