@@ -1809,4 +1809,117 @@ class Model extends \Hazaar\Model\Strict {
         
     }
 
+    static public function toJSONSchema($def){
+
+        if(!$def instanceof \stdClass)
+            return false;
+
+        $schema = (object)[
+            '$id' => (string)(new \Hazaar\Application\URL('schemas', str_replace(' ', '_', strtolower(ake($def, 'name')) . '.json'))),
+            '$schema' => 'https://json-schema.org/draft/2020-12/schema',
+            'description' => ake($def, 'description')
+        ];
+
+        $def->type_map = (object)[
+            'boolean' => 'boolean',
+            'bool' => 'boolean',
+            'text' => 'string',
+            'string' => 'string',
+            'number' => 'integer',
+            'float' => 'numeric',
+            'file' => 'string',
+            'integer' => 'integer',
+            'date' => 'string'
+        ];
+
+        if($def->fields){
+
+            if(!($properties = self::exportJSONSchemaObject($def, $def)))
+                throw new \Exception('Conversion of Hazaar Forms defintion to JSON-Schema has failed!');
+
+            $schema = (object)array_merge((array)$schema, (array)$properties);
+
+        }
+
+        return $schema;
+
+    }
+
+    static private function exportJSONSchemaObject(&$def, $object){
+
+        if(isset($object->json) && $object->json === false)
+            return false;
+
+        $property = new \stdClass;
+
+        $type = ake($object, 'type', 'text');
+
+        if($items = ake($object, 'fields')){
+
+            $property->type = 'object';
+
+            $property->properties = new \stdClass;
+
+            foreach($items as $key => $item){
+
+                if($child = self::exportJSONSchemaObject($def, $item)){
+
+                    $property->properties->$key = $child;
+
+                    if(ake($item, 'required', false) !== false){
+
+                        if(!property_exists($property, 'required'))
+                            $property->required = [];
+            
+                        $property->required[] = $key;
+            
+                    }
+
+                }
+
+            }
+
+        }elseif($type === 'array'){
+
+            $property->type = 'array';
+            
+            $property->items = ['type' => self::getJSONType($def, ake($object, 'arrayOf'))];
+
+        }else{
+
+            $property->type = self::getJSONType($def, $type);
+
+        }
+
+        if($label = ake($object, 'label'))
+            $property->title = $label;
+            
+        if($hint = ake($object, 'hint'))
+            $property->description = $hint;
+
+        if(($options = ake($object, 'options')) && !isset($options->url) && $property->type !== 'boolean'){
+
+            if(isset($options->data))
+                $options = $options->data;
+
+            //$property->enum = true;// is_object($options) ? get_object_vars($options) : array_keys($);
+
+        }
+
+        return $property;
+        
+    }
+
+    static private function getJSONType(&$def, $type){
+
+        while(isset($def->types) && property_exists($def->types, $type))
+            $type = ake($def->types->$type, 'type', 'text');
+
+        if(!property_exists($def->type_map, $type))
+            throw new \Exception('Unknown JSON type: ' . $type);
+
+        return ake($def->type_map, $type, 'string');
+
+    }
+
 }
