@@ -1070,45 +1070,43 @@ class Model extends \Hazaar\Model\Strict {
 
     }
 
-    private function __resolve_field_layout($name, $layout, $fields) {
+    private function __resolve_field_layout($name, $fields, $layout = null, $a = false) {
 
-        foreach($layout as $object_key => &$field) {
+        if(!$fields)
+            return [];
 
-            if (is_array($field) || ($field instanceof \stdClass && property_exists($field, 'fields'))) {
+        if(!$layout)
+            $layout = is_array($fields) ? $fields : array_keys(get_object_vars($fields));
+        
+        foreach($layout as &$layout_item) {
 
-                $field = $this->__resolve_field_layout($name, $field, $fields);
+            if (is_string($layout_item))
+                $layout_item = (object)[ 'name' => $layout_item ];
 
-            }elseif(is_string($field) && ($field_obj = ake($fields, $field)) && $field_obj instanceof \stdClass){
+            if (is_array($layout_item)) {
 
-                if (!property_exists($field_obj, 'name'))
-                    $field_obj->name = $name . '.' . $field;
+                $layout_item = [ 'fields' => $this->__resolve_field_layout($fields, $layout_item, $name, $a) ];
 
-                $field = $field_obj;
+            } else if ($item_name = ake($layout_item, 'name')) {
 
-            }elseif($field instanceof \stdClass){
+                $field = ake($fields, $item_name);
 
-                if (property_exists($field, 'type') && !property_exists($field, 'name'))
-                    $field->name = $name . (is_int($object_key) ? '' : '.' . $object_key);
+                if (!$field || ake($field, 'hidden') === true){
 
-            }
+                    $layout_item = null;
 
-            if($field instanceof \stdClass && property_exists($field, 'type')){
-
-                if($field->type === 'button')
-                    return null;
-                elseif(property_exists($this->__form, 'types') && property_exists($this->__form->types, $field->type)){
-
-                    $field = $this->smart_merge_recursive_override(ake($this->__form->types, $field->type), $field);
-
-                    if(property_exists($field, 'fields')){
-
-                        $field->fields = (array)$this->__resolve_field_layout($field->name, (property_exists($field, 'layout') ? $field->layout : $field->fields), $field->fields);
-
-                        if(property_exists($field, 'layout')) unset($field->layout);
-
-                    }
+                    continue;
 
                 }
+
+                $layout_item = (object)array_merge((array)$field, (array)$layout_item);
+
+                if ($name) 
+                    $layout_item->name = $name . ($a ? '[' . $layout_item->name . ']' : '.' . $layout_item->name);
+
+            } else if ($sub_layout = ake($layout_item, 'fields')) {
+
+                $layout_item->fields = $this->__resolve_field_layout($name, $fields, $sub_layout, $a);
 
             }
 
@@ -1256,13 +1254,13 @@ class Model extends \Hazaar\Model\Strict {
 
         }elseif(property_exists($field, 'fields')){
 
-            $layout = (array)$this->__resolve_field_layout($field->name, (property_exists($field, 'layout') ? $field->layout : $field->fields), $field->fields);
+            $layout = $this->__resolve_field_layout($field->name, $field->fields, ake($field, 'layout'));
+
+            unset($field->layout);
 
             $field->horizontal = false;
 
             $field->fields = $this->__group($layout, $field, $value, $field->name);
-
-            return $field;
 
         }elseif ($value instanceof \Hazaar\Model\Strict
             || $value instanceof \Hazaar\Model\ChildArray){
@@ -1271,22 +1269,13 @@ class Model extends \Hazaar\Model\Strict {
 
         }
 
-        $field->value = $value;
-
         //Look for subfields
         if(property_exists($field, 'fields') && ake($field, 'type') !== 'array'){
 
-            foreach($field->fields as $key => &$sub_field){
+            foreach($field->fields as $key => &$sub_field)
+                $sub_field = $this->__group($sub_field, $form, $value, $field->name);
 
-                $sub_field->name = $field->name . '.' . $key;
-
-                $sub_field->value = ake($value, $key);
-
-                $sub_field = $this->__field($sub_field, $form);
-
-            }
-
-        }
+        }else $field->value = $value;
 
         if(property_exists($field, 'prefix') && ($sf = $this->getFormFieldDefinition($field->prefix)))
             $field->prefix = $this->get($field->prefix);
