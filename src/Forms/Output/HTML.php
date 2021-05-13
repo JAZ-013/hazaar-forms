@@ -212,7 +212,7 @@ class HTML extends \Hazaar\Forms\Output {
 
         } else if (($layout = ake($info, 'fields')) && ake($info, 'type') !== 'array') {
 
-            $length = count($layout);
+            $length = count($layout instanceof \stdClass ? get_object_vars($layout) : $layout);
             
             $fields = [];
             
@@ -296,7 +296,7 @@ class HTML extends \Hazaar\Forms\Output {
                     ->toggleClass('col-sm-' . $this->settings->hz->left, $info->grid)
                     ->attr('for', '__hz_field_' . $info->name));
 
-            $col->set($info->value);
+            $col->set(ake($info, 'value'));
 
             if ($css = ake($info, 'css')) 
                 $input->css($css);
