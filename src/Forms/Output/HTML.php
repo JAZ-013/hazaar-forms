@@ -223,9 +223,13 @@ class HTML extends \Hazaar\Forms\Output {
 
             foreach($layout as $item) {
 
-                if (!$item) continue;
+                if(!$item) 
+                    continue;
 
-                if ($p && !is_array($item)) {
+                if(!$item instanceof \stdClass)
+                    $item = (object)['fields' => $item];
+
+                if ($p) {
 
                     if (!(property_exists($item, 'weight')))
                         $item->weight = 1;
@@ -234,10 +238,10 @@ class HTML extends \Hazaar\Forms\Output {
 
                 }
 
-                if (ake($info, 'protected') === true && _is_object($item)) 
+                if (ake($info, 'protected') === true) 
                     $item->protected = true;
 
-                if (property_exists($info, 'grid') && !property_exists($item, 'grid')) 
+                if (property_exists($info, 'grid') && !property_exists($item, 'grid'))
                     $item->grid = $info->grid;
 
                 $fields[] = $item;
@@ -257,7 +261,7 @@ class HTML extends \Hazaar\Forms\Output {
 
                 $field_width = $col_width;
                 
-                if (!($child_field = $this->_form_field($item, !$p)))
+                if (!($child_field = $this->_form_field($item, !$p, ake($info, 'grid'))))
                     continue;
 
                 if($weight = ake($item, 'weight')) 

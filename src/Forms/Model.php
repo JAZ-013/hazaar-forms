@@ -1048,21 +1048,18 @@ class Model extends \Hazaar\Model\Strict {
             if(property_exists($fields, 'show') && $this->evaluate($fields->show, true, $value_key) !== true)
                 return null;
 
-            $items = array();
-
-            foreach($fields->fields as $field_name => $field_item){
+            foreach($fields->fields as $field_name => &$field_item){
 
                 if($field_item instanceof \stdClass
                     && property_exists($fields, 'name')
                     && !property_exists($field_item, 'name'))
                     $field_item->name = $fields->name . '.' . $field_name;
 
-                if($item = $this->__group($field_item, $form, null, $parent_key))
-                    $items[] = $item;
+                $field_item = $this->__group($field_item, $form, null, $parent_key);
 
             }
 
-            return $items;
+            return $fields;
 
         }
 
