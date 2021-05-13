@@ -34,7 +34,7 @@ class HTML extends \Hazaar\Forms\Output {
 
         $def = $model->getFormDefinition();
 
-        $this->settings = replace_recursive(ake($def, 'settings'), ake($def, 'html'), [ 'hz' => [ 'left' => 3, 'right' => null ] ]);
+        $this->settings = replace_recursive(ake($def, 'settings', new \stdClass), ake($def, 'html'), (object)[ 'hz' => (object)[ 'left' => 3, 'right' => null ] ]);
 
         if (!ake($this->settings, 'hz.right')) $this->settings->hz->right = 12 - $this->settings->hz->left;
 
@@ -152,7 +152,7 @@ class HTML extends \Hazaar\Forms\Output {
 
             foreach($section as &$s){
 
-                $col = new \Hazaar\Html\Div($this->__section($s, !$p));
+                $col = new \Hazaar\Html\Div($this->_section($s, !$p));
 
                 if($p){
 
@@ -194,8 +194,8 @@ class HTML extends \Hazaar\Forms\Output {
         if(is_array($info))
             $info = (object)['fields' => $info ];
 
-        if ($grid && !(property_exits($info, 'grid'))) 
-            $info->grid = grid;
+        if ($grid && !(property_exists($info, 'grid'))) 
+            $info->grid = $grid;
 
         $p = ake($info, 'horizontal', $p);
 
@@ -278,9 +278,10 @@ class HTML extends \Hazaar\Forms\Output {
 
             if ($info->grid = (ake($info, 'grid') || ake($this->settings, 'horizontal'))) {
 
-                if ($info->nolabel !== true && $info->label) $col->addClass('col-sm-' . ake($this->settings, 'hz.right', 5));
-                
-                else $col->addClass('col-sm-12')->toggleClass('row', $info->row === true);
+                if ($info->nolabel !== true && ake($info, 'label')) 
+                    $col->addClass('col-sm-' . ake($this->settings, 'hz.right', 5));
+                else 
+                    $col->addClass('col-sm-12')->toggleClass('row', ake($info, 'row') === true);
 
             }
 
@@ -320,7 +321,7 @@ class HTML extends \Hazaar\Forms\Output {
             if (($label = ake($info, 'label')) && field.children().length === 0) 
                 $field->add($this->_label($label, 'label', def));
 
-            $field->add((new Div)->set($this->modal->_match_replace($html, null, true, true)));
+            $field->add((new Div)->set($this->modal->matchReplace($html, null, true, true)));
 
         }
 
