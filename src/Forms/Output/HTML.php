@@ -97,7 +97,7 @@ class HTML extends \Hazaar\Forms\Output {
         $sections = [];
 
         foreach($page->sections as $section)
-            $sections[] = $this->_section($section, true, ake($page, 'grid', false));
+            $sections[] = $this->_section($section, true);
 
         if (ake($this->settings, 'cards') === true || ake($page, 'cards') === true) {
 
@@ -197,6 +197,8 @@ class HTML extends \Hazaar\Forms\Output {
         if ($grid && !(property_exits($info, 'grid'))) 
             $info->grid = grid;
 
+        $p = ake($info, 'horizontal', $p);
+
         if ($render = ake($info, 'render')) {
 
             dump($render);
@@ -209,8 +211,6 @@ class HTML extends \Hazaar\Forms\Output {
             $field->attr('data-bind', $info->name);
 
         } else if (($layout = ake($info, 'fields')) && ake($info, 'type') !== 'array') {
-
-            $horizontal = ake($info, 'horizontal', $p);
 
             $length = count($layout);
             
@@ -252,8 +252,8 @@ class HTML extends \Hazaar\Forms\Output {
 
             foreach($fields as $item) {
 
-                //if ($horizontal === true) 
-                 //   $info->row = true;
+                if ($item instanceof \stdClass && ake($info, 'horizontal') === true) 
+                    $item->row = true;
 
                 $field_width = $col_width;
                 
@@ -265,8 +265,8 @@ class HTML extends \Hazaar\Forms\Output {
 
                 $field->add($child_field->toggleClass('col-md-' . $field_width, $p));
 
-                //if ($p && !ake($info, 'row', false) && !$item->grid) 
-                   // $child_field->removeClass('row');
+                if ($item instanceof \stdClass && $p && !ake($info, 'row', false) && !$item->grid) 
+                    $child_field->removeClass('row');
 
             }
 
