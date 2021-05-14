@@ -2,6 +2,11 @@
 
 namespace Hazaar\Forms\Output;
 
+use \Hazaar\Html\Block;
+use \Hazaar\Html\Inline;
+use \Hazaar\Html\Div;
+use \Hazaar\Html\Img;
+
 /**
  * Model short summary.
  *
@@ -27,13 +32,13 @@ class PDF extends HTML {
 
         if(is_string($item)){
 
-            $element = new \Hazaar\Html\Block($tag);
+            $element = new Block($tag);
 
             $element->add($item);
 
         }else{
 
-            $element = new \Hazaar\Html\Inline($tag);
+            $element = new Inline($tag);
 
             foreach(get_object_vars($item) as $attr => $content){
 
@@ -62,7 +67,7 @@ class PDF extends HTML {
 
     }
 
-    private function renderHTML($settings = array(), $form = null, $ixes = null){
+    public function renderHTML($settings = array(), $form = null, $ixes = null){
 
         $form = $this->model->resolve();
 
@@ -93,7 +98,7 @@ class PDF extends HTML {
         if($file = \Hazaar\Loader::getModuleFilePath('pdf.css'))
             $style = file_get_contents($file);
 
-        $head->add(new \Hazaar\Html\Block('style', $style));
+        $head->add(new Block('style', $style));
 
         $body = new \Hazaar\Html\Body();
 
@@ -114,12 +119,12 @@ class PDF extends HTML {
 
                 $header = $body->find('.form-header');
 
-                $header->prepend((new \Hazaar\Html\Img($form->pdf->logo))->class('form-logo'));
+                $header->prepend((new Img($form->pdf->logo))->class('form-logo'));
 
             }
 
             if(property_exists($form->pdf, 'style'))
-                $head->add(new \Hazaar\Html\Block('style', $form->pdf->style));
+                $head->add(new Block('style', $form->pdf->style));
 
         }
 

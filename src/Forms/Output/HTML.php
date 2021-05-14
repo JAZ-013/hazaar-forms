@@ -103,15 +103,9 @@ class HTML extends \Hazaar\Forms\Output {
 
             $body->addClass('card');
 
-            if ($label = ake($page, 'label')) 
-                $body->add($this->_label($label, 'div', $page)->addClass('card-header'));
-
             $body->add((new Div)->class('card-body')->add(sections));
 
         } else {
-
-            if ($label = ake($page, 'label')) 
-                $body->add($this->_label($label, 'h1', $page));
 
             $body->add($sections);
 
