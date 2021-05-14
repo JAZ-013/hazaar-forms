@@ -97,7 +97,7 @@ class HTML extends \Hazaar\Forms\Output {
         $sections = [];
 
         foreach($page->sections as $section)
-            $sections[] = $this->_section($section, true);
+            $sections[] = $this->_section($section);
 
         if (ake($this->settings, 'cards') === true || ake($page, 'cards') === true) {
 
@@ -121,71 +121,57 @@ class HTML extends \Hazaar\Forms\Output {
 
     }
 
-    //Render a page section
-    private function _section($section, $horizontal = true) {
+    function _section($section, $horizontal = true) {
 
-        if(is_array($section)){
+        $group = new Div;
+
+        if (is_array($section)) {
 
             $col_width = null;
 
-            $group = new \Hazaar\Html\Div();
-
-            if($horizontal){
+            if ($horizontal) {
 
                 $group->addClass('row');
 
                 $length = count($section);
 
-                foreach ($section as &$s) {
+                foreach($section as $section_item) {
 
-                    if (!is_object($s)) continue;
+                    if (!$section_item instanceof \stdClass) continue;
 
-                    if (!property_exists($s, 'weight')) $s->weight = 1;
+                    if (!property_exists($section_item, 'weight')) 
+                        $section_item->weight = 1;
 
-                    $length = $length + ($s->weight - 1);
+                    $length += ($section_item->weight - 1);
 
                 }
 
-                $col_width = (12 / $length);
+                $col_width = 12 / $length;
 
             }
 
-            foreach($section as &$s){
+            foreach($section as $section_item) 
+                $group->add((new Div)
+                    ->toggleClass('col-md-' + Math.round(ake($section_item, 'weight', 1) * $col_width), $horizontal)
+                    ->add($this->_section($section_item, !$horizontal))
+                );
 
-                $col = new \Hazaar\Html\Div($this->_section($s, !$horizontal));
-
-                if($horizontal){
-
-                    $field_width = (is_object($s) ? $s->weight : 1) * $col_width;
-
-                    $col->class('col-lg-' . round($field_width));
-                }
-
-                $group->add($col);
-
-            }
-
-            return $group;
+            return group;
 
         }
 
-        $html = (new \Hazaar\Html\Div())->class('form-section');
+        if (!$section instanceof \stdClass)
+            return null;
 
-        if ($section instanceof \stdClass){
+        $fieldset = (new Div)->class('col col-12')->appendTo($group);
 
-            if ($label = ake($section, 'label')) 
-                $html->add($this->_label($label, 'legend', $section));
+        if ($label = ake($section, 'label')) 
+            $fieldset->add($this->_label(host, $label, 'legend', $section));
 
-            if($fields = ake($section, 'fields')){
+        foreach($section->fields as $field)
+            $fieldset->add($this->_form_field($field, $horizontal, ake($section, 'grid', false)));
 
-                foreach($section->fields as $field) 
-                    $html->add($this->_form_field($field, $horizontal, ake($section, 'grid', false)));
-
-            }
-
-        }
-
-        return $html;
+        return $group->addClass('row');
 
     }
 
@@ -197,18 +183,13 @@ class HTML extends \Hazaar\Forms\Output {
         if ($grid && !(property_exists($info, 'grid'))) 
             $info->grid = $grid;
 
-        $horizontal = ake($info, 'horizontal', $horizontal);
+        if(property_exists($info, 'horizontal'))
+            $horizontal = $info->horizontal;
 
         if ($render = ake($info, 'render')) {
 
-            dump($render);
-
-            $field = $this->modal->evaluate($render, $info->value, $info->name);
-
-            if (!$field) 
+            if(!($field = $this->modal->evaluate($render, $info->value, ake($info, 'name'))))
                 return;
-
-            $field->attr('data-bind', $info->name);
 
         } else if (property_exists($info, 'fields') && ake($info, 'type') !== 'array') {
 
@@ -220,8 +201,8 @@ class HTML extends \Hazaar\Forms\Output {
             
             $col_width = 0;
 
-            if (!$horizontal === null)
-                $horizontal = $this->settings->horizontal ? false : !property_exists($info, 'layout');
+            if ($horizontal === null)
+                $horizontal = ake($this->settings, 'horizontal') ? false : !ake($info, 'layout');
 
             foreach($layout as $item) {
 
@@ -243,8 +224,7 @@ class HTML extends \Hazaar\Forms\Output {
                 if (ake($info, 'protected') === true) 
                     $item->protected = true;
 
-                if (property_exists($info, 'grid') && !property_exists($item, 'grid'))
-                    $item->grid = $info->grid;
+                $item->grid = (property_exists($info, 'grid') && !property_exists($item, 'grid')) ? $info->grid : false;
 
                 $fields[] = $item;
 
@@ -263,7 +243,7 @@ class HTML extends \Hazaar\Forms\Output {
 
                 $field_width = $col_width;
                 
-                if (!($child_field = $this->_form_field($item, !$horizontal, ake($info, 'grid'))))
+                if (!($child_field = $this->_form_field($item, !$horizontal, ake($info, 'grid', false))))
                     continue;
 
                 if($weight = ake($item, 'weight')) 
@@ -295,8 +275,7 @@ class HTML extends \Hazaar\Forms\Output {
 
             if (($title = ake($info, 'title')) || ($info->nolabel !== true && ($label = ake($info, 'label'))))
                 $field->add($this->_label(($title ? $title : $label), 'label', $info)
-                    ->toggleClass('col-sm-' . $this->settings->hz->left, $info->grid)
-                    ->attr('for', '__hz_field_' . $info->name));
+                    ->toggleClass('col-sm-' . $this->settings->hz->left, $info->grid));
 
             $col->set(ake($info, 'value'));
 
