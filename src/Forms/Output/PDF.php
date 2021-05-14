@@ -62,7 +62,7 @@ class PDF extends HTML {
 
     }
 
-    public function renderHTML($settings = array(), $form = null, $ixes = null){
+    private function renderHTML($settings = array(), $form = null, $ixes = null){
 
         $form = $this->model->resolve();
 
