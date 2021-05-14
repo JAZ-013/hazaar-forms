@@ -1040,12 +1040,13 @@ class Model extends \Hazaar\Model\Strict {
          */
         if(is_string($field)){
 
-            if(ake($form, 'fields.' . $field) === null)
-                return null;
-
             $name = $field;
 
-            $field = ake($form->fields, $field, (object)array('type' => 'text'));
+            if(($field = ake($form, 'fields.' . implode('.fields.', explode('.', $field)))) === null)
+                return null;
+
+            if(!ake($field, 'type', null, true))
+                $field->type = 'text';
 
             $field->name = ($parent_key ? $parent_key . '.' : null) . $name;
 

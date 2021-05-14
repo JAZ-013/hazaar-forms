@@ -166,7 +166,7 @@ class HTML extends \Hazaar\Forms\Output {
         $fieldset = (new Div)->class('col col-12')->appendTo($group);
 
         if ($label = ake($section, 'label')) 
-            $fieldset->add($this->_label(host, $label, 'legend', $section));
+            $fieldset->add($this->_label($label, 'legend', $section));
 
         foreach($section->fields as $field)
             $fieldset->add($this->_form_field($field, $horizontal, ake($section, 'grid', false)));
