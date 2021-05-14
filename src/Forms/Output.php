@@ -42,7 +42,7 @@ abstract class Output implements Output_Interface {
 
             if (is_array($layout_item)) {
 
-                $layout_item = [ 'fields' => $this->__resolve_field_layout($fields, $layout_item) ];
+                $layout_item = $this->__resolve_field_layout($fields, $layout_item);
 
             } else if ($item_name = ake($layout_item, 'name')) {
 

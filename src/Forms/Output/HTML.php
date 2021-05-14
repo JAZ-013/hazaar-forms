@@ -180,7 +180,7 @@ class HTML extends \Hazaar\Forms\Output {
         if(is_array($info))
             $info = (object)['fields' => $info ];
 
-        if ($grid && !(property_exists($info, 'grid'))) 
+        if (!property_exists($info, 'grid'))
             $info->grid = $grid;
 
         if(property_exists($info, 'horizontal'))
@@ -224,7 +224,8 @@ class HTML extends \Hazaar\Forms\Output {
                 if (ake($info, 'protected') === true) 
                     $item->protected = true;
 
-                $item->grid = (property_exists($info, 'grid') && !property_exists($item, 'grid')) ? $info->grid : false;
+                if(property_exists($info, 'grid') && !property_exists($item, 'grid'))
+                    $item->grid = $info->grid;
 
                 $fields[] = $item;
 
