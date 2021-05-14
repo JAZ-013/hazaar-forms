@@ -186,12 +186,14 @@ class HTML extends \Hazaar\Forms\Output {
         if(property_exists($info, 'horizontal'))
             $horizontal = $info->horizontal;
 
+        $type = ake($info, 'type', 'text');
+
         if ($render = ake($info, 'render')) {
 
             if(!($field = $this->modal->evaluate($render, $info->value, ake($info, 'name'))))
                 return;
 
-        } else if (property_exists($info, 'fields') && ake($info, 'type') !== 'array') {
+        } else if (property_exists($info, 'fields') && $type !== 'array') {
 
             $layout = property_exists($info, 'layout') ? $this->__resolve_field_layout($info->fields, $info->layout) : $info->fields;
 
@@ -259,6 +261,21 @@ class HTML extends \Hazaar\Forms\Output {
 
         } else {
 
+            $value = ake($info, 'value');
+
+            if($type == 'boolean'){
+
+                $value = yn($value);
+
+            }elseif($value instanceof \Hazaar\Date){
+
+                if(ake($info, 'org_type', 'date') === 'datetime')
+                    $value = $value->datetime();
+                else
+                    $value = $value->date();
+
+            }
+
             $info->nolabel = false;
 
             $col = (new Div)->class('form-field');
@@ -278,7 +295,16 @@ class HTML extends \Hazaar\Forms\Output {
                 $field->add($this->_label(($title ? $title : $label), 'label', $info)
                     ->toggleClass('col-sm-' . $this->settings->hz->left, $info->grid));
 
-            $col->set(ake($info, 'value'));
+            if($prefix = ake($field, 'prefix'))
+                $field->add($this->model->matchReplace((string)$prefix) . ' ');
+
+            if($value === null && $null = (array)ake($this->settings, 'null'))
+                $value = is_array($null) ? ake($null, $type, ake($null, 'default')) : $null;
+
+            $col->add($value);
+
+            if($suffix = ake($field, 'suffix'))
+                $col->add(' ' . $this->model->matchReplace((string)$suffix));
 
             if ($css = ake($info, 'css')) 
                 $input->css($css);
