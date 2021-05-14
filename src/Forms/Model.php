@@ -501,36 +501,6 @@ class Model extends \Hazaar\Model\Strict {
 
     }
 
-    private function smart_merge_recursive_override(){
-
-        $array = null;
-
-        foreach(func_get_args() as $arg){
-
-            if(!(is_array($arg) || $arg instanceof \stdClass))
-                continue;
-
-            if($array === null)
-                $array = is_array($arg) ? array() : new \stdClass;
-
-            foreach($arg as $key => $value){
-
-                if(is_array($value) || $value instanceof \stdClass)
-                    $value = $this->smart_merge_recursive_override(ake($array, $key), $value);
-
-                if(is_array($array))
-                    $array[$key] = $value;
-                else
-                    $array->$key = $value;
-
-            }
-
-        }
-
-        return $array;
-
-    }
-
     public function setTags($tags){
 
         if($tags === null)
@@ -963,8 +933,10 @@ class Model extends \Hazaar\Model\Strict {
 
         }
 
-        return $form;
+        unset($form->fields);
 
+        return $form;
+        
     }
 
     private function __page($page, &$form){
@@ -1048,16 +1020,8 @@ class Model extends \Hazaar\Model\Strict {
             if(property_exists($fields, 'show') && $this->evaluate($fields->show, true, $value_key) !== true)
                 return null;
 
-            foreach($fields->fields as $field_name => &$field_item){
-
-                if($field_item instanceof \stdClass
-                    && property_exists($fields, 'name')
-                    && !property_exists($field_item, 'name'))
-                    $field_item->name = $fields->name . '.' . $field_name;
-
-                $field_item = $this->__group($field_item, $form, null, $parent_key);
-
-            }
+            foreach($fields->fields as $field_name => &$field_item)
+                $field_item = $this->__field($field_item, $form, null, null, $parent_key . '.' . $field_name);
 
             return $fields;
 
@@ -1067,54 +1031,13 @@ class Model extends \Hazaar\Model\Strict {
 
     }
 
-    private function __resolve_field_layout($name, $fields, $layout = null, $a = false) {
-
-        if(!$fields)
-            return [];
-
-        if(!$layout)
-            $layout = is_array($fields) ? $fields : array_keys(get_object_vars($fields));
-        
-        foreach($layout as &$layout_item) {
-
-            if (is_string($layout_item))
-                $layout_item = (object)[ 'name' => $layout_item ];
-
-            if (is_array($layout_item)) {
-
-                $layout_item = [ 'fields' => $this->__resolve_field_layout($fields, $layout_item, $name, $a) ];
-
-            } else if ($item_name = ake($layout_item, 'name')) {
-
-                $field = ake($fields, $item_name);
-
-                if (!$field || ake($field, 'hidden') === true){
-
-                    $layout_item = null;
-
-                    continue;
-
-                }
-
-                $layout_item = (object)array_merge((array)$field, (array)$layout_item);
-
-                if ($name) 
-                    $layout_item->name = $name . ($a ? '[' . $layout_item->name . ']' : '.' . $layout_item->name);
-
-            } else if ($sub_layout = ake($layout_item, 'fields')) {
-
-                $layout_item->fields = $this->__resolve_field_layout($name, $fields, $sub_layout, $a);
-
-            }
-
-        }
-
-        return $layout;
-
-    }
-
     private function __field($field, $form, $evaluate = true, $item_value = null, $parent_key = null){
 
+        /*
+         * If the field is a string, find it's object from the form fields.
+         * If the field is an object and has a name, find it's object from the form fields and make a merged copy.
+         * If the field is an object with no name, use it "as-is".
+         */
         if(is_string($field)){
 
             if(ake($form, 'fields.' . $field) === null)
@@ -1129,7 +1052,7 @@ class Model extends \Hazaar\Model\Strict {
         }elseif(is_object($field) || is_array($field)){
 
             if($name = ake($field, 'name'))
-                $field = $this->smart_merge_recursive_override(ake($form->fields, $name), $field);
+                $field = replace_recursive(ake($form->fields, $name), $field);
 
         }else{
 
@@ -1137,22 +1060,29 @@ class Model extends \Hazaar\Model\Strict {
 
         }
 
+        /**
+         * Check if the 'type' is a custom type and merge the field in with the type definition object 
+         * Unless it's a button, then skip it.
+         */
         if(property_exists($field, 'type')){
 
             if($field->type === 'button')
                 return null;
             elseif(property_exists($this->__form, 'types') && property_exists($this->__form->types, $field->type))
-                $field = $this->smart_merge_recursive_override(ake($this->__form->types, $field->type), $field);
+                $field = replace_recursive(ake($this->__form->types, $field->type), $field);
 
         }
 
+        //Grab the field value (and while we're at it, resolve the field key).
         $value = ($field_key = ake($field, 'name', $parent_key)) ? ake($field, 'value', $this->get($field_key)) : $item_value;
 
         $output = ake($field, 'output', array('empty' => true));
 
+        //Check if we're skipping output of empty values
         if(!$value && ake($output, 'empty', true) === false)
             return null;
 
+        //Convert any plain values that have options into dataBinderValue object with the correct label
         if($value && !($value instanceof \Hazaar\Model\Strict
             || $value instanceof \Hazaar\Model\ChildArray
             || $value instanceof \Hazaar\Model\DataBinderValue)
@@ -1174,14 +1104,17 @@ class Model extends \Hazaar\Model\Strict {
 
         }
 
+        //Run any evaluations now that we have the value, and see if we should even show this field.
         if($evaluate === true
             && (!is_object($field) || (property_exists($field, 'show') && $this->evaluate($field->show, true, $field_key) !== true)))
             return null;
 
+        //If there is no value, just output the empty value content, which is null by default.
         if($value === null){
 
             $value = ake($output, 'content');
 
+        //If the value is an array then we loop through each element and resolve each one recursively using the array's field definition
         }elseif(ake($field, 'type') == 'array'){
 
             if(property_exists($field, 'fields') && $field->fields instanceof \stdClass){
@@ -1231,6 +1164,7 @@ class Model extends \Hazaar\Model\Strict {
 
             }
 
+        //For files, we just resolve the file check it's valid and then resolve into an object with a name and URL.
         }elseif(ake($field, 'type') === 'file'){
 
             if($this->__controller instanceof \Hazaar\Controller\Form){
@@ -1249,30 +1183,24 @@ class Model extends \Hazaar\Model\Strict {
 
             }
 
+        //If this is an embedded object, resolve the sub-fields
         }elseif(property_exists($field, 'fields')){
 
-            $layout = $this->__resolve_field_layout($field->name, $field->fields, ake($field, 'layout'));
+            $this->__group($field, $field, $value, $field_key);
 
-            unset($field->layout);
+        //Otherwise, set the field value
+        }else{
+        
+            /* However, if we don't know what's going on so if we have certain data, we clean it up first.
+             * This can happen when resolving a form definition that has a different structure the data. ie: the def has changed so data structure is out-dated.
+             */
 
-            $field->horizontal = false;
+            if ($value instanceof \Hazaar\Model\Strict || $value instanceof \Hazaar\Model\ChildArray)
+                $value = null;
 
-            $field->fields = $this->__group($layout, $field, $value, $field->name);
-
-        }elseif ($value instanceof \Hazaar\Model\Strict
-            || $value instanceof \Hazaar\Model\ChildArray){
-
-            $value = null;
+            $field->value = $value;
 
         }
-
-        //Look for subfields
-        if(property_exists($field, 'fields') && ake($field, 'type') !== 'array'){
-
-            foreach($field->fields as $key => &$sub_field)
-                $sub_field = $this->__group($sub_field, $form, $value, $field->name);
-
-        }else $field->value = $value;
 
         if(property_exists($field, 'prefix') && ($sf = $this->getFormFieldDefinition($field->prefix)))
             $field->prefix = $this->get($field->prefix);
