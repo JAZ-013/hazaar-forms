@@ -231,7 +231,7 @@ class HTML extends \Hazaar\Forms\Output {
 
             $field = (new Div)->class('form-section')->toggleClass('row', $horizontal);
 
-            if ($label = ake($info, 'label')) $field->add((new Div)->toggleClass('col-md-12', $horizontal)->set($this->_label($label, 'h5', $info)));
+            if ($label = ake($info, 'label')) $field->add((new Div)->toggleClass('col-md-12', $horizontal)->set($this->_label($label, 'h4', $info)));
 
             foreach($fields as $item) {
 
@@ -253,6 +253,15 @@ class HTML extends \Hazaar\Forms\Output {
 
             }
 
+        }elseif(property_exists($info, 'fields') && $type === 'array'){
+
+            $field = (new Div)->class('itemlist');
+
+            if ($label = ake($info, 'label')) $field->add((new Div)->set($this->_label($label, 'h4', $info)));
+            
+            foreach($info->fields as $child_item)
+                $field->add($this->_form_field($child_item, true, false));
+
         } else {
 
             $value = ake($info, 'value');
@@ -267,6 +276,10 @@ class HTML extends \Hazaar\Forms\Output {
                     $value = $value->datetime();
                 else
                     $value = $value->date();
+
+            }elseif(is_array($value)){
+
+                $value = implode(ake($info, 'glue', ', '), $value);
 
             }
 
