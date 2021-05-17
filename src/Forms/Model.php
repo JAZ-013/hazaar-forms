@@ -1053,13 +1053,8 @@ class Model extends \Hazaar\Model\Strict {
 
             $field->name = ($parent_key ? $parent_key . '.' : null) . $name;
 
-        }elseif(is_object($field) || is_array($field)){
-
-            if($name = ake($field, 'name'))
-                $field = replace_recursive(ake($form->fields, $name), $field);
-
-        }else{
-
+        }elseif(!is_object($field)){
+            
             return null;
 
         }
@@ -1131,8 +1126,6 @@ class Model extends \Hazaar\Model\Strict {
 
                     foreach($keys as $key => $def){
 
-                        $def->name = $key;
-
                         $def->value = ake($value[$i], $key);
 
                         $items[$i][$key] = $this->__field($def, $form, false);
@@ -1141,18 +1134,7 @@ class Model extends \Hazaar\Model\Strict {
 
                 }
 
-                $value = $items;
-
-            }elseif(property_exists($field, 'fields')
-                && $field->fields instanceof \stdClass
-                && $value instanceof \Hazaar\Model\ChildArray){
-
-                foreach($value as $item){
-
-                    foreach($field->fields as $key => &$def)
-                        $def->value = ake($item, $key);
-
-                }
+                $field->fields = $items;
 
             }elseif($options = ake($field, 'options')){
 
