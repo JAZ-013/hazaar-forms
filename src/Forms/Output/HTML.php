@@ -268,6 +268,10 @@ class HTML extends \Hazaar\Forms\Output {
                 else
                     $value = $value->date();
 
+            }elseif(is_array($value)){
+
+                $value = implode(ake($info, 'glue', ', '), $value);
+
             }
 
             $info->nolabel = false;

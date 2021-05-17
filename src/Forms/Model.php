@@ -1148,6 +1148,10 @@ class Model extends \Hazaar\Model\Strict {
 
                 }
 
+            }else{
+
+                $field->value = (array)($value instanceof \Hazaar\Model\ChildArray ? $value->toArray() : $value);
+
             }
 
         //For files, we just resolve the file check it's valid and then resolve into an object with a name and URL.
