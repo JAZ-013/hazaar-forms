@@ -253,6 +253,15 @@ class HTML extends \Hazaar\Forms\Output {
 
             }
 
+        }elseif(property_exists($info, 'fields') && $type === 'array'){
+
+            $items = (new Div)->class('itemlist-items');
+
+            foreach($info->fields as $child_item)
+                $items->add($this->_form_field($child_item, true, false));
+
+            $field = (new Div($items))->class('itemlist');
+
         } else {
 
             $value = ake($info, 'value');
