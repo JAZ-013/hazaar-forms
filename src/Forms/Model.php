@@ -1126,9 +1126,11 @@ class Model extends \Hazaar\Model\Strict {
 
                     foreach($keys as $key => $def){
 
-                        $def->value = ake($value[$i], $key);
+                        $itemDef = clone $def;
 
-                        $items[$i][$key] = $this->__field($def, $form, false);
+                        $itemDef->value = ake($value[$i], $key);
+
+                        $items[$i][$key] = $this->__field($itemDef, $form, false);
 
                     }
 
