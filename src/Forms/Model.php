@@ -450,6 +450,9 @@ class Model extends \Hazaar\Model\Strict {
                 if(ake($def, 'other') === true)
                     return $value;
 
+                if(is_array($value))
+                    return $value;
+
                 if(is_array($value) && isset($value['__hz_value']))
                     $sVal = $value['__hz_value'];
                 elseif($value instanceof \stdClass && isset($value->__hz_value))
