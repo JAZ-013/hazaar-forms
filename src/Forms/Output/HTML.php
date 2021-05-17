@@ -231,7 +231,7 @@ class HTML extends \Hazaar\Forms\Output {
 
             $field = (new Div)->class('form-section')->toggleClass('row', $horizontal);
 
-            if ($label = ake($info, 'label')) $field->add((new Div)->toggleClass('col-md-12', $horizontal)->set($this->_label($label, 'h5', $info)));
+            if ($label = ake($info, 'label')) $field->add((new Div)->toggleClass('col-md-12', $horizontal)->set($this->_label($label, 'h4', $info)));
 
             foreach($fields as $item) {
 
@@ -255,12 +255,12 @@ class HTML extends \Hazaar\Forms\Output {
 
         }elseif(property_exists($info, 'fields') && $type === 'array'){
 
-            $items = (new Div)->class('itemlist-items');
+            $field = (new Div)->class('itemlist');
 
+            if ($label = ake($info, 'label')) $field->add((new Div)->set($this->_label($label, 'h4', $info)));
+            
             foreach($info->fields as $child_item)
-                $items->add($this->_form_field($child_item, true, false));
-
-            $field = (new Div($items))->class('itemlist');
+                $field->add($this->_form_field($child_item, true, false));
 
         } else {
 
