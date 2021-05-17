@@ -1071,7 +1071,7 @@ class Model extends \Hazaar\Model\Strict {
             if($field->type === 'button')
                 return null;
             elseif(property_exists($this->__form, 'types') && property_exists($this->__form->types, $field->type))
-                $field = replace_recursive(ake($this->__form->types, $field->type), $field);
+                $field = replace_recursive(clone ake($this->__form->types, $field->type), $field);
 
         }
 
