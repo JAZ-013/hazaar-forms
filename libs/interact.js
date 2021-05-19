@@ -1386,7 +1386,8 @@ dataBinderArray.prototype.diff = function (data, callback) {
                 if (typeof def.lookup === 'string') def.lookup = { url: def.lookup };
                 input = _input_lookup(host, def);
             } else {
-                switch (def.type) {
+                let inputType = def.inputType || def.type;
+                switch (inputType) {
                     case 'button':
                         input = _input_button(host, def);
                         break;
@@ -1406,7 +1407,7 @@ dataBinderArray.prototype.diff = function (data, callback) {
                     case 'text':
                     case 'string':
                     default:
-                        input = _input_std(host, def.type, def);
+                        input = _input_std(host, inputType, def);
                         break;
                 }
             }
