@@ -10,6 +10,12 @@ namespace Hazaar\Forms\Output;
  * @version 1.0
  * @author jamiec
  */
+
+ use \Hazaar\Html\Block;
+ use \Hazaar\Html\Div;
+ use \Hazaar\Html\H1;
+ use \Hazaar\Html\Fieldset;
+
 class HTML extends \Hazaar\Forms\Output {
 
     static public $pageClass = 'card card-default';
@@ -18,11 +24,21 @@ class HTML extends \Hazaar\Forms\Output {
 
     static public $pageBodyClass = 'card-body';
 
-    private $options;
+    private $modal;
+
+    private $settings;
 
     public function init(\Hazaar\Forms\Model $model){
 
-        $this->options = ake($model->getFormDefinition(), 'html');
+        $this->modal = $model;
+
+        $def = $model->getFormDefinition();
+
+        $this->settings = replace_recursive(ake($def, 'settings', new \stdClass), ake($def, 'html'), (object)[ 'hz' => (object)[ 'left' => 3, 'right' => null ] ]);
+
+        if (!ake($this->settings, 'hz.right')) $this->settings->hz->right = 12 - $this->settings->hz->left;
+
+        if (!ake($this->settings, 'hz.left')) $this->settings->hz->left = 12 - $this->settings->hz->right;
 
     }
 
@@ -31,31 +47,45 @@ class HTML extends \Hazaar\Forms\Output {
         if(!$form instanceof \stdClass)
             $form = $this->model->resolve();
 
-        $div = (new \Hazaar\Html\Div())->class(ake($settings, 'formClass', 'form-output'));
+        $div = (new Div)->class(ake($settings, 'formClass', 'form-output'));
 
         if(ake($settings, 'showTitle', true) === true)
-            $div->add((new \Hazaar\Html\Div(new \Hazaar\Html\H1($this->model->matchReplace(ake($form, 'name', 'Unnamed Form')))))
+            $div->add((new Div(new H1($this->model->matchReplace(ake($form, 'name', 'Unnamed Form')))))
                 ->class(ake($settings, 'titleClass', 'form-header')));
 
         if(!$ixes && property_exists($form, 'html'))
             $ixes = $form->html;
 
         if(ake($settings, 'showPrefix', true) === true && is_object($ixes) && property_exists($ixes, 'prefix'))
-            $div->add((new \Hazaar\Html\Div($this->model->matchReplace((string)$ixes->prefix, true)))
+            $div->add((new Div($this->model->matchReplace((string)$ixes->prefix, true)))
                 ->class(ake($settings, 'prefixClass', 'form-prefix')));
 
         foreach($form->pages as $page_num => $page)
-            $div->add($this->__page($page, $page_num + 1, $settings));
+            $div->add($this->_page($page, $page_num + 1, $settings));
 
         if(ake($settings, 'showSuffix', true) === true && is_object($ixes) && property_exists($ixes,  'suffix'))
-            $div->add((new \Hazaar\Html\Div($this->model->matchReplace((string)$ixes->suffix, true)))
+            $div->add((new Div($this->model->matchReplace((string)$ixes->suffix, true)))
                 ->class(ake($settings, 'suffixClass', 'form-suffix')));
 
         return $div;
 
     }
 
-    private function __page($page, $page_num, $settings = null){
+    private function _label($label, $default_label, $def) {
+
+        $labelType = ake($def, 'labelType', ($default_label ? $default_label : 'label'));
+
+        $o = (new Block($labelType))->class('control-label')->set($this->model->matchReplace($label, true));
+
+        if ($label_class = ake($def, 'labelClass')) 
+            $o->addClass($label_class);
+
+        return $o;
+
+    }
+
+    //Render a page
+    private function _page($page, $page_num, $settings) {
 
         $html = (new \Hazaar\Html\Div())->class(HTML::$pageClass . ' form-page page-' . $page_num);
 
@@ -64,247 +94,177 @@ class HTML extends \Hazaar\Forms\Output {
 
         $body = (new \Hazaar\Html\Div())->class(HTML::$pageBodyClass);
 
+        $sections = [];
+
         foreach($page->sections as $section)
-            $body->add($this->__section($section));
+            $sections[] = $this->_section($section);
+
+        if (ake($this->settings, 'cards') === true || ake($page, 'cards') === true) {
+
+            $body->addClass('card');
+
+            $body->add((new Div)->class('card-body')->add(sections));
+
+        } else {
+
+            $body->add($sections);
+
+        }
 
         return $html->add($body);
 
     }
 
-    private function __section($section, $p = true){
+    function _section($section, $horizontal = true) {
 
-        if(is_array($section)){
+        $group = new Div;
+
+        if (is_array($section)) {
 
             $col_width = null;
 
-            $group = new \Hazaar\Html\Div();
-
-            if($p){
+            if ($horizontal) {
 
                 $group->addClass('row');
 
                 $length = count($section);
 
-                foreach ($section as &$s) {
+                foreach($section as $section_item) {
 
-                    if (!is_object($s)) continue;
+                    if (!$section_item instanceof \stdClass) continue;
 
-                    if (!property_exists($s, 'weight')) $s->weight = 1;
+                    if (!property_exists($section_item, 'weight')) 
+                        $section_item->weight = 1;
 
-                    $length = $length + ($s->weight - 1);
+                    $length += ($section_item->weight - 1);
 
                 }
 
-                $col_width = (12 / $length);
+                $col_width = 12 / $length;
 
             }
 
-            foreach($section as &$s){
+            foreach($section as $section_item) 
+                $group->add((new Div)
+                    ->toggleClass('col-md-' + Math.round(ake($section_item, 'weight', 1) * $col_width), $horizontal)
+                    ->add($this->_section($section_item, !$horizontal))
+                );
 
-                $col = new \Hazaar\Html\Div($this->__section($s, !$p));
-
-                if($p){
-
-                    $field_width = (is_object($s) ? $s->weight : 1) * $col_width;
-
-                    $col->class('col-lg-' . round($field_width));
-                }
-
-                $group->add($col);
-
-            }
-
-            return $group;
+            return group;
 
         }
 
-        $html = (new \Hazaar\Html\Div())->class('form-section');
+        if (!$section instanceof \stdClass)
+            return null;
 
-        if(is_object($section)){
+        $fieldset = (new Div)->class('col col-12')->appendTo($group);
 
-            if(property_exists($section, 'label'))
-                $html->add(new \Hazaar\Html\H3($this->model->matchReplace($section->label, true)));
+        if ($label = ake($section, 'label')) 
+            $fieldset->add($this->_label($label, 'legend', $section));
 
-            if(property_exists($section, 'fields'))
-                $html->add($this->__group($section->fields));
+        foreach($section->fields as $field)
+            $fieldset->add($this->_form_field($field, $horizontal, ake($section, 'grid', false)));
 
-        }
-
-        return $html;
+        return $group->addClass('row');
 
     }
 
-    private function __group($fields, $horizontal = true){
+    function _form_field($info, $horizontal = true, $grid = false) {
 
-        if(!is_array($fields))
-            return null;
+        if(is_array($info))
+            $info = (object)['fields' => $info ];
 
-        $items = array();
+        if (!property_exists($info, 'grid'))
+            $info->grid = $grid;
 
-        foreach($fields as $name => $field){
+        if(property_exists($info, 'horizontal'))
+            $horizontal = $info->horizontal;
 
-            $horizontal = ake($field, 'horizontal', $horizontal);
+        $type = ake($info, 'type', 'text');
 
-            if(is_array($field) && !array_key_exists('name', $field)){
+        if ($render = ake($info, 'render')) {
 
-                $html = new \Hazaar\Html\Div();
+            if(!($field = $this->modal->evaluate($render, $info->value, ake($info, 'name'))))
+                return;
 
-                if($horizontal === true){
+        } else if (property_exists($info, 'fields') && $type !== 'array') {
 
-                    $html->class('row');
+            $layout = property_exists($info, 'layout') ? $this->__resolve_field_layout($info->fields, $info->layout) : $info->fields;
 
-                    $length = count($field);
+            $length = count($layout instanceof \stdClass ? get_object_vars($layout) : $layout);
+            
+            $fields = [];
+            
+            $col_width = 0;
 
-                    foreach ($field as $field_col) {
+            if ($horizontal === null)
+                $horizontal = ake($this->settings, 'horizontal') ? false : !ake($info, 'layout');
 
-                        if (!$field_col) continue;
+            foreach($layout as $item) {
 
-                        if (!is_object($field_col))
-                            $field_col = (object)array("name" => $field_col);
+                if(!$item) 
+                    continue;
 
-                        if (!property_exists($field_col, 'weight'))
-                            $field_col->weight = 1;
+                if(!$item instanceof \stdClass)
+                    $item = (object)['fields' => $item];
 
-                        $length = $length + ($field_col->weight - 1);
+                if ($horizontal) {
 
-                    }
+                    if (!(property_exists($item, 'weight')))
+                        $item->weight = 1;
 
-                    $col_width = (12 / $length);
-
-                    foreach($field as $field_col){
-
-                        $field_width = $col_width;
-
-                        if (is_object($field_col) && property_exists($field_col, 'weight'))
-                            $field_width = round($field_width * $field_col->weight);
-
-                        $html->add((new \Hazaar\Html\Div($this->__group(array($field_col), !$horizontal)))->class('col-lg-' . $field_width));
-
-                    }
-
-                }else{
-
-                    foreach($field as $field_col)
-                        $html->add(new \Hazaar\Html\Div($this->__group(array($field_col), !$horizontal)));
+                    $length = $length + ($item->weight - 1);
 
                 }
 
-                $items[] = $html;
+                if (ake($info, 'protected') === true) 
+                    $item->protected = true;
 
-            }elseif(is_object($field) && property_exists($field, 'fields') && ake($field, 'type') !== 'array'){
+                if(property_exists($info, 'grid') && !property_exists($item, 'grid'))
+                    $item->grid = $info->grid;
 
-                $group = new \Hazaar\Html\Div();
-
-                if(property_exists($field, 'label'))
-                    $group->add(new \Hazaar\Html\H4($field->label));
-
-                if ($horizontal === null) $p = !(property_exists($field, 'layout') && $field['layout']);
-
-                $group->add($this->__group(array((array)$field->fields), $horizontal));
-
-                $items[] = $group;
-
-            }else{
-
-                $items[] = $this->__field($name, $field);
+                $fields[] = $item;
 
             }
 
-        }
+            $col_width = 12 / max($length, 1);
 
-        return $items;
+            $field = (new Div)->class('form-section')->toggleClass('row', $horizontal);
 
-    }
+            if ($label = ake($info, 'label')) $field->add((new Div)->toggleClass('col-md-12', $horizontal)->set($this->_label($label, 'h4', $info)));
 
-    private function __field($name, $field){
+            foreach($fields as $item) {
 
-        $group = (new \Hazaar\Html\Div())->class('form-group');
+                if ($item instanceof \stdClass && ake($info, 'horizontal') === true) 
+                    $item->row = true;
 
-        if($label = ake($field, 'label'))
-            $group->add(new \Hazaar\Html\H5($this->model->matchReplace($label, true)));
+                $field_width = $col_width;
+                
+                if (!($child_field = $this->_form_field($item, !$horizontal, ake($info, 'grid', false))))
+                    continue;
 
-        $type = ake($field, 'type', 'text');
+                if($weight = ake($item, 'weight')) 
+                    $field_width = round($field_width * $weight);
 
-        if($type == 'button'){
+                $field->add($child_field->toggleClass('col-md-' . $field_width, $horizontal));
 
-            return null;
-
-        }elseif($type == 'array' || $type == 'file'){
-
-            if(property_exists($field, 'fields') && $field->fields instanceof \stdClass){
-
-                $table = (new \Hazaar\Html\Table())->class('table');
-
-                $table->add(new \Hazaar\Html\Thead($hdrs = new \Hazaar\Html\Tr()));
-
-                $rows = new \Hazaar\Html\Tbody();
-
-                $count = 0;
-
-                foreach(ake($field, 'fields', array()) as $key => $def){
-
-                    if(ake($def, 'hidden')) continue;
-
-                    $hdrs->add(new \Hazaar\Html\Th(ake($def, 'label', $key)));
-
-                    $count += ake($def, 'weight', 1);
-
-                }
-
-                foreach(ake($field, 'value', array()) as $items){
-
-                    $row = new \Hazaar\Html\Tr();
-
-                    foreach($items as $key => $item){
-
-                        $td = new \Hazaar\Html\Td();
-
-                        if($item){
-
-                            if(ake($item, 'hidden')) continue;
-
-                            $value = (property_exists($item, 'html') ? $item->html : $item->value);
-
-                            $td->add($value);
-
-                            $td->style('width', (100 / $count ) * ake($item, 'weight', 1) . '%');
-
-                        }
-
-                        $row->add($td);
-
-                    }
-
-                    $rows->add($row);
-
-                }
-
-                $group->add($table->add($rows));
-
-            }elseif(\Hazaar\Map::is_array($field->value)){
-
-                $list = (new \Hazaar\Html\Ul())->class('form-value-group');
-
-                $is_file = (ake($field, 'type') === 'file');
-
-                foreach($field->value as $item){
-
-                    if($is_file)
-                        $item = new \Hazaar\Html\A($item['url'], $item['name']);
-                    elseif(property_exists($field, 'options'))
-                        $item = ake($field->options, $item, $item);
-
-                    $list->add((new \Hazaar\Html\Li($item))->class('form-value'));
-
-                }
-
-                $group->add($list);
+                if ($item instanceof \stdClass && $horizontal && !ake($info, 'row', false) && !$item->grid) 
+                    $child_field->removeClass('row');
 
             }
 
-        }elseif($type !== null){
+        }elseif(property_exists($info, 'fields') && $type === 'array'){
 
-            $value = ake($field, 'value');
+            $field = (new Div)->class('itemlist');
+
+            if ($label = ake($info, 'label')) $field->add((new Div)->set($this->_label($label, 'h4', $info)));
+            
+            foreach($info->fields as $child_item)
+                $field->add($this->_form_field($child_item, true, false));
+
+        } else {
+
+            $value = ake($info, 'value');
 
             if($type == 'boolean'){
 
@@ -312,37 +272,85 @@ class HTML extends \Hazaar\Forms\Output {
 
             }elseif($value instanceof \Hazaar\Date){
 
-                if(ake($field, 'org_type', 'date') === 'datetime')
+                if(ake($info, 'org_type', 'date') === 'datetime')
                     $value = $value->datetime();
                 else
                     $value = $value->date();
 
+            }elseif(is_array($value)){
+
+                $value = implode(ake($info, 'glue', ', '), $value);
+
             }
 
-            $value_group = (new \Hazaar\Html\Div())->class('form-value');
+            $info->nolabel = false;
+
+            $col = (new Div)->class('form-field');
+
+            if ($info->grid = (ake($info, 'grid') || ake($this->settings, 'horizontal'))) {
+
+                if ($info->nolabel !== true && ake($info, 'label')) 
+                    $col->addClass('col-sm-' . ake($this->settings, 'hz.right', 5));
+                else 
+                    $col->addClass('col-sm-12')->toggleClass('row', ake($info, 'row') === true);
+
+            }
+
+            $field = (new Div)->class('form-group')->toggleClass('row', $info->grid);
+
+            if (($title = ake($info, 'title')) || ($info->nolabel !== true && ($label = ake($info, 'label'))))
+                $field->add($this->_label(($title ? $title : $label), 'label', $info)
+                    ->toggleClass('col-sm-' . $this->settings->hz->left, $info->grid));
 
             if($prefix = ake($field, 'prefix'))
-                $value_group->add($this->model->matchReplace((string)$prefix) . ' ');
+                $field->add($this->model->matchReplace((string)$prefix) . ' ');
 
-            if($value === null && $null = (array)ake($this->options, 'null'))
+            if($value === null && $null = (array)ake($this->settings, 'null'))
                 $value = is_array($null) ? ake($null, $type, ake($null, 'default')) : $null;
 
-            $value_group->add($value);
+            $col->add($value);
 
             if($suffix = ake($field, 'suffix'))
-                $value_group->add(' ' . $this->model->matchReplace((string)$suffix));
+                $col->add(' ' . $this->model->matchReplace((string)$suffix));
 
-            $group->add($value_group);
+            if ($css = ake($info, 'css')) 
+                $input->css($css);
+
+            if ($cssClass = ake($info, 'cssClass')) 
+                $input->addClass($cssClass);
+
+            $field->add($col);
 
         }
 
-        if($html = ake($field, 'html'))
-            $group->add($this->model->matchReplace((string)$html, true));
+        if ($width = ake($info, 'width'))    
+            $field->width($width);
 
-        if($class = ake($field, 'output.class'))
-            $group->addClass($class);
+        if ($max_width = ake($info, 'max-width')) 
+            $field->style('max-width', $max_width);
 
-        return $group;
+        if ($height = ake($info, 'max-height')) 
+            $field->style('height', $height);
+
+        if ($max_height = ake($info, 'max-height')) 
+            $field->style('max-height', $max_height);
+
+        if ($html = ake($info, 'html')) {
+
+            if (($label = ake($info, 'label')) && field.children().length === 0) 
+                $field->add($this->_label($label, 'label', def));
+
+            $field->add((new Div)->set($this->modal->matchReplace($html, null, true, true)));
+
+        }
+
+        if ($header = ake($info, 'header')) 
+            $field->prepend($header);
+
+        if ($footer = ake($info, 'footer')) 
+            $field->add($footer);
+
+        return $field;
 
     }
 
