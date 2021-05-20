@@ -1740,7 +1740,7 @@ class Model extends \Hazaar\Model\Strict {
 
         $schema = (object)[
             '$id' => (string)(new \Hazaar\Application\URL('schemas', str_replace(' ', '_', strtolower(ake($def, 'name')) . '.json'))),
-            '$schema' => 'https://json-schema.org/draft/2020-12/schema',
+            '$schema' => 'https://datatracker.ietf.org/doc/html/draft-wright-json-schema-00',
             'description' => ake($def, 'description')
         ];
 
