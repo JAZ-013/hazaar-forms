@@ -602,8 +602,9 @@ dataBinderArray.prototype.diff = function (data, callback) {
     }
 
     function _input_select_multi_items(host, data, container) {
-        let def = container.empty().data('def'), item_data = _get_data_item(host.data, def.name), data_index = {};
+        let def = container.empty().data('def'), item_data = _get_data_item(host.data, def.name, true), data_index = {};
         let valueKey = def.options.value || 'value', labelKey = def.options.label || 'label';
+        let other = 'other' in def && _eval(host, def.other, null, item_data, def.name);
         data = _convert_data(data, valueKey, labelKey, def, data_index, def.options.combine);
         if (data === null || (Array.isArray(data) && data.length === 0)) {
             item_data.empty();
@@ -611,20 +612,44 @@ dataBinderArray.prototype.diff = function (data, callback) {
             _input_event_update(host, def.name, true);
             return container.parent().hide();
         }
+        if (other === true) data.push({ value: "__hz_other", label: "Other" });
         let values = item_data.save(true);
         if (values) {
-            let remove = values.filter(function (i) { return !(i in data_index); });
-            for (let x in remove) item_data.remove(remove[x]);
+            let diff = values.filter(function (i) { return !(i in data_index); });
+            for (let i of diff) item_data.remove(i);
+            if (other === true && diff.length > 0) {
+                item_data.other = new dataBinderArray(diff, 'other', item_data);
+                values.push('__hz_other');
+            }
+        }
+        let fOther = function (adding, o, item_data) {
+            if (adding) {
+                if (!(item_data.other instanceof dataBinderArray)) item_data.other = new dataBinderArray([], 'other', item_data);
+                let itemDef = {
+                    name: item_data.other.attrName,
+                    type: "array",
+                    arrayOf: "text",
+                    placeholder: "Enter other values here..."
+                };
+                o.parent().after(_input_multitext(host, itemDef, item_data.other));
+            } else {
+                delete item_data.other;
+                o.parent().next().remove();
+            }
         }
         let fChange = function () {
-            let def = $(this.childNodes[0]).data('def'), value = _convert_data_type(def, this.childNodes[0].value);
-            let item_data = _get_data_item(host.data, def.name);
-            let index = item_data.indexOf(value);
-            if (this.childNodes[0].checked) {
-                if (index === -1) item_data.push({ '__hz_value': value, '__hz_label': this.childNodes[1].textContent });
-            } else item_data.unset(index);
+            let o = $(this.childNodes[0]), def = o.data('def'), value = _convert_data_type(def, o.val());
+            let adding = o.is(':checked');
+            if (value === '__hz_other') {
+                fOther(adding, o, item_data);
+            } else {
+                let item_data = _get_data_item(host.data, def.name);
+                let index = item_data.indexOf(value);
+                if (adding === true) {
+                    if (index === -1) item_data.push({ '__hz_value': value, '__hz_label': this.childNodes[1].textContent });
+                } else item_data.unset(index);
+            }
         };
-        let value = _get_data_item(host.data, def.name, true);
         let disabled = def.protected === true || _eval(host, def.disabled, false, item_data, def.name);
         if ('sort' in def.options) {
             if (typeof def.options.sort === 'boolean') def.options.sort = labelKey;
@@ -652,7 +677,7 @@ dataBinderArray.prototype.diff = function (data, callback) {
         if (def.columns > 6) def.columns = 6;
         let do_ops = function (data, c) {
             let col_width = Math.floor(12 / def.columns), per_col = Math.ceil(Object.keys(data).length / def.columns);
-            let cols = $('<div class="row">').appendTo(c), column = 0, items = [];;
+            let cols = $('<div class="row">').appendTo(c), column = 0, items = [];
             for (let col = 0; col < def.columns; col++)
                 items.push($('<div>').addClass('col-md-' + col_width).toggleClass('custom-controls-stacked', def.inline));
             for (let x in data) {
@@ -661,19 +686,19 @@ dataBinderArray.prototype.diff = function (data, callback) {
                     continue;
                 }
                 let iv = _convert_data_type(def, data[x][valueKey]), il = data[x][labelKey], id = _guid();
-                let active = value instanceof dataBinderArray && value.indexOf(iv) > -1, name = def.name + '_' + iv;
-                let label = $('<div class="custom-control custom-checkbox">').html([
-                    $('<input class="custom-control-input" type="checkbox">')
-                        .attr('id', id)
-                        .attr('value', iv)
-                        .prop('checked', active)
-                        .prop('disabled', disabled)
-                        .data('def', def),
-                    $('<label class="custom-control-label">').html(il).attr('for', id)
-                ]).attr('data-bind-value', iv).change(fChange);
+                let active = values.indexOf(iv) > -1, name = def.name + '_' + iv;
+                let input = $('<input class="custom-control-input" type="checkbox">')
+                    .attr('id', id)
+                    .attr('value', iv)
+                    .prop('checked', active)
+                    .prop('disabled', disabled)
+                    .data('def', def);
+                let label = $('<div class="custom-control custom-checkbox">').html([input, $('<label class="custom-control-label">').html(il).attr('for', id)])
+                    .attr('data-bind-value', iv).change(fChange);
                 if ('css' in def) label.css(def.css);
                 items[column].append(label);
                 if (items[column].children().length >= per_col) column++;
+                if (active && iv === '__hz_other') fOther(true, input, item_data);
             }
             cols.html(items);
         }
@@ -1282,8 +1307,9 @@ dataBinderArray.prototype.diff = function (data, callback) {
         return inputDIV;
     }
 
-    function _input_multitext(host, def) {
-        let group = $('<div class="form-multi-text">'), item_data = _get_data_item(host.data, def.name), container;
+    function _input_multitext(host, def, item_data) {
+        let group = $('<div class="form-multi-text">'), container;
+        if (!item_data) item_data = _get_data_item(host.data, def.name);
         let _rm_multitext_item = function (e) {
             let value = $(e.currentTarget.parentNode).children('span').text();
             item_data.remove(_convert_data_type(def, value));
@@ -1303,7 +1329,7 @@ dataBinderArray.prototype.diff = function (data, callback) {
         let inputDef = Object.assign({}, def, { name: '__hz_input_mt_' + def.name, type: def.arrayOf });
         if ('format' in def && 'validate' in def) { delete inputDef.validate.minlen; delete inputDef.validate.maxlen; }
         if (!('hint' in def) || def.hint === true) def.hint = 'Press ENTER to add item to list.';
-        _input_std(_get_empty_host(ud, host), def.arrayOf, inputDef, true).appendTo(group)
+        let input = _input_std(_get_empty_host(ud, host), def.arrayOf, inputDef, true, item_data).appendTo(group)
             .on('keypress', function (e) {
                 if (e.which !== 13) return;
                 _update_multitext_item($(this));
@@ -2215,7 +2241,7 @@ dataBinderArray.prototype.diff = function (data, callback) {
         for (let x in fields) {
             let itemExtra = extra ? $.extend(true, {}, extra) : null;
             if (typeof fields[x] === 'string') fields[x] = { type: fields[x], label: x };
-            if('value' in fields[x]) fields[x].protected = true;
+            if ('value' in fields[x]) fields[x].protected = true;
             if (!('type' in fields[x]) && ('options' in fields[x] || 'lookup' in fields[x])) {
                 fields[x].type = 'text';
             } else if ('type' in fields[x] && 'types' in host.def && fields[x].type in host.def.types) {
