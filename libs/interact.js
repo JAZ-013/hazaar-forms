@@ -612,7 +612,7 @@ dataBinderArray.prototype.diff = function (data, callback) {
             _input_event_update(host, def.name, true);
             return container.parent().hide();
         }
-        if (other === true) data.push({ value: "__hz_other", label: "Other" });
+        if (other === true) data.push({ value: "__hz_other", label: def.otherLabel || "Other" });
         let values = item_data.save(true);
         if (values) {
             let diff = values.filter(function (i) { return !(i in data_index); });
@@ -629,7 +629,7 @@ dataBinderArray.prototype.diff = function (data, callback) {
                     name: item_data.other.attrName,
                     type: "array",
                     arrayOf: "text",
-                    placeholder: "Enter other values here..."
+                    placeholder: def.otherPlaceholder || "Enter other values here..."
                 };
                 o.parent().after(_input_multitext(host, itemDef, item_data.other));
             } else {
