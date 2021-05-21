@@ -611,18 +611,29 @@ dataBinderArray.prototype.diff = function (data, callback) {
             _input_event_update(host, def.name, true);
             return container.parent().hide();
         }
+        if ('other' in def && _eval(host, def.other, null, item_data, def.name) === true) data.push({ value: "__hz_other", label: "Other" });
         let values = item_data.save(true);
         if (values) {
             let remove = values.filter(function (i) { return !(i in data_index); });
             for (let x in remove) item_data.remove(remove[x]);
         }
         let fChange = function () {
-            let def = $(this.childNodes[0]).data('def'), value = _convert_data_type(def, this.childNodes[0].value);
-            let item_data = _get_data_item(host.data, def.name);
-            let index = item_data.indexOf(value);
-            if (this.childNodes[0].checked) {
-                if (index === -1) item_data.push({ '__hz_value': value, '__hz_label': this.childNodes[1].textContent });
-            } else item_data.unset(index);
+            let o = $(this.childNodes[0]), def = o.data('def'), value = _convert_data_type(def, o.val());
+            let adding = o.is(':checked');
+            if (value === '__hz_other') {
+                def.otherVisible = adding;
+                if (def.otherVisible === true) {
+                    let name = def.name + '.other'
+                    item_data.other = new dataBinderArray([], name, item_data, item_data.namespace);
+                    o.parent().after(_input_multitext(host, { name: name, type: "array", arrayOf: "text", placeholder: "Enter other values here..." }, item_data.other));
+                } else o.parent().next().remove();
+            } else {
+                let item_data = _get_data_item(host.data, def.name);
+                let index = item_data.indexOf(value);
+                if (adding === true) {
+                    if (index === -1) item_data.push({ '__hz_value': value, '__hz_label': this.childNodes[1].textContent });
+                } else item_data.unset(index);
+            }
         };
         let value = _get_data_item(host.data, def.name, true);
         let disabled = def.protected === true || _eval(host, def.disabled, false, item_data, def.name);
@@ -1282,8 +1293,9 @@ dataBinderArray.prototype.diff = function (data, callback) {
         return inputDIV;
     }
 
-    function _input_multitext(host, def) {
-        let group = $('<div class="form-multi-text">'), item_data = _get_data_item(host.data, def.name), container;
+    function _input_multitext(host, def, item_data) {
+        let group = $('<div class="form-multi-text">'), container;
+        if (!item_data) item_data = _get_data_item(host.data, def.name);
         let _rm_multitext_item = function (e) {
             let value = $(e.currentTarget.parentNode).children('span').text();
             item_data.remove(_convert_data_type(def, value));
@@ -2215,7 +2227,7 @@ dataBinderArray.prototype.diff = function (data, callback) {
         for (let x in fields) {
             let itemExtra = extra ? $.extend(true, {}, extra) : null;
             if (typeof fields[x] === 'string') fields[x] = { type: fields[x], label: x };
-            if('value' in fields[x]) fields[x].protected = true;
+            if ('value' in fields[x]) fields[x].protected = true;
             if (!('type' in fields[x]) && ('options' in fields[x] || 'lookup' in fields[x])) {
                 fields[x].type = 'text';
             } else if ('type' in fields[x] && 'types' in host.def && fields[x].type in host.def.types) {
