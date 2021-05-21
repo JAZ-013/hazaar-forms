@@ -623,10 +623,18 @@ dataBinderArray.prototype.diff = function (data, callback) {
             if (value === '__hz_other') {
                 def.otherVisible = adding;
                 if (def.otherVisible === true) {
-                    let name = def.name + '.other'
-                    item_data.other = new dataBinderArray([], name, item_data, item_data.namespace);
-                    o.parent().after(_input_multitext(host, { name: name, type: "array", arrayOf: "text", placeholder: "Enter other values here..." }, item_data.other));
-                } else o.parent().next().remove();
+                    item_data.other = new dataBinderArray([], 'other', item_data);
+                    let itemDef = {
+                        name: item_data.other.attrName,
+                        type: "array",
+                        arrayOf: "text",
+                        placeholder: "Enter other values here..."
+                    };
+                    o.parent().after(_input_multitext(host, itemDef, item_data.other));
+                } else {
+                    delete item_data.other;
+                    o.parent().next().remove();
+                }
             } else {
                 let item_data = _get_data_item(host.data, def.name);
                 let index = item_data.indexOf(value);
@@ -1315,7 +1323,7 @@ dataBinderArray.prototype.diff = function (data, callback) {
         let inputDef = Object.assign({}, def, { name: '__hz_input_mt_' + def.name, type: def.arrayOf });
         if ('format' in def && 'validate' in def) { delete inputDef.validate.minlen; delete inputDef.validate.maxlen; }
         if (!('hint' in def) || def.hint === true) def.hint = 'Press ENTER to add item to list.';
-        _input_std(_get_empty_host(ud, host), def.arrayOf, inputDef, true).appendTo(group)
+        let input = _input_std(_get_empty_host(ud, host), def.arrayOf, inputDef, true, item_data).appendTo(group)
             .on('keypress', function (e) {
                 if (e.which !== 13) return;
                 _update_multitext_item($(this));
