@@ -893,7 +893,7 @@ class Model extends \Hazaar\Model\Strict {
                 }else{
 
                     foreach($array[$name] as &$item)
-                        $item = ake($item, ($use_label ? '__hz_label' : '__hz_value'));
+                        $item = is_array($item) && array_key_exists('__hz_value', $item) ? ake($item, ($use_label ? '__hz_label' : '__hz_value')) : $item;
                     
                 }
 
