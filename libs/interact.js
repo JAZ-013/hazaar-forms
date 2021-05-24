@@ -1537,13 +1537,12 @@ dataBinderArray.prototype.diff = function (data, callback) {
             let item_name = item_data.attrName;
             item_data.extend(_define(def.fields, item_data), true);
             o.find('select,input').each(function (index, item) {
-                let input = $(item), def = input.data('def');
+                let input = $(item), def = input.data('def'), child_item_data = item_data[def.name];
                 if (input.is('select')) {
-                    if ('options' in def) _input_options(host, def, input, item_data, function (select, options) {
-                        _input_options_populate(host, options, select, false, item_data);
+                    if ('options' in def) _input_options(host, def, input, child_item_data, function (select, options) {
+                        _input_options_populate(host, options, select, false, child_item_data);
                     });
                 } else if (def.type === 'date' && 'format' in def) {
-                    let child_item_data = item_data[def.name];
                     input.data('datepicker', null);
                     input.datepicker(def.__datepicker_options);
                     if (child_item_data && child_item_data.value) input.datepicker('setDate', new Date(child_item_data.value));
