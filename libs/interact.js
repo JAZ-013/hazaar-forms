@@ -342,19 +342,21 @@ dataBinderArray.prototype.diff = function (data, callback) {
     }
 
     function _nullify(host, def) {
-        if (typeof def === 'string') def = _form_field_lookup(host.def, def);
-        if (!def || typeof def !== 'object' || def.protected || def.keep || 'value' in def) return;
-        if ('fields' in def && def.type !== 'array') {
+        if (typeof def !== 'object' || def.protected || def.keep || 'value' in def) return;
+        if (typeof def.name === 'string') {
+            let item_data = _get_data_item(host.data, def.name);
+            if (item_data instanceof dataBinderValue) item_data.set(def.default || null, def.placeholder || null);
+            else if (item_data instanceof dataBinder) item_data.empty();
+        } else if ('fields' in def) {
             for (let x in def.fields) {
                 let sdef = def.fields[x];
                 if (sdef instanceof Array) {
                     _nullify(host, { fields: sdef });
-                } else _nullify(host, sdef);
+                } else if (typeof sdef === 'string') {
+                    let item_data = _get_data_item(host.data, sdef);
+                    if (item_data instanceof dataBinderValue) item_data.set(def.default || null, def.placeholder || null);
+                }
             }
-        } else if (typeof def.name === 'string') {
-            let item_data = _get_data_item(host.data, def.name);
-            if (item_data instanceof dataBinderValue) item_data.set(def.default || null, def.placeholder || null);
-            else if (item_data instanceof dataBinderArray) item_data.empty();
         }
     }
 
