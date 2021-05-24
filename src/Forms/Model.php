@@ -440,7 +440,7 @@ class Model extends \Hazaar\Model\Strict {
 
         }
 
-        if(isset($def['options']) && !isset($def['options']->url) && ake($def, 'allowAny', false) !== true){
+        if(isset($def['options']) && !(isset($def['options']->url) || is_string($def['options'])) && ake($def, 'allowAny', false) !== true){
 
             if(!isset($def['prepare'])) $def['prepare'] = [];
 
@@ -450,12 +450,14 @@ class Model extends \Hazaar\Model\Strict {
                 if(ake($def, 'other') === true)
                     return $value;
 
-                if(is_array($value))
-                    return $value;
+                if(is_array($value)){
 
-                if(is_array($value) && isset($value['__hz_value']))
+                    if(!isset($value['__hz_value']))
+                        return $value;
+
                     $sVal = $value['__hz_value'];
-                elseif($value instanceof \stdClass && isset($value->__hz_value))
+
+                }elseif($value instanceof \stdClass && isset($value->__hz_value))
                     $sVal = $value->__hz_value;
                 elseif($value instanceof \Hazaar\Model\DataBinderValue)
                     $sVal = $value->value;
