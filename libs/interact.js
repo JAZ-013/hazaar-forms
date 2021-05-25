@@ -513,13 +513,15 @@ dataBinderArray.prototype.diff = function (data, callback) {
         host.eval_cache = true;
         if (typeof update === 'string') update = { "url": update };
         if (_is_object(input)) {
-            if (item_data && input.is('select') && input.val() && input.val() !== '__hz_other') {
-                let other = input.children('option[value="' + item_data.value + '"]').data('other') || null;
+            if (item_data) {
                 item_data.enabled(false);
-                item_data.set(item_data.value, input.children('option:selected').text(), other, true);
+                if (input.is('select') && input.val() && input.val() !== '__hz_other') {
+                    let other = input.children('option[value="' + item_data.value + '"]').data('other') || null;
+                    item_data.set(item_data.value, input.children('option:selected').text(), other, true);
+                } else if (input.is('input[type="radio"]') && item_data.enabled() === true) {
+                    item_data.set(item_data.value, input.next().text());
+                }
                 item_data.enabled(true);
-            } else if (item_data && input.is('input[type="radio"]') && item_data.enabled() === true) {
-                item_data.set(item_data.value, input.next().text());
             }
             if (no_update !== true && (typeof update === 'boolean' || update && ('url' in update || host.settings.update === true))) {
                 let options = {
