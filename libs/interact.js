@@ -1757,7 +1757,7 @@ dataBinderArray.prototype.diff = function (data, callback) {
         if (typeof section !== 'object') return null;
         let fieldset = $('<fieldset class="col col-12">').data('def', section).appendTo(group);
         if (section.label) fieldset.append(_label(host, section.label, 'legend', section));
-        for (let field of section.fields) fieldset.append(_form_field(host, field, p, ud, ud, ud, ud, section.grid));
+        for (let field of section.fields) fieldset.append(_form_field(host, field, ud, ud, ud, ud, ud, section.grid));
         if ('show' in section) _make_showable(host, section, fieldset);
         return group.addClass('row');
     }
