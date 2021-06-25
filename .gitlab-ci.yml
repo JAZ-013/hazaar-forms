@@ -3,11 +3,16 @@ BuildJS:
   - git config --global user.email "${CI_EMAIL}"
   - git config --global user.name "${CI_USERNAME}"
   - git checkout $CI_COMMIT_REF_NAME
-  - uglifyjs libs/interact.js -o libs/interact.min.js
-  - git add libs/interact.min.js
-  - git commit -m "Minified JS"
-  - git remote rm origin && git remote add origin git@git-ssh.hazaar.io:$CI_PROJECT_PATH.git
-  - git push origin master -o ci.skip
+  - |-
+    FILES=`git diff-tree --no-commit-id --name-only -r $CI_COMMIT_SHA`
+    if [[ "$FILES" =~ libs\/interact\.js ]]; then
+      echo "Building Minified JS"
+      uglifyjs libs/interact.js -o libs/interact.min.js
+      git add libs/interact.min.js
+      git commit -m "Minified JS"
+      git remote rm origin && git remote add origin git@git-ssh.hazaar.io:$CI_PROJECT_PATH.git
+      git push origin master -o ci.skip
+    fi
   stage: build
   only: 
   - master
