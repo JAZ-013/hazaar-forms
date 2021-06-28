@@ -148,7 +148,7 @@ class HTML extends \Hazaar\Forms\Output {
 
             foreach($section as $section_item) 
                 $group->add((new Div)
-                    ->toggleClass('col-md-' + Math.round(ake($section_item, 'weight', 1) * $col_width), $horizontal)
+                    ->toggleClass('col-md-' + round(ake($section_item, 'weight', 1) * $col_width), $horizontal)
                     ->add($this->_section($section_item, !$horizontal))
                 );
 
@@ -355,7 +355,7 @@ class HTML extends \Hazaar\Forms\Output {
             if (($label = ake($info, 'label')) && $field->count() === 0) 
                 $field->add($this->_label($label, 'label', def));
 
-            $field->add((new Div)->set($this->modal->matchReplace($html, null, true, true)));
+            $field->add((new Div)->set($this->modal->matchReplace($html)));
 
         }
 
