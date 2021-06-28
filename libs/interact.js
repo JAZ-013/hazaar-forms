@@ -350,12 +350,8 @@ dataBinderArray.prototype.diff = function (data, callback) {
         } else if ('fields' in def) {
             for (let x in def.fields) {
                 let sdef = def.fields[x];
-                if (sdef instanceof Array) {
-                    _nullify(host, { fields: sdef });
-                } else if (typeof sdef === 'string') {
-                    let item_data = _get_data_item(host.data, sdef);
-                    if (item_data instanceof dataBinderValue) item_data.set(def.default || null, def.placeholder || null);
-                }
+                if (sdef instanceof Array) _nullify(host, { fields: sdef });
+                else _nullify(host, sdef);
             }
         }
     }
