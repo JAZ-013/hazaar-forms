@@ -352,7 +352,7 @@ class HTML extends \Hazaar\Forms\Output {
 
         if ($html = ake($info, 'html')) {
 
-            if (($label = ake($info, 'label')) && field.children().length === 0) 
+            if (($label = ake($info, 'label')) && $field->count() === 0) 
                 $field->add($this->_label($label, 'label', def));
 
             $field->add((new Div)->set($this->modal->matchReplace($html, null, true, true)));
