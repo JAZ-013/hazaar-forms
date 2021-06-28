@@ -1155,19 +1155,21 @@ class Model extends \Hazaar\Model\Strict {
 
                 $field->fields = $items;
 
-            }elseif($options = ake($field, 'options')){
+            }else{
+                
+                if($options = ake($field, 'options')){
 
-                if(is_string($options))
-                    $options = (object)array('url' => $options);
+                    if(is_string($options))
+                        $options = (object)array('url' => $options);
 
-                if($options instanceof \stdClass && property_exists($options, 'url')){
+                    if($options instanceof \stdClass && property_exists($options, 'url')){
 
-                    if($data = $this->api($this->matchReplace($options->url), $options))
-                        $field->options = $this->__convert_data($data, ake($options, 'value', 'value'), ake($options, 'label', 'label'));
+                        if($data = $this->api($this->matchReplace($options->url), $options))
+                            $field->options = $this->__convert_data($data, ake($options, 'value', 'value'), ake($options, 'label', 'label'));
+
+                    }
 
                 }
-
-            }else{
 
                 $field->value = (array)($value instanceof \Hazaar\Model\ChildArray ? $value->toArray() : $value);
 

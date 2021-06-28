@@ -15,6 +15,8 @@ namespace Hazaar\Forms\Output;
  use \Hazaar\Html\Div;
  use \Hazaar\Html\H1;
  use \Hazaar\Html\Fieldset;
+ use \Hazaar\Html\Ul;
+ use \Hazaar\Html\Li;
 
 class HTML extends \Hazaar\Forms\Output {
 
@@ -279,7 +281,20 @@ class HTML extends \Hazaar\Forms\Output {
 
             }elseif(is_array($value)){
 
-                $value = implode(ake($info, 'glue', ', '), $value);
+                if($glue = ake($info, 'glue')){
+
+                    $value = implode($glue, $value);
+
+                }else{
+
+                    $list = new Ul();
+
+                    foreach($value as $sub_value)
+                        $list->add(new Li($sub_value));
+                        
+                }
+
+                $value = $list;
 
             }
 
