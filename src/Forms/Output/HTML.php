@@ -49,6 +49,8 @@ class HTML extends \Hazaar\Forms\Output {
         if(!$form instanceof \stdClass)
             $form = $this->model->resolve();
 
+        //dump($form->pages[0]->sections[2]);
+
         $div = (new Div)->class(ake($settings, 'formClass', 'form-output'));
 
         if(ake($settings, 'showTitle', true) === true)
@@ -146,13 +148,13 @@ class HTML extends \Hazaar\Forms\Output {
 
             }
 
-            foreach($section as $section_item) 
+            foreach($section as $section_item)
                 $group->add((new Div)
-                    ->toggleClass('col-md-' + round(ake($section_item, 'weight', 1) * $col_width), $horizontal)
+                    ->toggleClass('col-md-' . round(ake($section_item, 'weight', 1) * $col_width), $horizontal)
                     ->add($this->_section($section_item, !$horizontal))
                 );
 
-            return group;
+            return $group;
 
         }
 
@@ -279,18 +281,18 @@ class HTML extends \Hazaar\Forms\Output {
                 else
                     $value = $value->date();
 
-            }elseif(is_array($value)){
+            }elseif(is_array($value) || $value instanceof \Hazaar\Model\ChildArray){
 
-                if($glue = ake($info, 'glue')){
+                if($glue = ake($info, 'glue') ){
 
-                    $value = implode($glue, $value);
+                    $value = implode($glue, (($value instanceof \Hazaar\Model\ChildArray) ? $value->toArray() : $value));
 
                 }else{
 
                     $list = new Ul();
 
                     foreach($value as $sub_value)
-                        $list->add(new Li($sub_value));
+                        $list->add(new Li((string)$sub_value));
                         
                 }
 

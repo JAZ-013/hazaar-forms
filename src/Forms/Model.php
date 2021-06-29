@@ -631,7 +631,7 @@ class Model extends \Hazaar\Model\Strict {
 
                     foreach($subs as $key){
 
-                        $sub_item = ake($item, $key);
+                        $sub_item = (array)ake($item, $key);
 
                         $this->filterItems($sub_item, $no_reindex, $sub);
 
@@ -1171,7 +1171,7 @@ class Model extends \Hazaar\Model\Strict {
 
                 }
 
-                $field->value = (array)($value instanceof \Hazaar\Model\ChildArray ? $value->toArray() : $value);
+                $field->value = $value;//(array)($value instanceof \Hazaar\Model\ChildArray ? $value->toArray() : $value);
 
             }
 
