@@ -1041,7 +1041,7 @@ class Model extends \Hazaar\Model\Strict {
                 return null;
 
             foreach($fields->fields as $field_name => &$field_item)
-                $field_item = $this->__field($field_item, $form, null, null, $parent_key . '.' . $field_name);
+                $field_item = $this->__field($field_item, $form, true, null, ($parent_key ? $parent_key . '.' . $field_name : null));
 
             return $fields;
 
