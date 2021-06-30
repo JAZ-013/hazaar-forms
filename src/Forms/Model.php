@@ -1040,8 +1040,14 @@ class Model extends \Hazaar\Model\Strict {
             if(property_exists($fields, 'show') && $this->evaluate($fields->show, true, $value_key) !== true)
                 return null;
 
-            foreach($fields->fields as $field_name => &$field_item)
-                $field_item = $this->__field($field_item, $form, true, null, ($parent_key ? $parent_key . '.' . $field_name : null));
+            foreach($fields->fields as $field_name => &$field_item){
+
+                if(is_object($field_item))
+                    $field_item->name = $field_name;
+
+                $field_item = $this->__field($field_item, $form, true, null, $parent_key);
+
+            }
 
             return $fields;
 
@@ -1077,8 +1083,10 @@ class Model extends \Hazaar\Model\Strict {
         }elseif($name = ake($field, 'name')){
 
             $field = replace_recursive(ake($form->fields, $name), $field);
-
         }
+
+        if($parent_key)
+            $field->name = $parent_key . '.' . $field->name;
 
         /**
          * Check if the 'type' is a custom type and merge the field in with the type definition object 
