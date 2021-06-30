@@ -17,6 +17,7 @@ namespace Hazaar\Forms\Output;
  use \Hazaar\Html\Fieldset;
  use \Hazaar\Html\Ul;
  use \Hazaar\Html\Li;
+ use \Hazaar\Html\A;
 
 class HTML extends \Hazaar\Forms\Output {
 
@@ -48,8 +49,6 @@ class HTML extends \Hazaar\Forms\Output {
 
         if(!$form instanceof \stdClass)
             $form = $this->model->resolve();
-
-        //dump($form->pages[0]->sections[2]);
 
         $div = (new Div)->class(ake($settings, 'formClass', 'form-output'));
 
@@ -283,17 +282,26 @@ class HTML extends \Hazaar\Forms\Output {
 
             }elseif(is_array($value) || $value instanceof \Hazaar\Model\ChildArray){
 
-                if($glue = ake($info, 'glue') ){
+                $list = new Ul();
 
-                    $value = implode($glue, (($value instanceof \Hazaar\Model\ChildArray) ? $value->toArray() : $value));
+                if($type === 'file'){
+
+                    foreach($value as $sub_value)
+                        $list->add(new Li(new A(ake($sub_value, 'url'), ake($sub_value, 'name'))));
 
                 }else{
 
-                    $list = new Ul();
+                    if($glue = ake($info, 'glue') ){
 
-                    foreach($value as $sub_value)
-                        $list->add(new Li((string)$sub_value));
-                        
+                        $value = implode($glue, (($value instanceof \Hazaar\Model\ChildArray) ? $value->toArray() : $value));
+
+                    }else{
+
+                        foreach($value as $sub_value)
+                            $list->add(new Li((string)(is_array($sub_value) ? ake($sub_value, 'name', $sub_value) : $sub_value)));
+                            
+                    }
+
                 }
 
                 $value = $list;

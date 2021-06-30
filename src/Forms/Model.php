@@ -1074,6 +1074,10 @@ class Model extends \Hazaar\Model\Strict {
             
             return null;
 
+        }elseif($name = ake($field, 'name')){
+
+            $field = replace_recursive(ake($form->fields, $name), $field);
+
         }
 
         /**
@@ -1191,6 +1195,8 @@ class Model extends \Hazaar\Model\Strict {
                         'url' => (string)$file->media_uri()
                     );
                 }
+
+                $field->value = $value;
 
             }
 
