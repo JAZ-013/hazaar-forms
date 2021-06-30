@@ -931,10 +931,12 @@ dataBinderArray.prototype.diff = function (data, callback) {
             let match = matches[x].substr(2, matches[x].length - 4);
             if (!(match in def.watchers)) def.watchers[match] = [];
             if (typeof item_data === 'undefined') item_data = host.data;
-            def.watchers[match].push(item_data.watch(match, function (key, item_data, select) {
-                if (item_data.enabled() === false) return;
-                _input_options_populate_ajax(host, options, select, true, item_data, callback);
-            }, select));
+            if(item_data instanceof dataBinder){
+                def.watchers[match].push(item_data.watch(match, function (key, item_data, select) {
+                    if (item_data.enabled() === false) return;
+                    _input_options_populate_ajax(host, options, select, true, item_data, callback);
+                }, select));
+            }
         }
         return _input_options_populate_ajax(host, options, select, track, item_data, callback);
     }
