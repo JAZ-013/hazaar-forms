@@ -53,7 +53,7 @@ class HTML extends \Hazaar\Forms\Output {
         $div = (new Div)->class(ake($settings, 'formClass', 'form-output'));
 
         if(ake($settings, 'showTitle', true) === true)
-            $div->add((new Div(new H1($this->model->matchReplace(ake($form, 'name', 'Unnamed Form')))))
+            $div->add((new Div(new H1($this->model->matchReplace(ake($form, 'name', 'Unnamed Form'), true))))
                 ->class(ake($settings, 'titleClass', 'form-header')));
 
         if(!$ixes && property_exists($form, 'html'))
@@ -328,7 +328,7 @@ class HTML extends \Hazaar\Forms\Output {
                     ->toggleClass('col-sm-' . $this->settings->hz->left, $info->grid));
 
             if($prefix = ake($field, 'prefix'))
-                $field->add($this->model->matchReplace((string)$prefix) . ' ');
+                $field->add($this->model->matchReplace((string)$prefix) . ' ', true);
 
             if($value === null && $null = (array)ake($this->settings, 'null'))
                 $value = is_array($null) ? ake($null, $type, ake($null, 'default')) : $null;
@@ -336,7 +336,7 @@ class HTML extends \Hazaar\Forms\Output {
             $col->add($value);
 
             if($suffix = ake($field, 'suffix'))
-                $col->add(' ' . $this->model->matchReplace((string)$suffix));
+                $col->add(' ' . $this->model->matchReplace((string)$suffix, true));
 
             if ($css = ake($info, 'css')) 
                 $input->css($css);
@@ -365,7 +365,7 @@ class HTML extends \Hazaar\Forms\Output {
             if (($label = ake($info, 'label')) && $field->count() === 0) 
                 $field->add($this->_label($label, 'label', def));
 
-            $field->add((new Div)->set($this->modal->matchReplace($html)));
+            $field->add((new Div)->set($this->modal->matchReplace($html, true)));
 
         }
 
