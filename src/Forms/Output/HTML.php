@@ -49,6 +49,8 @@ class HTML extends \Hazaar\Forms\Output {
 
         if(!$form instanceof \stdClass)
             $form = $this->model->resolve();
+        
+        //dump($form->pages[0]->sections[0]->fields[1]->fields[0]);
 
         $div = (new Div)->class(ake($settings, 'formClass', 'form-output'));
 
@@ -172,10 +174,18 @@ class HTML extends \Hazaar\Forms\Output {
 
     }
 
-    function _form_field($info, $horizontal = true, $grid = false) {
+    function _form_field($info, $horizontal = true, $grid = false, $parent_layout = null) {
 
-        if(is_array($info))
+        if(is_array($info)){
+
             $info = (object)['fields' => $info ];
+
+        }elseif(property_exists($info,'hidden')){
+
+            if($this->model->evaluate($info->hidden, false) === true)
+                return null;
+
+        }
 
         if (!property_exists($info, 'grid'))
             $info->grid = $grid;
@@ -192,7 +202,10 @@ class HTML extends \Hazaar\Forms\Output {
 
         } else if (property_exists($info, 'fields') && $type !== 'array') {
 
-            $layout = property_exists($info, 'layout') ? $this->__resolve_field_layout($info->fields, $info->layout) : $info->fields;
+            if($parent_layout)
+                $layout =  $this->__resolve_field_layout($info->fields, $parent_layout);
+            else
+                $layout = property_exists($info, 'layout') ? $this->__resolve_field_layout($info->fields, $info->layout) : $info->fields;
 
             $length = count($layout instanceof \stdClass ? get_object_vars($layout) : $layout);
             
@@ -205,8 +218,13 @@ class HTML extends \Hazaar\Forms\Output {
 
             foreach($layout as $item) {
 
-                if(!$item) 
+                if(!$item || ake($item,'hidden') === true){
+
+                    $length--;
+
                     continue;
+
+                }
 
                 if(!$item instanceof \stdClass)
                     $item = (object)['fields' => $item];
@@ -238,8 +256,15 @@ class HTML extends \Hazaar\Forms\Output {
 
             foreach($fields as $item) {
 
-                if ($item instanceof \stdClass && ake($info, 'horizontal') === true) 
-                    $item->row = true;
+                if ($item instanceof \stdClass){
+
+                    if(ake($item,'hidden') === true)
+                        continue;
+
+                    if(ake($info, 'horizontal') === true) 
+                        $item->row = true;
+
+                }
 
                 $field_width = $col_width;
                 
@@ -263,7 +288,7 @@ class HTML extends \Hazaar\Forms\Output {
             if ($label = ake($info, 'label')) $field->add((new Div)->set($this->_label($label, 'h4', $info)));
             
             foreach($info->fields as $child_item)
-                $field->add($this->_form_field($child_item, true, false));
+                $field->add($this->_form_field($child_item, true, false, ake($info, 'layout')));
 
         } else {
 

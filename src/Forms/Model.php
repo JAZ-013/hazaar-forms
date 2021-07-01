@@ -1089,6 +1089,9 @@ class Model extends \Hazaar\Model\Strict {
         if($parent_key)
             $field->name = $parent_key . '.' . $field->name;
 
+        if(property_exists($field,'hidden'))
+            $field->hidden = $this->evaluate($field->hidden, false);
+
         /**
          * Check if the 'type' is a custom type and merge the field in with the type definition object 
          * Unless it's a button, then skip it.
