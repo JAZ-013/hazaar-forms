@@ -1145,7 +1145,8 @@ class Model extends \Hazaar\Model\Strict {
         //If the value is an array then we loop through each element and resolve each one recursively using the array's field definition
         }elseif(ake($field, 'type') == 'array'){
 
-            if(property_exists($field, 'fields') && $field->fields instanceof \stdClass){
+            if(property_exists($field, 'fields') 
+                && ($field->fields instanceof \stdClass || is_array($field->fields))){
 
                 $items = array();
 
@@ -1183,7 +1184,7 @@ class Model extends \Hazaar\Model\Strict {
 
                 }
 
-                $field->value = $value;//(array)($value instanceof \Hazaar\Model\ChildArray ? $value->toArray() : $value);
+                $field->value = $value;
 
             }
 
