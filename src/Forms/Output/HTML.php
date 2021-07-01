@@ -50,8 +50,6 @@ class HTML extends \Hazaar\Forms\Output {
         if(!$form instanceof \stdClass)
             $form = $this->model->resolve();
         
-        //dump($form->pages[0]->sections[0]->fields[1]->fields[0]);
-
         $div = (new Div)->class(ake($settings, 'formClass', 'form-output'));
 
         if(ake($settings, 'showTitle', true) === true)

@@ -1042,10 +1042,10 @@ class Model extends \Hazaar\Model\Strict {
 
             foreach($fields->fields as $field_name => &$field_item){
 
-                if(!is_array($fields->fields) && is_object($field_item))
+                if(!is_numeric($field_name) && is_object($field_item))
                     $field_item->name = $field_name;
 
-                $field_item = $this->__field($field_item, $form, true, null, $parent_key);
+                $field_item = $this->__field($field_item, $item_value, true, null, $parent_key);
 
             }
 
@@ -1082,7 +1082,7 @@ class Model extends \Hazaar\Model\Strict {
 
         }elseif($name = ake($field, 'name')){
 
-            $field = replace_recursive(ake($form->fields, $name), $field);
+            $field = (object)replace_recursive(ake($form->fields, $name), $field);
             
         }
 
