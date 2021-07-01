@@ -466,7 +466,9 @@ class Model extends \Hazaar\Model\Strict {
 
                 $options = $this->__convert_data((isset($def['options']->data) ? $def['options']->data : $def['options']), ake($def['options'], 'value', 'value'), ake($def['options'], 'label', 'label'));
 
-                if(is_boolean($sVal))
+                $type = ake($def, 'type');
+
+                if($type === 'boolean' || $type === 'bool')
                     $sVal = strbool($sVal);
 
                 if(!isset($options[$sVal]))
