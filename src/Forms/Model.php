@@ -1086,7 +1086,7 @@ class Model extends \Hazaar\Model\Strict {
             
         }
 
-        if($parent_key)
+        if($parent_key && property_exists($field, 'name'))
             $field->name = $parent_key . '.' . $field->name;
 
         if(property_exists($field,'hidden'))
