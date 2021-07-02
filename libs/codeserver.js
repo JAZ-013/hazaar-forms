@@ -319,6 +319,7 @@ http.createServer((req, res) => {
             res.end(JSON.stringify(result));
         } catch (e) {
             res.writeHead(500, { 'Content-Type': 'text/plain' });
+            console.error(e);
             res.end('ERROR: ' + e.toString());
         }
     });
