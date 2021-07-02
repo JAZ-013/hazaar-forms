@@ -440,7 +440,7 @@ class Model extends \Hazaar\Model\Strict {
 
         }
 
-        if(isset($def['options']) && !(isset($def['options']->url) || is_string($def['options'])) && ake($def, 'allowAny', false) !== true){
+        if(isset($def['options']) && !(isset($def['options']->url) || is_string($def['options']) || is_array($def['options'])) && ake($def, 'allowAny', false) !== true){
 
             if(!isset($def['prepare'])) $def['prepare'] = [];
 
