@@ -100,7 +100,7 @@ class HTML extends \Hazaar\Forms\Output {
         $sections = [];
 
         foreach($page->sections as $section)
-            $sections[] = $this->_section($section);
+            $sections[] = $this->_section($section, true);
 
         if (ake($this->settings, 'cards') === true || ake($page, 'cards') === true) {
 
@@ -118,13 +118,16 @@ class HTML extends \Hazaar\Forms\Output {
 
     }
 
-    function _section($section, $horizontal = true) {
+    function _section($section, $horizontal = null) {
 
         $group = new Div;
 
         if (is_array($section)) {
 
             $col_width = null;
+
+            if ($horizontal === null) 
+                $horizontal = true;
 
             if ($horizontal) {
 
@@ -166,13 +169,13 @@ class HTML extends \Hazaar\Forms\Output {
             $fieldset->add($this->_label($label, 'legend', $section));
 
         foreach($section->fields as $field)
-            $fieldset->add($this->_form_field($field, $horizontal, ake($section, 'grid', false)));
+            $fieldset->add($this->_form_field($field, null, ake($section, 'grid', false)));
 
         return $group->addClass('row');
 
     }
 
-    function _form_field($info, $horizontal = true, $grid = false, $parent_layout = null) {
+    function _form_field($info, $horizontal = null, $grid = false, $parent_layout = null) {
 
         if(is_array($info)){
 
@@ -212,7 +215,7 @@ class HTML extends \Hazaar\Forms\Output {
             $col_width = 0;
 
             if ($horizontal === null)
-                $horizontal = ake($this->settings, 'horizontal') ? false : !ake($info, 'layout');
+                $horizontal = ake($this->settings, 'horizontal') ? false : !(property_exists($info, 'layout') && $info->layout);
 
             foreach($layout as $item) {
 

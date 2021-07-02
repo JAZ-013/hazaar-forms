@@ -1106,8 +1106,13 @@ class Model extends \Hazaar\Model\Strict {
 
             if($field->type === 'button')
                 return null;
-            elseif(property_exists($this->__form, 'types') && property_exists($this->__form->types, $field->type))
+            elseif(property_exists($this->__form, 'types') && property_exists($this->__form->types, $field->type)){
+
                 $field = replace_recursive(deep_clone(ake($this->__form->types, $field->type)), $field);
+
+                $field->horizontal = false;
+                
+            }
 
         }
 
@@ -1136,7 +1141,7 @@ class Model extends \Hazaar\Model\Strict {
 
             }
 
-            $value = \Hazaar\Model\DataBinderValue::create($value, ake($field->options, $value, $value));
+            $value = \Hazaar\Model\DataBinderValue::create($value, ake($options, $value, $value));
 
             $this->set($field_key, $value);
 
