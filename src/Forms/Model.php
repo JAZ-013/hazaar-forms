@@ -1047,7 +1047,7 @@ class Model extends \Hazaar\Model\Strict {
                 if(!is_numeric($field_name) && is_object($field_item))
                     $field_item->name = $field_name;
 
-                $field_item = $this->__field($field_item, $item_value, true, null, $parent_key);
+                $field_item = $this->__field($field_item, $item_value ? $item_value : $form, true, null, $parent_key);
 
             }
 
@@ -1068,7 +1068,7 @@ class Model extends \Hazaar\Model\Strict {
          */
         if(is_string($field)){
 
-            $name = $field;
+            $name = ($parent_key ? $parent_key . '.' : '' ) . $field;
 
             if(($field = ake($form, 'fields.' . implode('.fields.', explode('.', $field)))) === null)
                 return null;
@@ -1078,6 +1078,10 @@ class Model extends \Hazaar\Model\Strict {
 
             $field->name = ($parent_key ? $parent_key . '.' : null) . $name;
 
+        }elseif(is_array($field)){
+
+            return $this->__group((object)['fields' => $field], $form, $item_value, $parent_key);
+
         }elseif(!is_object($field)){
             
             return null;
@@ -1085,11 +1089,11 @@ class Model extends \Hazaar\Model\Strict {
         }elseif($name = ake($field, 'name')){
 
             $field = (object)replace_recursive(ake($form->fields, $name), $field);
+
+            if($parent_key && property_exists($field, 'name'))
+                $field->name = $parent_key . '.' . $field->name;
             
         }
-
-        if($parent_key && property_exists($field, 'name'))
-            $field->name = $parent_key . '.' . $field->name;
 
         if(property_exists($field,'hidden'))
             $field->hidden = $this->evaluate($field->hidden, false);
