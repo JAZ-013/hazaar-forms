@@ -1,4 +1,4 @@
-﻿var ud = undefined;
+var ud = undefined;
 
 //Object.assign() Polyfill
 if (typeof Object.assign !== 'function') {
@@ -1119,7 +1119,7 @@ dataBinderArray.prototype.diff = function (data, callback) {
             _post(host, 'fileinfo', { 'field': def.name }, true).done(function (response) {
                 if (!response.ok) return;
                 let item_data = _get_data_item(host.data, response.field);
-                item_data.empty();
+                item_data.empty(true);
                 for (let x in response.files) if (host.deloads.findIndex(function (e) {
                     return e.field === response.field && e.file === response.files[x].name;
                 }) < 0) item_data.push(_objectify_file(response.files[x]));
