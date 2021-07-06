@@ -931,7 +931,7 @@ dataBinderArray.prototype.diff = function (data, callback) {
             let match = matches[x].substr(2, matches[x].length - 4);
             if (!(match in def.watchers)) def.watchers[match] = [];
             if (typeof item_data === 'undefined') item_data = host.data;
-            if(item_data instanceof dataBinder){
+            if (item_data instanceof dataBinder) {
                 def.watchers[match].push(item_data.watch(match, function (key, item_data, select) {
                     if (item_data.enabled() === false) return;
                     _input_options_populate_ajax(host, options, select, true, item_data, callback);
@@ -1116,14 +1116,14 @@ dataBinderArray.prototype.diff = function (data, callback) {
         if (host.standalone) {
             for (let f of item_data) input.fileUpload('add', f.save());
         } else {
-            _post(host, 'fileinfo', { 'field': def.name }, true).done(function (response) {
+            if (item_data && item_data.length > 0) for (file of item_data) input.fileUpload('add', file.save());
+            _post(host, 'fileinfo', { 'field': def.name }, false).done(function (response) {
                 if (!response.ok) return;
-                let item_data = _get_data_item(host.data, response.field);
-                item_data.empty(true);
-                for (let x in response.files) if (host.deloads.findIndex(function (e) {
-                    return e.field === response.field && e.file === response.files[x].name;
-                }) < 0) item_data.push(_objectify_file(response.files[x]));
-                for (let x in host.uploads) if (host.uploads[x].field === response.field) item_data.push(_objectify_file(host.uploads[x].file));
+                let item_data = _get_data_item(host.data, response.field), rmlist = [];
+                for (let nf of response.files) if (host.deloads.findIndex(function (f) { return String(f.name) === nf.name; }) < 0) item_data.push(_objectify_file(nf));
+                for (let uf of host.uploads) if (uf.field === response.field) item_data.push(_objectify_file(uf.file));
+                for (let mf of item_data) if (response.files.findIndex(function (f) { return f.name === String(mf.name); }) < 0) rmlist.push(mf);
+                for (let rm of rmlist) item_data.remove(rm, true);
             }).fail(_error);
         }
         return input;
@@ -2589,6 +2589,7 @@ $.fn.fileUpload = function () {
             if (host.options.multiple === true) for (let x in file) this._add(file[x]);
             return;
         } else if (typeof file !== 'object') file = { name: file, type: "text/text" };
+        if (host.files.findIndex(function (f) { return f.name === file.name; }) >= 0) return;
         if (!('lastModifiedDate' in file)) file.lastModifiedDate = new Date(file.lastModified * 1000);
         host.files.push(file);
         if (host.o.dzwords) host.o.dzwords.hide();
