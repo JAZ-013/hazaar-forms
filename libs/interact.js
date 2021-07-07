@@ -1104,7 +1104,7 @@ dataBinderArray.prototype.diff = function (data, callback) {
                     });
                     host.deloads.push({ "field": def.name, "file": file.name });
                 }
-                item_data.unset(item_data.indexOf(function (item) { return item.name.value === file.name; }), true);
+                item_data.unset(item_data.findIndex(function (item) { return item.name.value === file.name; }), true);
                 _input_event_update(host, input);
                 return true;
             }
@@ -1120,7 +1120,13 @@ dataBinderArray.prototype.diff = function (data, callback) {
             _post(host, 'fileinfo', { 'field': def.name }, false).done(function (response) {
                 if (!response.ok) return;
                 let item_data = _get_data_item(host.data, response.field), rmlist = [];
-                for (let nf of response.files) if (host.deloads.findIndex(function (f) { return String(f.name) === nf.name; }) < 0) item_data.push(_objectify_file(nf));
+                for (let nf of response.files) if (host.deloads.findIndex(function (f) { return String(f.name) === nf.name; }) < 0) {
+                    let i = item_data.findIndex(function (f) { return String(f.name) === nf.name; }), of = _objectify_file(nf);
+                    if (i >= 0) {
+                        item_data[i].extend(of);
+                        input.fileUpload('update', of.name, of);
+                    } else item_data.push(of);
+                }
                 for (let uf of host.uploads) if (uf.field === response.field) item_data.push(_objectify_file(uf.file));
                 for (let mf of item_data) if (response.files.findIndex(function (f) { return f.name === String(mf.name); }) < 0) rmlist.push(mf);
                 for (let rm of rmlist) item_data.remove(rm, true);
@@ -2566,6 +2572,9 @@ $.fn.fileUpload = function () {
             case 'remove':
                 host._remove(arguments[1]);
                 break;
+            case 'update':
+                host._update(arguments[1], arguments[2]);
+                break;
             case 'list':
                 return host.files;
         }
@@ -2615,6 +2624,19 @@ $.fn.fileUpload = function () {
         });
         if (this.files.length === 0 && this.o.dzwords) this.o.dzwords.show();
         return true;
+    };
+    host._update = function (name, nFile) {
+        for (let file of this.files) {
+            if (file.name === name) {
+                $.extend(file, nFile);
+                host.o.list.children().each(function (index, o) {
+                    let item = $(o), data = item.data('file');
+                    if (data && data.name === file.name) item.find('.dz-detail a').html(file.name).attr('href', file.url);
+                });
+                return true;
+            }
+        }
+        return false;
     };
     host._preview = function (file) {
         let o = $('<div class="dz-preview">').css({ width: host.options.thumbnail, height: host.options.thumbnail });
