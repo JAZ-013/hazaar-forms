@@ -926,9 +926,10 @@ dataBinderArray.prototype.diff = function (data, callback) {
         }
         if (!(_is_object(options) && ('url' in options)))
             return callback(host, options, ('data' in options) ? options.data : options, select);
-        let matches = options.url.match(/\{\{[\w\.]+\}\}/g), def = select.data('def');
+        let matches = options.url.match(/\{\{[\W]*[\w\.]+\}\}/g), def = select.data('def');
         for (let x in matches) {
-            let match = matches[x].substr(2, matches[x].length - 4);
+            let match = matches[x].substr(2, matches[x].length - 4), s = null;
+            if (s = match.match(/([\W]*)(.*)/)) match = s[2];
             if (!(match in def.watchers)) def.watchers[match] = [];
             if (typeof item_data === 'undefined') item_data = host.data;
             if (item_data instanceof dataBinder) {
